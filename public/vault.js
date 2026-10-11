@@ -2089,6 +2089,7 @@
             ${!canSend ? `<small class="ve-error-tip">⚠️ Not enough diamonds in your vault (balance: ${diamonds}💎)</small>` : ''}
           </div>
         </div>`;
+      }
     } else {
       // History Pane
       bodyHtml = `

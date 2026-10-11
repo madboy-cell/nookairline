@@ -15,7 +15,12 @@
 
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n || 0).toLocaleString();
-  const myRole = () => window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
+  const myRole = () => {
+    if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+      return window.SkySupabase.getCharacterBase();
+    }
+    return window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
+  };
   const partnerRole = () => (myRole() === 'bkk' ? 'dxb' : 'bkk');
   const isCoupleActive = () => !!(window.SkySupabase && ((window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) || (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple())));
   const V = () => window.NookVault;
@@ -1739,6 +1744,10 @@
   function onProfiles() {
     updateDock();
     if (!S.open) return;
+    if (lounge()) {
+      S.helloFailed = false;
+      clearTimeout(S.helloTimer);
+    }
     // Don't rebuild the room mid-crank/reveal; finishReveal applies the latest state
     if (S.pulling || S.reveal) { renderHead(); return; }
     const key = ownedIds().join(',');
@@ -1788,7 +1797,7 @@
     mountDock();
     updateDock();
     window.addEventListener('vault:profiles', onProfiles);
-    window.addEventListener('sky:couple_status_changed', () => { if (S.open) render(); });
+    window.addEventListener('sky:couple_status_changed', () => { if (S.open) onProfiles(); });
     // Needs decay continuously — refresh bars / bubbles / naps every 20s
     setInterval(() => {
       updateDock();

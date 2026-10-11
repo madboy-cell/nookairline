@@ -1030,6 +1030,7 @@ function sendSignaling(data) {
     ws.send(JSON.stringify(data));
   }
 }
+window.sendSignaling = sendSignaling;
 
 // 9. End / Hangup Call
 function endCall(sendNotification = true) {
