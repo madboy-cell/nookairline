@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="daily.css?v=20261009a">
   <link rel="stylesheet" href="catlounge.css?v=20261010v2">
   <link rel="stylesheet" href="skydash.css?v=20261009d">
+  <link rel="stylesheet" href="social.css?v=20261012v1">
   <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
 </head>
 <body>
@@ -42,6 +43,13 @@
       <button class="flight-header-photo-btn" id="flightHeaderPhotoBtn" title="Photo Mode (Hide UI for Screenshots)" type="button">
         <span class="photo-icon">📸</span>
         <span class="photo-label">Photo</span>
+      </button>
+
+      <!-- Phase 5: Flight Social & Couple Sanctuary Trigger -->
+      <button class="flight-header-social-btn" id="flightHeaderSocialBtn" title="Social Lounge & Couple Sanctuary" type="button">
+        <span class="social-icon">💞</span>
+        <span class="social-label" id="socialBtnLabel">Social</span>
+        <span class="social-badge-dot" id="socialBadgeDot"></span>
       </button>
 
       <div class="call-timer-chip hidden" id="callTimerChip">
@@ -702,6 +710,10 @@
             <span>✨</span>
             <span>Maple Fitting Room</span>
           </div>
+          <div class="social-base-pills" id="wardrobeBaseSwitcher" style="margin: 0 8px;">
+            <button class="social-base-btn active" id="wardrobeBaseBtnBkk" data-base="bkk" type="button">🐺 Wolf Boy</button>
+            <button class="social-base-btn" id="wardrobeBaseBtnDxb" data-base="dxb" type="button">🐉 Dragon Girl</button>
+          </div>
           <button class="wardrobe-close-btn" id="closeWardrobeBtn" aria-label="Close Wardrobe">✕</button>
         </div>
         
@@ -967,6 +979,149 @@
         </div>
       </div>
     </div>
+
+    <!-- =========================================================
+         PHASE 5: SOCIAL DRAWER & COUPLE SANCTUARY
+         ========================================================= -->
+    <div class="social-drawer-backdrop hidden" id="socialDrawerBackdrop"></div>
+    <aside class="social-drawer hidden" id="socialDrawer" aria-label="Social & Couple Sanctuary">
+      <header class="social-drawer-header">
+        <div class="social-brand">
+          <span class="social-header-crest">💞</span>
+          <div class="social-header-titles">
+            <span class="social-title">FLIGHT SOCIAL</span>
+            <span class="social-subtitle">Couple Sanctuary & Cabin Roster</span>
+          </div>
+        </div>
+        <button class="social-close-btn" id="closeSocialDrawerBtn" aria-label="Close Social Drawer">✕</button>
+      </header>
+
+      <!-- Active User Profile Card with Global Base Switcher -->
+      <section class="social-profile-card">
+        <div class="social-profile-main">
+          <div class="social-avatar-wrap">
+            <img src="assets/bkk_warrior_idle.png" class="social-avatar-img" id="socialUserAvatarImg" alt="Your Avatar">
+            <span class="social-presence-dot online"></span>
+          </div>
+          <div class="social-profile-info">
+            <div class="social-profile-name-row">
+              <span class="social-profile-username" id="socialProfileUsername">Captain</span>
+              <span class="social-base-badge" id="socialBaseBadge">🐺 Wolf Boy</span>
+            </div>
+            <div class="social-currency-row">
+              <span class="social-currency-chip diamonds">💎 <b id="socialDiamondsCount">5,000</b></span>
+              <span class="social-seat-chip" id="socialSeatChip">Seat BKK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global Character Base Toggle Pill -->
+        <div class="social-base-switcher-row">
+          <span class="social-base-label">Character Base:</span>
+          <div class="social-base-pills">
+            <button class="social-base-btn active" id="socialBaseBtnBkk" data-base="bkk" type="button">🐺 Wolf Boy</button>
+            <button class="social-base-btn" id="socialBaseBtnDxb" data-base="dxb" type="button">🐉 Dragon Girl</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Segmented Social Tabs -->
+      <nav class="social-drawer-tabs">
+        <button class="social-tab-btn active" id="socialTabCoupleBtn" data-tab="couple" type="button">
+          <span class="tab-icon">💞</span> Couple Sanctuary
+        </button>
+        <button class="social-tab-btn" id="socialTabFriendsBtn" data-tab="friends" type="button">
+          <span class="tab-icon">👥</span> Friends (<span id="socialFriendsCount">0</span>)
+        </button>
+      </nav>
+
+      <!-- TAB 1: COUPLE SANCTUARY -->
+      <div class="social-tab-content" id="socialTabCoupleContent">
+        <!-- Linked Couple State -->
+        <div class="couple-card linked hidden" id="coupleCardLinked">
+          <div class="couple-banner-glow"></div>
+          <div class="couple-avatars-row">
+            <div class="couple-partner me">
+              <img src="assets/bkk_warrior_idle.png" class="couple-avatar-img" id="coupleMeImg" alt="You">
+              <span class="couple-partner-name" id="coupleMeName">You</span>
+              <span class="couple-partner-base" id="coupleMeBase">🐺 Wolf Boy</span>
+            </div>
+            <div class="couple-heart-beam">
+              <span class="couple-heart-anim">💞</span>
+              <span class="couple-status-text">LINKED</span>
+            </div>
+            <div class="couple-partner partner">
+              <img src="assets/got_queen_idle.png" class="couple-avatar-img" id="couplePartnerImg" alt="Partner">
+              <span class="couple-partner-name" id="couplePartnerName">Sweetheart</span>
+              <span class="couple-partner-base" id="couplePartnerBase">🐉 Dragon Girl</span>
+            </div>
+          </div>
+
+          <div class="couple-details">
+            <div class="couple-detail-row">
+              <span class="detail-label">Status</span>
+              <span class="detail-value online" id="couplePartnerStatusText">🟢 In Flight Lounge</span>
+            </div>
+            <div class="couple-detail-row">
+              <span class="detail-label">Anniversary</span>
+              <span class="detail-value" id="coupleAnniversaryText">Oct 12, 2026</span>
+            </div>
+          </div>
+
+          <div class="couple-actions">
+            <button class="couple-action-btn call" id="coupleStartCallBtn" type="button">
+              <span class="btn-icon">📞</span> Start 1:1 Couple Call
+            </button>
+            <button class="couple-action-btn decouple" id="coupleDecoupleBtn" type="button">
+              <span class="btn-icon">💔</span> Decouple
+            </button>
+          </div>
+          <p class="couple-safety-hint">🛡️ Decouple Guarantee: Wardrobe items & diamonds remain 100% untouched.</p>
+        </div>
+
+        <!-- Unlinked Couple State -->
+        <div class="couple-card unlinked" id="coupleCardUnlinked">
+          <div class="unlinked-icon">💍</div>
+          <h3 class="unlinked-title">No Partner Linked</h3>
+          <p class="unlinked-desc">Link with your couple partner to unlock private 1:1 Voice & Video calls, shared couple perks, and intimate flight reactions.</p>
+
+          <form class="couple-invite-form" id="coupleInviteForm">
+            <label class="form-label" for="coupleInviteInput">Link with Partner</label>
+            <div class="form-row">
+              <input type="text" id="coupleInviteInput" class="social-input" placeholder="Partner username or Flight ID" maxlength="32" required />
+              <button type="submit" class="social-submit-btn">Send Invite 💞</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 2: FRIENDS LIST -->
+      <div class="social-tab-content hidden" id="socialTabFriendsContent">
+        <form class="add-friend-form" id="addFriendForm">
+          <div class="form-row">
+            <input type="text" id="addFriendInput" class="social-input" placeholder="Add friend by username..." maxlength="32" required />
+            <button type="submit" class="social-submit-btn">Add Friend ➕</button>
+          </div>
+        </form>
+
+        <div class="friends-list" id="friendsListContainer">
+          <!-- Dynamic friend rows injected here -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Couple Gating Modal (Appears when non-couple player taps Call) -->
+    <div class="couple-gating-modal hidden" id="coupleGatingModal">
+      <div class="couple-gating-card">
+        <div class="gating-crest">💞</div>
+        <h3 class="gating-title">Couple Sanctuary Feature</h3>
+        <p class="gating-text">Direct 1:1 Voice & Video calls are exclusive to linked Couple Partners.<br>In Party World, enjoy emojis, chat, and the Cabin Reaction Deck with other flyers!</p>
+        <div class="gating-actions">
+          <button class="gating-btn primary" id="gatingOpenSanctuaryBtn">Open Couple Sanctuary 💞</button>
+          <button class="gating-btn secondary" id="gatingCloseBtn">Back to Flight</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Vendor Game Engines (Hardware-Accelerated 120Hz Sprites, Spring Physics & Particles) -->
@@ -989,6 +1144,9 @@
   <script src="monopoly.js?v=20261012v8"></script>
   <script src="skydash_audio.js?v=20261009a"></script>
   <script src="skydash.js?v=20261009e"></script>
+  <!-- Phase 5 Supabase & Social SDK -->
+  <script src="supabase_client.js?v=20261012v1"></script>
+  <script src="social_ui.js?v=20261012v1"></script>
   <script src="app.js?v=20261012v7"></script>
 </body>
 </html>

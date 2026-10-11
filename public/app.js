@@ -235,6 +235,11 @@ function optimizeAudioSDP(sdp) {
 
 // 1. Initialize Local Media (Mic only — camera is opened on demand)
 async function initLocalMedia() {
+  if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+    console.log('[Media] Unlinked / Guest flyer: media initialization deferred to Couple Sanctuary.');
+    updateBadge('Lounge Ready', true);
+    return;
+  }
   try {
     const constraints = {
       audio: {
@@ -575,6 +580,14 @@ async function handleSignalingMessage(message) {
 
 // 4. Start WebRTC Call
 async function startCall() {
+  if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+    if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
+    else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
+    return;
+  }
+  if (!localStream) {
+    await initLocalMedia();
+  }
   if (isCallActive) return;
   isCallActive = true;
   isCaller = true;
@@ -1074,6 +1087,11 @@ function setupEventListeners() {
   // Mic Toggle
   micBtn.addEventListener('click', () => {
     triggerHaptic(12);
+    if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+      if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
+      else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
+      return;
+    }
     if (!localStream) return;
     isMicMuted = !isMicMuted;
     localStream.getAudioTracks().forEach((track) => {
@@ -1096,6 +1114,14 @@ function setupEventListeners() {
   let cameraBusy = false;
   cameraBtn.addEventListener('click', async () => {
     triggerHaptic(12);
+    if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+      if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
+      else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
+      return;
+    }
+    if (!localStream) {
+      await initLocalMedia();
+    }
     if (!localStream || cameraBusy) return;
     cameraBusy = true;
     const wantOn = isCameraOff;
@@ -1152,6 +1178,11 @@ function setupEventListeners() {
   // Primary Call Action Button (Connect / End Flight)
   callActionBtn.addEventListener('click', () => {
     triggerHaptic(20);
+    if (!isCallActive && window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+      if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
+      else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
+      return;
+    }
     // Unconditional iOS audio unlock on user gesture
     if (remoteAudio && remoteAudio.srcObject) {
       remoteAudio.play().catch(() => {});

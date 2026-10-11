@@ -45,7 +45,12 @@
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-  const myRole = () => window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
+  const myRole = () => {
+    if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+      return window.SkySupabase.getCharacterBase();
+    }
+    return window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
+  };
   const partnerRole = () => (myRole() === 'bkk' ? 'dxb' : 'bkk');
   const me = () => (S.profiles ? S.profiles[myRole()] : null);
   const them = () => (S.profiles ? S.profiles[partnerRole()] : null);
@@ -60,7 +65,16 @@
   function owns(role, id) {
     if (!C.BY_ID[id]) return true; // classic outfits are free
     const p = S.profiles && S.profiles[role];
-    return !!(p && p.owned && p.owned[id] > 0);
+    if (p && p.owned && p.owned[id] > 0) return true;
+    const term = window.myTerminal || 'bkk';
+    const termP = S.profiles && S.profiles[term];
+    if (termP && termP.owned && termP.owned[id] > 0) return true;
+    const c = C.BY_ID[id];
+    if (c && c.pair && termP && termP.owned) {
+      const pairCostumes = Object.values(C.BY_ID).filter((x) => x.pair === c.pair);
+      if (pairCostumes.some((x) => termP.owned[x.id] > 0)) return true;
+    }
+    return false;
   }
   function copies(role, id) {
     const p = S.profiles && S.profiles[role];
@@ -259,6 +273,10 @@
           <button class="vault-tab" role="tab" data-action="tab" data-tab="gacha" id="vaultTabGacha">🎰 Gacha</button>
           <span class="vault-tab-ink"></span>
         </nav>
+        <div class="vault-base-switcher" id="vaultBaseSwitcher" title="Switch Character Base">
+          <button class="vault-base-pill active" id="vaultBaseBkk" data-action="switch-base" data-base="bkk" type="button">🐺 Wolf Boy</button>
+          <button class="vault-base-pill" id="vaultBaseDxb" data-action="switch-base" data-base="dxb" type="button">🐉 Dragon Girl</button>
+        </div>
         <div class="vault-body" id="vaultBody"></div>
         <div class="vault-inspect" id="vaultInspect"></div>
         <div class="vault-envelope-modal" id="vaultEnvelopeModal"></div>
@@ -397,9 +415,18 @@
     const body = $('vaultBody'); if (body) body.scrollTop = 0;
   }
 
+  function updateVaultBaseSwitcher() {
+    const cur = myRole();
+    const bkk = $('vaultBaseBkk');
+    const dxb = $('vaultBaseDxb');
+    if (bkk) bkk.classList.toggle('active', cur === 'bkk');
+    if (dxb) dxb.classList.toggle('active', cur === 'dxb');
+  }
+
   function render() {
     if (!S.open) return;
     updatePills();
+    updateVaultBaseSwitcher();
     const tabs = $('vaultTabs');
     if (tabs) {
       tabs.dataset.active = S.tab;
@@ -1387,6 +1414,16 @@
     const id = t.dataset.id;
     switch (a) {
       case 'close': close(); break;
+      case 'switch-base': {
+        const base = t.dataset.base;
+        if (window.SkySupabase && typeof window.SkySupabase.updateCharacterBase === 'function') {
+          window.SkySupabase.updateCharacterBase(base);
+        }
+        updateVaultBaseSwitcher();
+        Sound.tap();
+        render();
+        break;
+      }
       case 'tab':
         closeInspect();
         setTab(t.dataset.tab);
@@ -2406,6 +2443,10 @@
       if ($('vaultInspect') && $('vaultInspect').classList.contains('open')) closeInspect();
       else if (S.pulling) doSkip();
       else close();
+    });
+    window.addEventListener('sky:character_base_changed', () => {
+      updateVaultBaseSwitcher();
+      if (S.open) render();
     });
   }
 
