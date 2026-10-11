@@ -69,9 +69,16 @@
 
       this._bindElements();
       this._bindEvents();
+      this._bindOnboarding();
       this.render();
 
       console.log('[SkySocialUI] Initialized successfully with Passport & Sanctuary.');
+
+      setTimeout(() => {
+        if (window.SkySupabase && !window.SkySupabase.isOnboardingCompleted()) {
+          this.openOnboarding(1);
+        }
+      }, 700);
     }
 
     _bindElements() {
@@ -380,6 +387,272 @@
       if (this.profileSheet) {
         this.profileSheet.classList.remove('open');
         this.profileSheet.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    openOnboarding(step = 1) {
+      if (!this.onboardingModal) this.onboardingModal = $('skyOnboardingModal');
+      if (this.onboardingModal) {
+        this.onboardingModal.classList.remove('hidden');
+        this.setOnbStep(step);
+      }
+    }
+
+    closeOnboarding() {
+      if (this.onboardingModal) {
+        this.onboardingModal.classList.add('hidden');
+      }
+    }
+
+    setOnbStep(step) {
+      this.onbStep = step;
+      for (let i = 1; i <= 4; i++) {
+        const view = $(`onbStepView${i}`);
+        const pill = $(`onbStepPill${i}`);
+        const line = $(`onbStepLine${i}`);
+        if (view) view.classList.toggle('active', i === step);
+        if (pill) pill.classList.toggle('active', i === step);
+        if (line) line.classList.toggle('done', i < step);
+      }
+
+      if (step === 4) {
+        const pName = $('ticketPassengerName');
+        const pPersona = $('ticketPersonaName');
+        if (pName) pName.textContent = this.onbUsername || 'Captain Sky';
+        if (pPersona) pPersona.textContent = this.onbPersona === 'bkk' ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
+        Sound.claim();
+      }
+    }
+
+    _bindOnboarding() {
+      this.onboardingModal = $('skyOnboardingModal');
+      this.onbStep = 1;
+      this.onbPersona = (window.SkySupabase && window.SkySupabase.getCharacterBase()) || 'bkk';
+      this.onbUsername = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || 'Captain Sky';
+      this.onbAuthMode = 'login';
+      this.onbIsPair = false;
+
+      const randomCallsigns = [
+        'Captain Sky', 'Ace Luna', 'Pilot Zephyr', 'Nova Wings',
+        'Star Phoenix', 'Sky Ranger', 'Aero Fox', 'Solaris Ace',
+        'Cloud Dancer', 'Storm Wolf', 'Valkyrie Ace', 'Starlight One'
+      ];
+
+      const onbPersonaBkk = $('onbPersonaBkk');
+      const onbPersonaDxb = $('onbPersonaDxb');
+      const onbCallsignInput = $('onbCallsignInput');
+      const onbRandomNameBtn = $('onbRandomNameBtn');
+      const onbNextBtn1 = $('onbNextBtn1');
+
+      const onbGoogleAuthBtn = $('onbGoogleAuthBtn');
+      const onbTabLogin = $('onbTabLogin');
+      const onbTabRegister = $('onbTabRegister');
+      const onbEmailForm = $('onbEmailForm');
+      const onbEmailInput = $('onbEmailInput');
+      const onbPasswordInput = $('onbPasswordInput');
+      const onbAuthMsg = $('onbAuthMsg');
+      const onbEmailSubmitBtn = $('onbEmailSubmitBtn');
+      const onbGuestBtn = $('onbGuestBtn');
+      const onbBackBtn2 = $('onbBackBtn2');
+
+      const onbChoicePair = $('onbChoicePair');
+      const onbChoiceSolo = $('onbChoiceSolo');
+      const onbPartnerInput = $('onbPartnerInput');
+      const onbBackBtn3 = $('onbBackBtn3');
+      const onbNextBtn3 = $('onbNextBtn3');
+
+      const onbCompleteBtn = $('onbCompleteBtn');
+      const passportViewTicketBtn = $('passportViewTicketBtn');
+
+      if (passportViewTicketBtn) {
+        passportViewTicketBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          this.closeProfileModal();
+          this.openOnboarding(4);
+        });
+      }
+
+      // Step 1: Persona choice
+      if (onbPersonaBkk) {
+        onbPersonaBkk.addEventListener('click', () => {
+          Sound.tap();
+          this.onbPersona = 'bkk';
+          onbPersonaBkk.classList.add('active');
+          if (onbPersonaDxb) onbPersonaDxb.classList.remove('active');
+          const checkBkk = onbPersonaBkk.querySelector('.onb-persona-check');
+          const checkDxb = onbPersonaDxb ? onbPersonaDxb.querySelector('.onb-persona-check') : null;
+          if (checkBkk) checkBkk.textContent = '✓ Selected';
+          if (checkDxb) checkDxb.textContent = 'Select';
+        });
+      }
+
+      if (onbPersonaDxb) {
+        onbPersonaDxb.addEventListener('click', () => {
+          Sound.tap();
+          this.onbPersona = 'dxb';
+          onbPersonaDxb.classList.add('active');
+          if (onbPersonaBkk) onbPersonaBkk.classList.remove('active');
+          const checkDxb = onbPersonaDxb.querySelector('.onb-persona-check');
+          const checkBkk = onbPersonaBkk ? onbPersonaBkk.querySelector('.onb-persona-check') : null;
+          if (checkDxb) checkDxb.textContent = '✓ Selected';
+          if (checkBkk) checkBkk.textContent = 'Select';
+        });
+      }
+
+      if (onbRandomNameBtn && onbCallsignInput) {
+        onbRandomNameBtn.addEventListener('click', () => {
+          Sound.tap();
+          const pick = randomCallsigns[Math.floor(Math.random() * randomCallsigns.length)];
+          onbCallsignInput.value = pick;
+          this.onbUsername = pick;
+        });
+      }
+
+      if (onbNextBtn1) {
+        onbNextBtn1.addEventListener('click', () => {
+          Sound.tap();
+          if (onbCallsignInput && onbCallsignInput.value.trim()) {
+            this.onbUsername = onbCallsignInput.value.trim();
+          }
+          this.setOnbStep(2);
+        });
+      }
+
+      // Step 2: Auth
+      if (onbGoogleAuthBtn) {
+        onbGoogleAuthBtn.addEventListener('click', async () => {
+          Sound.auth();
+          try {
+            await window.SkySupabase.signInWithOAuth('google');
+            this.setOnbStep(3);
+          } catch (err) {
+            if (onbAuthMsg) {
+              onbAuthMsg.textContent = err.message || 'Google Auth Error';
+              onbAuthMsg.className = 'onb-auth-msg';
+              onbAuthMsg.classList.remove('hidden');
+            }
+          }
+        });
+      }
+
+      if (onbTabLogin && onbTabRegister) {
+        onbTabLogin.addEventListener('click', () => {
+          Sound.tap();
+          this.onbAuthMode = 'login';
+          onbTabLogin.classList.add('active');
+          onbTabRegister.classList.remove('active');
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Sign In with Email';
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+        });
+        onbTabRegister.addEventListener('click', () => {
+          Sound.tap();
+          this.onbAuthMode = 'register';
+          onbTabRegister.classList.add('active');
+          onbTabLogin.classList.remove('active');
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Create New Account';
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+        });
+      }
+
+      if (onbEmailForm) {
+        onbEmailForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = onbEmailInput ? onbEmailInput.value.trim() : '';
+          const pass = onbPasswordInput ? onbPasswordInput.value : '';
+          if (!email || !pass) return;
+
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = true;
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+
+          try {
+            if (this.onbAuthMode === 'register') {
+              await window.SkySupabase.signUpWithPassword(email, pass, {
+                username: this.onbUsername,
+                character_base: this.onbPersona
+              });
+            } else {
+              await window.SkySupabase.signInWithPassword(email, pass);
+            }
+            Sound.claim();
+            this.setOnbStep(3);
+          } catch (err) {
+            if (onbAuthMsg) {
+              onbAuthMsg.textContent = err.message || 'Authentication error';
+              onbAuthMsg.className = 'onb-auth-msg';
+              onbAuthMsg.classList.remove('hidden');
+            }
+          } finally {
+            if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = false;
+          }
+        });
+      }
+
+      if (onbGuestBtn) {
+        onbGuestBtn.addEventListener('click', () => {
+          Sound.tap();
+          this.setOnbStep(3);
+        });
+      }
+
+      if (onbBackBtn2) {
+        onbBackBtn2.addEventListener('click', () => {
+          Sound.tap();
+          this.setOnbStep(1);
+        });
+      }
+
+      // Step 3: Couple Choice
+      if (onbChoicePair) {
+        onbChoicePair.addEventListener('click', () => {
+          Sound.tap();
+          this.onbIsPair = true;
+          onbChoicePair.classList.add('active');
+          if (onbChoiceSolo) onbChoiceSolo.classList.remove('active');
+          if (onbPartnerInput) onbPartnerInput.focus();
+        });
+      }
+
+      if (onbChoiceSolo) {
+        onbChoiceSolo.addEventListener('click', () => {
+          Sound.tap();
+          this.onbIsPair = false;
+          onbChoiceSolo.classList.add('active');
+          if (onbChoicePair) onbChoicePair.classList.remove('active');
+        });
+      }
+
+      if (onbBackBtn3) {
+        onbBackBtn3.addEventListener('click', () => {
+          Sound.tap();
+          this.setOnbStep(2);
+        });
+      }
+
+      if (onbNextBtn3) {
+        onbNextBtn3.addEventListener('click', () => {
+          Sound.tap();
+          this.setOnbStep(4);
+        });
+      }
+
+      // Step 4: Complete Boarding
+      if (onbCompleteBtn) {
+        onbCompleteBtn.addEventListener('click', async () => {
+          Sound.claim();
+          const partnerName = (this.onbIsPair && onbPartnerInput) ? onbPartnerInput.value.trim() : null;
+          await window.SkySupabase.completeOnboarding({
+            persona: this.onbPersona,
+            username: this.onbUsername,
+            partnerInvite: partnerName
+          });
+          this.closeOnboarding();
+          this.render();
+          
+          if (window.NookCats && typeof window.NookCats.renderAll === 'function') {
+            window.NookCats.renderAll();
+          }
+        });
       }
     }
 

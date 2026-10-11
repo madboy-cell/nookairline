@@ -166,6 +166,31 @@ async function itAsync(desc, fn) {
     assert.strictEqual(client.getCharacterBase(), 'dxb', 'Base remained untouched after failed update');
   });
 
+  await itAsync('2.5 signUpWithPassword and signInWithPassword manage authenticated users', async () => {
+    const signup = await client.signUpWithPassword('pilot@nookairline.com', 'securepass123', {
+      username: 'Captain_Pilot',
+      character_base: 'bkk'
+    });
+    assert.ok(signup.success);
+    assert.strictEqual(client.getCurrentUser().email, 'pilot@nookairline.com');
+    assert.strictEqual(client.isGuest(), false);
+
+    const signin = await client.signInWithPassword('pilot@nookairline.com', 'securepass123');
+    assert.ok(signin.success);
+    assert.strictEqual(client.getCurrentUser().email, 'pilot@nookairline.com');
+  });
+
+  await itAsync('2.6 isOnboardingCompleted and completeOnboarding manage onboarding lifecycle', async () => {
+    assert.strictEqual(client.isOnboardingCompleted(), false);
+    await client.completeOnboarding({
+      persona: 'dxb',
+      username: 'Ace_Luna'
+    });
+    assert.strictEqual(client.isOnboardingCompleted(), true);
+    assert.strictEqual(client.getCharacterBase(), 'dxb');
+    assert.strictEqual(client.getCurrentUser().username, 'Ace_Luna');
+  });
+
   // --- SUITE 3: Couple Sanctuary & Decouple Safety ---
   console.log('\n--- SUITE 3: Couple Sanctuary & Decouple Safety ---');
 

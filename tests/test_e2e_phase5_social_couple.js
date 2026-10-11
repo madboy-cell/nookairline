@@ -103,6 +103,13 @@ async function itAsync(desc, fn) {
     assert.ok(socIdx < appIdx, 'social_ui.js loads before app.js');
   });
 
+  it('1.7 index.html includes first-class boarding pass onboarding modal', () => {
+    assert.ok(indexHtml.includes('id="skyOnboardingModal"'), 'Must have skyOnboardingModal');
+    assert.ok(indexHtml.includes('id="onbPersonaBkk"'), 'Must have onbPersonaBkk');
+    assert.ok(indexHtml.includes('id="onbPersonaDxb"'), 'Must have onbPersonaDxb');
+    assert.ok(indexHtml.includes('id="onbCompleteBtn"'), 'Must have onbCompleteBtn');
+  });
+
   // --- SUITE 2: Mock Client Sandbox Execution ---
   console.log('\n--- SUITE 2: Client Lifecycle & Event Execution ---');
 

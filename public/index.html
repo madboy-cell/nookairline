@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="daily.css?v=20261012v3">
   <link rel="stylesheet" href="catlounge.css?v=20261012v1">
   <link rel="stylesheet" href="skydash.css?v=20261009d">
-  <link rel="stylesheet" href="social.css?v=20261012v4">
+  <link rel="stylesheet" href="social.css?v=20261012v5">
   <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
 </head>
 <body>
@@ -1169,6 +1169,7 @@
                 <div class="passport-name-row">
                   <h3 id="passportUsername">Pilot Alex</h3>
                   <button class="passport-edit-btn" id="passportEditNameBtn" title="Edit Callsign">✏️</button>
+                  <button type="button" class="passport-boarding-pass-btn" id="passportViewTicketBtn" title="View Boarding Pass">🎫 Boarding Pass</button>
                 </div>
                 <div class="passport-id-badge" id="passportIdBadge">ID: #SKY-7789 · VIP TIER 1</div>
               </div>
@@ -1279,6 +1280,242 @@
     </div>
   </div>
 
+  <!-- =========================================================
+       FIRST CLASS ONBOARDING & BOARDING PASS MODAL
+       ========================================================= -->
+  <div class="onboarding-modal-backdrop hidden" id="skyOnboardingModal">
+    <div class="onboarding-modal-container" role="dialog" aria-modal="true" aria-labelledby="onboardingModalTitle">
+      <div class="onboarding-glow-burst"></div>
+
+      <!-- Header with Airline Brand & Step Progress -->
+      <header class="onboarding-header">
+        <div class="onboarding-crest">✈️ SKY PARTY</div>
+        <h2 class="onboarding-title" id="onboardingModalTitle">FIRST CLASS BOARDING PASS</h2>
+        <p class="onboarding-subtitle" id="onboardingSubtitle">Welcome aboard! Personalize your character persona & pilot ticket.</p>
+        
+        <!-- Step Indicators -->
+        <div class="onboarding-steps-track">
+          <div class="onboarding-step-pill active" id="onbStepPill1" data-step="1">
+            <span class="step-num">1</span> <span>Persona</span>
+          </div>
+          <div class="onboarding-step-line" id="onbStepLine1"></div>
+          <div class="onboarding-step-pill" id="onbStepPill2" data-step="2">
+            <span class="step-num">2</span> <span>Account</span>
+          </div>
+          <div class="onboarding-step-line" id="onbStepLine2"></div>
+          <div class="onboarding-step-pill" id="onbStepPill3" data-step="3">
+            <span class="step-num">3</span> <span>Couple</span>
+          </div>
+          <div class="onboarding-step-line" id="onbStepLine3"></div>
+          <div class="onboarding-step-pill" id="onbStepPill4" data-step="4">
+            <span class="step-num">4</span> <span>Ticket</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Step Body Container -->
+      <div class="onboarding-body">
+        
+        <!-- STEP 1: Persona & Callsign -->
+        <section class="onboarding-step-view active" id="onbStepView1">
+          <div class="onb-section-header">
+            <h3>Choose Your Cabin Persona</h3>
+            <p>Select your flight avatar base and your pilot callsign for the terminal departure board.</p>
+          </div>
+
+          <!-- Persona Cards -->
+          <div class="onb-persona-grid">
+            <div class="onb-persona-card active" id="onbPersonaBkk" data-base="bkk">
+              <div class="onb-persona-badge">BKK ACE</div>
+              <div class="onb-persona-img-wrap">
+                <img src="assets/bkk_warrior_idle.png" alt="Wolf Boy">
+              </div>
+              <div class="onb-persona-name">🐺 Wolf Boy</div>
+              <div class="onb-persona-desc">Urban Samurai · Cloud Ace</div>
+              <div class="onb-persona-check">✓ Selected</div>
+            </div>
+
+            <div class="onb-persona-card" id="onbPersonaDxb" data-base="dxb">
+              <div class="onb-persona-badge">DXB EMPRESS</div>
+              <div class="onb-persona-img-wrap">
+                <img src="assets/got_queen.png" alt="Dragon Girl">
+              </div>
+              <div class="onb-persona-name">🐉 Dragon Girl</div>
+              <div class="onb-persona-desc">Targaryen Empress · Desert Fire</div>
+              <div class="onb-persona-check">Select</div>
+            </div>
+          </div>
+
+          <!-- Callsign Input -->
+          <div class="onb-callsign-box">
+            <label for="onbCallsignInput">Pilot Callsign / Passenger Name:</label>
+            <div class="onb-callsign-input-row">
+              <span class="onb-input-icon">✈️</span>
+              <input type="text" id="onbCallsignInput" class="onb-text-input" maxlength="20" placeholder="e.g. Captain Leo" value="Captain Sky">
+              <button type="button" class="onb-random-name-btn" id="onbRandomNameBtn" title="Randomize Name">🎲</button>
+            </div>
+          </div>
+
+          <div class="onb-actions-row">
+            <button type="button" class="onb-btn-primary" id="onbNextBtn1">
+              <span>Next: Account Setup</span> →
+            </button>
+          </div>
+        </section>
+
+        <!-- STEP 2: Account & Cloud Backup -->
+        <section class="onboarding-step-view" id="onbStepView2">
+          <div class="onb-section-header">
+            <h3>Cloud Backup & Flight Account</h3>
+            <p>Save your diamonds, wardrobe loadout, and gacha pulls in the cloud.</p>
+          </div>
+
+          <!-- Google 1-Tap OAuth -->
+          <div class="onb-auth-card">
+            <button type="button" class="google-auth-btn onb-google-btn" id="onbGoogleAuthBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.27-2.09 3.67-5.17 3.67-9.15z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div class="onb-divider"><span>OR WITH EMAIL</span></div>
+
+            <!-- Email / Password Form with Sign In / Register tabs -->
+            <div class="onb-email-tabs">
+              <button type="button" class="onb-email-tab active" id="onbTabLogin">Sign In</button>
+              <button type="button" class="onb-email-tab" id="onbTabRegister">New Account</button>
+            </div>
+
+            <form class="onb-email-form" id="onbEmailForm">
+              <div class="onb-input-group">
+                <input type="email" id="onbEmailInput" class="onb-text-input" placeholder="pilot@gmail.com" required autocomplete="email">
+              </div>
+              <div class="onb-input-group">
+                <input type="password" id="onbPasswordInput" class="onb-text-input" placeholder="Password (min 6 characters)" required autocomplete="current-password">
+              </div>
+              <div class="onb-auth-msg hidden" id="onbAuthMsg"></div>
+              <button type="submit" class="onb-btn-email-submit" id="onbEmailSubmitBtn">Sign In with Email</button>
+            </form>
+          </div>
+
+          <!-- Instant Guest Option -->
+          <div class="onb-guest-box">
+            <button type="button" class="onb-guest-btn" id="onbGuestBtn">
+              <span>⚡ Fly as Guest Passenger (Instant Play)</span>
+            </button>
+            <small>No registration needed. You can link your Google/Email anytime.</small>
+          </div>
+
+          <div class="onb-actions-row">
+            <button type="button" class="onb-btn-secondary" id="onbBackBtn2">← Back</button>
+          </div>
+        </section>
+
+        <!-- STEP 3: Couple Sanctuary -->
+        <section class="onboarding-step-view" id="onbStepView3">
+          <div class="onb-section-header">
+            <h3>Couple Sanctuary Flight Pairing</h3>
+            <p>Are you boarding together with your favorite person today?</p>
+          </div>
+
+          <div class="onb-couple-choice-grid">
+            <!-- Option A: Pair Now -->
+            <div class="onb-couple-card" id="onbChoicePair">
+              <span class="onb-card-icon">💞</span>
+              <h4>Flying with Partner</h4>
+              <p>Unlock shared cabin lounge, 1:1 private calls, and couple streaks.</p>
+              <div class="onb-couple-input-wrap">
+                <input type="text" id="onbPartnerInput" class="onb-text-input" placeholder="Partner's username / invite code">
+              </div>
+            </div>
+
+            <!-- Option B: Fly Solo -->
+            <div class="onb-couple-card active" id="onbChoiceSolo">
+              <span class="onb-card-icon">🛫</span>
+              <h4>Flying Solo for Now</h4>
+              <p>Enjoy solo quests, cat lounge adoption, and board games. You can link your partner anytime!</p>
+              <div class="onb-solo-pill">✓ Single Passenger Selected</div>
+            </div>
+          </div>
+
+          <div class="onb-actions-row">
+            <button type="button" class="onb-btn-secondary" id="onbBackBtn3">← Back</button>
+            <button type="button" class="onb-btn-primary" id="onbNextBtn3">
+              <span>Issue Boarding Pass</span> →
+            </button>
+          </div>
+        </section>
+
+        <!-- STEP 4: Boarding Pass Celebration -->
+        <section class="onboarding-step-view" id="onbStepView4">
+          <div class="onb-ticket-wrap">
+            <!-- Luxury Airline Boarding Pass -->
+            <div class="luxury-boarding-ticket">
+              <div class="ticket-header">
+                <div class="ticket-airline">NOOK AIRLINE · SKY PARTY</div>
+                <div class="ticket-flight-no">FLIGHT #SKY-2026</div>
+              </div>
+              <div class="ticket-body">
+                <div class="ticket-route-row">
+                  <div class="route-point">
+                    <span class="code">BKK</span>
+                    <span class="city">Bangkok</span>
+                  </div>
+                  <div class="route-plane">✈️ ─────── ✈️</div>
+                  <div class="route-point">
+                    <span class="code">DXB</span>
+                    <span class="city">Dubai</span>
+                  </div>
+                </div>
+
+                <div class="ticket-info-grid">
+                  <div class="ticket-info-item">
+                    <span class="lbl">PASSENGER CALLSIGN</span>
+                    <span class="val" id="ticketPassengerName">Captain Sky</span>
+                  </div>
+                  <div class="ticket-info-item">
+                    <span class="lbl">CABIN PERSONA</span>
+                    <span class="val" id="ticketPersonaName">🐺 Wolf Boy</span>
+                  </div>
+                  <div class="ticket-info-item">
+                    <span class="lbl">CLASS / SEAT</span>
+                    <span class="val gold">1A · FIRST CLASS VIP</span>
+                  </div>
+                  <div class="ticket-info-item">
+                    <span class="lbl">WELCOME BONUS</span>
+                    <span class="val gold">💎 5,000 + 🐟 150</span>
+                  </div>
+                </div>
+
+                <!-- Perforated Tear Line & Barcode -->
+                <div class="ticket-barcode-wrap">
+                  <div class="ticket-barcode-lines"></div>
+                  <span class="ticket-barcode-num">NK-2026-VIP-0017789</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="onb-welcome-message">
+            <h3>🎉 Welcome Aboard, First Class Passenger!</h3>
+            <p>Your luxury aircraft is fueled and ready on Runway 09. Enjoy your flight!</p>
+          </div>
+
+          <div class="onb-actions-row center">
+            <button type="button" class="onb-btn-launch" id="onbCompleteBtn">
+              <span>🛫 Board Flight & Enter Cabin</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Vendor Game Engines (Hardware-Accelerated 120Hz Sprites, Spring Physics & Particles) -->
   <script src="vendor/pixi.min.js"></script>
   <script src="vendor/gsap.min.js"></script>
@@ -1307,8 +1544,8 @@
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dWx0dWZoY2RwaHJqcGxicmVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDM1MzEsImV4cCI6MjEwNzMxOTUzMX0.old1fleZdZwgRz_88SZOVE_1Ysm2gkGtp1kBgpjSvZ0'
     };
   </script>
-  <script src="supabase_client.js?v=20261012v4"></script>
-  <script src="social_ui.js?v=20261012v4"></script>
+  <script src="supabase_client.js?v=20261012v5"></script>
+  <script src="social_ui.js?v=20261012v5"></script>
   <script src="app.js?v=20261012v12"></script>
 </body>
 </html>

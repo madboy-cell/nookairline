@@ -19,7 +19,8 @@
     PROFILE: 'sky_party_user_profile',
     COUPLES: 'sky_party_couples_store',
     FRIENDS: 'sky_party_friends_store',
-    PRESENCE: 'sky_party_presence_state'
+    PRESENCE: 'sky_party_presence_state',
+    ONBOARDING: 'sky_party_onboarding_done'
   };
 
   function safeDispatch(type, detail) {
@@ -177,6 +178,20 @@
           this.client = window.supabase.createClient(cfg.url, cfg.anonKey);
           this.isLiveClient = true;
           console.log('[SkySupabase] Initialized with LIVE Supabase backend at:', cfg.url);
+
+          // Hook into Supabase live auth state events
+          if (this.client.auth && typeof this.client.auth.onAuthStateChange === 'function') {
+            this.client.auth.onAuthStateChange(async (event, session) => {
+              console.log('[SkySupabase] Auth event:', event);
+              if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session && session.user) {
+                await this._fetchOrCreateProfile(session.user);
+                safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+              } else if (event === 'SIGNED_OUT') {
+                await this.loginGuest();
+                safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+              }
+            });
+          }
         } catch (err) {
           console.warn('[SkySupabase] Failed to initialize live client, falling back to Local Provider:', err);
           this.isLiveClient = false;
@@ -206,6 +221,134 @@
 
     getProfile() {
       return this.currentUser;
+    }
+
+    /**
+     * Resolves or creates user record in public.profiles table
+     */
+    async _fetchOrCreateProfile(user, extraMeta = {}) {
+      if (!user) return this.currentUser;
+      if (this.isLiveClient && this.client) {
+        try {
+          const { data, error } = await this.client
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (data) {
+            this.currentUser = {
+              ...data,
+              email: user.email,
+              isGuest: false
+            };
+          } else {
+            const initial = {
+              id: user.id,
+              username: extraMeta.username || user.user_metadata?.username || `Captain_${user.id.slice(0, 4).toUpperCase()}`,
+              character_base: extraMeta.character_base || user.user_metadata?.character_base || 'bkk',
+              equipped_costume: 'pilot',
+              diamonds: 5000,
+              stardust: 0,
+              inventory: []
+            };
+            const { data: created } = await this.client
+              .from('profiles')
+              .upsert(initial)
+              .select()
+              .single();
+
+            this.currentUser = {
+              ...(created || initial),
+              email: user.email,
+              isGuest: false
+            };
+          }
+          this.localProvider.saveProfile(this.currentUser);
+          await this.getCoupleStatus();
+          await this.getFriends();
+          return this.currentUser;
+        } catch (err) {
+          console.warn('[SkySupabase] Live profile sync warning:', err);
+        }
+      }
+
+      // Local fallback
+      if (!this.currentUser) await this.loginGuest(extraMeta.username, extraMeta.character_base);
+      this.currentUser.email = user.email || this.currentUser.email;
+      this.currentUser.isGuest = false;
+      this.localProvider.saveProfile(this.currentUser);
+      return this.currentUser;
+    }
+
+    /**
+     * Sign Up with Email + Password
+     */
+    async signUpWithPassword(email, password, metadata = {}) {
+      if (!email || !email.includes('@')) throw new Error('Please enter a valid email address.');
+      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters.');
+
+      if (this.isLiveClient && this.client && this.client.auth) {
+        const { data, error } = await this.client.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              username: metadata.username || 'Passenger',
+              character_base: metadata.character_base || 'bkk'
+            }
+          }
+        });
+        if (error) throw error;
+        if (data && data.user) {
+          await this._fetchOrCreateProfile(data.user, metadata);
+          safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+          return { success: true, user: this.currentUser, session: data.session };
+        }
+      }
+
+      // Local Guest fallback
+      if (!this.currentUser) await this.loginGuest(metadata.username, metadata.character_base);
+      this.currentUser.email = email;
+      this.currentUser.username = metadata.username || this.currentUser.username;
+      this.currentUser.character_base = metadata.character_base || this.currentUser.character_base;
+      this.currentUser.auth_provider = 'email';
+      this.currentUser.isGuest = false;
+      this.currentUser.updated_at = new Date().toISOString();
+      this.localProvider.saveProfile(this.currentUser);
+      safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+      return { success: true, user: this.currentUser };
+    }
+
+    /**
+     * Sign In with Email + Password
+     */
+    async signInWithPassword(email, password) {
+      if (!email || !email.includes('@')) throw new Error('Please enter a valid email address.');
+      if (!password) throw new Error('Please enter your password.');
+
+      if (this.isLiveClient && this.client && this.client.auth) {
+        const { data, error } = await this.client.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        if (data && data.user) {
+          await this._fetchOrCreateProfile(data.user);
+          safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+          return { success: true, user: this.currentUser, session: data.session };
+        }
+      }
+
+      // Local Guest fallback
+      if (!this.currentUser) await this.loginGuest();
+      this.currentUser.email = email;
+      this.currentUser.auth_provider = 'email';
+      this.currentUser.isGuest = false;
+      this.currentUser.updated_at = new Date().toISOString();
+      this.localProvider.saveProfile(this.currentUser);
+      safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+      return { success: true, user: this.currentUser };
     }
 
     /**
@@ -387,6 +530,44 @@
       } else {
         this.localProvider.saveProfile(this.currentUser);
       }
+      return this.currentUser;
+    }
+
+    /**
+     * Checks if user has completed the onboarding flow
+     */
+    isOnboardingCompleted() {
+      try {
+        return !!localStorage.getItem(STORAGE_KEYS.ONBOARDING);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    /**
+     * Finalizes onboarding: saves persona, username, optional couple invite, and marks complete
+     */
+    async completeOnboarding({ persona, username, partnerInvite } = {}) {
+      if (!this.currentUser) {
+        await this.loginGuest(username, persona);
+      }
+      if (persona && (persona === 'bkk' || persona === 'dxb')) {
+        await this.updateCharacterBase(persona);
+      }
+      if (username && username.trim()) {
+        await this.updateProfile({ username: username.trim() });
+      }
+      if (partnerInvite && partnerInvite.trim()) {
+        try {
+          await this.createCoupleInvite(partnerInvite.trim());
+        } catch (e) {
+          console.warn('[SkySupabase] Onboarding couple invite notice:', e);
+        }
+      }
+      try {
+        localStorage.setItem(STORAGE_KEYS.ONBOARDING, 'true');
+      } catch (e) {}
+      safeDispatch('sky:onboarding_completed', { user: this.currentUser });
       return this.currentUser;
     }
 
