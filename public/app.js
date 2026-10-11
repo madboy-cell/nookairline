@@ -436,18 +436,23 @@ async function handleSignalingMessage(message) {
       console.log(`[Terminal] Assigned seat: ${myTerminal.toUpperCase()}`);
       const seatTag = document.getElementById('seatTag');
       if (seatTag) seatTag.textContent = `SEAT ${myTerminal.toUpperCase()}`;
-      else document.querySelector('.brand-title').textContent = `SKY PARTY [${myTerminal.toUpperCase()}]`;
-      const partnerDestination = myTerminal === 'bkk' ? 'Dubai Lounge (DXB)' : 'Bangkok Lounge (BKK)';
       if (partnerName) {
-        partnerName.textContent = partnerDestination;
+        const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
+        partnerName.textContent = isCouple ? (window.SkySupabase.coupleStatus.partner?.username || 'Partner') : 'Co-Pilot Lounge';
       }
       if (message.partnerOnline) {
-        updateCapsule('Partner Online • Ready to Fly ✈️', true);
-        updateBadge('Partner Online • Ready', true);
+        updateCapsule('Partner Boarded • Ready to Fly ✈️', true);
+        updateBadge('Partner Boarded • Ready', true);
       } else {
-        const otherCity = myTerminal === 'bkk' ? 'Dubai (DXB)' : 'Bangkok (BKK)';
-        updateCapsule(`Awaiting ${otherCity}...`, false);
-        updateBadge(`Waiting for ${myTerminal === 'bkk' ? 'DXB' : 'BKK'}...`, false);
+        const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
+        if (isCouple) {
+          const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
+          updateCapsule(`Awaiting ${partnerUname}...`, false);
+          updateBadge(`Waiting for ${partnerUname}...`, false);
+        } else {
+          updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
+          updateBadge('Solo Flight • Invite Partner', false);
+        }
       }
       break;
 

@@ -1,16 +1,64 @@
 /**
- * Sky Party — Social Drawer & Couple Sanctuary UI Controller (Phase 5)
- * Coordinates the slide-out drawer, couple state, friends list, and WebRTC call gating.
+ * Sky Party — Social & Passenger Passport UI Controller (Phase 5)
+ * Coordinates the Passenger Passport Modal, Persona Base Switcher,
+ * Couple Sanctuary, Friends Roster, and WebAudio FX.
  */
 
 (function (window) {
   'use strict';
 
-  const $ = (id) => document.getElementById(id);
+  const $ = (id) => (typeof document !== 'undefined' && document.getElementById ? document.getElementById(id) : null);
+
+  // ---------------------------------------------------------------------------
+  // Procedural WebAudio chimes matching daily.js
+  // ---------------------------------------------------------------------------
+  const Sound = (() => {
+    let ctx = null;
+    const ac = () => {
+      if (typeof window === 'undefined') return null;
+      if (!ctx) {
+        try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+      }
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    };
+    function tone(f, t0, dur, type = 'sine', vol = 0.08) {
+      const c = ac(); if (!c) return;
+      const o = c.createOscillator(); const g = c.createGain();
+      const t = c.currentTime + t0;
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
+    }
+    return {
+      tap() { tone(760, 0, 0.06, 'triangle', 0.05); },
+      switchBase() { [659, 880, 1109].forEach((f, i) => tone(f, i * 0.06, 0.22, 'triangle', 0.07)); },
+      auth() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.35, 'sine', 0.07)); },
+      claim() { [988, 1319, 1568].forEach((f, i) => tone(f, i * 0.06, 0.22, 'triangle', 0.08)); },
+      gem() { tone(1800 + Math.random() * 400, 0, 0.08, 'sine', 0.04); }
+    };
+  })();
+
+  function renderEmbers(containerId, count = 14) {
+    const c = $(containerId);
+    if (!c || c.children.length > 0) return;
+    let h = '';
+    for (let i = 0; i < count; i++) {
+      const x = Math.round(Math.random() * 100);
+      const d = (4 + Math.random() * 5).toFixed(2);
+      const delay = (-Math.random() * 8).toFixed(2);
+      const s = (0.5 + Math.random() * 0.9).toFixed(2);
+      h += `<i style="--x:${x}%;--d:${d}s;--delay:${delay}s;--s:${s}"></i>`;
+    }
+    c.innerHTML = h;
+  }
 
   class SkySocialUI {
     constructor() {
       this.isOpen = false;
+      this.isProfileOpen = false;
       this.currentTab = 'couple';
       this.initialized = false;
     }
@@ -19,71 +67,52 @@
       if (this.initialized) return;
       this.initialized = true;
 
-      this.mountHudElements();
       this._bindElements();
       this._bindEvents();
       this.render();
 
-      console.log('[SkySocialUI] Initialized successfully.');
-    }
-
-    mountHudElements() {
-      const header = $('flightHeader');
-      if (!header) return;
-      let group = (typeof header.querySelector === 'function') ? header.querySelector('.hdr-right') : $('flightHeaderRight');
-      if (!group) {
-        if (typeof document.createElement === 'function') {
-          group = document.createElement('div');
-          group.className = 'hdr-right';
-          group.id = 'flightHeaderRight';
-          if (header.appendChild) header.appendChild(group);
-        } else {
-          return;
-        }
-      }
-
-      if (!$('hudBaseSwitchBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'hudBaseSwitchBtn';
-        btn.className = 'hud-base-btn';
-        btn.type = 'button';
-        btn.title = 'Switch Character Base: Wolf Boy / Dragon Girl';
-        btn.innerHTML = '<span id="hudBaseIcon">🐺</span> <b id="hudBaseText">Boy</b>';
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const cur = window.SkySupabase ? window.SkySupabase.getCharacterBase() : 'bkk';
-          this.switchBase(cur === 'bkk' ? 'dxb' : 'bkk');
-        });
-        group.insertBefore(btn, group.firstChild);
-      }
-
-      if (!$('hudCoupleBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'hudCoupleBtn';
-        btn.className = 'hud-couple-btn';
-        btn.type = 'button';
-        btn.title = 'Couple Sanctuary & Flight Social';
-        btn.innerHTML = '<span>💞</span> <b id="hudCoupleText">Couple</b><span class="hud-badge-dot"></span>';
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.toggleDrawer();
-        });
-        const baseBtn = $('hudBaseSwitchBtn');
-        if (baseBtn && baseBtn.nextSibling) {
-          group.insertBefore(btn, baseBtn.nextSibling);
-        } else {
-          group.appendChild(btn);
-        }
-      }
+      console.log('[SkySocialUI] Initialized successfully with Passport & Sanctuary.');
     }
 
     _bindElements() {
+      // Drawers and sheets
       this.drawer = $('socialDrawer');
       this.backdrop = $('socialDrawerBackdrop');
       this.triggerBtn = $('flightHeaderSocialBtn');
       this.closeBtn = $('closeSocialDrawerBtn');
 
-      // Profile & Base Switcher
+      // Passenger Passport Sheet
+      this.profileSheet = $('skyProfileSheet');
+      this.profileBackdrop = $('skyProfileBackdrop');
+      this.profileCloseBtn = $('skyProfileCloseBtn');
+      this.profileHeaderBtn = $('flightHeaderProfileBtn');
+
+      // Profile Card Elements
+      this.passportAvatarImg = $('passportAvatarImg');
+      this.passportUsername = $('passportUsername');
+      this.passportEditNameBtn = $('passportEditNameBtn');
+      this.passportIdBadge = $('passportIdBadge');
+      this.passportDiamonds = $('passportDiamonds');
+      this.passportPersonaTag = $('passportPersonaTag');
+      this.passportCoupleTag = $('passportCoupleTag');
+
+      // Persona Base Cards
+      this.personaCardBkk = $('personaCardBkk');
+      this.personaCardDxb = $('personaCardDxb');
+      this.personaPillBkk = $('personaPillBkk');
+      this.personaPillDxb = $('personaPillDxb');
+
+      // Auth & Account
+      this.accountGuestBox = $('accountGuestBox');
+      this.accountLoggedInBox = $('accountLoggedInBox');
+      this.googleAuthBtn = $('googleAuthBtn');
+      this.emailAuthForm = $('emailAuthForm');
+      this.authEmailInput = $('authEmailInput');
+      this.loggedUserEmail = $('loggedUserEmail');
+      this.profileSignOutBtn = $('profileSignOutBtn');
+      this.profileOpenSanctuaryBtn = $('profileOpenSanctuaryBtn');
+
+      // Social Drawer Legacy Elements
       this.userAvatarImg = $('socialUserAvatarImg');
       this.usernameEl = $('socialProfileUsername');
       this.baseBadgeEl = $('socialBaseBadge');
@@ -101,7 +130,7 @@
       this.tabFriendsContent = $('socialTabFriendsContent');
       this.friendsCountEl = $('socialFriendsCount');
 
-      // Couple Sanctuary
+      // Couple Sanctuary Cards
       this.coupleCardLinked = $('coupleCardLinked');
       this.coupleCardUnlinked = $('coupleCardUnlinked');
       this.coupleMeImg = $('coupleMeImg');
@@ -129,7 +158,100 @@
     }
 
     _bindEvents() {
-      // Open / Close Drawer
+      // 1. Top Header Profile Chip -> Opens Passport Modal
+      if (this.profileHeaderBtn) {
+        this.profileHeaderBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openProfileModal();
+        });
+      }
+      if (this.profileCloseBtn) {
+        this.profileCloseBtn.addEventListener('click', () => this.closeProfileModal());
+      }
+      if (this.profileBackdrop) {
+        this.profileBackdrop.addEventListener('click', () => this.closeProfileModal());
+      }
+
+      // Persona Base Switcher Cards inside Passport Modal
+      if (this.personaCardBkk) {
+        this.personaCardBkk.addEventListener('click', () => {
+          Sound.switchBase();
+          this.switchBase('bkk');
+        });
+      }
+      if (this.personaCardDxb) {
+        this.personaCardDxb.addEventListener('click', () => {
+          Sound.switchBase();
+          this.switchBase('dxb');
+        });
+      }
+
+      // Callsign Edit
+      if (this.passportEditNameBtn) {
+        this.passportEditNameBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          const current = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || 'Passenger';
+          const newName = window.prompt('Enter your passenger callsign / name:', current);
+          if (newName && newName.trim() && newName.trim() !== current) {
+            await window.SkySupabase.updateProfile({ username: newName.trim() });
+            Sound.claim();
+            this.render();
+          }
+        });
+      }
+
+      // Google Sign-In
+      if (this.googleAuthBtn) {
+        this.googleAuthBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          Sound.auth();
+          try {
+            await window.SkySupabase.signInWithOAuth('google');
+            Sound.claim();
+            this.render();
+          } catch (err) {
+            alert('Google Auth: ' + err.message);
+          }
+        });
+      }
+
+      // Email Auth Form
+      if (this.emailAuthForm) {
+        this.emailAuthForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const inp = this.authEmailInput;
+          if (!inp || !inp.value.trim()) return;
+          try {
+            await window.SkySupabase.signInWithOtp(inp.value.trim());
+            Sound.claim();
+            inp.value = '';
+            this.render();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+
+      // Sign Out
+      if (this.profileSignOutBtn) {
+        this.profileSignOutBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          await window.SkySupabase.signOut();
+          this.render();
+        });
+      }
+
+      // Open Couple Sanctuary from Passport Modal
+      if (this.profileOpenSanctuaryBtn) {
+        this.profileOpenSanctuaryBtn.addEventListener('click', () => {
+          this.closeProfileModal();
+          this.openDrawer('couple');
+        });
+      }
+
+      // 2. Open / Close Social Drawer
       if (this.triggerBtn) {
         this.triggerBtn.addEventListener('click', () => this.toggleDrawer());
       }
@@ -149,7 +271,7 @@
         });
       }
 
-      // Base Switcher Buttons
+      // Base Switcher Buttons inside Drawer & Wardrobe
       if (this.baseBtnBkk) {
         this.baseBtnBkk.addEventListener('click', () => this.switchBase('bkk'));
       }
@@ -163,7 +285,7 @@
         this.wardrobeBaseBtnDxb.addEventListener('click', () => this.switchBase('dxb'));
       }
 
-      // Tab Switching
+      // Tabs
       if (this.tabCoupleBtn) {
         this.tabCoupleBtn.addEventListener('click', () => this.switchTab('couple'));
       }
@@ -171,30 +293,32 @@
         this.tabFriendsBtn.addEventListener('click', () => this.switchTab('friends'));
       }
 
-      // Couple Actions
+      // Couple Sanctuary Actions
       if (this.coupleInviteForm) {
         this.coupleInviteForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          const target = this.coupleInviteInput.value.trim();
+          const target = this.coupleInviteInput ? this.coupleInviteInput.value.trim() : '';
           if (!target) return;
           try {
-            await window.SkySupabase.createCoupleInvite(target);
-            this.coupleInviteInput.value = '';
+            await window.SkySupabase.linkCouple(target);
+            if (this.coupleInviteInput) this.coupleInviteInput.value = '';
             this.render();
           } catch (err) {
-            alert(err.message || 'Failed to send couple invite');
+            alert(err.message || 'Failed to send couple invite.');
           }
         });
       }
 
       if (this.coupleDecoupleBtn) {
         this.coupleDecoupleBtn.addEventListener('click', async () => {
-          const confirmMsg =
-            'Are you sure you want to decouple from your partner?\n\n' +
-            '🛡️ 100% Zero-Loss Guarantee: Your diamonds, wardrobe items, and stardust will remain completely untouched.';
-          if (confirm(confirmMsg)) {
+          if (!confirm('Are you sure you want to decouple? (Your wardrobe items & diamonds will remain 100% safe and untouched)')) {
+            return;
+          }
+          try {
             await window.SkySupabase.decouple();
             this.render();
+          } catch (err) {
+            alert(err.message || 'Decouple error.');
           }
         });
       }
@@ -207,23 +331,23 @@
         });
       }
 
-      // Friends Actions
+      // Friends
       if (this.addFriendForm) {
         this.addFriendForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          const target = this.addFriendInput.value.trim();
+          const target = this.addFriendInput ? this.addFriendInput.value.trim() : '';
           if (!target) return;
           try {
-            await window.SkySupabase.sendFriendRequest(target);
-            this.addFriendInput.value = '';
+            await window.SkySupabase.addFriend(target);
+            if (this.addFriendInput) this.addFriendInput.value = '';
             this.render();
           } catch (err) {
-            alert(err.message || 'Failed to add friend');
+            alert(err.message || 'Failed to add friend.');
           }
         });
       }
 
-      // Gating Modal Events
+      // Gating Modal Actions
       if (this.gatingOpenSanctuaryBtn) {
         this.gatingOpenSanctuaryBtn.addEventListener('click', () => {
           this.hideGatingModal();
@@ -234,19 +358,35 @@
         this.gatingCloseBtn.addEventListener('click', () => this.hideGatingModal());
       }
 
-      // Listen for Supabase & System Events
+      // Listen for Global Supabase events
       window.addEventListener('sky:character_base_changed', () => this.render());
-      window.addEventListener('sky:couple_status_changed', () => this.render());
-      window.addEventListener('sky:friends_changed', () => this.render());
+      window.addEventListener('sky:couple_updated', () => this.render());
+      window.addEventListener('sky:auth_state_changed', () => this.render());
+    }
 
-      if (window.SkySupabase && typeof window.SkySupabase.onPresenceChange === 'function') {
-        window.SkySupabase.onPresenceChange(() => this.render());
+    openProfileModal() {
+      Sound.tap();
+      this.isProfileOpen = true;
+      if (this.profileSheet) {
+        this.profileSheet.classList.add('open');
+        this.profileSheet.setAttribute('aria-hidden', 'false');
+      }
+      renderEmbers('profileEmbers', 14);
+      this.render();
+    }
+
+    closeProfileModal() {
+      this.isProfileOpen = false;
+      if (this.profileSheet) {
+        this.profileSheet.classList.remove('open');
+        this.profileSheet.setAttribute('aria-hidden', 'true');
       }
     }
 
     openDrawer(tab = null) {
-      if (tab) this.switchTab(tab);
+      Sound.tap();
       this.isOpen = true;
+      if (tab) this.switchTab(tab);
       if (this.drawer) this.drawer.classList.remove('hidden');
       if (this.backdrop) this.backdrop.classList.remove('hidden');
       this.render();
@@ -300,22 +440,74 @@
       const currentBase = window.SkySupabase.getCharacterBase();
       const couple = window.SkySupabase.coupleStatus;
       const friends = window.SkySupabase.friends || [];
+      const isBoy = currentBase === 'bkk';
+      const myAvatarSrc = isBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen.png';
 
-      // 1. Profile section
-      if (user) {
-        if (this.usernameEl) this.usernameEl.textContent = user.username || 'Captain';
-        if (this.diamondsEl) this.diamondsEl.textContent = (user.diamonds || 5000).toLocaleString();
-        const role = window.myTerminal ? window.myTerminal.toUpperCase() : 'BKK';
-        if (this.seatChipEl) this.seatChipEl.textContent = `Seat ${role}`;
+      // 1. Top Header Profile Chip
+      const headerAvatarImg = $('headerProfileAvatarImg');
+      if (headerAvatarImg) headerAvatarImg.src = myAvatarSrc;
+      const headerBadge = $('headerProfileBadge');
+      if (headerBadge) headerBadge.textContent = isBoy ? '🐺' : '🐉';
+      const headerName = $('headerProfileName');
+      if (headerName) headerName.textContent = user ? (user.username || 'Passenger') : 'Passenger';
+      const headerSub = $('headerProfileSub');
+      if (headerSub) {
+        if (couple && couple.isCouple && couple.partner) {
+          headerSub.textContent = `💞 ${couple.partner.username || 'Coupled'}`;
+        } else {
+          headerSub.textContent = 'Sky Passport';
+        }
       }
 
-      const isBoy = currentBase === 'bkk';
-      const myAvatarSrc = isBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen_idle.png';
+      // 2. Passenger Passport Sheet
+      if (this.passportAvatarImg) this.passportAvatarImg.src = myAvatarSrc;
+      if (this.passportUsername) this.passportUsername.textContent = user ? (user.username || 'Passenger') : 'Passenger';
+      if (this.passportIdBadge) {
+        const idShort = user && user.id ? user.id.slice(-4).toUpperCase() : '7789';
+        this.passportIdBadge.textContent = `ID: #SKY-${idShort} · VIP TIER 1`;
+      }
+      if (this.passportDiamonds) this.passportDiamonds.textContent = (user?.diamonds || 5000).toLocaleString();
+      if (this.passportPersonaTag) this.passportPersonaTag.textContent = isBoy ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
+      if (this.passportCoupleTag) {
+        this.passportCoupleTag.textContent = couple && couple.isCouple ? `💞 Linked (${couple.partner?.username || 'Partner'})` : 'Single Traveler';
+      }
+
+      // Persona Base Switcher Cards
+      if (this.personaCardBkk) this.personaCardBkk.classList.toggle('active', isBoy);
+      if (this.personaCardDxb) this.personaCardDxb.classList.toggle('active', !isBoy);
+      if (this.personaPillBkk) this.personaPillBkk.textContent = isBoy ? '✓ ACTIVE' : 'SELECT';
+      if (this.personaPillDxb) this.personaPillDxb.textContent = !isBoy ? '✓ ACTIVE' : 'SELECT';
+
+      // Auth state
+      const isGuest = !user || !!user.isGuest || !user.email;
+      if (this.accountGuestBox) this.accountGuestBox.classList.toggle('hidden', !isGuest);
+      if (this.accountLoggedInBox) this.accountLoggedInBox.classList.toggle('hidden', isGuest);
+      if (this.loggedUserEmail && user && user.email) {
+        this.loggedUserEmail.textContent = user.email;
+      }
+
+      // Passport Couple Card status
+      const pCoupleDesc = $('profileCoupleDesc');
+      if (pCoupleDesc) {
+        if (couple && couple.isCouple) {
+          pCoupleDesc.textContent = `Bound with ${couple.partner?.username || 'Partner'} 💞 in Couple Sanctuary. Enjoy private 1:1 calls and shared milestones.`;
+        } else {
+          pCoupleDesc.textContent = 'Pair with your flight partner to unlock private 1:1 WebRTC calls, intimacy reactions, and couple streak logs.';
+        }
+      }
+      if (this.profileOpenSanctuaryBtn) {
+        this.profileOpenSanctuaryBtn.textContent = couple && couple.isCouple ? 'Manage Couple Sanctuary 💞' : 'Open Couple Sanctuary 💞';
+      }
+
+      // 3. Social Drawer User Card
+      if (this.usernameEl) this.usernameEl.textContent = user?.username || 'Passenger';
+      if (this.diamondsEl) this.diamondsEl.textContent = (user?.diamonds || 5000).toLocaleString();
+      if (this.seatChipEl) {
+        this.seatChipEl.textContent = couple && couple.isCouple ? 'Flight Couple' : 'Solo Passenger';
+      }
       if (this.userAvatarImg) this.userAvatarImg.src = myAvatarSrc;
       if (this.baseBadgeEl) {
         this.baseBadgeEl.textContent = isBoy ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
-        this.baseBadgeEl.style.background = isBoy ? 'rgba(59, 130, 246, 0.2)' : 'rgba(236, 72, 153, 0.2)';
-        this.baseBadgeEl.style.borderColor = isBoy ? 'rgba(59, 130, 246, 0.4)' : 'rgba(236, 72, 153, 0.4)';
         this.baseBadgeEl.style.color = isBoy ? '#93c5fd' : '#f9a8d4';
       }
 
@@ -324,27 +516,7 @@
       if (this.wardrobeBaseBtnBkk) this.wardrobeBaseBtnBkk.classList.toggle('active', isBoy);
       if (this.wardrobeBaseBtnDxb) this.wardrobeBaseBtnDxb.classList.toggle('active', !isBoy);
 
-      this.mountHudElements();
-      const hudBaseIcon = $('hudBaseIcon');
-      const hudBaseText = $('hudBaseText');
-      const hudBaseBtn = $('hudBaseSwitchBtn');
-      if (hudBaseIcon) hudBaseIcon.textContent = isBoy ? '🐺' : '🐉';
-      if (hudBaseText) hudBaseText.textContent = isBoy ? 'Boy' : 'Girl';
-      if (hudBaseBtn) {
-        hudBaseBtn.classList.toggle('dxb', !isBoy);
-        hudBaseBtn.title = `Active Base: ${isBoy ? 'Wolf Boy' : 'Dragon Girl'} (Tap to switch)`;
-      }
-
-      const hudCoupleText = $('hudCoupleText');
-      if (hudCoupleText) {
-        if (couple && couple.isCouple && couple.partner) {
-          hudCoupleText.textContent = couple.partner.username || 'Partner 💞';
-        } else {
-          hudCoupleText.textContent = 'Couple 💞';
-        }
-      }
-
-      // 2. Couple Sanctuary
+      // 4. Couple Sanctuary
       if (couple && couple.isCouple) {
         if (this.coupleCardLinked) this.coupleCardLinked.classList.remove('hidden');
         if (this.coupleCardUnlinked) this.coupleCardUnlinked.classList.add('hidden');
@@ -355,7 +527,7 @@
 
         const partner = couple.partner || {};
         const partnerIsBoy = partner.character_base === 'bkk';
-        const partnerAvatarSrc = partnerIsBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen_idle.png';
+        const partnerAvatarSrc = partnerIsBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen.png';
         if (this.couplePartnerImg) this.couplePartnerImg.src = partnerAvatarSrc;
         if (this.couplePartnerName) this.couplePartnerName.textContent = partner.username || 'Partner';
         if (this.couplePartnerBase) this.couplePartnerBase.textContent = partnerIsBoy ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
@@ -381,7 +553,7 @@
         if (this.coupleCardUnlinked) this.coupleCardUnlinked.classList.remove('hidden');
       }
 
-      // 3. Friends List
+      // 5. Friends List
       if (this.friendsCountEl) this.friendsCountEl.textContent = friends.length;
       if (this.friendsListContainer) {
         if (friends.length === 0) {
@@ -391,7 +563,7 @@
           this.friendsListContainer.innerHTML = friends
             .map((f) => {
               const friendBoy = f.character_base === 'bkk';
-              const friendSprite = friendBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen_idle.png';
+              const friendSprite = friendBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen.png';
               const statusDot = f.isOnline ? '🟢' : '⚪';
               const statusText = f.isOnline ? 'In Cabin Lounge' : 'Offline';
               return `

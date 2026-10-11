@@ -4,118 +4,610 @@
  */
 
 /* -------------------------------------------------------------
-   Flight Header Social Trigger Button
+   Passenger Passport Profile Chip (Top Header - Left)
    ------------------------------------------------------------- */
-.flight-header-social-btn {
+.flight-header-profile-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  gap: 8px;
+  height: 38px;
+  padding: 3px 12px 3px 4px;
   border-radius: 999px;
-  padding: 5px 12px;
+  background: linear-gradient(135deg, rgba(22, 16, 36, 0.88), rgba(38, 22, 54, 0.88));
+  border: 1.5px solid rgba(251, 191, 36, 0.45);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  cursor: pointer;
   color: #fff;
   font-family: 'Outfit', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  pointer-events: auto;
+  flex: none;
   z-index: 10;
 }
 
-.flight-header-social-btn:hover {
-  background: rgba(244, 114, 182, 0.2);
-  border-color: rgba(244, 114, 182, 0.5);
-  box-shadow: 0 0 12px rgba(244, 114, 182, 0.35);
+.flight-header-profile-btn:hover {
   transform: translateY(-1px);
+  border-color: rgba(251, 191, 36, 0.85);
+  box-shadow: 0 6px 22px rgba(251, 191, 36, 0.35);
 }
 
-.social-badge-dot {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 7px;
-  height: 7px;
+.flight-header-profile-btn:active {
+  transform: scale(0.96);
+}
+
+.profile-chip-avatar-wrap {
+  position: relative;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  border: 1.5px solid rgba(253, 230, 138, 0.8);
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.3), rgba(15, 23, 42, 0.9));
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+  overflow: hidden;
+  flex: none;
+}
+
+.profile-chip-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.profile-chip-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 10px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.profile-chip-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.profile-chip-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, #fff7ed, #fde68a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-chip-sub {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: rgba(240, 232, 255, 0.65);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-chip-arrow {
+  font-size: 11px;
+  color: rgba(251, 191, 36, 0.7);
+  margin-left: -2px;
+  transition: transform 0.2s ease;
+}
+
+.flight-header-profile-btn:hover .profile-chip-arrow {
+  transform: translateY(1px);
+  color: #fde68a;
 }
 
 /* -------------------------------------------------------------
-   HUD Character Base Switcher & Couple Sanctuary Pills
+   Sky Profile & Passport Sheet (Matches Daily Flight Attendance)
    ------------------------------------------------------------- */
-.hud-base-btn {
-  display: inline-flex;
+.sky-profile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9200;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1.5px solid rgba(59, 130, 246, 0.5);
-  color: #93c5fd;
-  font-family: 'Outfit', sans-serif;
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
-}
-
-.hud-base-btn:hover {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: rgba(59, 130, 246, 0.8);
-  transform: translateY(-1px);
-}
-
-.hud-base-btn.dxb {
-  border-color: rgba(244, 114, 182, 0.6);
-  color: #f9a8d4;
-  background: rgba(244, 114, 182, 0.15);
-}
-
-.hud-base-btn.dxb:hover {
-  background: rgba(244, 114, 182, 0.3);
-  border-color: rgba(244, 114, 182, 0.9);
-}
-
-.hud-couple-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(244, 114, 182, 0.3), rgba(139, 92, 246, 0.3));
-  border: 1.5px solid rgba(244, 114, 182, 0.5);
+  justify-content: center;
+  pointer-events: none;
+  visibility: hidden;
+  font-family: var(--font-main, 'Plus Jakarta Sans', sans-serif);
   color: #fff;
-  font-family: 'Outfit', sans-serif;
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-  position: relative;
-  box-shadow: 0 4px 14px rgba(244, 114, 182, 0.3);
+}
+
+.sky-profile-sheet.open {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.sky-profile-sheet .dly-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(76, 29, 49, 0.55), rgba(5, 4, 12, 0.88));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.hud-couple-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
-  border-color: rgba(244, 114, 182, 0.85);
+.sky-profile-sheet.open .dly-backdrop {
+  opacity: 1;
 }
 
-.hud-couple-btn .hud-badge-dot {
-  width: 6px;
-  height: 6px;
+.sky-profile-sheet .profile-panel {
+  position: relative;
+  width: min(94vw, 480px);
+  max-height: min(88dvh, 860px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(251, 146, 60, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(30, 18, 38, 0.98), #110c1a);
+  border: 1px solid rgba(251, 146, 60, 0.28);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(244, 63, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  transform: translateY(30px) scale(0.96);
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.2, 1.2, 0.3, 1), opacity 0.3s ease;
+}
+
+.sky-profile-sheet.open .profile-panel {
+  transform: none;
+  opacity: 1;
+}
+
+@media (max-width: 560px) {
+  .sky-profile-sheet {
+    align-items: flex-end;
+  }
+  .sky-profile-sheet .profile-panel {
+    width: 100vw;
+    border-radius: 28px 28px 0 0;
+    max-height: 90dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateY(100%);
+  }
+}
+
+/* Card 1: Boarding Pass */
+.profile-passport-card {
+  background:
+    radial-gradient(90% 70% at 15% 10%, rgba(251, 191, 36, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.passport-header-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.passport-avatar-box {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  border: 2px solid rgba(253, 230, 138, 0.8);
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.4), #1a1026);
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.35);
+  overflow: hidden;
+  flex: none;
+}
+
+.passport-avatar-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.passport-status-ring {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.passport-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.passport-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.passport-name-row h3 {
+  margin: 0;
+  font: 800 20px/1.2 'Outfit', sans-serif;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passport-edit-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.passport-edit-btn:hover {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.5);
+  transform: scale(1.08);
+}
+
+.passport-id-badge {
+  font-size: 11px;
+  color: rgba(240, 232, 255, 0.65);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.passport-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.passport-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.passport-stat .stat-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(240, 232, 255, 0.5);
+  letter-spacing: 0.06em;
+}
+
+.passport-stat .stat-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.passport-stat .stat-val.gold {
+  color: #fde68a;
+}
+
+/* Card 2: Persona Base Switcher */
+.persona-switcher-card {
+  background:
+    radial-gradient(90% 70% at 85% 10%, rgba(244, 63, 94, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.persona-card-desc {
+  font-size: 12px;
+  color: rgba(240, 232, 255, 0.65);
+  margin: 4px 0 12px;
+  line-height: 1.4;
+}
+
+.persona-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.persona-option-card {
+  position: relative;
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.persona-option-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.persona-option-card.active {
+  border-color: rgba(251, 191, 36, 0.85);
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.22), rgba(30, 18, 38, 0.6));
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.persona-option-card#personaCardDxb.active {
+  border-color: rgba(244, 114, 182, 0.85);
+  background: linear-gradient(180deg, rgba(244, 114, 182, 0.22), rgba(30, 18, 38, 0.6));
+  box-shadow: 0 0 20px rgba(244, 114, 182, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.persona-thumb-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), rgba(0, 0, 0, 0.6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.persona-thumb-wrap img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.persona-text .persona-title {
+  font: 800 14px/1.2 'Outfit', sans-serif;
+  color: #fff;
+}
+
+.persona-text .persona-sub {
+  font-size: 10px;
+  color: rgba(240, 232, 255, 0.6);
+  margin-top: 2px;
+}
+
+.persona-status-pill {
+  margin-top: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+}
+
+.persona-option-card.active .persona-status-pill {
+  background: linear-gradient(90deg, #fb923c, #f59e0b);
+  color: #1a0f02;
+  border-color: #fde68a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.persona-option-card#personaCardDxb.active .persona-status-pill {
+  background: linear-gradient(90deg, #ec4899, #f43f5e);
+  color: #fff;
+  border-color: #fbcfe8;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+}
+
+/* Card 3: Account & Cloud Sync */
+.account-auth-card {
+  background:
+    radial-gradient(90% 70% at 15% 90%, rgba(99, 102, 241, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.account-desc {
+  font-size: 12px;
+  color: rgba(240, 232, 255, 0.7);
+  line-height: 1.45;
+  margin: 4px 0 14px;
+}
+
+.auth-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.google-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1f2937;
+  font: 700 13.5px 'Outfit', sans-serif;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.google-auth-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+  background: #f9fafb;
+}
+
+.google-auth-btn:active {
+  transform: scale(0.98);
+}
+
+.email-auth-form {
+  margin-top: 10px;
+}
+
+.auth-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-text-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 9px 12px;
+  color: #fff;
+  font-size: 12.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.auth-text-input:focus {
+  border-color: rgba(251, 146, 60, 0.6);
+}
+
+.auth-submit-btn {
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.35), rgba(244, 63, 94, 0.35));
+  border: 1px solid rgba(251, 146, 60, 0.5);
+  color: #fff;
+  font: 700 12.5px 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-submit-btn:hover {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.55), rgba(244, 63, 94, 0.55));
+  border-color: rgba(251, 146, 60, 0.8);
+}
+
+.logged-in-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-bottom: 12px;
+}
+
+.logged-icon {
+  font-size: 24px;
+}
+
+.logged-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.logged-email {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #fff;
+}
+
+.logged-status {
+  font-size: 11px;
+  color: #6ee7b7;
+}
+
+.sign-out-btn {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font: 700 12px 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-out-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fff;
+}
+
+/* Card 4: Couple Quick Card */
+.profile-couple-card {
+  background:
+    radial-gradient(90% 70% at 50% 10%, rgba(244, 114, 182, 0.2), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-color: rgba(244, 114, 182, 0.3);
+}
+
+.open-sanctuary-modal-btn {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.4), rgba(139, 92, 246, 0.4));
+  border: 1.5px solid rgba(244, 114, 182, 0.6);
+  color: #fff;
+  font: 800 13.5px 'Outfit', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(244, 114, 182, 0.25);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.open-sanctuary-modal-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244, 114, 182, 0.9);
+  box-shadow: 0 6px 24px rgba(244, 114, 182, 0.45);
+}
+
+/* Mobile Header Refinements */
+@media (max-width: 480px) {
+  .flight-header-profile-btn {
+    height: 35px;
+    padding: 2px 9px 2px 3px;
+    gap: 5px;
+  }
+  .profile-chip-avatar-wrap {
+    width: 27px;
+    height: 27px;
+  }
+  .profile-chip-title {
+    font-size: 11.5px;
+    max-width: 82px;
+  }
+  .profile-chip-sub {
+    font-size: 8.5px;
+  }
+  .flight-header-photo-btn {
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .flight-header-photo-btn .photo-label {
+    display: none;
+  }
 }
 
 /* -------------------------------------------------------------
@@ -161,24 +653,46 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 420px;
+  width: 440px;
   max-width: 100vw;
-  background: rgba(14, 17, 27, 0.94);
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(244, 114, 182, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(30, 18, 38, 0.98), #110c1a);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(244, 114, 182, 0.28);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.7), 0 0 40px rgba(244, 114, 182, 0.15), inset 1px 0 0 rgba(255, 255, 255, 0.08);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   transform: translateX(0);
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 1.2, 0.3, 1);
   overflow: hidden;
 }
 
 .social-drawer.hidden {
   transform: translateX(100%);
   pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .social-drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 28px 28px 0 0;
+    border-left: none;
+    border-top: 1px solid rgba(244, 114, 182, 0.35);
+    max-height: 90dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateY(0);
+  }
+  .social-drawer.hidden {
+    transform: translateY(100%);
+  }
 }
 
 /* -------------------------------------------------------------

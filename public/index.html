@@ -14,50 +14,58 @@
   <link rel="stylesheet" href="monopoly.css?v=20261012v7">
   <link rel="stylesheet" href="monopoly_fx.css?v=20261012v4">
   <link rel="stylesheet" href="vault.css?v=20261012v3">
-  <link rel="stylesheet" href="lounge.css?v=20261010v2">
+  <link rel="stylesheet" href="lounge.css?v=20261012v3">
   <link rel="stylesheet" href="daily.css?v=20261009a">
   <link rel="stylesheet" href="catlounge.css?v=20261010v2">
   <link rel="stylesheet" href="skydash.css?v=20261009d">
-  <link rel="stylesheet" href="social.css?v=20261012v2">
+  <link rel="stylesheet" href="social.css?v=20261012v3">
   <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
 </head>
 <body>
   <div id="app" class="airline-container">
     <!-- Top Flight Status Bar -->
     <header class="flight-header" id="flightHeader">
-      <div class="airline-brand">
-        <div class="brand-crest">
-          <img src="assets/ui/crest.png?v=20261011v2" alt="Sky Party crest" draggable="false">
+      <!-- Upgraded Passenger Passport & Profile Chip -->
+      <button class="flight-header-profile-btn" id="flightHeaderProfileBtn" title="Passenger Passport & Account Settings" type="button">
+        <div class="profile-chip-avatar-wrap">
+          <img id="headerProfileAvatarImg" src="assets/bkk_warrior_idle.png" alt="Avatar" draggable="false">
+          <span class="profile-chip-badge" id="headerProfileBadge">🐺</span>
         </div>
-        <div class="brand-text">
-          <span class="brand-title">SKY PARTY</span>
-          <span class="flight-route">BKK <span class="arrow">✈</span> DXB <span class="seat-tag" id="seatTag">SEAT —</span></span>
+        <div class="profile-chip-text">
+          <span class="profile-chip-title" id="headerProfileName">Passenger</span>
+          <span class="profile-chip-sub" id="headerProfileSub">Sky Passport</span>
         </div>
-      </div>
-
-      <div class="security-badge" id="securityBadge">
-        <span class="live-dot pulse"></span>
-        <span id="connectionBadgeText">Connecting to Flight Network...</span>
-      </div>
-
-      <button class="flight-header-photo-btn" id="flightHeaderPhotoBtn" title="Photo Mode (Hide UI for Screenshots)" type="button">
-        <span class="photo-icon">📸</span>
-        <span class="photo-label">Photo</span>
+        <span class="profile-chip-arrow">▾</span>
       </button>
 
-      <!-- Phase 5: Flight Social & Couple Sanctuary Trigger -->
-      <button class="flight-header-social-btn" id="flightHeaderSocialBtn" title="Social Lounge & Couple Sanctuary" type="button">
-        <span class="social-icon">💞</span>
-        <span class="social-label" id="socialBtnLabel">Social</span>
-        <span class="social-badge-dot" id="socialBadgeDot"></span>
+      <!-- Backwards compatibility hooks (hidden from display so they take 0 space) -->
+      <div class="airline-brand hidden" id="airlineBrand" style="display:none!important;">
+        <span class="brand-title">SKY PARTY</span>
+        <span class="seat-tag" id="seatTag"></span>
+      </div>
+      <div class="security-badge hidden" id="securityBadge" style="display:none!important;">
+        <span class="live-dot"></span>
+        <span id="connectionBadgeText"></span>
+      </div>
+      <button class="flight-header-social-btn hidden" id="flightHeaderSocialBtn" style="display:none!important;" type="button">
+        <span id="socialBtnLabel">Social</span><span id="socialBadgeDot"></span>
       </button>
 
+      <!-- Active In-Call Duration Chip -->
       <div class="call-timer-chip hidden" id="callTimerChip">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
         <span id="callDuration">00:00</span>
+      </div>
+
+      <!-- Right Utility Cluster (Contains Photo Mode, Streak Fire Chip, Diamonds Pill) -->
+      <div class="hdr-right" id="flightHeaderRight">
+        <button class="flight-header-photo-btn" id="flightHeaderPhotoBtn" title="Photo Mode (Hide UI for Screenshots)" type="button">
+          <span class="photo-icon">📸</span>
+          <span class="photo-label">Photo</span>
+        </button>
       </div>
     </header>
 
@@ -1128,6 +1136,147 @@
         </div>
       </div>
     </div>
+
+    <!-- =========================================================
+         SKY PASSENGER PASSPORT & ACCOUNT SETTINGS MODAL
+         ========================================================= -->
+    <div class="dly-sheet sky-profile-sheet" id="skyProfileSheet" aria-hidden="true">
+      <div class="dly-backdrop" id="skyProfileBackdrop"></div>
+      <section class="dly-panel profile-panel" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+        <!-- Floating ember ambient particles -->
+        <div class="dly-panel-embers" id="profileEmbers"></div>
+
+        <!-- Sheet Header -->
+        <header class="dly-head">
+          <div class="dly-head-text">
+            <h2 id="profileTitle">Passenger Passport</h2>
+            <small id="profileSubtitle">Character Persona & Account Settings</small>
+          </div>
+          <button class="dly-close" id="skyProfileCloseBtn" aria-label="Close Passport">✕</button>
+        </header>
+
+        <!-- Body Cards -->
+        <div class="dly-body" id="profileBody">
+          <!-- CARD 1: Luxury Boarding Pass / Passport Card -->
+          <div class="dly-card profile-passport-card">
+            <div class="passport-header-row">
+              <div class="passport-avatar-box">
+                <img id="passportAvatarImg" src="assets/bkk_warrior_idle.png" alt="Passenger Avatar">
+                <span class="passport-status-ring"></span>
+              </div>
+              <div class="passport-meta">
+                <span class="dly-kicker">FIRST CLASS PASSENGER</span>
+                <div class="passport-name-row">
+                  <h3 id="passportUsername">Pilot Alex</h3>
+                  <button class="passport-edit-btn" id="passportEditNameBtn" title="Edit Callsign">✏️</button>
+                </div>
+                <div class="passport-id-badge" id="passportIdBadge">ID: #SKY-7789 · VIP TIER 1</div>
+              </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="passport-stats-grid">
+              <div class="passport-stat">
+                <span class="stat-lbl">Diamonds</span>
+                <span class="stat-val gold">💎 <b id="passportDiamonds">5,000</b></span>
+              </div>
+              <div class="passport-stat">
+                <span class="stat-lbl">Persona</span>
+                <span class="stat-val" id="passportPersonaTag">🐺 Wolf Boy</span>
+              </div>
+              <div class="passport-stat">
+                <span class="stat-lbl">Sanctuary</span>
+                <span class="stat-val" id="passportCoupleTag">Single Traveler</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Interactive Persona Base Switcher (🐺 Boy vs 🐉 Girl) -->
+          <div class="dly-card persona-switcher-card">
+            <span class="dly-kicker">CHARACTER PERSONA BASE</span>
+            <h3>Select Cabin Base</h3>
+            <p class="persona-card-desc">Instantly swaps your cabin floor avatar, emotes, and voice persona without reloading.</p>
+
+            <div class="persona-cards-grid">
+              <!-- BKK Wolf Boy Card -->
+              <div class="persona-option-card active" id="personaCardBkk" data-base="bkk">
+                <div class="persona-thumb-wrap">
+                  <img src="assets/bkk_warrior_idle.png" alt="Wolf Boy" draggable="false">
+                </div>
+                <div class="persona-text">
+                  <div class="persona-title">🐺 Wolf Boy</div>
+                  <div class="persona-sub">Urban Samurai · Cloud Ace</div>
+                </div>
+                <div class="persona-status-pill" id="personaPillBkk">✓ ACTIVE</div>
+              </div>
+
+              <!-- DXB Dragon Girl Card -->
+              <div class="persona-option-card" id="personaCardDxb" data-base="dxb">
+                <div class="persona-thumb-wrap">
+                  <img src="assets/got_queen.png" alt="Dragon Girl" draggable="false">
+                </div>
+                <div class="persona-text">
+                  <div class="persona-title">🐉 Dragon Girl</div>
+                  <div class="persona-sub">Targaryen Empress · Desert Fire</div>
+                </div>
+                <div class="persona-status-pill" id="personaPillDxb">SELECT</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 3: Account & Cloud Backup (Google / Gmail / Email) -->
+          <div class="dly-card account-auth-card">
+            <span class="dly-kicker">ACCOUNT & CLOUD BACKUP</span>
+            <h3>Flight Account</h3>
+            <div id="accountGuestBox" class="account-state-box">
+              <p class="account-desc">You are flying as a <b>Guest Passenger</b> (data saved locally). Connect your Google account to sync your diamonds, wardrobe, and couple status anywhere.</p>
+              
+              <div class="auth-btn-group">
+                <button class="google-auth-btn" id="googleAuthBtn" type="button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.27-2.09 3.67-5.17 3.67-9.15z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+              </div>
+
+              <!-- Quick Email Sign-In -->
+              <form class="email-auth-form" id="emailAuthForm">
+                <div class="auth-input-row">
+                  <input type="email" id="authEmailInput" class="auth-text-input" placeholder="Or enter Gmail / email address..." required>
+                  <button type="submit" class="auth-submit-btn" id="emailAuthSubmitBtn">Connect</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Authenticated State Box -->
+            <div id="accountLoggedInBox" class="account-state-box hidden">
+              <div class="logged-in-row">
+                <span class="logged-icon">🛡️</span>
+                <div class="logged-details">
+                  <span class="logged-email" id="loggedUserEmail">user@gmail.com</span>
+                  <span class="logged-status">Cloud Synced & Protected ✓</span>
+                </div>
+              </div>
+              <button class="sign-out-btn" id="profileSignOutBtn" type="button">Sign Out (Switch Account)</button>
+            </div>
+          </div>
+
+          <!-- CARD 4: Couple Sanctuary Quick Access -->
+          <div class="dly-card profile-couple-card">
+            <span class="dly-kicker">COUPLE SANCTUARY</span>
+            <h3>Flight Partner</h3>
+            <p id="profileCoupleDesc" class="persona-card-desc">Pair with your flight partner to unlock private 1:1 WebRTC calls, intimacy reactions, and couple streak logs.</p>
+            <button class="open-sanctuary-modal-btn" id="profileOpenSanctuaryBtn" type="button">
+              <span>Open Couple Sanctuary 💞</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <!-- Vendor Game Engines (Hardware-Accelerated 120Hz Sprites, Spring Physics & Particles) -->
@@ -1138,7 +1287,7 @@
   <script src="telemetry.js?v=20261009a"></script>
   <script src="costumes.js?v=20261012v5"></script>
   <script src="rewards.js?v=20261009a"></script>
-  <script src="avatar.js?v=20261012v4"></script>
+  <script src="avatar.js?v=20261012v5"></script>
   <script src="vault.js?v=20261012v4"></script>
   <script src="daily.js?v=20261009a"></script>
   <script src="cats.js?v=20261009a"></script>
@@ -1151,8 +1300,8 @@
   <script src="skydash_audio.js?v=20261009a"></script>
   <script src="skydash.js?v=20261009e"></script>
   <!-- Phase 5 Supabase & Social SDK -->
-  <script src="supabase_client.js?v=20261012v2"></script>
-  <script src="social_ui.js?v=20261012v2"></script>
-  <script src="app.js?v=20261012v8"></script>
+  <script src="supabase_client.js?v=20261012v3"></script>
+  <script src="social_ui.js?v=20261012v3"></script>
+  <script src="app.js?v=20261012v9"></script>
 </body>
 </html>

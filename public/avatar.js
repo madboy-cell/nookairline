@@ -516,9 +516,18 @@ function renderAvatarDOM(containerId, avatar, isMe = true) {
   container.style.left = `${avatar.x}%`;
   container.style.top = `${avatar.y}%`;
 
-  const myRole = getTerminalRole();
-  const isDxb = isMe ? (myRole === 'dxb') : (myRole !== 'dxb');
-  const tagText = isMe ? (isDxb ? 'You [DXB]' : 'You [BKK]') : (isDxb ? 'Partner [DXB]' : 'Partner [BKK]');
+  const myProfile = window.SkySupabase ? window.SkySupabase.getProfile() : null;
+  const coupleStatus = window.SkySupabase ? window.SkySupabase.coupleStatus : null;
+  let tagText = isMe ? 'You' : 'Partner';
+  if (isMe && myProfile && myProfile.username) {
+    tagText = myProfile.username;
+  } else if (!isMe) {
+    if (coupleStatus && coupleStatus.isCouple && coupleStatus.partner && coupleStatus.partner.username) {
+      tagText = `💞 ${coupleStatus.partner.username}`;
+    } else {
+      tagText = 'Partner';
+    }
+  }
   const tagClass = isMe ? 'avatar-tag me' : 'avatar-tag';
 
   container.innerHTML = `

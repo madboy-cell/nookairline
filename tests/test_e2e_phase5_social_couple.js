@@ -69,11 +69,19 @@ async function itAsync(desc, fn) {
     assert.ok(indexHtml.includes('social.css'), 'social.css must be linked');
   });
 
-  it('1.2 index.html includes flight header social button', () => {
-    assert.ok(indexHtml.includes('id="flightHeaderSocialBtn"'));
+  it('1.2 index.html includes flight header social & profile buttons', () => {
+    assert.ok(indexHtml.includes('id="flightHeaderProfileBtn"'), 'Must have flightHeaderProfileBtn');
+    assert.ok(indexHtml.includes('id="flightHeaderSocialBtn"'), 'Must have flightHeaderSocialBtn');
   });
 
-  it('1.3 index.html includes social drawer and couple sanctuary markup', () => {
+  it('1.3 index.html includes passenger passport modal & persona cards', () => {
+    assert.ok(indexHtml.includes('id="skyProfileSheet"'), 'Must have skyProfileSheet');
+    assert.ok(indexHtml.includes('id="personaCardBkk"'), 'Must have personaCardBkk');
+    assert.ok(indexHtml.includes('id="personaCardDxb"'), 'Must have personaCardDxb');
+    assert.ok(indexHtml.includes('id="googleAuthBtn"'), 'Must have googleAuthBtn');
+  });
+
+  it('1.4 index.html includes social drawer and couple sanctuary markup', () => {
     assert.ok(indexHtml.includes('id="socialDrawer"'));
     assert.ok(indexHtml.includes('id="socialTabCoupleBtn"'));
     assert.ok(indexHtml.includes('id="socialTabFriendsBtn"'));
@@ -81,12 +89,12 @@ async function itAsync(desc, fn) {
     assert.ok(indexHtml.includes('id="coupleCardUnlinked"'));
   });
 
-  it('1.4 index.html includes couple call gating modal', () => {
+  it('1.5 index.html includes couple call gating modal', () => {
     assert.ok(indexHtml.includes('id="coupleGatingModal"'));
     assert.ok(indexHtml.includes('id="gatingOpenSanctuaryBtn"'));
   });
 
-  it('1.5 index.html loads supabase_client.js and social_ui.js before app.js', () => {
+  it('1.6 index.html loads supabase_client.js and social_ui.js before app.js', () => {
     const supIdx = indexHtml.indexOf('supabase_client.js');
     const socIdx = indexHtml.indexOf('social_ui.js');
     const appIdx = indexHtml.indexOf('app.js');

@@ -342,6 +342,30 @@
   transform: scale(0.95);
 }
 
+.hdr-right .flight-header-photo-btn {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .hdr-right {
+    gap: 5px;
+  }
+  .hdr-right .flight-header-photo-btn {
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .hdr-right .flight-header-photo-btn .photo-label {
+    display: none;
+  }
+}
+
 /* Show Menu / Exit Photo Mode Floating Pill */
 .photo-mode-exit-btn {
   position: absolute;

@@ -209,6 +209,89 @@
     }
 
     /**
+     * Sign in with OAuth provider (e.g. 'google')
+     */
+    async signInWithOAuth(provider = 'google') {
+      if (this.isLiveClient && this.client && this.client.auth) {
+        try {
+          const { data, error } = await this.client.auth.signInWithOAuth({
+            provider,
+            options: { redirectTo: window.location.origin }
+          });
+          if (error) throw error;
+          return { success: true, data };
+        } catch (err) {
+          console.warn('[SkySupabase] Live OAuth error, using local auth flow:', err);
+        }
+      }
+
+      // Guest / Local fallback flow for Google/OAuth
+      const simulatedEmail = `${(this.currentUser && this.currentUser.username ? this.currentUser.username.toLowerCase().replace(/[^a-z0-9]/g, '') : 'pilot')}@gmail.com`;
+      if (!this.currentUser) await this.loginGuest();
+      this.currentUser.email = simulatedEmail;
+      this.currentUser.auth_provider = provider;
+      this.currentUser.isGuest = false;
+      this.currentUser.updated_at = new Date().toISOString();
+      this.localProvider.saveProfile(this.currentUser);
+
+      safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+      console.log(`[SkySupabase] Signed in with ${provider} (${simulatedEmail})`);
+      return { success: true, user: this.currentUser };
+    }
+
+    /**
+     * Sign in with Email / OTP Magic Link
+     */
+    async signInWithOtp(email) {
+      if (!email || !email.includes('@')) {
+        throw new Error('Please enter a valid email address.');
+      }
+
+      if (this.isLiveClient && this.client && this.client.auth) {
+        try {
+          const { error } = await this.client.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: window.location.origin }
+          });
+          if (error) throw error;
+          return { success: true, message: 'Magic link sent to your email.' };
+        } catch (err) {
+          console.warn('[SkySupabase] Live OTP error, using local fallback:', err);
+        }
+      }
+
+      if (!this.currentUser) await this.loginGuest();
+      this.currentUser.email = email;
+      this.currentUser.auth_provider = 'email';
+      this.currentUser.isGuest = false;
+      this.currentUser.updated_at = new Date().toISOString();
+      this.localProvider.saveProfile(this.currentUser);
+
+      safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+      return { success: true, user: this.currentUser };
+    }
+
+    /**
+     * Sign out and revert to local guest passenger mode
+     */
+    async signOut() {
+      if (this.isLiveClient && this.client && this.client.auth) {
+        try {
+          await this.client.auth.signOut();
+        } catch (err) {
+          console.warn('[SkySupabase] Error during live signOut:', err);
+        }
+      }
+
+      // Reset to Guest Profile
+      localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      await this.loginGuest();
+      safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+      console.log('[SkySupabase] Signed out. Reset to Guest Mode.');
+      return { success: true };
+    }
+
+    /**
      * Gets the active character base ('bkk' for Wolf Boy, 'dxb' for Dragon Girl)
      */
     getCharacterBase() {
