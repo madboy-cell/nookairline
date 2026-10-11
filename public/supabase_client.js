@@ -705,6 +705,28 @@
     }
 
     async _restoreSession() {
+      if (this.isLiveClient && this.client && this.client.auth) {
+        try {
+          const { data: { session } } = await this.client.auth.getSession();
+          if (session && session.user) {
+            const { data: profile } = await this.client.from('profiles').select('*').eq('id', session.user.id).single();
+            if (profile) {
+              this.currentUser = {
+                ...profile,
+                email: session.user.email,
+                isGuest: false
+              };
+              this.localProvider.saveProfile(this.currentUser);
+              await this.getCoupleStatus();
+              await this.getFriends();
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('[SkySupabase] Live session check warning:', e);
+        }
+      }
+
       // If user profile is in localStorage, restore it
       const saved = this.localProvider._load(STORAGE_KEYS.PROFILE, null);
       if (saved) {

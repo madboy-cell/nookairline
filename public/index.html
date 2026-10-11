@@ -1300,8 +1300,15 @@
   <script src="skydash_audio.js?v=20261009a"></script>
   <script src="skydash.js?v=20261009e"></script>
   <!-- Phase 5 Supabase & Social SDK -->
-  <script src="supabase_client.js?v=20261012v3"></script>
-  <script src="social_ui.js?v=20261012v3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_CONFIG = {
+      url: 'https://etultufhcdphrjplbren.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dWx0dWZoY2RwaHJqcGxicmVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDM1MzEsImV4cCI6MjEwNzMxOTUzMX0.old1fleZdZwgRz_88SZOVE_1Ysm2gkGtp1kBgpjSvZ0'
+    };
+  </script>
+  <script src="supabase_client.js?v=20261012v4"></script>
+  <script src="social_ui.js?v=20261012v4"></script>
   <script src="app.js?v=20261012v12"></script>
 </body>
 </html>

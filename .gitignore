@@ -23,3 +23,7 @@ data_backups/
 .env
 .env.local
 .env.*.local
+
+# Supabase CLI temp files
+supabase/.temp/
+.supabase/
