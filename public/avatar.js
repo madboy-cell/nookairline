@@ -557,6 +557,68 @@ function renderAvatarDOM(containerId, avatar, isMe = true) {
   `;
 }
 
+// Check if partner is active (linked couple in Supabase or peer connected via signaling)
+function isPartnerActive() {
+  if (typeof window !== 'undefined' && window.nookPartnerOnline === true) return true;
+  if (typeof window !== 'undefined' && window.SkySupabase) {
+    if (window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) return true;
+    if (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple()) return true;
+  }
+  return false;
+}
+
+// Update partner presence dynamically (e.g. peer connected, couple linked/unlinked)
+function updatePartnerPresence(online) {
+  const active = (typeof online === 'boolean') ? (online || isPartnerActive()) : isPartnerActive();
+  const partnerEl = document.getElementById('partnerAvatar');
+
+  if (active) {
+    if (partnerEl) {
+      partnerEl.style.display = '';
+      partnerEl.classList.remove('hidden');
+      renderAvatarDOM('partnerAvatar', partnerAvatar, false);
+      if (Math.abs(myAvatar.x - partnerAvatar.x) < 14) {
+        myAvatar.x = 42;
+        myAvatar.facing = 'right';
+        partnerAvatar.x = 58;
+        partnerAvatar.facing = 'left';
+        const myEl = document.getElementById('myAvatar');
+        if (myEl) {
+          myEl.style.left = `${myAvatar.x}%`;
+          myEl.className = 'avatar-entity idle';
+        }
+        partnerEl.style.left = `${partnerAvatar.x}%`;
+        partnerEl.className = 'avatar-entity idle facing-left';
+      }
+      partnerEl.classList.add('happy-bounce');
+      setTimeout(() => partnerEl.classList.remove('happy-bounce'), 800);
+    }
+    if (!partnerWanderTimer) {
+      scheduleAvatarWander('partnerAvatar', 2000, 4200);
+    }
+  } else {
+    if (partnerEl) {
+      partnerEl.style.display = 'none';
+      partnerEl.classList.add('hidden');
+    }
+    if (partnerWanderTimer) {
+      clearTimeout(partnerWanderTimer);
+      partnerWanderTimer = null;
+    }
+  }
+}
+
+// Listen to couple status changes from Supabase
+if (typeof window !== 'undefined') {
+  window.addEventListener('sky:couple_status_changed', () => {
+    updatePartnerPresence(isPartnerActive());
+    renderAvatarDOM('myAvatar', myAvatar, true);
+    if (isPartnerActive()) {
+      renderAvatarDOM('partnerAvatar', partnerAvatar, false);
+    }
+  });
+}
+
 // Initialize Sky Lounge Stage & Events
 function initAvatarStage() {
   const floor = document.getElementById('loungeFloor');
@@ -603,9 +665,31 @@ function initAvatarStage() {
   // Apply initial saved scenery
   applyCabinScenery(currentSceneryTheme, false);
 
-  // Render initial avatars
+  const partnerActive = isPartnerActive();
+
+  // In solo flight, gracefully center player avatar if placed near outer edge
+  if (!partnerActive && (myAvatar.x <= 36 || myAvatar.x >= 64)) {
+    myAvatar.x = 50;
+  }
+
+  // Render player avatar
   renderAvatarDOM('myAvatar', myAvatar, true);
-  renderAvatarDOM('partnerAvatar', partnerAvatar, false);
+
+  // Render or hide partner avatar depending on solo vs coupled
+  const partnerEl = document.getElementById('partnerAvatar');
+  if (partnerActive) {
+    if (partnerEl) {
+      partnerEl.style.display = '';
+      partnerEl.classList.remove('hidden');
+    }
+    renderAvatarDOM('partnerAvatar', partnerAvatar, false);
+    scheduleAvatarWander('partnerAvatar', 2400, 3800);
+  } else {
+    if (partnerEl) {
+      partnerEl.style.display = 'none';
+      partnerEl.classList.add('hidden');
+    }
+  }
 
   // Direct Tap on Avatars (Tap either yourself or partner for a Warm Hug!)
   const myEl = document.getElementById('myAvatar');
@@ -615,7 +699,6 @@ function initAvatarStage() {
       triggerWarmHug(true);
     });
   }
-  const partnerEl = document.getElementById('partnerAvatar');
   if (partnerEl) {
     partnerEl.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -623,9 +706,8 @@ function initAvatarStage() {
     });
   }
 
-  // Start independent autonomous wandering for BOTH characters!
+  // Start independent autonomous wandering for player avatar
   scheduleAvatarWander('myAvatar', 1200, 2200);
-  scheduleAvatarWander('partnerAvatar', 2400, 3800);
 }
 
 // Spawn Cute Tap Ripple
@@ -681,6 +763,13 @@ function moveAvatar(containerId, avatarObj, targetX, targetY, isLocal = true) {
 // Dual-Avatar Autonomous Wandering Engine
 function scheduleAvatarWander(avatarId, minDelay = 3000, maxDelay = 6500) {
   const isMe = avatarId === 'myAvatar';
+  if (!isMe && !isPartnerActive()) {
+    if (partnerWanderTimer) {
+      clearTimeout(partnerWanderTimer);
+      partnerWanderTimer = null;
+    }
+    return;
+  }
   const delay = Math.round(minDelay + Math.random() * (maxDelay - minDelay));
 
   const timer = setTimeout(() => {
@@ -697,6 +786,9 @@ function scheduleAvatarWander(avatarId, minDelay = 3000, maxDelay = 6500) {
 }
 
 function runAvatarWanderStep(avatarId) {
+  const isMe = avatarId === 'myAvatar';
+  if (!isMe && !isPartnerActive()) return;
+
   // Save mobile CPU & GPU: pause autonomous wander while modals (Monopoly/Vault) are open or app is in background
   if (document.hidden || document.body.classList.contains('has-active-modal') || (window.monopolyState && window.monopolyState.active)) {
     scheduleAvatarWander(avatarId, 5000, 8000);
@@ -708,7 +800,6 @@ function runAvatarWanderStep(avatarId) {
     return;
   }
 
-  const isMe = avatarId === 'myAvatar';
   const avatarObj = isMe ? myAvatar : partnerAvatar;
   const el = document.getElementById(avatarId);
   if (!el) return;
@@ -727,8 +818,15 @@ function runAvatarWanderStep(avatarId) {
   }
 
   // Pick a natural random destination along the luxury airplane carpet runner
-  // X: 18% to 82%, Y: 55% to 63% (on royal blue carpet runner)
-  let targetX = Math.round(18 + Math.random() * 64);
+  const partnerActive = isPartnerActive();
+  let targetX;
+  if (!partnerActive) {
+    // In solo flight, player wanders freely across center carpet
+    targetX = Math.round(24 + Math.random() * 52);
+  } else {
+    // When coupled, keep natural spacing across the cabin
+    targetX = Math.round(18 + Math.random() * 64);
+  }
   let targetY = Math.round(55 + Math.random() * 8);
 
   // Ensure minimum walking distance so it looks like an actual stroll
@@ -741,10 +839,12 @@ function runAvatarWanderStep(avatarId) {
   // Stroll avatar to new spot
   moveAvatar(avatarId, avatarObj, targetX, targetY, isMe);
 
-  // Check proximity with partner avatar after arriving
-  setTimeout(() => {
-    checkAvatarProximity();
-  }, 1150);
+  // Check proximity with partner avatar after arriving (only if partner is active)
+  if (partnerActive) {
+    setTimeout(() => {
+      checkAvatarProximity();
+    }, 1150);
+  }
 
   // Schedule next wander step
   scheduleAvatarWander(avatarId, 4500, 8500);
@@ -815,6 +915,7 @@ function showVoiceNoteBubble(avatarId, note = '♪') {
 
 // Check proximity between both avatars: if close, turn towards each other & share love!
 function checkAvatarProximity() {
+  if (!isPartnerActive()) return;
   if (isHugInProgress) return;
   const dx = Math.abs(myAvatar.x - partnerAvatar.x);
   const dy = Math.abs(myAvatar.y - partnerAvatar.y);
@@ -851,6 +952,51 @@ function checkAvatarProximity() {
 let hugTimer = null;
 let hugHeartsInterval = null;
 let isHugActive = false;
+
+// Solo Flight Cozy Warm Hug / Self-Love Embrace
+function triggerSoloWarmHug() {
+  const myEl = document.getElementById('myAvatar');
+  if (!myEl) return;
+
+  lastInteractionTime = Date.now();
+  playHugHeartbeatSound(3200);
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate([40, 50, 40]);
+    } catch (_) {}
+  }
+
+  myEl.classList.add('happy-bounce');
+  showEmoteBubble('myAvatar', '🥰');
+  spawnHeartExplosion(myAvatar.x, myAvatar.y - 12, 3);
+
+  const vignette = document.getElementById('hugScreenVignette');
+  if (vignette) {
+    vignette.classList.add('active');
+    setTimeout(() => vignette.classList.remove('active'), 2400);
+  }
+
+  const groundHalo = document.getElementById('hugGroundHalo');
+  if (groundHalo) {
+    groundHalo.classList.remove('hidden');
+    groundHalo.classList.add('active');
+    setTimeout(() => {
+      groundHalo.classList.remove('active');
+      setTimeout(() => groundHalo.classList.add('hidden'), 500);
+    }, 2400);
+  }
+
+  const toastMsg = '💖 Cozy warm hug! Tap "Copy Link" or link in Couple Sanctuary to share hugs with a partner.';
+  if (typeof showToast === 'function') {
+    showToast(toastMsg);
+  } else if (typeof window.showToast === 'function') {
+    window.showToast(toastMsg);
+  }
+
+  setTimeout(() => {
+    if (myEl) myEl.classList.remove('happy-bounce');
+  }, 2200);
+}
 
 
 // Web Audio Physiological Heartbeat & Celestial Warmth Synthesizer
@@ -951,6 +1097,12 @@ function spawnCarpetPixelHeart() {
 // Trigger Enhanced Emotional Warm Hug (Pure In-World Animation, No Popups)
 function triggerWarmHug(isLocal = true) {
   if (isHugActive) return;
+
+  if (!isPartnerActive()) {
+    triggerSoloWarmHug();
+    return;
+  }
+
   isHugActive = true;
   isHugInProgress = true;
   lastInteractionTime = Date.now();
@@ -1588,6 +1740,12 @@ function renderSceneryGrid() {
 
 // Handle Incoming Avatar Messages from WebSocket Signaling
 function handleAvatarMessage(message) {
+  if (['avatar_move', 'avatar_outfit', 'avatar_hug', 'avatar_emote'].includes(message.type)) {
+    if (!isPartnerActive()) {
+      updatePartnerPresence(true);
+    }
+  }
+
   switch (message.type) {
     case 'avatar_move':
       moveAvatar('partnerAvatar', partnerAvatar, message.x, message.y, false);
@@ -1654,6 +1812,9 @@ window.applyCabinScenery = applyCabinScenery;
 window.openSceneryModal = openSceneryModal;
 window.triggerWarmHug = triggerWarmHug;
 window.endWarmHug = endWarmHug;
+window.triggerSoloWarmHug = triggerSoloWarmHug;
+window.isPartnerActive = isPartnerActive;
+window.updatePartnerPresence = updatePartnerPresence;
 window.CABIN_SCENERIES = CABIN_SCENERIES;
 
 // --- Vault / Wardrobe bridge -------------------------------------------------

@@ -157,6 +157,7 @@ function showToast(text) {
     toast.classList.remove('visible');
   }, 2600);
 }
+window.showToast = showToast;
 
 // --- Initialization ---
 window.addEventListener('DOMContentLoaded', async () => {
@@ -431,6 +432,9 @@ async function handleSignalingMessage(message) {
       myTerminal = message.terminal;
       window.myTerminal = myTerminal;
       window.nookPartnerOnline = !!message.partnerOnline;
+      if (typeof window.updatePartnerPresence === 'function') {
+        window.updatePartnerPresence(!!message.partnerOnline);
+      }
       if (typeof updateMonopolyHUD === 'function') updateMonopolyHUD();
       if (window.NookTelemetry) window.NookTelemetry.setTerminal(myTerminal);
       console.log(`[Terminal] Assigned seat: ${myTerminal.toUpperCase()}`);
@@ -458,6 +462,9 @@ async function handleSignalingMessage(message) {
 
     case 'partner_status':
       window.nookPartnerOnline = !!message.online;
+      if (typeof window.updatePartnerPresence === 'function') {
+        window.updatePartnerPresence(!!message.online);
+      }
       if (message.online) {
         if (partnerOfflineGraceTimer) {
           clearTimeout(partnerOfflineGraceTimer);
