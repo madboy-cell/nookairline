@@ -17,7 +17,8 @@ const ROLES = ['bkk', 'dxb'];
 const other = (r) => (r === 'bkk' ? 'dxb' : 'bkk');
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
-module.exports = function createCats({ vault, persistVault, sendToRole, broadcastVault, publicProfiles, daily }) {
+module.exports = function createCats({ vault, persistVault, sendToRole, broadcastVault, publicProfiles, daily, features }) {
+  const isCouple = () => !features || (typeof features === 'function' ? features().couple : features.couple);
   const lastPet = { bkk: { id: null, t: 0 }, dxb: { id: null, t: 0 } };
   const lastAction = { bkk: {}, dxb: {} };
 
@@ -87,7 +88,11 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
       catDay: { [role]: vault[role].catDay },
       fed: L.fed
     };
-    ROLES.forEach((r) => sendToRole(r, msg));
+    if (isCouple()) {
+      ROLES.forEach((r) => sendToRole(r, msg));
+    } else {
+      sendToRole(role, msg);
+    }
   }
 
   function giveFish(role, amount, capped) {
@@ -164,6 +169,7 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
   // ---------------------------------------------------------------------------
   /** 🤝 Shift handoff — once both of you have done a feeding round today, both get fish. */
   function checkHandoff(role) {
+    if (!isCouple()) return [];
     const fed = fedToday();
     fed[role] = true;
     if (fed.bkk && fed.dxb && !fed.paid) {
@@ -206,16 +212,18 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
       st.love = Math.min(100, st.love + gainLove);
       out.gain = wasFull ? 0 : giveFish(role, E.CARE_FISH.pet, true);
       p.catStats.pets += 1;
-      // 🫶 Double pet — both of you petting the same cat right now
-      lastPet[role] = { id: catId, t: now };
-      const o = lastPet[other(role)];
-      if (o.id === catId && now - o.t < E.DOUBLE_PET_WINDOW_MS) {
-        const can = ROLES.filter((r) => person(r).catDay.doublePets < E.DOUBLE_PET_MAX);
-        if (can.length) {
-          can.forEach((r) => { person(r).catDay.doublePets += 1; giveFish(r, E.DOUBLE_PET_BONUS, false); });
-          st.love = Math.min(100, st.love + 10);
-          out.bonuses.push({ kind: 'double', amount: E.DOUBLE_PET_BONUS });
-          lastPet.bkk.t = 0; lastPet.dxb.t = 0;   // one bonus per overlap
+      // 🫶 Double pet — only active if paired with couple partner
+      if (isCouple()) {
+        lastPet[role] = { id: catId, t: now };
+        const o = lastPet[other(role)];
+        if (o && o.id === catId && now - o.t < E.DOUBLE_PET_WINDOW_MS) {
+          const can = ROLES.filter((r) => person(r).catDay.doublePets < E.DOUBLE_PET_MAX);
+          if (can.length) {
+            can.forEach((r) => { person(r).catDay.doublePets += 1; giveFish(r, E.DOUBLE_PET_BONUS, false); });
+            st.love = Math.min(100, st.love + 10);
+            out.bonuses.push({ kind: 'double', amount: E.DOUBLE_PET_BONUS });
+            lastPet.bkk.t = 0; lastPet.dxb.t = 0;   // one bonus per overlap
+          }
         }
       }
       if (daily) daily.track(role, 'cat_pet', 1);
@@ -311,7 +319,9 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
         const out = pull(role, count);
         if (out.error) { err(out.error); return true; }
         sendTo(ws, { type: 'vault_cat_pull_result', role, results: out.results, reqId, profiles: publicProfiles() });
-        sendToRole(other(role), { type: 'vault_cat_event', role, action: 'pull', catId: out.best.id, best: out.best, count, profiles: publicProfiles() });
+        if (isCouple()) {
+          sendToRole(other(role), { type: 'vault_cat_event', role, action: 'pull', catId: out.best.id, best: out.best, count, profiles: publicProfiles() });
+        }
         return true;
       }
       case 'vault_cat_care': {
@@ -330,7 +340,9 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
         const out = gift(role, String(message.catId || ''));
         if (out.error) { err(out.error); return true; }
         sendTo(ws, { type: 'vault_cat_gift_result', role, catId: out.catId, items: out.items, reqId });
-        sendToRole(other(role), { type: 'vault_cat_event', role, action: 'gift', catId: out.catId });
+        if (isCouple()) {
+          sendToRole(other(role), { type: 'vault_cat_event', role, action: 'gift', catId: out.catId });
+        }
         broadcastVault();
         return true;
       }

@@ -924,6 +924,9 @@ body.cl-lock { overflow: hidden; }
 .cl-bond-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, #8ccfff, #b4e0ff); transition: width 0.8s ease; }
 .cl-bond-bar b { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 12px; transition: left 0.8s ease; }
 .cl-bond small { grid-column: 1 / -1; text-align: center; font-weight: 600; font-size: 11px; }
+.cl-bond.cl-bond-solo .cl-bond-bar { background: rgba(0, 0, 0, 0.08); }
+.cl-bond.cl-bond-solo .cl-bond-bar i { background: linear-gradient(90deg, #ff9ebb, #ff6b8b); }
+.cl-bond.cl-bond-solo .cl-bond-r { color: #ff6b8b; font-weight: 800; }
 
 .cl-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
 .cl-act {
@@ -983,6 +986,7 @@ body.cl-lock { overflow: hidden; }
   border: 1px dashed rgba(138, 100, 100, 0.25);
 }
 .cl-handoff.done { background: linear-gradient(120deg, #e7fbf1, #fff6dc); border-style: solid; border-color: rgba(79, 197, 150, 0.4); }
+.cl-handoff.cl-handoff-locked { background: rgba(0, 0, 0, 0.035); border-style: solid; border-color: rgba(138, 100, 100, 0.15); opacity: 0.88; }
 .cl-ho-ic { font-size: 22px; }
 .cl-handoff > div:nth-child(2) { flex: 1; min-width: 0; }
 .cl-handoff b { font-family: var(--cl-font); font-size: 13.5px; }

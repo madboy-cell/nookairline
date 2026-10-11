@@ -54,6 +54,7 @@
   const partnerRole = () => (myRole() === 'bkk' ? 'dxb' : 'bkk');
   const me = () => (S.profiles ? S.profiles[myRole()] : null);
   const them = () => (S.profiles ? S.profiles[partnerRole()] : null);
+  const isCoupleActive = () => !!(window.SkySupabase && ((window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) || (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple())));
   const chars = () => window.MAPLE_CHARACTERS || {};
   const currentCharId = () => { const a = window.getMyAvatar && window.getMyAvatar(); return a ? a.characterId : null; };
   const rarityOf = (id) => (C.BY_ID[id] ? C.BY_ID[id].rarity : 'classic');
@@ -360,13 +361,18 @@
     }
     const deckBtn = $('openWardrobeBtn');
     if (deckBtn) deckBtn.classList.toggle('vault-can-pull', !!(p && p.diamonds >= E.PULL_1));
+    const isPair = isCoupleActive();
     const unclaimed = p && Array.isArray(p.envelopes) ? p.envelopes.filter((e) => !e.claimed) : [];
     const rEl = $('vaultRedEnvelopeBtn');
     if (rEl) {
       rEl.classList.toggle('has-gift', unclaimed.length > 0);
+      rEl.classList.toggle('vault-gift-locked', !isPair && unclaimed.length === 0);
       if (unclaimed.length > 0) {
         rEl.innerHTML = `🧧 <b>Claim (${unclaimed.length})!</b>`;
         rEl.setAttribute('data-tooltip', `🧧 ${unclaimed.length} Red Envelopes waiting to be claimed!`);
+      } else if (!isPair) {
+        rEl.innerHTML = `🧧 <b>Gift</b> <span style="opacity:0.75;font-size:11px;">🔒</span>`;
+        rEl.setAttribute('data-tooltip', `🔒 Gifting Red Envelopes is exclusive to linked couples in Couple Sanctuary`);
       } else {
         rEl.innerHTML = `🧧 <b>Gift</b><span class="gift-gem"> 💎</span>`;
         rEl.setAttribute('data-tooltip', `🧧 Send Chinese Red Envelope (Ang Pao) to Partner`);
@@ -863,14 +869,15 @@
         // Mythic costumes cut out couple resonance and showcase their in-board Ultimate Ability!
         resonanceOrUlt = ultimateBlock(costume.id);
       } else {
-        const on = pc && pc.pair === costume.pair && pc.season === costume.season;
+        const isPair = isCoupleActive();
+        const on = isPair && pc && pc.pair === costume.pair && pc.season === costume.season;
         const mate = C.COSTUMES.find((c) => c.pair === costume.pair && c.role !== costume.role);
         resonanceOrUlt = `
           <div class="v-resonance ${on ? 'on' : ''}">
             <span class="v-res-icon">💞</span>
             <div>
               <b>Couple Resonance ${on ? '· ACTIVE' : ''}</b>
-              <span>${on ? C.RESONANCE.desc : `Both wear the ${mate ? mate.name : 'matching'} set → +25 miles each per lap`}</span>
+              <span>${on ? C.RESONANCE.desc : (isPair ? `Both wear the ${mate ? mate.name : 'matching'} set → +25 miles each per lap` : `Link partner & both wear the ${mate ? mate.name : 'matching'} set → +25 miles each per lap`)}</span>
             </div>
           </div>`;
       }
@@ -1476,6 +1483,13 @@
       case 'pull': pull(Number(t.dataset.count) === 10 ? 10 : 1); break;
       case 'pull-ticket': pullTicket(); break;
       case 'open-envelope-sender': openEnvelopeSender(t.dataset.amount); break;
+      case 'open-sanctuary':
+        closeEnvelopeModal();
+        close();
+        if (window.SkySocialUI && typeof window.SkySocialUI.openDrawer === 'function') {
+          window.SkySocialUI.openDrawer('couple');
+        }
+        break;
       case 'close-envelope-modal': closeEnvelopeModal(); break;
       case 'envelope-tab': S.envelopeTab = t.dataset.tab; Sound.tap(); renderEnvelopeModal(); break;
       case 'set-envelope-amt': S.envelopeAmount = Number(t.dataset.amount) || 50; Sound.tap(); renderEnvelopeModal(); break;
@@ -1937,6 +1951,15 @@
   }
 
   function openEnvelopeSender(initialAmt) {
+    const isPair = isCoupleActive();
+    const p = me();
+    const unclaimed = p && Array.isArray(p.envelopes) ? p.envelopes.filter((e) => !e.claimed) : [];
+    if (!isPair && unclaimed.length === 0) {
+      if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
+        window.SkySocialUI.showCoupleGatingModal('Red Envelope Gifting');
+        return;
+      }
+    }
     build();
     S.envelopeModalOpen = true;
     if (initialAmt) S.envelopeAmount = Number(initialAmt) || 50;
@@ -1985,7 +2008,20 @@
 
     let bodyHtml = '';
     if (isSend) {
-      bodyHtml = `
+      if (!isCoupleActive()) {
+        bodyHtml = `
+          <div class="ve-send-pane" style="text-align:center;padding:36px 20px;">
+            <div style="font-size:48px;margin-bottom:12px;">🧧🔒</div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.2rem;font-weight:800;color:#fff;margin:0 0 8px;">Couple Gifting Locked</h3>
+            <p style="font-size:0.86rem;line-height:1.5;color:rgba(255,255,255,0.75);max-width:320px;margin:0 auto 20px;">
+              Red Envelopes (Ang Pao) let partners send lucky diamonds and blessings to each other. Link your co-pilot in Couple Sanctuary to unlock gifting!
+            </p>
+            <button type="button" class="dly-open-sanctuary-btn" data-action="open-sanctuary" id="veOpenSanctuaryBtn">
+              <span>Link Partner in Couple Sanctuary 💞</span>
+            </button>
+          </div>`;
+      } else {
+        bodyHtml = `
         <div class="ve-send-pane">
           <div class="ve-target-card">
             <div class="ve-target-avatar">
@@ -2126,6 +2162,14 @@
   }
 
   function submitEnvelope() {
+    if (!isCoupleActive()) {
+      if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
+        window.SkySocialUI.showCoupleGatingModal('Red Envelope Gifting');
+      } else {
+        toast('🔒 Gifting is exclusive to linked couples in Couple Sanctuary');
+      }
+      return;
+    }
     const p = me();
     if (!p) return;
     const amt = Math.floor(Number(S.envelopeAmount) || 0);
@@ -2446,6 +2490,11 @@
     });
     window.addEventListener('sky:character_base_changed', () => {
       updateVaultBaseSwitcher();
+      if (S.open) render();
+    });
+    window.addEventListener('sky:couple_status_changed', () => {
+      updatePills();
+      if (S.envelopeModalOpen) renderEnvelopeModal();
       if (S.open) render();
     });
   }

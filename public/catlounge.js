@@ -17,6 +17,7 @@
   const fmt = (n) => Number(n || 0).toLocaleString();
   const myRole = () => window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
   const partnerRole = () => (myRole() === 'bkk' ? 'dxb' : 'bkk');
+  const isCoupleActive = () => !!(window.SkySupabase && ((window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) || (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple())));
   const V = () => window.NookVault;
   const profiles = () => (V() && V().getProfiles ? V().getProfiles() : null);
   const me = () => { const p = profiles(); return p ? p[myRole()] : null; };
@@ -217,6 +218,31 @@
     return `${def.name} prefers ${b > d ? 'BKK' : 'DXB'} 💕`;
   }
 
+  function soloBondData(id) {
+    const st = catState(id);
+    const def = C.BY_ID[id];
+    if (!st || !def) return { level: 1, pct: 20, text: 'Getting acquainted ✨' };
+    const myRoleKey = myRole();
+    const myCare = (st.care && st.care[myRoleKey]) || (st.care && (st.care.bkk || 0) + (st.care.dxb || 0)) || 0;
+    let level = 1;
+    let pct = Math.min(100, Math.round((myCare / 5) * 100));
+    let text = `${def.name} is warming up to you nicely ✨`;
+    if (myCare >= 30) {
+      level = 4;
+      pct = 100;
+      text = `Soulmate Fluff — Inseparable best friends forever! 💖👑`;
+    } else if (myCare >= 15) {
+      level = 3;
+      pct = Math.round(50 + ((myCare - 15) / 15) * 50);
+      text = `${def.name} purrs happily whenever you walk in 🥰`;
+    } else if (myCare >= 5) {
+      level = 2;
+      pct = Math.round(25 + ((myCare - 5) / 10) * 25);
+      text = `${def.name} loves your gentle pats and treats 💕`;
+    }
+    return { level, pct, text };
+  }
+
   // ---------------------------------------------------------------------------
   // Shell
   // ---------------------------------------------------------------------------
@@ -404,7 +430,12 @@
     const ids = ownedIds();
     const dc = $('clDexCount'); if (dc) dc.textContent = `${ids.length}/${C.CATS.length}`;
     const sub = $('clSub');
-    if (sub) sub.textContent = ids.length ? `${ids.length} cat${ids.length === 1 ? '' : 's'} · shared with ${partnerRole().toUpperCase()} 💞` : 'Your shared cat lounge';
+    const isPair = isCoupleActive();
+    if (sub) {
+      sub.textContent = ids.length
+        ? `${ids.length} cat${ids.length === 1 ? '' : 's'} · ${isPair ? `shared with ${partnerRole().toUpperCase()} 💞` : 'Purrst Class Sanctuary 🐾'}`
+        : (isPair ? 'Your shared cat lounge' : 'Purrst Class Cat Lounge');
+    }
   }
 
   function bumpPill(id) {
@@ -1043,12 +1074,22 @@
           ${bar('love', '💕', 'Love', n.love)}
           ${bar('fun', '🧶', 'Fun', n.fun)}
         </div>
+        ${isCoupleActive() ? `
         <div class="cl-bond">
           <span class="cl-bond-l">BKK</span>
           <div class="cl-bond-bar"><i style="width:${bkkPct}%"></i><b style="left:${bkkPct}%">💗</b></div>
           <span class="cl-bond-r">DXB</span>
           <small>${bondText(id)}</small>
-        </div>
+        </div>` : (() => {
+          const sb = soloBondData(id);
+          return `
+        <div class="cl-bond cl-bond-solo">
+          <span class="cl-bond-l">🐾 Affection</span>
+          <div class="cl-bond-bar"><i style="width:${sb.pct}%"></i><b style="left:${sb.pct}%">💖</b></div>
+          <span class="cl-bond-r">Lv.${sb.level}</span>
+          <small>${sb.text}</small>
+        </div>`;
+        })()}
         <div class="cl-actions">
           <button class="cl-act feed ${full ? 'meh' : ''}" data-c="feed" data-id="${id}" id="clActFeed"><span class="ic">${def.food}</span><b>Feed</b><small>${full ? 'Full 😽' : capped ? 'Yum' : `+${E.CARE_FISH.feed}🐟`}</small></button>
           <button class="cl-act pet" data-c="pet" data-id="${id}" id="clActPet"><span class="ic">🫶</span><b>Pet</b><small>${capped ? 'Rub me' : `+${E.CARE_FISH.pet}🐟 / rub`}</small></button>
@@ -1071,12 +1112,19 @@
           <div class="cl-sum"><span>🐟</span><b>${day.careFish}/${E.CARE_FISH_CAP}</b><small>care fish today</small><div class="cl-need-bar"><i style="width:${(day.careFish / E.CARE_FISH_CAP) * 100}%"></i></div></div>
           <div class="cl-sum"><span>🎁</span><b>${day.gifts}/${cap}</b><small>gifts opened${ready ? ` · <em>${ready} waiting</em>` : ''}</small><div class="cl-need-bar gold"><i style="width:${(day.gifts / cap) * 100}%"></i></div></div>
         </div>
+        ${isCoupleActive() ? `
         <div class="cl-handoff ${fed.paid ? 'done' : ''}">
           <span class="cl-ho-ic">🤝</span>
           <div><b>Shift handoff</b><small>${fed.paid ? `Both of you fed the cats today — +${E.HANDOFF_BONUS}🐟 each collected!` : `When BKK <i>and</i> DXB both feed a cat today: <b>+${E.HANDOFF_BONUS}🐟 each</b>`}</small></div>
           <div class="cl-ho-who"><span class="${fed.bkk ? 'on' : ''}">BKK</span><span class="${fed.dxb ? 'on' : ''}">DXB</span></div>
         </div>
-        <p class="cl-sum-tip">${hungry ? `🍣 ${hungry} hungry cat${hungry === 1 ? '' : 's'} · ` : ''}🫶 Pet the same cat at the same time as ${partnerRole().toUpperCase()} for a <b>double purr</b> bonus (${day.doublePets}/${E.DOUBLE_PET_MAX})</p>
+        ` : `
+        <div class="cl-handoff cl-handoff-locked">
+          <span class="cl-ho-ic">🔒</span>
+          <div><b>Couple Shift Handoff Locked</b><small>Link a partner in Couple Sanctuary to unlock daily double-feed bonus (+${E.HANDOFF_BONUS}🐟 each)!</small></div>
+        </div>
+        `}
+        <p class="cl-sum-tip">${hungry ? `🍣 ${hungry} hungry cat${hungry === 1 ? '' : 's'} · ` : ''}${isCoupleActive() ? `🫶 Pet the same cat at the same time as ${partnerRole().toUpperCase()} for a <b>double purr</b> bonus (${day.doublePets}/${E.DOUBLE_PET_MAX})` : `🐾 Feed and pet your cute cats to earn fish and unlock daily lounge gifts!`}</p>
       </article>`;
   }
 
@@ -1477,10 +1525,11 @@
           </div>
         </section>`;
     }).join('');
+    const isPair = isCoupleActive();
     box.innerHTML = `
       <div class="cl-dex-head">
         <svg viewBox="0 0 70 70" class="cl-dex-ring" aria-hidden="true"><circle cx="35" cy="35" r="30" class="trk"/><circle cx="35" cy="35" r="30" class="val" stroke-dasharray="${(ring * pct) / 100} ${ring}"/></svg>
-        <div><b>${have} / ${total} cats adopted</b><small>Shared by BKK &amp; DXB · every cat lives in one lounge</small></div>
+        <div><b>${have} / ${total} cats adopted</b><small>${isPair ? 'Shared by BKK &amp; DXB · every cat lives in one lounge' : 'Your personal Purrst Class sanctuary collection'}</small></div>
       </div>
       ${sections}`;
   }
@@ -1601,7 +1650,7 @@
       }
       if (msg.action === 'play') { hearts(catHead(id), 4); }
       if (msg.action !== 'pet') addFeed(msg.role, msg.action, id);
-    } else if (S.open && def) {
+    } else if (S.open && def && isCoupleActive()) {
       // 👻 Partner presence: you see their hand / bowl / toy in your lounge
       if (!S.nodes[id] && msg.action !== 'pull') summon(id);
       if (msg.action === 'pet') {
@@ -1625,7 +1674,7 @@
         toast(`<div><b>🎰 ${msg.role.toUpperCase()} opened ${msg.count > 1 ? `${msg.count} capsules` : 'a capsule'}!</b><span>Best: <em style="color:${R.color}">${R.label} ${def.name}</em>${msg.best.isNew ? ' — new to the lounge! 🏠' : ''}</span></div>`, 'cl-toast', 4200);
       }
       if (msg.action !== 'pet') addFeed(msg.role, msg.action, id);
-    } else if (!mine && def && msg.action === 'pull' && msg.best && msg.best.rarity !== 'common') {
+    } else if (!mine && def && isCoupleActive() && msg.action === 'pull' && msg.best && msg.best.rarity !== 'common') {
       const R = C.RARITY[msg.best.rarity];
       toast(`<div><b>🐾 ${msg.role.toUpperCase()} adopted ${def.name}!</b><span><em style="color:${R.color}">${R.label}</em> · come say hi in the Cat Lounge</span></div>`, 'cl-toast', 4200);
     }
@@ -1634,6 +1683,7 @@
   }
 
   function handleBonuses(msg, id, def) {
+    if (!isCoupleActive()) return;
     (msg.bonuses || []).forEach((b) => {
       if (b.kind === 'handoff') {
         Sound.gift();
@@ -1738,6 +1788,7 @@
     mountDock();
     updateDock();
     window.addEventListener('vault:profiles', onProfiles);
+    window.addEventListener('sky:couple_status_changed', () => { if (S.open) render(); });
     // Needs decay continuously — refresh bars / bubbles / naps every 20s
     setInterval(() => {
       updateDock();

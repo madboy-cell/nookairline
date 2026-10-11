@@ -820,3 +820,107 @@
 @media (prefers-reduced-motion: reduce) {
   .dly-fire i, .dly-panel-embers i, .dly-cel-embers i, .dly-cel-rays, .dly-claim, .dly-claim::after, .dly-bar i::after { animation: none !important; }
 }
+
+/* Solo Flight Attendance & Locked Couple Features */
+.dly-solo-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+.dly-who.unlinked {
+  color: #64748b;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+.dly-who.unlinked i {
+  background: #475569;
+  box-shadow: none;
+}
+.dly-couple-lock-banner {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: radial-gradient(90% 70% at 20% 0%, rgba(244, 63, 94, 0.16), transparent 70%), rgba(20, 16, 28, 0.7);
+  border: 1px dashed rgba(244, 63, 94, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dly-cl-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dly-cl-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.dly-cl-text b {
+  display: block;
+  font-size: 13.5px;
+  color: #fda4af;
+  margin-bottom: 3px;
+}
+.dly-cl-text p {
+  font-size: 11.5px;
+  color: var(--dly-dim);
+  line-height: 1.45;
+  margin: 0;
+}
+.dly-open-sanctuary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(253, 164, 175, 0.5);
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.85), rgba(168, 85, 247, 0.85));
+  color: #fff;
+  font: 800 13px/1 var(--font-display, 'Outfit', sans-serif);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
+}
+.dly-open-sanctuary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.5);
+}
+.dly-open-sanctuary-btn:active {
+  transform: scale(0.98);
+}
+.dly-call-locked {
+  opacity: 0.9;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)) !important;
+}
+.dly-call-locked .dly-ring svg circle {
+  stroke: rgba(255, 255, 255, 0.08) !important;
+}
+.dly-open-sanctuary-btn-sm {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  background: rgba(244, 63, 94, 0.14);
+  color: #fda4af;
+  font: 700 12px/1 var(--font-display, 'Outfit', sans-serif);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.dly-open-sanctuary-btn-sm:hover {
+  background: rgba(244, 63, 94, 0.24);
+  transform: translateY(-1px);
+}
+.dly-open-sanctuary-btn-sm:active {
+  transform: scale(0.97);
+}
+

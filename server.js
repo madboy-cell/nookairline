@@ -291,7 +291,7 @@ const daily = createDaily({
   persistVault,
   sendToRole: (role, msg) => sendTo(role === 'bkk' ? bkkSocket : dxbSocket, msg),
   broadcastVault: (extra) => broadcastVault(extra),
-  features: () => ({ cats: !!vault.cats })
+  features: () => ({ cats: !!vault.cats, couple: !!(vault.couple && vault.couple.active && bkkSocket && dxbSocket) })
 });
 
 // 🐾 Purrst Class Lounge: shared cats, Kitty Capsule, 🐟 fish (see server_cats.js)
@@ -302,7 +302,8 @@ const cats = createCats({
   sendToRole: (role, msg) => sendTo(role === 'bkk' ? bkkSocket : dxbSocket, msg),
   broadcastVault: (extra) => broadcastVault(extra),
   publicProfiles: () => publicProfiles(),
-  daily
+  daily,
+  features: () => ({ couple: !!(vault.couple && vault.couple.active && bkkSocket && dxbSocket) })
 });
 
 // 🤖 Sky Monopoly Solo Bot: server authority for Captain Whiskers matches (see server_monobot.js)

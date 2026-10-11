@@ -57,25 +57,36 @@
     };
   })();
 
+  const isCoupleActive = () => !!(window.SkySupabase && ((window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) || (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple())));
+
   // ---------------------------------------------------------------------------
   // Derived state
   // ---------------------------------------------------------------------------
   function streakView() {
+    const isPair = isCoupleActive();
     const c = couple();
     const today = R.dayKey();
-    const gap = R.daysBetween(c.lastDay, today);
-    let alive = c.streak;
-    let risk = '';
-    if (!c.lastDay) alive = 0;
-    else if (gap === 0) risk = 'lit';
-    else if (gap === 1) risk = 'pending';
-    else if (gap === 2 && c.freezes > 0) risk = 'frozen';
-    else { alive = 0; risk = 'broken'; }
     const ci = c.checkins || {};
+    const myCheckin = ci[myRole()] === today;
+
+    // Solo flight: streak is personal checkin status (1 if checked in today, else 0)
+    let alive = isPair ? c.streak : (myCheckin ? 1 : 0);
+    let risk = '';
+    if (!isPair) {
+      risk = myCheckin ? 'lit' : 'pending';
+    } else {
+      const gap = R.daysBetween(c.lastDay, today);
+      if (!c.lastDay) alive = 0;
+      else if (gap === 0) risk = 'lit';
+      else if (gap === 1) risk = 'pending';
+      else if (gap === 2 && c.freezes > 0) risk = 'frozen';
+      else { alive = 0; risk = 'broken'; }
+    }
+
     return {
-      c, today, alive, risk,
-      meIn: ci[myRole()] === today,
-      themIn: ci[partnerRole()] === today,
+      c, today, alive, risk, isPair,
+      meIn: myCheckin,
+      themIn: isPair ? (ci[partnerRole()] === today) : false,
       next7: alive > 0 ? 7 - (alive % 7 || 7) + (risk === 'lit' ? 0 : 1) : 7
     };
   }
@@ -164,16 +175,22 @@
     ensurePillInGroup();
     const chip = $('dailyChip');
     if (!chip) return;
+    const isPair = isCoupleActive();
     const sv = streakView();
     const qv = questView();
     const num = $('dailyChipNum');
-    const n = String(sv.alive);
+    const n = isPair ? String(sv.alive) : (sv.meIn ? '1' : '0');
     if (num && num.textContent !== n) {
       num.textContent = n;
       chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump');
     }
     chip.classList.toggle('is-dim', sv.risk !== 'lit');
     chip.classList.toggle('is-frozen', sv.risk === 'frozen');
+    if (!isPair) {
+      chip.title = sv.meIn ? 'Daily Flight Log — Solo Attendance Active (+20💎 collected)' : 'Daily Flight Log — Check in today for +20💎';
+    } else {
+      chip.title = 'Daily Flight Log — streak, quests & rewards';
+    }
     const fire = chip.querySelector('.dly-fire');
     if (fire) fire.className = `dly-fire xs st-${sv.risk === 'lit' ? 'lit' : sv.risk === 'frozen' ? 'frozen' : 'dim'}`;
     const dot = $('dailyChipDot');
@@ -244,13 +261,22 @@
       const isToday = i === 0;
       const done = hist.has(key);
       let inner = '';
-      if (isToday && !done) {
-        inner = `<span class="half l ${sv.c.checkins && sv.c.checkins.bkk === sv.today ? 'on' : ''}"></span><span class="half r ${sv.c.checkins && sv.c.checkins.dxb === sv.today ? 'on' : ''}"></span>`;
-      } else if (done) {
-        inner = '<span class="mini-flame">🔥</span>';
+      if (!sv.isPair) {
+        if (isToday) {
+          inner = sv.meIn ? '<span style="font-size:13px;color:#fdba74;font-weight:900;">✓</span>' : '';
+        } else if (done) {
+          inner = '<span style="font-size:13px;color:#fdba74;font-weight:900;">✓</span>';
+        }
+      } else {
+        if (isToday && !done) {
+          inner = `<span class="half l ${sv.c.checkins && sv.c.checkins.bkk === sv.today ? 'on' : ''}"></span><span class="half r ${sv.c.checkins && sv.c.checkins.dxb === sv.today ? 'on' : ''}"></span>`;
+        } else if (done) {
+          inner = '<span class="mini-flame">🔥</span>';
+        }
       }
+      const isDone = !sv.isPair ? (isToday ? sv.meIn : done) : done;
       h += `
-        <div class="dly-day ${done ? 'done' : ''} ${isToday ? 'today' : ''}" style="--i:${6 - i}">
+        <div class="dly-day ${isDone ? 'done' : ''} ${isToday ? 'today' : ''}" style="--i:${6 - i}">
           <div class="dly-day-dot">${inner}</div>
           <small>${isToday ? 'Today' : wd}</small>
         </div>`;
@@ -258,8 +284,56 @@
     return h;
   }
 
+  function soloStreakCard(sv) {
+    const mine = myRole().toUpperCase();
+    const status = sv.meIn
+      ? `<b class="ok">✨ Checked in for today!</b> Daily flight attendance bonus active (+20💎).`
+      : `Board today to collect your daily flight attendance +20💎!`;
+
+    return `
+      <article class="dly-card dly-streak dly-solo-streak st-${sv.risk}" id="dailyStreakCard">
+        <div class="dly-streak-top">
+          <div class="dly-streak-fire">
+            ${fireHtml('lg', sv.meIn ? 'lit' : 'dim')}
+            <span class="dly-streak-num" id="dailyStreakNum">${sv.meIn ? 1 : 0}</span>
+          </div>
+          <div class="dly-streak-info">
+            <span class="dly-kicker">✈️ Solo Flight Attendance</span>
+            <h3>${sv.meIn ? 'Checked in today! ✨' : 'Daily Flight Check-in'}</h3>
+            <div class="dly-streak-meta">
+              <span>Attendance: <b>${sv.meIn ? 'Day 1 (Active)' : 'Pending Check-in'}</b></span>
+              <span class="dly-solo-tag">Solo Passenger</span>
+            </div>
+          </div>
+        </div>
+        <div class="dly-week">${weekTrack(sv)}</div>
+        <div class="dly-checkins">
+          <span class="dly-who ${sv.meIn ? 'in' : ''}"><i></i>${mine} ${sv.meIn ? 'checked in' : 'pending'}</span>
+          <span class="dly-who unlinked"><i></i>Co-pilot: Unlinked</span>
+        </div>
+        <p class="dly-status">${status}</p>
+
+        <!-- Couple Streak Locked Banner -->
+        <div class="dly-couple-lock-banner">
+          <div class="dly-cl-head">
+            <span class="dly-cl-icon">🔥🔒</span>
+            <div class="dly-cl-text">
+              <b>Couple Streak & Shared Chests Locked</b>
+              <p>Link with a partner in Couple Sanctuary to unlock shared 2-player flames, weekly milestone chests (+150💎), and 30-day jackpot bonuses (+500💎)!</p>
+            </div>
+          </div>
+          <button type="button" class="dly-open-sanctuary-btn" data-d="open-sanctuary" id="dlyOpenSanctuaryFromStreak">
+            <span>Link Partner in Couple Sanctuary 💞</span>
+          </button>
+        </div>
+      </article>`;
+  }
+
   function streakCard() {
     const sv = streakView();
+    if (!sv.isPair) {
+      return soloStreakCard(sv);
+    }
     const partner = partnerRole().toUpperCase();
     const mine = myRole().toUpperCase();
     const freezes = Math.min(D.STREAK_FREEZE_MAX, sv.c.freezes || 0);
@@ -306,7 +380,31 @@
       </article>`;
   }
 
+  function soloCallCard() {
+    return `
+      <article class="dly-card dly-call dly-call-locked" id="dailyCallCard">
+        <div class="dly-ring locked">
+          <svg viewBox="0 0 80 80" aria-hidden="true">
+            <circle class="trk" cx="40" cy="40" r="34"></circle>
+          </svg>
+          <div class="dly-ring-mid"><b style="font-size:22px;">🔒</b><small>Couple</small></div>
+        </div>
+        <div class="dly-call-info">
+          <span class="dly-kicker" style="color:var(--dly-dim);">🔒 Together Time (Couple Only)</span>
+          <h3>1:1 Calls Gated for Couples</h3>
+          <p>Private encrypted voice & video calls and call-time diamond rewards are exclusive to linked partners in Couple Sanctuary.</p>
+          <button type="button" class="dly-open-sanctuary-btn-sm" data-d="open-sanctuary" id="dlyCallSanctuaryBtn">
+            <span>Link Partner to Unlock 💞</span>
+          </button>
+        </div>
+      </article>`;
+  }
+
   function callCard() {
+    const isPair = isCoupleActive();
+    if (!isPair) {
+      return soloCallCard();
+    }
     const cv = callView();
     const live = callIsLive();
     const R0 = 34; const C0 = 2 * Math.PI * R0;
@@ -424,6 +522,12 @@
       case 'close': close(); break;
       case 'claim': claim(t.dataset.id, t); break;
       case 'chest': openChest(t); break;
+      case 'open-sanctuary':
+        close();
+        if (window.SkySocialUI && typeof window.SkySocialUI.openDrawer === 'function') {
+          window.SkySocialUI.openDrawer('couple');
+        }
+        break;
     }
   }
 
@@ -663,6 +767,7 @@
     updateChip();
     startCallTicks();
     window.addEventListener('vault:profiles', onProfiles);
+    window.addEventListener('sky:couple_status_changed', onProfiles);
     setInterval(() => { updateChip(); if (S.open) { const r = $('dailyReset'); if (r) r.textContent = `New quests in ${resetIn()}`; } }, 30000);
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;

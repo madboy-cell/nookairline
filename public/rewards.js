@@ -32,14 +32,14 @@
    */
   const QUESTS = [
     { id: 'hug3',      group: 'hug',      event: 'hug',      goal: 3,  reward: 25, icon: '🤗', title: 'Send 3 Warm Hugs',              hint: 'Tap the Warm Hug button' },
-    { id: 'hug6',      group: 'hug',      event: 'hug',      goal: 6,  reward: 40, icon: '💞', title: 'Cuddle marathon: 6 Warm Hugs',  hint: 'Hugs while you talk count too' },
-    { id: 'call20',    group: 'call',     event: 'call',     goal: 20, reward: 30, icon: '📞', title: 'Talk for 20 minutes',           hint: 'Stay on a live call together' },
-    { id: 'call45',    group: 'call',     event: 'call',     goal: 45, reward: 50, icon: '🛫', title: 'Long-haul: talk for 45 minutes', hint: 'Stay on a live call together' },
+    { id: 'hug6',      group: 'hug',      event: 'hug',      goal: 6,  reward: 40, icon: '💞', title: 'Cuddle marathon: 6 Warm Hugs',  hint: 'Hugs while you talk count too',       needs: 'couple' },
+    { id: 'call20',    group: 'call',     event: 'call',     goal: 20, reward: 30, icon: '📞', title: 'Talk for 20 minutes',           hint: 'Stay on a live call together',        needs: 'couple' },
+    { id: 'call45',    group: 'call',     event: 'call',     goal: 45, reward: 50, icon: '🛫', title: 'Long-haul: talk for 45 minutes', hint: 'Stay on a live call together',        needs: 'couple' },
     { id: 'mono1',     group: 'monopoly', event: 'monopoly', goal: 1,  reward: 40, icon: '🎲', title: 'Finish a Sky Monopoly game',    hint: 'Win or lose, it counts' },
     { id: 'pull1',     group: 'pull',     event: 'pull',     goal: 1,  reward: 15, icon: '🎰', title: 'Make a Vault pull',             hint: 'Any banner, ×1 or ×10' },
     { id: 'equip1',    group: 'style',    event: 'equip',    goal: 1,  reward: 15, icon: '👗', title: 'Change your outfit',            hint: 'Wear something from the Wardrobe' },
     { id: 'scene1',    group: 'style',    event: 'scene',    goal: 1,  reward: 15, icon: '🌅', title: 'Change the cabin scenery',      hint: 'Open Scenery and pick a view' },
-    { id: 'envelope1', group: 'gift',     event: 'envelope', goal: 1,  reward: 20, icon: '🧧', title: 'Send a red envelope',           hint: 'Even 💎1 with a sweet note counts' },
+    { id: 'envelope1', group: 'gift',     event: 'envelope', goal: 1,  reward: 20, icon: '🧧', title: 'Send a red envelope',           hint: 'Even 💎1 with a sweet note counts',   needs: 'couple' },
     // 🐾 Purrst Class Lounge quests (only rolled once the cat lounge exists)
     { id: 'feed3',     group: 'catcare',  event: 'cat_feed', goal: 3,  reward: 25, icon: '🍣', title: 'Feed the cats 3 times',          hint: 'Open the Cat Lounge',      needs: 'cats' },
     { id: 'pet8',      group: 'catlove',  event: 'cat_pet',  goal: 8,  reward: 25, icon: '🫶', title: 'Pet the cats 8 times',           hint: 'Rub a cat until it purrs', needs: 'cats' },

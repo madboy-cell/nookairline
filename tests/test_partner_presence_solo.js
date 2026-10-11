@@ -188,8 +188,69 @@ it('2.5 updatePartnerPresence(false) re-hides partner avatar on disconnect', () 
   assert.ok(partnerEl.classList.has('hidden'), 'partnerAvatar should have hidden class');
 });
 
+console.log('\n--- SUITE 3: Couple Features Gating (Daily, Vault, Cat Lounge, Rewards) ---');
+
+// 3.1 Rewards Pool Gating
+const rewardsJs = fs.readFileSync(path.join(__dirname, '../public/rewards.js'), 'utf8');
+const rewardsContext = vm.createContext({
+  window: {},
+  module: { exports: {} },
+  exports: {}
+});
+rewardsContext.window = rewardsContext;
+vm.runInContext(rewardsJs, rewardsContext);
+const Rewards = rewardsContext.NookRewards || rewardsContext.module.exports;
+
+it('3.1 Rewards questsFor filters out couple-gated quests when flying solo', () => {
+  const soloQuests = Rewards.questsFor('2026-10-12', 'bkk', { cats: true, couple: false });
+  const coupleGated = ['hug6', 'call20', 'call45', 'envelope1'];
+  for (const q of soloQuests) {
+    assert.strictEqual(coupleGated.includes(q.id), false, `Quest ${q.id} requires a couple but was offered to solo player!`);
+  }
+});
+
+// 3.2 Daily Flight Log Solo Gating
+const dailyJs = fs.readFileSync(path.join(__dirname, '../public/daily.js'), 'utf8');
+assert.ok(dailyJs.includes('soloStreakCard'), 'daily.js contains soloStreakCard');
+assert.ok(dailyJs.includes('soloCallCard'), 'daily.js contains soloCallCard');
+assert.ok(dailyJs.includes('Couple Streak & Shared Chests Locked'), 'daily.js contains Couple Streak Locked Banner');
+assert.ok(dailyJs.includes('🔒 Together Time (Couple Only)'), 'daily.js contains Together Time couple lock');
+
+it('3.2 daily.js renders solo attendance streak and gates Together Time for couples', () => {
+  assert.ok(dailyJs.includes('if (!sv.isPair)'), 'daily.js branches to soloStreakCard when isPair is false');
+  assert.ok(dailyJs.includes('if (!isPair) {\n      return soloCallCard();'), 'daily.js branches to soloCallCard when isPair is false');
+});
+
+// 3.3 Red Envelope Gating in Vault
+const vaultJs = fs.readFileSync(path.join(__dirname, '../public/vault.js'), 'utf8');
+assert.ok(vaultJs.includes('vault-gift-locked'), 'vault.js toggles vault-gift-locked when couple is unlinked');
+assert.ok(vaultJs.includes('Couple Gifting Locked'), 'vault.js renders Couple Gifting Locked screen');
+
+it('3.3 vault.js blocks envelope sending and reflects locked status when unlinked', () => {
+  assert.ok(vaultJs.includes('if (!isCoupleActive())'), 'vault.js gates submitEnvelope when couple is inactive');
+  assert.ok(vaultJs.includes('Gifting Red Envelopes is exclusive to linked couples'), 'vault.js updates tooltip for unlinked players');
+});
+
+// 3.4 Cat Lounge Solo Companion Bond & Handoff Gating
+const catloungeJs = fs.readFileSync(path.join(__dirname, '../public/catlounge.js'), 'utf8');
+assert.ok(catloungeJs.includes('soloBondData'), 'catlounge.js contains soloBondData');
+assert.ok(catloungeJs.includes('cl-bond-solo'), 'catlounge.js renders cl-bond-solo');
+assert.ok(catloungeJs.includes('Couple Shift Handoff Locked'), 'catlounge.js displays Couple Shift Handoff Locked');
+
+it('3.4 catlounge.js renders personal affection bond and gates shift handoff for solo flyers', () => {
+  assert.ok(catloungeJs.includes('if (!isCoupleActive()) return;'), 'catlounge.js gates couple bonuses when unlinked');
+  assert.ok(catloungeJs.includes('Purrst Class Sanctuary 🐾'), 'catlounge.js displays solo sanctuary title');
+});
+
+// 3.5 Server Authority Gating
+const serverCatsJs = fs.readFileSync(path.join(__dirname, '../server_cats.js'), 'utf8');
+it('3.5 server_cats.js accepts features and suppresses partner bonuses and broadcasts when solo', () => {
+  assert.ok(serverCatsJs.includes('features'), 'server_cats.js accepts features parameter');
+  assert.ok(serverCatsJs.includes('if (!isCouple()) return [];'), 'checkHandoff returns empty array when isCouple() is false');
+});
+
 console.log('\n============================================================');
-console.log(`TEST SUMMARY: ${passed}/6 Passed (0 Failed)`);
+console.log(`TEST SUMMARY: ${passed}/11 Passed (0 Failed)`);
 console.log('============================================================\n');
-console.log('🎉 ALL SOLO FLIGHT PARTNER PRESENCE TESTS PASSED 100%!');
+console.log('🎉 ALL SOLO FLIGHT PARTNER PRESENCE & FEATURE GATING TESTS PASSED 100%!');
 process.exit(0);
