@@ -1664,6 +1664,13 @@
     lan.classList.add('burst');
     shock(best.rarity);
     if (best.rarity === 'mythic') quake();
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      const cX = window.innerWidth / 2;
+      const cY = window.innerHeight / 2;
+      const col = best.rarity === 'mythic' ? 0xffd700 : best.rarity === 'epic' ? 0xc084fc : 0x38bdf8;
+      window.SkyPixi.spawnShockwaveRing(cX, cY, col, 220, 700);
+      window.SkyPixi.spawnRadialBurst(cX, cY, 'stardust', best.rarity === 'mythic' ? 60 : 35, { additive: true });
+    }
     await wait(260);
     flash(best.rarity === 'mythic' ? '#fff7d6' : '#ffffff');
     lan.style.visibility = 'hidden';

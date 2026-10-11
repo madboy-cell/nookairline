@@ -266,6 +266,12 @@
   }
 
   function ring(x, y, size = 60, color = '#fde047', ms = 450) {
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      const numColor = typeof color === 'string' && color.startsWith('#')
+        ? parseInt(color.slice(1), 16)
+        : 0xfde047;
+      window.SkyPixi.spawnShockwaveRing(x, y, numColor, size * 1.5, ms);
+    }
     if (!refs()) return;
     const el = document.createElement('div');
     el.className = 'fx-ring';
@@ -282,6 +288,13 @@
 
   /** Particle burst with simple ballistic motion. */
   function burst({ x, y, name = 'sparkle', count = 8, spread = 120, up = 0, gravity = 300, life = 900, size = 18, filter = '', rotate = true }) {
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      const pixiKind = (name === 'fire' || name === 'flame') ? 'ember' :
+                       (name === 'ice' || name === 'frost' || name === 'crystal') ? 'frost' :
+                       (name === 'star' || name === 'stardust' || name === 'starfall') ? 'stardust' :
+                       (name === 'chip' || name === 'monaco_chip') ? 'chip' : 'spark';
+      window.SkyPixi.spawnRadialBurst(x, y, pixiKind, count * 2, { additive: true });
+    }
     if (!refs()) return Promise.resolve();
     const isMobile = typeof window !== 'undefined' && (window.innerWidth < 640 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
     const maxCount = isMobile ? (api.reducedMotion ? 4 : 16) : (api.reducedMotion ? 6 : count);
@@ -721,6 +734,10 @@
         if (!refs()) { resolve(); return; }
         const n = api.reducedMotion ? 3 : clamp(Math.round(Math.abs(amount) / 40), 4, 14);
         const P2 = point(to);
+        const b = point(from);
+        if (window.SkyPixi && window.SkyPixi.isReady) {
+          window.SkyPixi.spawnCoinBurst(b, P2, n * 2);
+        }
         const targetEl = endpointEl(to);
         const intoTarget = !(to && to.role);
         const bumpEl = to && to.role && targetEl ? (targetEl.closest('.monopoly-player-card') || {}).querySelector?.('.player-thumb-mini') : null;
@@ -973,6 +990,10 @@
     flash('rgba(56, 189, 248, 0.7)', 380);
     shake('heavy');
     vignette(4, 'midnight-clock');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.midnightParadox({ cX: c.x, cY: c.y });
+    }
 
     if (casterEl) casterEl.classList.add('fx-token-clockwork-charge');
 
@@ -1270,6 +1291,10 @@
     shake('heavy');
     vignette(5.0, 'cryo-stasis');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.absoluteZero({ targetP: citP });
+    }
+
     if (casterEl) {
       casterEl.classList.add('fx-token-glacial-charge');
       casterEl.classList.add('token-frost-dragon-wings');
@@ -1509,6 +1534,10 @@
     shake('heavy');
     vignette(4.5, 'solar-flare');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.nileSeduction({ targetP: pyrP });
+    }
+
     if (casterEl) {
       casterEl.classList.add('token-gilded-scarab-wings');
     }
@@ -1650,6 +1679,10 @@
     flash('rgba(255, 69, 0, 0.88)', 400);
     shake('heavy');
     vignette(5.0, 'solar-flare');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.solarWrath({ targetP: c });
+    }
 
     if (casterEl) {
       casterEl.classList.add('token-solar-falcon-wings');
@@ -1806,6 +1839,10 @@
     flash('rgba(244, 63, 94, 0.85)', 420);
     shake('heavy');
     vignette(4.5, 'phantom-opera');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.phantomCurtainCall({ cX: hexP.x, cY: hexP.y });
+    }
 
     if (casterEl) {
       casterEl.classList.add('token-phantom-waltz-wings');
@@ -2152,6 +2189,10 @@
     setTimeout(() => flash('rgba(56, 189, 248, 0.88)', 400), 150);
     shake('heavy');
     vignette(4.5, 'olympus-storm');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.wrathOfOlympus({ targetP: smiteP, victims: victimEntries });
+    }
 
     if (casterEl) {
       casterEl.classList.add('token-olympus-pegasus-wings');
@@ -2769,6 +2810,10 @@
     shake('heavy');
     vignette(4, 'void-tithe');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.voidLightningTithe({ casterP: fromP, victims: victimEntries.map(v => ({ p: v.coord, amount: v.amount })) });
+    }
+
     if (casterEl) casterEl.classList.add('fx-token-sovereign-charge');
     victimEntries.forEach(ve => {
       if (ve.el) ve.el.classList.add('fx-token-shocked');
@@ -2959,6 +3004,10 @@
     shake('heavy');
     vignette(4, 'abyss-deep');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.abyssCataclysm({ targetP: toP });
+    }
+
     if (casterEl) casterEl.classList.add('fx-token-abyss-monarch');
     if (targetEl) targetEl.classList.add('fx-token-drowning');
 
@@ -3047,6 +3096,10 @@
     flash('rgba(245, 158, 11, 0.72)', 350);
     shake('medium');
     vignette(4, 'monaco-vip');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.monacoGoldRush({ cX: c.x, cY: c.y });
+    }
 
     if (casterEl) casterEl.classList.add('fx-token-high-roller');
 
@@ -3156,6 +3209,10 @@
     shake('medium');
     vignette(4, 'naga-mist');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.emeraldNagaSurge({ cX: pCoord.x, cY: pCoord.y });
+    }
+
     if (casterEl) casterEl.classList.add('fx-token-naga-blessed');
 
     // 2. Emerging Emerald Urn & Sacred Dragon
@@ -3240,6 +3297,10 @@
     shake('heavy');
     vignette(5, 'eclipse-totality');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.eclipseConvergence({ cX: c.x, cY: c.y });
+    }
+
     // 2. Aligning Celestial Yin-Yang Eclipse at center
     const eclipse = spawn('eclipse_yin_yang', c.x, c.y, 170, 'fx-glow-purple');
     eclipse.animate([
@@ -3317,6 +3378,10 @@
     flash('rgba(168, 85, 247, 0.72)', 350);
     shake('medium');
     vignette(4, 'djinn-palace');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.cosmicGenieWish({ cX: pCoord.x, cY: pCoord.y });
+    }
 
     // 2. Shaking Brass Lamp at caster
     const lamp = spawn('djinn_magic_lamp', pCoord.x, pCoord.y - 10, 145, 'fx-glow-purple');
