@@ -1,0 +1,68 @@
+{
+  "s1": {
+    "id": "s1",
+    "name": "Bangkok After Dark",
+    "startsAt": 1790935723417,
+    "endsAt": 1791000000000
+  },
+  "s2": {
+    "id": "s2",
+    "name": "Tokyo Sakura Reverie",
+    "startsAt": 1791454123417,
+    "endsAt": 1792318123417
+  },
+  "s3": {
+    "id": "s3",
+    "name": "Dubai Desert Mirage",
+    "startsAt": 1791470200000,
+    "endsAt": 1792679800000
+  },
+  "s4": {
+    "id": "s4",
+    "name": "Monte Carlo Casino Royale",
+    "startsAt": 1791477000000,
+    "endsAt": 1792686600000
+  },
+  "s5": {
+    "id": "s5",
+    "name": "Atlantis: Bioluminescent Abyss",
+    "startsAt": 1791480000000,
+    "endsAt": 1792689600000
+  },
+  "s6": {
+    "id": "s6",
+    "name": "Starlight Odyssey: Celestial Gala",
+    "startsAt": 1791485000000,
+    "endsAt": 1792694600000
+  },
+  "s7": {
+    "id": "s7",
+    "name": "Enchanted Fairytales & Royal Crowns",
+    "startsAt": 1791500000000,
+    "endsAt": 1792700000000
+  },
+  "s8": {
+    "id": "s8",
+    "name": "Nordic Aurora & Glacial Royalty",
+    "startsAt": 1791550000000,
+    "endsAt": 1792800000000
+  },
+  "s9": {
+    "id": "s9",
+    "name": "Egyptian Mirage & Solar Dynasty",
+    "startsAt": 1791550000000,
+    "endsAt": 1792900000000
+  },
+  "s10": {
+    "id": "s10",
+    "name": "Phantom Masquerade: The Grand Carnival of Fate",
+    "startsAt": 1791550000000,
+    "endsAt": 1793500000000
+  },
+  "s11": {
+    "id": "s11",
+    "name": "Pantheon of the Gods: Olympus Thunder & The Elysian Forge",
+    "startsAt": 1791550000000,
+    "endsAt": 1793600000000
+  }
+}

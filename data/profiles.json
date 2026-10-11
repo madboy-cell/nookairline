@@ -1,0 +1,1265 @@
+{
+  "bkk": {
+    "diamonds": 5550,
+    "stardust": 456,
+    "tickets": 8,
+    "fish": 295,
+    "owned": {
+      "s1_songkran_m": 7,
+      "s1_rooftop_m": 6,
+      "s1_muaythai_m": 2,
+      "s1_dragon_m": 3,
+      "s1_tuktuk_m": 1,
+      "s1_market_m": 4,
+      "s1_naga_m": 2,
+      "s2_cyber_m": 7,
+      "s2_taisho_m": 7,
+      "s2_matcha_m": 20,
+      "s2_harajuku_m": 16,
+      "s2_ramen_m": 21,
+      "s2_shinkansen_m": 12,
+      "s2_lofi_m": 3,
+      "s2_arcade_m": 7,
+      "s2_onsen_m": 6,
+      "s2_matsuri_m": 3,
+      "s2_celestial_m": 2,
+      "s2_inari_m": 1,
+      "s3_abra_m": 3,
+      "s3_safari_m": 3,
+      "s3_falcon_m": 4,
+      "s3_cyber_m": 3,
+      "s3_gahwa_m": 11,
+      "s3_souk_m": 5,
+      "s3_gold_m": 6,
+      "s1_cruise_m": 1,
+      "s3_hypercar_m": 2,
+      "s3_burj_m": 2,
+      "s3_marina_m": 2,
+      "s3_phoenix_m": 2,
+      "s4_lounge_m": 6,
+      "s4_poker_m": 3,
+      "s4_dice_m": 3,
+      "s4_gp_m": 6,
+      "s4_security_m": 2,
+      "s4_magic_m": 7,
+      "s4_roulette_m": 1,
+      "s4_slot_m": 1,
+      "s5_leviathan_m": 2,
+      "s4_dealer_m": 2,
+      "s5_diver_m": 4,
+      "s5_corsair_m": 1,
+      "s5_seahorse_m": 1,
+      "s5_manta_m": 2,
+      "s5_triton_m": 1,
+      "s5_tide_m": 1,
+      "s5_angler_m": 2,
+      "s6_pulsar_m": 4,
+      "s6_supernova_m": 1,
+      "s6_lunar_m": 2,
+      "s6_orbital_m": 3,
+      "s6_stardust_m": 4,
+      "s6_aurora_m": 1,
+      "s6_meteor_m": 2,
+      "s6_nebula_m": 5,
+      "s6_comet_m": 6,
+      "s6_aegis_m": 1,
+      "s7_forest_m": 9,
+      "s7_palace_m": 8,
+      "s7_siren_m": 1,
+      "s7_sundrop_m": 1,
+      "s7_belle_m": 1,
+      "s5_emperor_m": 1,
+      "s8_aurora_m": 9,
+      "s8_aviator_m": 38,
+      "s8_sentinel_m": 2,
+      "s8_warden_m": 1,
+      "s9_pharaoh_m": 1,
+      "s10_phantom_m": 1,
+      "s10_tarot_m": 1,
+      "s10_opera_m": 1,
+      "s11_zeus_m": 1,
+      "s11_pegasus_m": 1,
+      "s11_hades_m": 1
+    },
+    "equipped": "s7_belle_m",
+    "pity": {
+      "epic": 0,
+      "mythic": 0
+    },
+    "stats": {
+      "wins": 26,
+      "losses": 26,
+      "pulls": 312,
+      "earned": 41221,
+      "gifted": 11061,
+      "received": 50
+    },
+    "botStats": {
+      "played": 21,
+      "wins": 17,
+      "hardStreak": 1,
+      "hardLossStreak": 0,
+      "net": 3550
+    },
+    "lastDaily": "2026-10-09",
+    "envelopes": [
+      {
+        "id": "env_1791466680587_yh6t",
+        "from": "dxb",
+        "to": "bkk",
+        "amount": 50,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:38:00.587Z",
+        "claimed": true
+      }
+    ],
+    "envelopesSent": [
+      {
+        "id": "env_1791564590842_d1xw",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 4455,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:49:50.842Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791562814959_3qfk",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:20:14.959Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791562798878_hdka",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:19:58.878Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791493024099_5yqy",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 6 Starlight Odyssey! 🌌✨🪐",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T20:57:04.099Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791491572125_oroh",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 6 Starlight Odyssey! 🌌✨🪐",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T20:32:52.125Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791482423095_90er",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 300,
+        "message": "Good luck pulling Mythic in Season 4! 🎰✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T18:00:23.095Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791481297404_txdy",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 1656,
+        "message": "Good luck pulling Mythic in Season 4! 🎰✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T17:41:37.404Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791467719972_jrie",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 100,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:55:19.972Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791467709358_bigf",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:55:09.358Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791413054448_h1wz",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 50,
+        "message": "Good luck pulling Mythic in Season 2!",
+        "blessing": "mythic",
+        "timestamp": "2026-10-07T22:44:14.448Z",
+        "claimed": true
+      }
+    ],
+    "daily": {
+      "day": "2026-10-11",
+      "quests": [
+        {
+          "id": "feed3",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "pull1",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "hug3",
+          "progress": 0,
+          "claimed": false
+        }
+      ],
+      "bonusClaimed": false,
+      "callMin": 0,
+      "callPaid": 0
+    },
+    "fishWelcome": true,
+    "catPity": {
+      "epic": 1,
+      "mythic": 1
+    },
+    "catDay": {
+      "day": "2026-10-11",
+      "careFish": 0,
+      "gifts": 0,
+      "doublePets": 0
+    },
+    "catStats": {
+      "pulls": 145,
+      "feeds": 18,
+      "pets": 17,
+      "plays": 10,
+      "gifts": 10
+    }
+  },
+  "dxb": {
+    "diamonds": 26404,
+    "stardust": 393,
+    "tickets": 10,
+    "fish": 225,
+    "owned": {
+      "s1_market_f": 6,
+      "s1_songkran_f": 2,
+      "s1_kinnaree_f": 2,
+      "s1_muaythai_f": 2,
+      "s1_dragon_f": 1,
+      "s1_rooftop_f": 3,
+      "s2_ramen_f": 11,
+      "s2_matcha_f": 5,
+      "s2_matsuri_f": 4,
+      "s2_lofi_f": 3,
+      "s2_arcade_f": 5,
+      "s2_shinkansen_f": 6,
+      "s2_harajuku_f": 12,
+      "s2_onsen_f": 7,
+      "s2_taisho_f": 1,
+      "s2_inari_f": 1,
+      "s2_cyber_f": 1,
+      "s1_cruise_f": 1,
+      "s1_tuktuk_f": 1,
+      "s3_abra_f": 7,
+      "s3_gahwa_f": 4,
+      "s3_souk_f": 4,
+      "s3_gold_f": 3,
+      "s3_marina_f": 2,
+      "s3_cyber_f": 2,
+      "s3_phoenix_f": 1,
+      "s2_celestial_f": 1,
+      "s3_djinn_f": 1,
+      "s3_safari_f": 1,
+      "s3_hypercar_f": 2,
+      "s4_security_f": 9,
+      "s4_dice_f": 5,
+      "s4_slot_f": 1,
+      "s4_gp_f": 5,
+      "s4_heist_f": 6,
+      "s4_lounge_f": 8,
+      "s4_dealer_f": 6,
+      "s4_magic_f": 11,
+      "s4_poker_f": 3,
+      "s4_yacht_f": 2,
+      "s4_royale_f": 1,
+      "s5_angler_f": 8,
+      "s5_diver_f": 5,
+      "s5_triton_f": 6,
+      "s5_coral_f": 4,
+      "s5_jellyfish_f": 1,
+      "s4_roulette_f": 1,
+      "s5_nautilus_f": 3,
+      "s5_tide_f": 1,
+      "s5_corsair_f": 3,
+      "s5_manta_f": 2,
+      "s5_seahorse_f": 3,
+      "s5_aquanaut_f": 7,
+      "s6_nebula_f": 9,
+      "s6_orbital_f": 1,
+      "s6_aurora_f": 2,
+      "s6_hubble_f": 2,
+      "s6_lunar_f": 3,
+      "s6_meteor_f": 2,
+      "s6_comet_f": 2,
+      "s6_pulsar_f": 7,
+      "s6_stardust_f": 5,
+      "s6_aegis_f": 1,
+      "s6_supernova_f": 1,
+      "s6_starhunter_f": 1,
+      "s7_forest_f": 30,
+      "s7_palace_f": 30,
+      "s7_siren_f": 5,
+      "s7_carpet_f": 10,
+      "s7_cinderella_f": 1,
+      "s7_sundrop_f": 1,
+      "s5_siren_f": 1,
+      "s7_belle_f": 1,
+      "s8_aviator_f": 4,
+      "s8_crystal_f": 1,
+      "s8_empress_f": 1,
+      "s10_phantom_f": 1,
+      "s10_tarot_f": 1,
+      "s10_opera_f": 1,
+      "s11_athena_f": 1,
+      "s11_pegasus_f": 1,
+      "s11_persephone_f": 1
+    },
+    "equipped": "s10_phantom_f",
+    "pity": {
+      "epic": 0,
+      "mythic": 0
+    },
+    "stats": {
+      "wins": 22,
+      "losses": 30,
+      "pulls": 310,
+      "earned": 44553,
+      "received": 11061,
+      "gifted": 50
+    },
+    "botStats": {
+      "played": 0,
+      "wins": 0,
+      "hardStreak": 0,
+      "hardLossStreak": 0,
+      "net": 0
+    },
+    "lastDaily": "2026-10-09",
+    "envelopes": [
+      {
+        "id": "env_1791564590842_d1xw",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 4455,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:49:50.842Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791562814959_3qfk",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:20:14.959Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791562798878_hdka",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-09T16:19:58.878Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791493024099_5yqy",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 6 Starlight Odyssey! 🌌✨🪐",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T20:57:04.099Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791491572125_oroh",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 6 Starlight Odyssey! 🌌✨🪐",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T20:32:52.125Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791482423095_90er",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 300,
+        "message": "Good luck pulling Mythic in Season 4! 🎰✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T18:00:23.095Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791481297404_txdy",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 1656,
+        "message": "Good luck pulling Mythic in Season 4! 🎰✨",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T17:41:37.404Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791467719972_jrie",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 100,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:55:19.972Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791467709358_bigf",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 900,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:55:09.358Z",
+        "claimed": true
+      },
+      {
+        "id": "env_1791413054448_h1wz",
+        "from": "bkk",
+        "to": "dxb",
+        "amount": 50,
+        "message": "Good luck pulling Mythic in Season 2!",
+        "blessing": "mythic",
+        "timestamp": "2026-10-07T22:44:14.448Z",
+        "claimed": true
+      }
+    ],
+    "envelopesSent": [
+      {
+        "id": "env_1791466680587_yh6t",
+        "from": "dxb",
+        "to": "bkk",
+        "amount": 50,
+        "message": "Good luck pulling Mythic in Season 2! 🌸",
+        "blessing": "mythic",
+        "timestamp": "2026-10-08T13:38:00.587Z",
+        "claimed": true
+      }
+    ],
+    "daily": {
+      "day": "2026-10-10",
+      "quests": [
+        {
+          "id": "pet8",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "call45",
+          "progress": 45,
+          "claimed": false
+        },
+        {
+          "id": "equip1",
+          "progress": 0,
+          "claimed": false
+        }
+      ],
+      "bonusClaimed": false,
+      "callMin": 144,
+      "callPaid": 5
+    },
+    "fishWelcome": true,
+    "catPity": {
+      "epic": 1,
+      "mythic": 22
+    },
+    "catDay": {
+      "day": "2026-10-11",
+      "careFish": 0,
+      "gifts": 0,
+      "doublePets": 0
+    },
+    "catStats": {
+      "pulls": 22,
+      "feeds": 28,
+      "pets": 11,
+      "plays": 4,
+      "gifts": 12
+    },
+    "botSession": {
+      "id": "bot_mv0apnvp_13ps",
+      "level": "easy",
+      "stake": 0,
+      "startedAt": 1791509856040
+    }
+  },
+  "awardedGames": [
+    "muyhrrj9vnb0-1791401803781",
+    "muyie57lo1me-1791402849488",
+    "muyj2xqe9fdv-1791403426818",
+    "muyjkrvg3p1l-1791404820540",
+    "muylfye78okg-1791407614395",
+    "muym4jwtjeld-1791408343130",
+    "muymeu6jhroz-1791409482554",
+    "muyni52cjd6l-1791411112428",
+    "muyo8kgk5c45-1791412435235",
+    "muyqr6qw25vo-1791416455887",
+    "muyr6wo3iwkl-1791417128936",
+    "muzjrsitpri1-1791465394110",
+    "muzkby139gzg-1791466334330",
+    "muzkby139gzg-1791467364963",
+    "muzlfsraqa48-1791467463790",
+    "muzlfsraqa48-1791467481961",
+    "muzlfsraqa48-1791467510517",
+    "muzlfsraqa48-1791467553863",
+    "muzlqo127cx0-1791468701640",
+    "muzmn9t1rk7d-1791469433714",
+    "muzmr1p565o6-1791469609828",
+    "muzod6xchrtk-1791473520056",
+    "muzpj903wxlv-1791475146209",
+    "muzqub3mvge0-1791477250175",
+    "muzs8ieqyvga-1791479744597",
+    "muzt8co0uxhm-1791481162024",
+    "muztuo4ovdl6-1791482327994",
+    "muzugqbv84rw-1791483211464",
+    "muzvjv2jdfje-1791484656324",
+    "muzvym90j7q4-1791485555278",
+    "muzx7fnstvel-1791487902914",
+    "muzy128e14z7-1791489169951",
+    "muzzatphubt2-1791491551889",
+    "mv0035umpofo-1791492988283",
+    "mv018zharmn6-1791494533827",
+    "mv01rm9uzpdf-1791495488768",
+    "mv027u2387z2-1791496911166",
+    "mv0vjk1ctn7n-1791545492555",
+    "mv0wbw2tfn59-1791546593912",
+    "mv15nup8acq6-1791562288819",
+    "mv16pxxu1xxy-1791563774235",
+    "mv16xq4hou4y-1791564570065",
+    "mv17l0rc5sdi-1791565648370",
+    "mv184bay5ww1-1791566503082",
+    "mv194t1z5htz-1791568257796",
+    "mv19tn8uapkn-1791569356580",
+    "mv1a8dww2k6i-1791570226921",
+    "mv1bnsqlrjq6-1791572780796",
+    "mv1fsf5jjpah-1791579646106",
+    "mv1hvm66agqc-1791582728832",
+    "mv1ie2f5d1j6-1791583630734",
+    "mv1iuxpx34a5-1791584550911"
+  ],
+  "couple": {
+    "streak": 3,
+    "best": 3,
+    "lastDay": "2026-10-10",
+    "freezes": 0,
+    "checkins": {
+      "bkk": "2026-10-11",
+      "dxb": "2026-10-10"
+    },
+    "history": [
+      "2026-10-08",
+      "2026-10-09",
+      "2026-10-10"
+    ]
+  },
+  "cats": {
+    "created": 1791419811481,
+    "owned": {
+      "c_mochi": {
+        "stars": 5,
+        "copies": 10,
+        "by": "both",
+        "at": 1791419811481,
+        "hunger": 20.3,
+        "love": 50.1,
+        "fun": 0,
+        "t": 1791504988033,
+        "care": {
+          "bkk": 14,
+          "dxb": 5
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "c_tux": {
+        "stars": 5,
+        "copies": 20,
+        "by": "bkk",
+        "at": 1791419858156,
+        "hunger": 45,
+        "love": 99.7,
+        "fun": 0,
+        "t": 1791497246487,
+        "care": {
+          "bkk": 2,
+          "dxb": 6
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": ""
+        }
+      },
+      "r_brit": {
+        "stars": 5,
+        "copies": 8,
+        "by": "bkk",
+        "at": 1791419878923,
+        "hunger": 35.6,
+        "love": 56.3,
+        "fun": 0,
+        "t": 1791496994992,
+        "care": {
+          "bkk": 15,
+          "dxb": 4
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "c_patch": {
+        "stars": 5,
+        "copies": 10,
+        "by": "bkk",
+        "at": 1791419888315,
+        "hunger": 39.9,
+        "love": 86.1,
+        "fun": 0,
+        "t": 1791497041588,
+        "care": {
+          "bkk": 8,
+          "dxb": 3
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "r_sphynx": {
+        "stars": 5,
+        "copies": 7,
+        "by": "bkk",
+        "at": 1791419901234,
+        "hunger": 47.8,
+        "love": 41.9,
+        "fun": 0,
+        "t": 1791493605161,
+        "care": {
+          "bkk": 12,
+          "dxb": 6
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "r_persian": {
+        "stars": 5,
+        "copies": 7,
+        "by": "bkk",
+        "at": 1791420096673,
+        "hunger": 45,
+        "love": 0,
+        "fun": 0,
+        "t": 1791571717422,
+        "care": {
+          "bkk": 7,
+          "dxb": 16
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "c_kumo": {
+        "stars": 5,
+        "copies": 15,
+        "by": "bkk",
+        "at": 1791420096673,
+        "hunger": 0,
+        "love": 100,
+        "fun": 0,
+        "t": 1791497030520,
+        "care": {
+          "bkk": 4,
+          "dxb": 4
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": "2026-10-08"
+        }
+      },
+      "e_mau": {
+        "stars": 5,
+        "copies": 5,
+        "by": "bkk",
+        "at": 1791420096673,
+        "hunger": 0,
+        "love": 15,
+        "fun": 0,
+        "t": 1791546795487,
+        "care": {
+          "bkk": 4,
+          "dxb": 6
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": ""
+        }
+      },
+      "r_birman": {
+        "stars": 5,
+        "copies": 8,
+        "by": "bkk",
+        "at": 1791420096673,
+        "hunger": 18.7,
+        "love": 75.7,
+        "fun": 0,
+        "t": 1791497099231,
+        "care": {
+          "bkk": 6,
+          "dxb": 4
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": "2026-10-08"
+        }
+      },
+      "c_toffee": {
+        "stars": 5,
+        "copies": 7,
+        "by": "bkk",
+        "at": 1791420096673,
+        "hunger": 45,
+        "love": 48.1,
+        "fun": 0,
+        "t": 1791505016250,
+        "care": {
+          "bkk": 19,
+          "dxb": 4
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "e_coon": {
+        "stars": 4,
+        "copies": 4,
+        "by": "bkk",
+        "at": 1791472152952,
+        "hunger": 45,
+        "love": 6,
+        "fun": 0,
+        "t": 1791572957416,
+        "care": {
+          "bkk": 0,
+          "dxb": 7
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "r_munch": {
+        "stars": 5,
+        "copies": 5,
+        "by": "bkk",
+        "at": 1791472164569,
+        "hunger": 45,
+        "love": 78,
+        "fun": 0,
+        "t": 1791505073343,
+        "care": {
+          "bkk": 0,
+          "dxb": 3
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "r_blue": {
+        "stars": 4,
+        "copies": 4,
+        "by": "dxb",
+        "at": 1791472205933,
+        "hunger": 11.1,
+        "love": 75.9,
+        "fun": 0,
+        "t": 1791496994992,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "r_siam": {
+        "stars": 5,
+        "copies": 9,
+        "by": "dxb",
+        "at": 1791476087321,
+        "hunger": 21.7,
+        "love": 100,
+        "fun": 7.3,
+        "t": 1791497041588,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": "2026-10-08"
+        }
+      },
+      "c_noir": {
+        "stars": 5,
+        "copies": 10,
+        "by": "bkk",
+        "at": 1791479903865,
+        "hunger": 0,
+        "love": 48.6,
+        "fun": 0,
+        "t": 1791546809656,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "c_yuki": {
+        "stars": 5,
+        "copies": 6,
+        "by": "bkk",
+        "at": 1791479903865,
+        "hunger": 45,
+        "love": 0,
+        "fun": 0,
+        "t": 1791571704738,
+        "care": {
+          "bkk": 0,
+          "dxb": 3
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "c_moo": {
+        "stars": 5,
+        "copies": 10,
+        "by": "bkk",
+        "at": 1791479903865,
+        "hunger": 32.5,
+        "love": 100,
+        "fun": 20.6,
+        "t": 1791497041588,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "e_khao": {
+        "stars": 4,
+        "copies": 4,
+        "by": "bkk",
+        "at": 1791479903865,
+        "hunger": 59.6,
+        "love": 69.2,
+        "fun": 0,
+        "t": 1791505065173,
+        "care": {
+          "bkk": 0,
+          "dxb": 3
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": ""
+        }
+      },
+      "r_korat": {
+        "stars": 5,
+        "copies": 5,
+        "by": "bkk",
+        "at": 1791479950854,
+        "hunger": 78.7,
+        "love": 100,
+        "fun": 78.5,
+        "t": 1791480390041,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "m_captain": {
+        "stars": 1,
+        "copies": 1,
+        "by": "bkk",
+        "at": 1791479950854,
+        "hunger": 45,
+        "love": 6,
+        "fun": 0,
+        "t": 1791572941981,
+        "care": {
+          "bkk": 3,
+          "dxb": 4
+        },
+        "gifts": {
+          "bkk": "2026-10-08",
+          "dxb": "2026-10-08"
+        }
+      },
+      "e_bengal": {
+        "stars": 4,
+        "copies": 4,
+        "by": "dxb",
+        "at": 1791480058975,
+        "hunger": 45,
+        "love": 0,
+        "fun": 0,
+        "t": 1791572949572,
+        "care": {
+          "bkk": 0,
+          "dxb": 3
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "e_fold": {
+        "stars": 5,
+        "copies": 5,
+        "by": "bkk",
+        "at": 1791480127522,
+        "hunger": 33,
+        "love": 100,
+        "fun": 21.4,
+        "t": 1791497015220,
+        "care": {
+          "bkk": 0,
+          "dxb": 0
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "e_ragdoll": {
+        "stars": 2,
+        "copies": 2,
+        "by": "bkk",
+        "at": 1791489904046,
+        "hunger": 41,
+        "love": 0,
+        "fun": 35,
+        "t": 1791572974221,
+        "care": {
+          "bkk": 0,
+          "dxb": 9
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": ""
+        }
+      },
+      "m_maneki": {
+        "stars": 1,
+        "copies": 1,
+        "by": "bkk",
+        "at": 1791489904046,
+        "hunger": 45,
+        "love": 0,
+        "fun": 0,
+        "t": 1791571767236,
+        "care": {
+          "bkk": 7,
+          "dxb": 6
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": "2026-10-09"
+        }
+      },
+      "m_moon": {
+        "stars": 1,
+        "copies": 1,
+        "by": "bkk",
+        "at": 1791497041588,
+        "hunger": 45,
+        "love": 6,
+        "fun": 0,
+        "t": 1791571754757,
+        "care": {
+          "bkk": 0,
+          "dxb": 11
+        },
+        "gifts": {
+          "bkk": "",
+          "dxb": "2026-10-09"
+        }
+      }
+    },
+    "fed": {
+      "day": "2026-10-09",
+      "bkk": false,
+      "dxb": true,
+      "paid": false
+    },
+    "log": [
+      {
+        "t": 1791572974221,
+        "role": "dxb",
+        "kind": "play",
+        "catId": "e_ragdoll"
+      },
+      {
+        "t": 1791572965201,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "e_ragdoll"
+      },
+      {
+        "t": 1791572954247,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "e_coon"
+      },
+      {
+        "t": 1791572949572,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "e_bengal"
+      },
+      {
+        "t": 1791572938107,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "m_captain"
+      },
+      {
+        "t": 1791571767236,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "m_maneki"
+      },
+      {
+        "t": 1791571749800,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "m_moon"
+      },
+      {
+        "t": 1791571717422,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "r_persian"
+      },
+      {
+        "t": 1791571704739,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "c_yuki"
+      },
+      {
+        "t": 1791546809656,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "c_noir",
+        "rarity": "common",
+        "count": 1
+      },
+      {
+        "t": 1791546795488,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "e_mau",
+        "rarity": "epic",
+        "count": 1
+      },
+      {
+        "t": 1791546698330,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "m_moon"
+      },
+      {
+        "t": 1791505073343,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "r_munch"
+      },
+      {
+        "t": 1791505065174,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "e_khao"
+      },
+      {
+        "t": 1791505047918,
+        "role": "dxb",
+        "kind": "play",
+        "catId": "e_ragdoll"
+      },
+      {
+        "t": 1791505016251,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "c_toffee"
+      },
+      {
+        "t": 1791505009288,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "r_persian"
+      },
+      {
+        "t": 1791504988033,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "c_mochi",
+        "rarity": "common",
+        "count": 1
+      },
+      {
+        "t": 1791504980105,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "c_noir",
+        "rarity": "common",
+        "count": 1
+      },
+      {
+        "t": 1791504963513,
+        "role": "dxb",
+        "kind": "gift",
+        "catId": "m_moon"
+      },
+      {
+        "t": 1791504959913,
+        "role": "dxb",
+        "kind": "gift",
+        "catId": "m_maneki"
+      },
+      {
+        "t": 1791497246488,
+        "role": "dxb",
+        "kind": "feed",
+        "catId": "c_tux"
+      },
+      {
+        "t": 1791497186687,
+        "role": "dxb",
+        "kind": "play",
+        "catId": "m_moon"
+      },
+      {
+        "t": 1791497137900,
+        "role": "dxb",
+        "kind": "play",
+        "catId": "m_maneki"
+      },
+      {
+        "t": 1791497099231,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "r_birman",
+        "rarity": "rare",
+        "count": 1
+      },
+      {
+        "t": 1791497041588,
+        "role": "bkk",
+        "kind": "pull",
+        "catId": "m_moon",
+        "rarity": "mythic",
+        "count": 10
+      },
+      {
+        "t": 1791497030520,
+        "role": "bkk",
+        "kind": "pull",
+        "catId": "e_mau",
+        "rarity": "epic",
+        "count": 10
+      },
+      {
+        "t": 1791497027833,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "r_siam",
+        "rarity": "rare",
+        "count": 1
+      },
+      {
+        "t": 1791497015220,
+        "role": "bkk",
+        "kind": "pull",
+        "catId": "e_ragdoll",
+        "rarity": "epic",
+        "count": 10
+      },
+      {
+        "t": 1791497009587,
+        "role": "dxb",
+        "kind": "pull",
+        "catId": "c_toffee",
+        "rarity": "common",
+        "count": 1
+      }
+    ]
+  }
+}

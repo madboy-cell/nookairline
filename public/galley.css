@@ -1,0 +1,841 @@
+/* ==========================================================================
+   NOOK AIRLINE — SKY BISTRO: FIRST-CLASS GALLEY DASH (CO-OP OVERCOOKED)
+   Optimized for Portrait Mobile & Desktop with Smart Step Hints & Glowing Targets
+   ========================================================================== */
+
+/* Fullstage Galley Container - Complete Fullscreen Takeover */
+.galley-stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 99999;
+  background-color: #0b0f19;
+  background-image: url('assets/galley_kitchen_wide.png');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Hide ALL flight lounge and phone call elements during Galley game */
+.airline-container.galley-mode-active #flightHeader,
+.airline-container.galley-mode-active #flightStatusCapsule,
+.airline-container.galley-mode-active #emotionDeck,
+.airline-container.galley-mode-active #callControls,
+.airline-container.galley-mode-active .audio-permission-banner,
+.airline-container.galley-mode-active #localPip {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .galley-stage {
+    background-image: url('assets/galley_kitchen_portrait.png');
+    background-size: cover;
+    background-position: center top;
+  }
+}
+
+.galley-stage.hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Luxury Velvet Transition Curtain */
+.galley-curtain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 100000;
+  background: radial-gradient(circle at center, #1b263b 0%, #0d131f 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transform: translateY(-100%);
+  transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+  pointer-events: none;
+}
+
+.galley-curtain.closing {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.curtain-crest {
+  font-size: 48px;
+  animation: crestPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes crestPulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(1.08); opacity: 1; }
+}
+
+.curtain-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f7d070;
+  text-transform: uppercase;
+  text-shadow: 0 0 16px rgba(247, 208, 112, 0.4);
+}
+
+/* ==========================================================================
+   TOP ORDERS RAIL & STATS BAR
+   ========================================================================== */
+.galley-header {
+  position: relative;
+  z-index: 25;
+  width: 100%;
+  padding: 10px 14px 6px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(10, 15, 26, 0.96) 0%, rgba(10, 15, 26, 0.75) 75%, transparent 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.galley-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.galley-brand-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  color: #f7d070;
+  letter-spacing: 1px;
+}
+
+.galley-stats-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.galley-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(247, 208, 112, 0.35);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.score-chip .stat-val {
+  color: #f7d070;
+}
+
+.timer-chip.urgent {
+  border-color: #ef4444;
+  color: #ef4444;
+  animation: timerBeep 0.5s infinite alternate;
+}
+
+@keyframes timerBeep {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+
+.galley-mic-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.galley-mic-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.06);
+}
+
+.galley-mic-btn.muted {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: #ef4444;
+}
+
+.galley-exit-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* Order Tickets Carousel */
+.galley-tickets-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: 100%;
+  padding-bottom: 2px;
+}
+.galley-tickets-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Self-Guiding Visual Recipe Ticket */
+.order-ticket {
+  flex-shrink: 0;
+  min-width: 140px;
+  background: #fffef5;
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  border-top: 4px solid #38bdf8;
+  animation: ticketSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.order-ticket.rush {
+  border-top-color: #ef4444;
+  animation: ticketUrgent 0.6s infinite alternate ease-in-out;
+}
+
+@keyframes ticketSlideIn {
+  0% { transform: translateY(-16px) scale(0.92); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes ticketUrgent {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); box-shadow: 0 0 14px rgba(239, 68, 68, 0.6); }
+}
+
+.ticket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ticket-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111;
+  white-space: nowrap;
+}
+
+.ticket-points {
+  font-size: 10px;
+  font-weight: 800;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.18);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+.ticket-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket-dish-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.ticket-dish-img {
+  height: 38px;
+  width: auto;
+  max-width: 44px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.ticket-recipe-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recipe-step-label {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.recipe-steps-pills {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.step-arrow {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.ticket-timer-bar {
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ticket-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: #22c55e;
+  border-radius: 2px;
+  transition: width 1s linear, background-color 0.4s ease;
+}
+
+.ticket-timer-fill.warn { background: #eab308; }
+.ticket-timer-fill.danger { background: #ef4444; }
+
+/* ==========================================================================
+   SMART COACH HINT BANNER (Guides Player Exactly What To Do Next!)
+   ========================================================================== */
+.galley-coach-hint {
+  width: calc(100% - 24px);
+  margin: 0 auto;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(14, 20, 36, 0.94);
+  border: 1px solid rgba(247, 208, 112, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f7d070;
+  text-align: center;
+  z-index: 28;
+  animation: coachPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes coachPulse {
+  0%, 100% { border-color: rgba(247, 208, 112, 0.4); transform: scale(1); }
+  50% { border-color: rgba(247, 208, 112, 0.9); transform: scale(1.01); box-shadow: 0 0 16px rgba(247, 208, 112, 0.4); }
+}
+
+/* ==========================================================================
+   2D MAPLE GALLEY STAGE & AVATARS
+   ========================================================================== */
+.galley-floor {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+
+.avatar-entity.in-galley {
+  z-index: 22;
+  cursor: pointer;
+}
+
+.galley-chef-hat {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 38px;
+  background-image: url('assets/chef_hat.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+  z-index: 30;
+  animation: chefHatBob 2.2s ease-in-out infinite;
+}
+
+@keyframes chefHatBob {
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-1deg); }
+  50% { transform: translateX(-50%) translateY(-3px) rotate(1deg); }
+}
+
+.avatar-held-item {
+  position: absolute;
+  top: -56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(14, 20, 36, 0.94);
+  border: 2px solid #f7d070;
+  border-radius: 12px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 10px rgba(247, 208, 112, 0.5);
+  animation: heldItemFloat 1.2s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 35;
+}
+
+.avatar-held-item img {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+@keyframes heldItemFloat {
+  0% { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(-4px); }
+}
+
+.avatar-entity.chopping .avatar-body-wrapper {
+  animation: avatarChopMotion 0.22s ease-in-out infinite alternate !important;
+}
+
+@keyframes avatarChopMotion {
+  0% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+  100% { transform: translateX(-50%) translateY(-2px) rotate(4deg); }
+}
+
+/* Flying Item Arc Animation */
+.flying-toss-item {
+  position: absolute;
+  z-index: 80;
+  font-size: 26px;
+  pointer-events: none;
+  transition: left 0.45s linear, top 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+
+/* ==========================================================================
+   PORTRAIT-OPTIMIZED TOUCH CONSOLE (Intuitive, Large, Tactile Station Cards!)
+   ========================================================================== */
+.galley-console {
+  position: relative;
+  z-index: 30;
+  width: 100%;
+  background: linear-gradient(0deg, rgba(10, 15, 26, 0.98) 0%, rgba(14, 20, 36, 0.92) 85%, transparent 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 10px 12px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Row 1: Ingredients Dispensers */
+.console-row-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  padding-left: 4px;
+}
+
+.console-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.console-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  min-height: 58px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.console-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.console-btn:active {
+  transform: scale(0.95);
+}
+
+.btn-icon-large {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.btn-caption {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Target Station Highlight (Pulses in Gold when you need to tap here next!) */
+.console-btn.target-next,
+.galley-station.target-next {
+  border-color: #f7d070 !important;
+  background: rgba(247, 208, 112, 0.22) !important;
+  box-shadow: 0 0 16px rgba(247, 208, 112, 0.6) !important;
+  animation: targetPulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes targetPulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px rgba(247, 208, 112, 0.4); }
+  100% { transform: scale(1.05); box-shadow: 0 0 20px rgba(247, 208, 112, 0.8); }
+}
+
+/* Station Badges & Mini Progress */
+.console-btn-status {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 9px;
+  font-weight: 800;
+  background: #f59e0b;
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.console-btn-status.ready {
+  background: #22c55e;
+}
+
+.console-btn-status.burnt {
+  background: #ef4444;
+}
+
+/* Row 2: Action Stations (Board, Stove, Pass, Serve) */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.serve-btn {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%);
+  border-color: rgba(247, 208, 112, 0.5);
+}
+
+.serve-btn:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* Bottom Bar: Toss & Trash */
+.utility-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.util-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.util-btn.toss {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.35) 100%);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.util-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   LANDSCAPE TWEAKS (EXPANDS NICELY ON DESKTOP & IPAD)
+   ========================================================================== */
+@media (min-aspect-ratio: 1/1) {
+  .galley-header {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 20px;
+  }
+  .galley-tickets-container {
+    max-width: calc(100% - 240px);
+  }
+  .galley-console {
+    padding: 10px 24px 20px 24px;
+    max-width: 820px;
+    margin: 0 auto;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+/* ==========================================================================
+   VICTORY MODAL & COUNTDOWN OVERLAYS
+   ========================================================================== */
+.galley-countdown-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 100;
+  background: rgba(10, 15, 26, 0.88);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.countdown-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f7d070;
+  text-transform: uppercase;
+}
+
+.countdown-number {
+  font-family: 'Outfit', sans-serif;
+  font-size: 72px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(247, 208, 112, 0.8);
+  animation: countdownPop 0.8s ease-in-out infinite;
+}
+
+@keyframes countdownPop {
+  0% { transform: scale(0.7); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.countdown-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 280px;
+}
+
+/* Result Modal */
+.galley-result-modal {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 110;
+  background: rgba(10, 15, 26, 0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.result-card {
+  background: linear-gradient(135deg, rgba(26, 36, 60, 0.95) 0%, rgba(14, 20, 36, 0.98) 100%);
+  border: 1px solid rgba(247, 208, 112, 0.4);
+  border-radius: 24px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 24px rgba(247, 208, 112, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: resultEntry 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes resultEntry {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.result-crest { font-size: 32px; }
+.result-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.result-stars {
+  font-size: 36px;
+  letter-spacing: 4px;
+  filter: drop-shadow(0 0 12px rgba(247, 208, 112, 0.6));
+}
+
+.result-score-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.score-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  color: #f7d070;
+}
+
+.result-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0 12px 0;
+}
+
+.res-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.res-stat .k {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.res-stat .v {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.res-btn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.play-again-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+.back-lounge-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.res-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nook Airline — Private First-Class Line</title>
+  <meta name="description" content="Nook Airline dedicated encrypted video and voice portal between Bangkok and Dubai.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css?v=20261009a">
+  <link rel="stylesheet" href="avatar.css?v=20261009a">
+  <link rel="stylesheet" href="monopoly.css?v=20261009y">
+  <link rel="stylesheet" href="monopoly_fx.css?v=20261009x">
+  <link rel="stylesheet" href="vault.css?v=20261009b">
+  <link rel="stylesheet" href="lounge.css?v=20261009a">
+  <link rel="stylesheet" href="daily.css?v=20261009a">
+  <link rel="stylesheet" href="catlounge.css?v=20261009b">
+  <link rel="stylesheet" href="skydash.css?v=20261009d">
+  <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
+</head>
+<body>
+  <div id="app" class="airline-container">
+    <!-- Top Flight Status Bar -->
+    <header class="flight-header" id="flightHeader">
+      <div class="airline-brand">
+        <div class="brand-crest">
+          <img src="assets/ui/crest.png" alt="Nook Airline crest" draggable="false">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">NOOK AIRLINE</span>
+          <span class="flight-route">BKK <span class="arrow">✈</span> DXB <span class="seat-tag" id="seatTag">SEAT —</span></span>
+        </div>
+      </div>
+
+      <div class="security-badge" id="securityBadge">
+        <span class="live-dot pulse"></span>
+        <span id="connectionBadgeText">Connecting to Flight Network...</span>
+      </div>
+
+      <div class="call-timer-chip hidden" id="callTimerChip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="callDuration">00:00</span>
+      </div>
+    </header>
+
+    <!-- Main Viewport Area -->
+    <main class="call-stage" id="callStage">
+      <!-- Remote Video & Audio (Fullscreen / Main) -->
+      <div class="video-wrapper remote-wrapper" id="remoteWrapper">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <!-- Dedicated Audio Tag: Solves iOS Safari / Chrome mobile audio muting -->
+        <audio id="remoteAudio" autoplay playsinline></audio>
+        
+        <!-- Elegant Flight Status Capsule (Keeps 2D plane cabin & avatars 100% visible) -->
+        <div class="flight-status-capsule" id="flightStatusCapsule">
+          <div class="capsule-dot" id="capsuleDot"></div>
+          <span class="capsule-text" id="capsuleText">Connecting to Flight Network...</span>
+          <button class="capsule-copy-btn" id="capsuleCopyBtn" title="Copy Partner Link">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="copy-label">Copy Link</span>
+          </button>
+        </div>
+
+        <!-- 2D Maple Airliner Cabin Stage (Default active stage) -->
+        <div class="sky-lounge theme-winterfell" id="skyLounge">
+          <!-- Golden Cabin Ambient Cove Glow -->
+          <div class="cabin-ambient-light" id="cabinAmbientLight"></div>
+
+          <!-- Subtle Atmosphere Flash on theme change -->
+          <div class="cabin-atmosphere-flash" id="cabinAtmosphereFlash"></div>
+
+          <!-- Emotional Sensory Screen Warmth Vignette -->
+          <div class="hug-screen-vignette" id="hugScreenVignette"></div>
+
+          <!-- Walkable First-Class Cabin Floor & Avatars -->
+          <div class="lounge-floor" id="loungeFloor">
+            <!-- Chibi Avatars on Luxury Carpet Runner -->
+            <div class="avatar-entity idle" id="myAvatar"></div>
+            <div class="avatar-entity idle" id="partnerAvatar"></div>
+
+            <!-- Ground Warmth Halo & Floating Hearts for Hug -->
+            <div class="hug-ground-halo hidden" id="hugGroundHalo"></div>
+            <div class="hug-carpet-hearts" id="hugCarpetHearts"></div>
+          </div>
+        </div>
+
+
+        <!-- Floating Tap-to-Unmute Banner if iOS blocks audio -->
+        <div class="audio-permission-banner hidden" id="audioPermissionBanner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span>Tap anywhere on screen to enable speaker</span>
+        </div>
+      </div>
+
+      <!-- Local Self-View (Floating PiP - only shown when Camera is ON) -->
+      <div class="video-wrapper local-pip hidden" id="localPip">
+        <video id="localVideo" autoplay playsinline muted></video>
+        <div class="pip-label">You</div>
+        <div class="camera-off-overlay" id="cameraOffOverlay">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path>
+          </svg>
+        </div>
+      </div>
+    </main>
+
+    <!-- Floating 2D Sky Lounge Action Deck -->
+    <div class="emotion-deck" id="emotionDeck">
+      <!-- Enhanced Emotional Sensory Warm Hug -->
+      <button class="emote-btn hug-hero-btn" id="hugActionBtn" title="Send Warm Embrace (Tap or Hold)">
+        <span class="hug-btn-pulse-ring"></span>
+        <span class="emote-icon"><img src="assets/ui/icon_hug.png" alt="" draggable="false"></span>
+        <span class="emote-label">Warm Hug</span>
+      </button>
+
+      <!-- Sky Monopoly Board Game (Couple Route & Balance Game) -->
+      <button class="emote-btn monopoly-btn" id="openMonopolyBtn" title="Sky Monopoly Board Game">
+        <span class="monopoly-btn-glow"></span>
+        <span class="emote-icon"><img src="assets/ui/icon_monopoly.png" alt="" draggable="false"></span>
+        <span class="emote-label">Monopoly</span>
+      </button>
+
+
+      <!-- Sky Dash Runner (Tales of Flight) -->
+      <button class="emote-btn skydash-btn" id="openSkyDashBtn" title="Sky Dash: Cloud Runner">
+        <span class="emote-icon"><img src="assets/ui/icon_runner.png" alt="" draggable="false"></span>
+        <span class="emote-label">Sky Dash</span>
+      </button>
+
+      <button class="emote-btn wardrobe-btn" id="openWardrobeBtn" title="Wardrobe, Codex & Gacha">
+        <span class="emote-icon"><img src="assets/ui/icon_vault.png" alt="" draggable="false"></span>
+        <span class="emote-label">Wardrobe</span>
+      </button>
+      
+      <button class="emote-btn scenery-btn" id="openSceneryBtn" title="Cabin Scenery & Atmosphere">
+        <span class="emote-icon"><img src="assets/ui/icon_scenery.png" alt="" draggable="false"></span>
+        <span class="emote-label">Scenery</span>
+      </button>
+    </div>
+
+    <!-- Sky Monopoly Board Game Modal -->
+    <div class="monopoly-modal hidden" id="monopolyModal">
+      <div class="monopoly-container">
+        <!-- Header -->
+        <div class="monopoly-header">
+          <div class="monopoly-brand">
+            <span>✈️</span>
+            <span>SKY MONOPOLY</span>
+          </div>
+          <div class="monopoly-header-actions">
+            <button class="monopoly-reset-btn" id="monopolyLobbyBtn" title="Boarding Gate Lobby">🚪 Lobby</button>
+            <button class="monopoly-reset-btn" id="monopolyRulesBtn" title="How to play">❔ Rules</button>
+            <button class="monopoly-reset-btn" id="resetMonopolyBtn" title="Reset Board & Start Fresh Game">🔄 Reset</button>
+            <button class="monopoly-close-btn" id="closeMonopolyBtn" title="Close Game">✕</button>
+          </div>
+        </div>
+
+        <!-- Players HUD (Responsive 2-4 Players) -->
+        <div class="monopoly-players-bar" id="monopolyPlayersBar">
+          <div class="monopoly-player-card player-bkk" id="monopolyPlayerCardBkk">
+            <img src="assets/bkk_warrior_idle.png" class="player-thumb-mini" id="monopolyBkkThumb" alt="BKK" />
+            <div class="player-info-mini">
+              <span class="player-name-mini" id="monopolyBkkName">Lord of BKK 🐺</span>
+              <div class="player-stats-row">
+                <span class="player-miles-pill" id="monopolyBkkMiles">1,200 🪙</span>
+                <span class="player-nw-pill" id="monopolyBkkNw">NW 1,200</span>
+                <span class="player-prop-badge" id="monopolyBkkProps">🏰 0</span>
+              </div>
+              <div class="player-extras-row">
+                <span class="player-passes" id="monopolyBkkPasses">🎟️🎟️🎟️</span>
+                <span class="player-items-mini" id="monopolyBkkItems"></span>
+              </div>
+              <div class="player-ult-track" id="monopolyBkkUltTrack" title="Ultimate Charge">
+                <div class="player-ult-fill" id="monopolyBkkUltFill" style="width: 0%;"></div>
+                <span class="player-ult-label" id="monopolyBkkUltLabel">0%</span>
+              </div>
+            </div>
+          </div>
+          <div class="monopoly-player-card player-dxb" id="monopolyPlayerCardDxb">
+            <img src="assets/got_queen_idle.png" class="player-thumb-mini" id="monopolyDxbThumb" alt="DXB" />
+            <div class="player-info-mini">
+              <span class="player-name-mini" id="monopolyDxbName">Khaleesi 🐉</span>
+              <div class="player-stats-row">
+                <span class="player-miles-pill" id="monopolyDxbMiles">1,200 🪙</span>
+                <span class="player-nw-pill" id="monopolyDxbNw">NW 1,200</span>
+                <span class="player-prop-badge" id="monopolyDxbProps">🏰 0</span>
+              </div>
+              <div class="player-extras-row">
+                <span class="player-passes" id="monopolyDxbPasses">🎟️🎟️🎟️</span>
+                <span class="player-items-mini" id="monopolyDxbItems"></span>
+              </div>
+              <div class="player-ult-track" id="monopolyDxbUltTrack" title="Ultimate Charge">
+                <div class="player-ult-fill" id="monopolyDxbUltFill" style="width: 0%;"></div>
+                <span class="player-ult-label" id="monopolyDxbUltLabel">0%</span>
+              </div>
+            </div>
+          </div>
+          <div class="monopoly-player-card player-bot1 hidden" id="monopolyPlayerCardBot1">
+            <img src="assets/bot_mochi.jpg" class="player-thumb-mini" id="monopolyBot1Thumb" alt="Bot 1" />
+            <div class="player-info-mini">
+              <span class="player-name-mini" id="monopolyBot1Name">Trainee Mochi 🐣</span>
+              <div class="player-stats-row">
+                <span class="player-miles-pill" id="monopolyBot1Miles">1,200 🪙</span>
+                <span class="player-nw-pill" id="monopolyBot1Nw">NW 1,200</span>
+                <span class="player-prop-badge" id="monopolyBot1Props">🏰 0</span>
+              </div>
+              <div class="player-extras-row">
+                <span class="player-items-mini" id="monopolyBot1Items"></span>
+              </div>
+              <div class="player-ult-track" id="monopolyBot1UltTrack" title="Ultimate Charge">
+                <div class="player-ult-fill" id="monopolyBot1UltFill" style="width: 0%;"></div>
+                <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
+              </div>
+            </div>
+          </div>
+          <div class="monopoly-player-card player-bot2 hidden" id="monopolyPlayerCardBot2">
+            <img src="assets/bot_captain.jpg" class="player-thumb-mini" id="monopolyBot2Thumb" alt="Bot 2" />
+            <div class="player-info-mini">
+              <span class="player-name-mini" id="monopolyBot2Name">Capt. Whiskers 😈</span>
+              <div class="player-stats-row">
+                <span class="player-miles-pill" id="monopolyBot2Miles">1,200 🪙</span>
+                <span class="player-nw-pill" id="monopolyBot2Nw">NW 1,200</span>
+                <span class="player-prop-badge" id="monopolyBot2Props">🏰 0</span>
+              </div>
+              <div class="player-extras-row">
+                <span class="player-items-mini" id="monopolyBot2Items"></span>
+              </div>
+              <div class="player-ult-track" id="monopolyBot2UltTrack" title="Ultimate Charge">
+                <div class="player-ult-fill" id="monopolyBot2UltFill" style="width: 0%;"></div>
+                <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- First Class Boarding Gate / Lobby Waiting Room -->
+        <div class="monopoly-lobby-screen hidden" id="monopolyLobbyScreen">
+          <div class="lobby-card-wrap">
+            <button class="lobby-close-btn" id="lobbyCloseBtn" title="Close Lobby" aria-label="Close">✕</button>
+            <div class="lobby-header-banner">
+              <div class="lobby-flight-code">
+                <span class="flight-badge">FIRST CLASS VIP</span>
+                <span class="flight-no">FLIGHT SKY-777 ✈️</span>
+                <span class="live-pulse-dot"></span>
+              </div>
+              <h2 class="lobby-title">Sky Monopoly Boarding Lounge</h2>
+              <p class="lobby-subtitle">Assemble your flight crew & challenge the bots</p>
+            </div>
+
+            <!-- Mode Selector Tabs -->
+            <div class="lobby-mode-tabs" id="lobbyModeTabs">
+              <button class="lobby-mode-tab active" data-mode="4p" id="tabMode4p">
+                <span class="tab-icon">✈️</span>
+                <span class="tab-label">4P Sky Party</span>
+                <span class="tab-hint">2 Humans + 2 Bots</span>
+              </button>
+              <button class="lobby-mode-tab" data-mode="couple" id="tabModeCouple">
+                <span class="tab-icon">💞</span>
+                <span class="tab-label">2P Couple</span>
+                <span class="tab-hint">Intimate Duel</span>
+              </button>
+              <button class="lobby-mode-tab" data-mode="bot" id="tabModeBot">
+                <span class="tab-icon">🤖</span>
+                <span class="tab-label">Solo vs Bot</span>
+                <span class="tab-hint">Practice Duel</span>
+              </button>
+            </div>
+
+            <!-- 4 Passenger Seat Pods -->
+            <div class="lobby-seats-grid">
+              <!-- Seat 1: Host / You -->
+              <div class="lobby-seat-card seat-host" id="lobbySeatBkk">
+                <div class="seat-badge-strip">
+                  <span class="seat-num">SEAT 1A</span>
+                  <span class="seat-role-pill">👑 Flight Host</span>
+                </div>
+                <div class="seat-avatar-wrap">
+                  <img src="assets/bkk_warrior_idle.png" class="seat-avatar" id="lobbySeatBkkImg" alt="BKK" />
+                  <span class="seat-glow-ring"></span>
+                </div>
+                <div class="seat-info">
+                  <strong class="seat-name" id="lobbySeatBkkName">Lord of BKK 🐺</strong>
+                  <span class="seat-costume-tag" id="lobbySeatBkkCostume">Pilot Uniform</span>
+                </div>
+                <button class="seat-ready-btn is-ready" id="lobbySeatBkkReadyBtn">
+                  <span>✅ READY</span>
+                </button>
+              </div>
+
+              <!-- Seat 2: Partner / Her -->
+              <div class="lobby-seat-card seat-guest" id="lobbySeatDxb">
+                <div class="seat-badge-strip">
+                  <span class="seat-num">SEAT 1B</span>
+                  <span class="seat-role-pill" id="lobbySeatDxbRolePill">🌸 First Officer</span>
+                </div>
+                <div class="seat-avatar-wrap">
+                  <img src="assets/got_queen_idle.png" class="seat-avatar" id="lobbySeatDxbImg" alt="DXB" />
+                  <span class="seat-glow-ring"></span>
+                </div>
+                <div class="seat-info">
+                  <strong class="seat-name" id="lobbySeatDxbName">Khaleesi 🐉</strong>
+                  <span class="seat-costume-tag" id="lobbySeatDxbCostume">Sakura Kimono</span>
+                </div>
+                <div class="seat-status-pill ready" id="lobbySeatDxbStatus">
+                  <span>🟢 Online & Ready</span>
+                </div>
+              </div>
+
+              <!-- Seat 3: Bot 1 (Trainee Mochi) -->
+              <div class="lobby-seat-card seat-bot" id="lobbySeatBot1">
+                <div class="seat-badge-strip">
+                  <span class="seat-num">SEAT 2A</span>
+                  <span class="seat-role-pill bot-pill-easy" id="lobbySeatBot1RolePill">🐣 Co-Pilot</span>
+                </div>
+                <div class="seat-avatar-wrap">
+                  <img src="assets/bot_mochi.jpg" class="seat-avatar" id="lobbySeatBot1Img" alt="Mochi" />
+                  <span class="seat-glow-ring"></span>
+                </div>
+                <div class="seat-info">
+                  <strong class="seat-name">Trainee Mochi 🐾</strong>
+                  <span class="seat-desc">Friendly & playful</span>
+                </div>
+                <div class="seat-select-wrap">
+                  <select class="seat-diff-select" id="lobbyBot1DiffSelect">
+                    <option value="easy" selected>🟢 Easy Bot</option>
+                    <option value="hard">🔴 Hard Bot</option>
+                    <option value="closed">❌ Closed</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Seat 4: Bot 2 (Captain Whiskers) -->
+              <div class="lobby-seat-card seat-bot" id="lobbySeatBot2">
+                <div class="seat-badge-strip">
+                  <span class="seat-num">SEAT 2B</span>
+                  <span class="seat-role-pill bot-pill-hard" id="lobbySeatBot2RolePill">😈 Rival Captain</span>
+                </div>
+                <div class="seat-avatar-wrap">
+                  <img src="assets/bot_captain.jpg" class="seat-avatar" id="lobbySeatBot2Img" alt="Whiskers" />
+                  <span class="seat-glow-ring"></span>
+                </div>
+                <div class="seat-info">
+                  <strong class="seat-name">Capt. Whiskers 😼</strong>
+                  <span class="seat-desc">Plays to win · Uses C4</span>
+                </div>
+                <div class="seat-select-wrap">
+                  <select class="seat-diff-select" id="lobbyBot2DiffSelect">
+                    <option value="hard" selected>🔴 Hard Bot</option>
+                    <option value="easy">🟢 Easy Bot</option>
+                    <option value="closed">❌ Closed</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rules & Romance Note -->
+            <div class="lobby-perks-banner" id="lobbyPerksBanner">
+              <span class="perks-icon" id="lobbyPerksIcon">💖</span>
+              <span class="perks-text" id="lobbyPerksText"><strong>Couple Vibe Check:</strong> Romantic card questions active when you land on each other! Standard rent & sabotage duels vs bots.</span>
+            </div>
+
+            <!-- Launch Button -->
+            <div class="lobby-footer-actions">
+              <button class="btn-lobby-launch" id="btnLaunchMonopolyGame">
+                <span class="launch-icon">🛫</span>
+                <span class="launch-label">BOARD FLIGHT & ROLL (START GAME)</span>
+                <span class="launch-shimmer"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7x5 Tall Closed Loop Board (20 Tiles) -->
+        <div class="monopoly-board-wrap" id="monopolyBoardWrap">
+          <div class="monopoly-board-grid" id="monopolyBoardGrid">
+            <!-- Center Dashboard Hub -->
+            <div class="monopoly-center-hub" id="monopolyCenterHub">
+              <!-- Holographic Airport Radar Sweep -->
+              <div class="hub-radar-sweep-wrap">
+                <div class="hub-radar-rings"></div>
+                <div class="hub-radar-beam"></div>
+              </div>
+              <div class="hub-pill-row">
+                <span class="round-pill" id="monopolyRoundPill">ROUND 1 / 20</span>
+                <span class="goal-pill" id="monopolyGoalPill">🏆 3,500 NW</span>
+              </div>
+              <div class="final-boarding-banner hidden" id="monopolyFinalBoarding">🔥 FINAL BOARDING · RENT ×1.5</div>
+
+              <div class="turn-badge my-turn" id="monopolyTurnBadge">
+                <span>🎲 Your Turn</span>
+              </div>
+
+              <!-- 3D Pixel Dice -->
+              <div class="monopoly-dice-container" id="monopolyDiceContainer">
+                <div class="dice-shadow" id="diceShadow"></div>
+                <div class="dice-shockwave" id="diceShockwave"></div>
+                <div class="monaco-dice-orbit hidden" id="monacoDiceOrbit">
+                  <span class="orbit-item oi-1">💎</span>
+                  <span class="orbit-item oi-2">♠️</span>
+                  <span class="orbit-item oi-3">👑</span>
+                  <span class="orbit-item oi-4">🪙</span>
+                  <span class="orbit-item oi-5">🎲</span>
+                  <span class="orbit-item oi-6">♥️</span>
+                </div>
+                <div class="astral-dice-orbit hidden" id="astralDiceOrbit">
+                  <span class="astral-orbit-node ao-1">🪐</span>
+                  <span class="astral-orbit-node ao-2">✨</span>
+                  <span class="astral-orbit-node ao-3">🌌</span>
+                  <span class="astral-orbit-node ao-4">⭐</span>
+                  <span class="astral-orbit-node ao-5">🔮</span>
+                  <span class="astral-orbit-node ao-6">💫</span>
+                </div>
+                <!-- S1: Mekong Naga Emerald Orbit -->
+                <div class="naga-dice-orbit hidden" id="nagaDiceOrbit">
+                  <span class="naga-orbit-node no-1">🐉</span>
+                  <span class="naga-orbit-node no-2">🪷</span>
+                  <span class="naga-orbit-node no-3">💧</span>
+                  <span class="naga-orbit-node no-4">✨</span>
+                  <span class="naga-orbit-node no-5">🪙</span>
+                  <span class="naga-orbit-node no-6">🌿</span>
+                </div>
+                <!-- S2-A: Inari Kitsune Foxfire Orbit -->
+                <div class="inari-dice-orbit hidden" id="inariDiceOrbit">
+                  <span class="inari-orbit-node io-1">🦊</span>
+                  <span class="inari-orbit-node io-2">🔥</span>
+                  <span class="inari-orbit-node io-3">🌸</span>
+                  <span class="inari-orbit-node io-4">⛩️</span>
+                  <span class="inari-orbit-node io-5">✨</span>
+                  <span class="inari-orbit-node io-6">🗡️</span>
+                </div>
+                <!-- S2-B: Celestial Eclipse Yin-Yang Orbit -->
+                <div class="eclipse-dice-orbit hidden" id="eclipseDiceOrbit">
+                  <span class="eclipse-orbit-node eo-1">☀️</span>
+                  <span class="eclipse-orbit-node eo-2">🌙</span>
+                  <span class="eclipse-orbit-node eo-3">✨</span>
+                  <span class="eclipse-orbit-node eo-4">⭐</span>
+                  <span class="eclipse-orbit-node eo-5">💫</span>
+                  <span class="eclipse-orbit-node eo-6">🪐</span>
+                </div>
+                <!-- S3-A: Starlight Djinn Magic Lamp Orbit -->
+                <div class="djinn-dice-orbit hidden" id="djinnDiceOrbit">
+                  <span class="djinn-orbit-node do-1">🪔</span>
+                  <span class="djinn-orbit-node do-2">✨</span>
+                  <span class="djinn-orbit-node do-3">💎</span>
+                  <span class="djinn-orbit-node do-4">🌪️</span>
+                  <span class="djinn-orbit-node do-5">🪙</span>
+                  <span class="djinn-orbit-node do-6">🧞</span>
+                </div>
+                <!-- S3-B: Immortal Phoenix Pyre Orbit -->
+                <div class="phoenix-dice-orbit hidden" id="phoenixDiceOrbit">
+                  <span class="phoenix-orbit-node po-1">🔥</span>
+                  <span class="phoenix-orbit-node po-2">🪶</span>
+                  <span class="phoenix-orbit-node po-3">☀️</span>
+                  <span class="phoenix-orbit-node po-4">✨</span>
+                  <span class="phoenix-orbit-node po-5">💥</span>
+                  <span class="phoenix-orbit-node po-6">🌟</span>
+                </div>
+                <!-- S5: Atlantis Bioluminescent Abyssal Orbit -->
+                <div class="abyss-dice-orbit hidden" id="abyssDiceOrbit">
+                  <span class="abyss-orbit-node abo-1">🔱</span>
+                  <span class="abyss-orbit-node abo-2">🪼</span>
+                  <span class="abyss-orbit-node abo-3">🦪</span>
+                  <span class="abyss-orbit-node abo-4">🌊</span>
+                  <span class="abyss-orbit-node abo-5">💎</span>
+                  <span class="abyss-orbit-node abo-6">🫧</span>
+                </div>
+                <div class="monopoly-dice-box" id="monopolyDiceBox" title="Tap to Roll Dice">
+                  <div class="dice-face" id="monopolyDiceFace">
+                    <div style="grid-column: 2; grid-row: 2;" class="dice-pip pip-center-red"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Ticker -->
+              <div class="monopoly-ticker" id="monopolyTicker">
+                Tap <strong>ROLL</strong> to begin your flight route!
+              </div>
+
+              <div class="monopoly-pause-banner hidden" id="monopolyPauseBanner"></div>
+            </div>
+          </div>
+          <!-- Player tokens (persistent, glide between tiles) -->
+          <div class="monopoly-token-layer" id="monopolyTokenLayer"></div>
+          <!-- Floating FX layer (coins, explosions) -->
+          <div class="monopoly-fx-layer" id="monopolyFxLayer"></div>
+        </div>
+
+        <!-- Bottom Thumb Dock: Dual Item Slots + Massive Roll + Ultimate -->
+        <div class="monopoly-dock" id="monopolyDock">
+          <div class="monopoly-item-dock" id="monopolyItemDock">
+            <button class="item-slot empty" id="monopolyItemSlot0" title="Item Slot 1">
+              <span class="item-slot-icon">＋</span>
+              <span class="item-slot-label">Empty</span>
+            </button>
+            <button class="item-slot empty" id="monopolyItemSlot1" title="Item Slot 2">
+              <span class="item-slot-icon">＋</span>
+              <span class="item-slot-label">Empty</span>
+            </button>
+          </div>
+          <button class="btn-roll-dice" id="btnRollDice">
+            <span class="roll-shimmer"></span>
+            <span class="roll-btn-text">ROLL DICE 🎲</span>
+          </button>
+          <button class="ult-dock-btn" id="monopolyUltBtn" title="Cast Mythic Signature Ultimate">
+            <div class="ult-dock-core"></div>
+            <span class="ult-dock-icon">⚡</span>
+            <span class="ult-dock-label" id="monopolyDockUltLabel">ULT 0%</span>
+            <div class="ult-dock-track">
+              <div class="ult-dock-bar" id="monopolyDockUltBar"></div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Abyssal Ocean Drift Navigator (S5 Mythic Tactical Choice) -->
+        <div class="abyss-drift-overlay hidden" id="abyssDriftOverlay"></div>
+
+        <!-- Decision Modals (Buy / Upgrade / Rent / Casino / Market / Arena / Items) -->
+        <div class="property-modal-overlay" id="propertyModalOverlay"></div>
+
+        <!-- Vibe Check Cards & Takeover Duels -->
+        <div class="balance-game-overlay" id="balanceGameOverlay"></div>
+
+        <!-- Big moments, coin flights & particles (above modals, below victory) -->
+        <div class="monopoly-moment-layer" id="monopolyMomentLayer"></div>
+
+        <!-- Victory Ceremony -->
+        <div class="victory-overlay" id="monopolyVictoryOverlay"></div>
+      </div>
+    </div>
+
+    <!-- Wardrobe / Fitting Room Modal -->
+    <div class="wardrobe-modal" id="wardrobeModal">
+      <div class="wardrobe-card">
+        <div class="wardrobe-header">
+          <div class="wardrobe-title">
+            <span>✨</span>
+            <span>Maple Fitting Room</span>
+          </div>
+          <button class="wardrobe-close-btn" id="closeWardrobeBtn" aria-label="Close Wardrobe">✕</button>
+        </div>
+        
+        <div class="wardrobe-preview-stage">
+          <div class="preview-avatar-box" id="previewAvatarBox"></div>
+        </div>
+
+        <div class="wardrobe-options" id="wardrobeOptions"></div>
+
+        <div class="wardrobe-footer">
+          <button class="wardrobe-save-btn" id="saveWardrobeBtn">Wear Outfit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cabin Scenery & Atmosphere Modal -->
+    <div class="scenery-modal" id="sceneryModal">
+      <div class="scenery-card">
+        <div class="scenery-header">
+          <div class="scenery-title">
+            <span>🌄</span>
+            <span>Flight Scenery & Atmosphere</span>
+          </div>
+          <button class="scenery-close-btn" id="closeSceneryBtn" aria-label="Close Scenery">✕</button>
+        </div>
+        
+        <p class="scenery-lead">Customize your cabin window view and ambient lighting. Any change is instantly synchronized for both passengers!</p>
+
+        <div class="scenery-grid" id="sceneryGrid"></div>
+
+        <div class="scenery-footer">
+          <button class="scenery-save-btn" id="saveSceneryBtn">Apply Scenery ✨</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Luxury Control Deck -->
+    <nav class="flight-controls" id="flightControls">
+      <!-- Microphone Toggle -->
+      <button class="control-btn" id="micBtn" title="Toggle Microphone" aria-label="Toggle Microphone">
+        <div class="btn-icon-wrapper">
+          <svg class="icon-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <svg class="icon-off hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </div>
+        <span class="btn-label" id="micLabel">Mute</span>
+      </button>
+
+      <!-- Camera Toggle (Defaults to Off) -->
+      <button class="control-btn active-off" id="cameraBtn" title="Toggle Camera" aria-label="Toggle Camera">
+        <div class="btn-icon-wrapper">
+          <svg class="icon-on hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 7l-7 5 7 5V7z"></path>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          <svg class="icon-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M21 21l-5-3.57V7l7-5v14l-2 1.43"></path>
+            <path d="M1 5a2 2 0 0 1 2-2h11"></path>
+            <path d="M16 16v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"></path>
+          </svg>
+        </div>
+        <span class="btn-label" id="cameraLabel">Camera Off</span>
+      </button>
+
+      <!-- Camera Flip (Front / Back) -->
+      <button class="control-btn" id="flipCameraBtn" title="Switch Camera" aria-label="Switch Camera">
+        <div class="btn-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 1.954.702 3.743 1.87 5.13L4 17h6v-6l-2.07 2.07C7.05 12.02 6.5 10.57 6.5 9c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5c0 1.57-.55 3.02-1.43 4.07l1.42 1.42C18.9 13.04 20 11.16 20 10z"></path>
+          </svg>
+        </div>
+        <span class="btn-label">Flip</span>
+      </button>
+
+      <!-- Call / Reconnect Action -->
+      <button class="control-btn call-action-btn" id="callActionBtn" title="Connect Flight" aria-label="Connect Flight">
+        <div class="btn-icon-wrapper">
+          <svg class="phone-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+        </div>
+        <span class="btn-label" id="callActionLabel">Connect</span>
+      </button>
+    </nav>
+
+    <!-- =========================================================
+         SKY DASH: 2.5D SKY RUNNER MODAL
+         ========================================================= -->
+    <div class="skydash-modal hidden" id="skydashModal">
+      <div class="skydash-container">
+        <!-- Header -->
+        <header class="skydash-header">
+          <div class="skydash-brand">
+            <span class="skydash-logo-badge">👟</span>
+            <div class="skydash-title-wrap">
+              <span class="skydash-title">NOOK RUNWAY</span>
+              <span class="skydash-subtitle">Sky Dash · Tales of Flight</span>
+            </div>
+          </div>
+          <div class="skydash-header-actions">
+            <button class="skydash-icon-btn" id="skydashCloseBtn" title="Close Runner">✕</button>
+          </div>
+        </header>
+
+        <!-- Canvas Viewport -->
+        <div class="skydash-canvas-wrapper">
+          <canvas id="skydashCanvas"></canvas>
+        </div>
+
+        <!-- In-Game Floating HUD -->
+        <div class="skydash-hud-layer" id="skydashHud">
+          <div class="skydash-hud-top">
+            <!-- Distance Progress Track -->
+            <div class="skydash-progress-row">
+              <span class="skydash-dist-text" id="skydashDistText">0m / 3,000m</span>
+              <div class="skydash-progress-track">
+                <div class="skydash-progress-fill" id="skydashProgressFill"></div>
+                <div class="skydash-runner-pin" id="skydashRunnerPin">✈️</div>
+              </div>
+            </div>
+
+            <!-- Stats Pill Row -->
+            <div class="skydash-metrics-row">
+              <div class="skydash-pill diamonds">💎 <span id="skydashDiamondsVal">0</span></div>
+              <div class="skydash-pill score">🏆 <span id="skydashScoreVal">0</span></div>
+              <div class="skydash-pill combo" id="skydashComboPill">🔥 <span id="skydashComboVal">×0</span></div>
+            </div>
+
+            <!-- Stamina & Fever Gauges -->
+            <div class="skydash-gauges-row">
+              <div class="skydash-gauge-container">
+                <span class="skydash-gauge-label">Stamina ⛽</span>
+                <div class="skydash-bar">
+                  <div class="skydash-bar-fill stamina" id="skydashStaminaFill" style="width: 100%;"></div>
+                </div>
+              </div>
+              <div class="skydash-gauge-container">
+                <span class="skydash-gauge-label">Fever 🌈</span>
+                <div class="skydash-bar">
+                  <div class="skydash-bar-fill fever" id="skydashFeverFill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ultimate Banner & Alert Flash -->
+          <div class="skydash-ult-banner" id="skydashUltBanner">✨ ULTIMATE RUSH! ✨</div>
+          <div class="skydash-alert-flash" id="skydashAlertFlash">⚡ LANDING DASH!</div>
+
+          <!-- 2-Thumb Touch Controls -->
+          <div class="skydash-controls-row">
+            <!-- Left: Jump Button -->
+            <button class="skydash-touch-btn jump-btn" id="skydashJumpBtn">
+              <span class="skydash-btn-icon">⬆️</span>
+              <span class="skydash-btn-label">Jump</span>
+            </button>
+
+            <!-- Center-Right: Item Slot -->
+            <div class="skydash-item-slot" id="skydashItemSlot" title="Tap to use item"></div>
+
+            <!-- Right: Slide & Dash Button -->
+            <button class="skydash-touch-btn slide-btn" id="skydashSlideBtn">
+              <span class="skydash-btn-icon">⬇️</span>
+              <span class="skydash-btn-label">Slide</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pre-Race Lobby Overlay Card -->
+        <div class="skydash-lobby-overlay" id="skydashLobbyOverlay">
+          <div class="skydash-lobby-card">
+            <div class="skydash-lobby-banner">
+              <img src="assets/ui/banner_skydash.jpg" alt="Sky Dash Banner">
+              <div class="skydash-lobby-banner-overlay">
+                <span class="skydash-banner-badge">SEASON RUNWAY CIRCUIT</span>
+                <h2 class="skydash-banner-title">Tokyo Sakura Skyway 🌸</h2>
+              </div>
+            </div>
+
+            <div class="skydash-lobby-content">
+              <!-- Equipped Loadout -->
+              <div class="skydash-loadout-strip">
+                <div class="skydash-loadout-item">
+                  <div class="skydash-loadout-avatar-box">
+                    <img src="assets/s2/s2_inari_f.png" id="skydashLobbyAvatarImg" alt="Costume">
+                  </div>
+                  <div class="skydash-loadout-info">
+                    <span class="skydash-loadout-tag">Costume</span>
+                    <span class="skydash-loadout-name" id="skydashLobbyCostumeName">Inari Empress ⛩️</span>
+                    <span class="skydash-loadout-perk" id="skydashLobbyCostumePerk">Foxfire Rush</span>
+                  </div>
+                </div>
+
+                <div class="skydash-loadout-item">
+                  <div class="skydash-loadout-avatar-box">
+                    <img src="assets/cats/c_mochi.png" id="skydashLobbyCatImg" alt="Companion">
+                  </div>
+                  <div class="skydash-loadout-info">
+                    <span class="skydash-loadout-tag">Companion</span>
+                    <span class="skydash-loadout-name" id="skydashLobbyCatName">Mochi 🐣</span>
+                    <span class="skydash-loadout-perk" id="skydashLobbyCatPerk">Stamina Fish 🐟</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mode Selector -->
+              <div class="skydash-mode-selector">
+                <button class="skydash-mode-tab active" id="skydashMode_solo">Solo Sprint 🏃</button>
+                <button class="skydash-mode-tab" id="skydashMode_duo">Duo Relay 💞</button>
+                <button class="skydash-mode-tab" id="skydashMode_boss">Boss Escape 🐙</button>
+              </div>
+
+              <!-- Launch Button -->
+              <button class="skydash-launch-btn" id="skydashLaunchBtn">
+                <span>🛫</span> Launch Flight!
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Post-Race Summary & Podium -->
+        <div class="skydash-summary-overlay" id="skydashSummaryOverlay">
+          <div class="skydash-summary-card">
+            <div class="skydash-summary-trophy">🏆</div>
+            <h2 class="skydash-summary-title">Flight Completed!</h2>
+            <p class="skydash-summary-subtitle">Spectacular runway landing at Cloud Station.</p>
+
+            <div class="skydash-summary-stats-grid">
+              <div class="skydash-stat-box">
+                <span class="skydash-stat-val" id="skydashSumDist">3,000m</span>
+                <span class="skydash-stat-lbl">Distance</span>
+              </div>
+              <div class="skydash-stat-box">
+                <span class="skydash-stat-val" id="skydashSumScore">245,000</span>
+                <span class="skydash-stat-lbl">Final Score</span>
+              </div>
+              <div class="skydash-stat-box">
+                <span class="skydash-stat-val" id="skydashSumDiamonds">+42 💎</span>
+                <span class="skydash-stat-lbl">Diamonds</span>
+              </div>
+              <div class="skydash-stat-box">
+                <span class="skydash-stat-val" id="skydashSumCombo">×48</span>
+                <span class="skydash-stat-lbl">Max Combo</span>
+              </div>
+            </div>
+
+            <div class="skydash-summary-actions">
+              <button class="skydash-summary-btn rematch" id="skydashRematchBtn">Fly Again ✈️</button>
+              <button class="skydash-summary-btn close" id="skydashSummaryCloseBtn">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor Game Engines (Hardware-Accelerated 120Hz Sprites, Spring Physics & Particles) -->
+  <script src="vendor/pixi.min.js"></script>
+  <script src="vendor/gsap.min.js"></script>
+
+  <script src="telemetry.js?v=20261009a"></script>
+  <script src="costumes.js?v=20261009p"></script>
+  <script src="rewards.js?v=20261009a"></script>
+  <script src="avatar.js?v=20261009e"></script>
+  <script src="vault.js?v=20261009d"></script>
+  <script src="daily.js?v=20261009a"></script>
+  <script src="cats.js?v=20261009a"></script>
+  <script src="catlounge.js?v=20261009b"></script>
+  <script src="monopoly_cards.js?v=20261009a"></script>
+  <script src="monopoly_rules.js?v=20261009a"></script>
+  <script src="monopoly_bot.js?v=20261009m"></script>
+  <script src="monopoly_fx.js?v=20261009v"></script>
+  <script src="monopoly.js?v=20261009aa"></script>
+  <script src="skydash_audio.js?v=20261009a"></script>
+  <script src="skydash.js?v=20261009e"></script>
+  <script src="app.js?v=20261009a"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Server runtime logs & telemetry
+logs/
+*.log
+
+# Dynamic local tunnels & test runtime data
+active_tunnel.txt
+data/monopoly_state.json
+data/monopoly_played_cards.json
+
+# Scratch & backup directories
+scratch/
+backup/
+data_backups/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
