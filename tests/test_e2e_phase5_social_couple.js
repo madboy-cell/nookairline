@@ -148,6 +148,19 @@ async function itAsync(desc, fn) {
     querySelectorAll() {
       return [];
     }
+
+    querySelector(sel) {
+      if (sel === '.hdr-right') return getOrMock('flightHeaderRight');
+      return null;
+    }
+
+    appendChild(child) {
+      return child;
+    }
+
+    insertBefore(child, ref) {
+      return child;
+    }
   }
 
   function getOrMock(id) {
@@ -157,6 +170,7 @@ async function itAsync(desc, fn) {
 
   const mockDocument = {
     getElementById: (id) => getOrMock(id),
+    createElement: (tag) => new MockElement(`mock_${tag}_${Date.now()}`),
     readyState: 'complete',
     addEventListener: () => {}
   };

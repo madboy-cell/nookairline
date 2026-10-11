@@ -19,11 +19,62 @@
       if (this.initialized) return;
       this.initialized = true;
 
+      this.mountHudElements();
       this._bindElements();
       this._bindEvents();
       this.render();
 
       console.log('[SkySocialUI] Initialized successfully.');
+    }
+
+    mountHudElements() {
+      const header = $('flightHeader');
+      if (!header) return;
+      let group = (typeof header.querySelector === 'function') ? header.querySelector('.hdr-right') : $('flightHeaderRight');
+      if (!group) {
+        if (typeof document.createElement === 'function') {
+          group = document.createElement('div');
+          group.className = 'hdr-right';
+          group.id = 'flightHeaderRight';
+          if (header.appendChild) header.appendChild(group);
+        } else {
+          return;
+        }
+      }
+
+      if (!$('hudBaseSwitchBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'hudBaseSwitchBtn';
+        btn.className = 'hud-base-btn';
+        btn.type = 'button';
+        btn.title = 'Switch Character Base: Wolf Boy / Dragon Girl';
+        btn.innerHTML = '<span id="hudBaseIcon">🐺</span> <b id="hudBaseText">Boy</b>';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cur = window.SkySupabase ? window.SkySupabase.getCharacterBase() : 'bkk';
+          this.switchBase(cur === 'bkk' ? 'dxb' : 'bkk');
+        });
+        group.insertBefore(btn, group.firstChild);
+      }
+
+      if (!$('hudCoupleBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'hudCoupleBtn';
+        btn.className = 'hud-couple-btn';
+        btn.type = 'button';
+        btn.title = 'Couple Sanctuary & Flight Social';
+        btn.innerHTML = '<span>💞</span> <b id="hudCoupleText">Couple</b><span class="hud-badge-dot"></span>';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleDrawer();
+        });
+        const baseBtn = $('hudBaseSwitchBtn');
+        if (baseBtn && baseBtn.nextSibling) {
+          group.insertBefore(btn, baseBtn.nextSibling);
+        } else {
+          group.appendChild(btn);
+        }
+      }
     }
 
     _bindElements() {
@@ -87,6 +138,15 @@
       }
       if (this.backdrop) {
         this.backdrop.addEventListener('click', () => this.closeDrawer());
+      }
+
+      // Bottom Action Deck Couple Button
+      const coupleDeckBtn = $('openCoupleDeckBtn');
+      if (coupleDeckBtn) {
+        coupleDeckBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openDrawer('couple');
+        });
       }
 
       // Base Switcher Buttons
@@ -263,6 +323,26 @@
       if (this.baseBtnDxb) this.baseBtnDxb.classList.toggle('active', !isBoy);
       if (this.wardrobeBaseBtnBkk) this.wardrobeBaseBtnBkk.classList.toggle('active', isBoy);
       if (this.wardrobeBaseBtnDxb) this.wardrobeBaseBtnDxb.classList.toggle('active', !isBoy);
+
+      this.mountHudElements();
+      const hudBaseIcon = $('hudBaseIcon');
+      const hudBaseText = $('hudBaseText');
+      const hudBaseBtn = $('hudBaseSwitchBtn');
+      if (hudBaseIcon) hudBaseIcon.textContent = isBoy ? '🐺' : '🐉';
+      if (hudBaseText) hudBaseText.textContent = isBoy ? 'Boy' : 'Girl';
+      if (hudBaseBtn) {
+        hudBaseBtn.classList.toggle('dxb', !isBoy);
+        hudBaseBtn.title = `Active Base: ${isBoy ? 'Wolf Boy' : 'Dragon Girl'} (Tap to switch)`;
+      }
+
+      const hudCoupleText = $('hudCoupleText');
+      if (hudCoupleText) {
+        if (couple && couple.isCouple && couple.partner) {
+          hudCoupleText.textContent = couple.partner.username || 'Partner 💞';
+        } else {
+          hudCoupleText.textContent = 'Couple 💞';
+        }
+      }
 
       // 2. Couple Sanctuary
       if (couple && couple.isCouple) {

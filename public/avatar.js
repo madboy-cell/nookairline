@@ -1702,3 +1702,26 @@ window.equipAvatarCharacter = function (characterId, broadcast = true) {
   }
   return true;
 };
+
+// Phase 5: Global Character Base Switcher Bridge
+if (typeof window !== 'undefined') {
+  window.addEventListener('sky:character_base_changed', (e) => {
+    const base = e.detail && e.detail.characterBase;
+    if (!base) return;
+    const targetId = base === 'dxb' ? 'got_queen' : 'bkk_guy';
+    window.equipAvatarCharacter(targetId, true);
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+        const base = window.SkySupabase.getCharacterBase();
+        if (base === 'dxb' && myAvatar.characterId === 'bkk_guy') {
+          window.equipAvatarCharacter('got_queen', false);
+        } else if (base === 'bkk' && myAvatar.characterId === 'got_queen') {
+          window.equipAvatarCharacter('bkk_guy', false);
+        }
+      }
+    }, 100);
+  });
+}
