@@ -607,6 +607,16 @@
 
     async updateProfile(updates) {
       if (!this.currentUser) return null;
+
+      // 🔥 ZERO REGRESSION INVENTORY SHIELD
+      // Existing inventory must NEVER be shrunk or wiped by any sync!
+      if (updates.inventory && Array.isArray(updates.inventory)) {
+        const existingInv = Array.isArray(this.currentUser.inventory) ? this.currentUser.inventory : [];
+        updates.inventory = Array.from(new Set([...existingInv, ...updates.inventory]));
+      } else if (updates.inventory === null || updates.inventory === undefined) {
+        delete updates.inventory;
+      }
+
       Object.assign(this.currentUser, updates, { updated_at: new Date().toISOString() });
       if (this.isLiveClient && !this.currentUser.isGuest) {
         try {

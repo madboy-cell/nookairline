@@ -1,16 +1,30 @@
 {
   "bkk": {
     "diamonds": 15000,
-    "stardust": 0,
+    "stardust": 640,
     "tickets": 0,
     "fish": 0,
-    "owned": {},
-    "equipped": null,
+    "owned": {
+      "s11_hoplite_m": 1,
+      "s11_oracle_m": 1,
+      "s11_bacchus_m": 1,
+      "s11_gladiator_m": 1,
+      "s11_pegasus_m": 1,
+      "s11_forge_m": 1,
+      "s11_hades_m": 1,
+      "s11_zeus_m": 1
+    },
+    "equipped": "s11_zeus_m",
     "pity": {
       "epic": 0,
       "mythic": 0
     },
-    "pityByBanner": {},
+    "pityByBanner": {
+      "s11": {
+        "epic": 0,
+        "mythic": 0
+      }
+    },
     "stats": {
       "wins": 0,
       "losses": 0,
@@ -54,17 +68,34 @@
     }
   },
   "dxb": {
-    "diamonds": 15000,
-    "stardust": 0,
+    "diamonds": 16690,
+    "stardust": 90,
     "tickets": 0,
     "fish": 0,
-    "owned": {},
-    "equipped": null,
-    "pity": {
-      "epic": 0,
-      "mythic": 0
+    "owned": {
+      "s11_bacchus_f": 1,
+      "s11_gladiator_f": 1,
+      "s11_hoplite_f": 1,
+      "s10_phantom_f": 1,
+      "s10_gondolier_f": 1,
+      "s10_bauta_f": 1,
+      "s11_oracle_f": 1
     },
-    "pityByBanner": {},
+    "equipped": "s10_phantom_f",
+    "pity": {
+      "epic": 3,
+      "mythic": 3
+    },
+    "pityByBanner": {
+      "s10": {
+        "epic": 0,
+        "mythic": 0
+      },
+      "s11": {
+        "epic": 3,
+        "mythic": 3
+      }
+    },
     "stats": {
       "wins": 0,
       "losses": 0,
