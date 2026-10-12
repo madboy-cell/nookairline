@@ -542,8 +542,19 @@ function broadcastVault(extra = {}) {
   sendTo(dxbSocket, msg);
 }
 
+function broadcastToActivePassengers(msg, excludeWs = null) {
+  if (typeof wss !== 'undefined' && wss.clients) {
+    const payload = JSON.stringify(msg);
+    wss.clients.forEach((client) => {
+      if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
+        try { client.send(payload); } catch (e) {}
+      }
+    });
+  }
+}
+
 function handleVaultMessage(ws, message) {
-  const role = ws.terminal;
+  const role = ws.terminal || (message.role === 'dxb' ? 'dxb' : 'bkk');
   if (role !== 'bkk' && role !== 'dxb') return;
   const partner = role === 'bkk' ? dxbSocket : bkkSocket;
   if (message.type.startsWith('vault_cat_')) {
@@ -566,10 +577,33 @@ function handleVaultMessage(ws, message) {
       const season = String(message.season || 's3').slice(0, 16);
       const out = vaultPull(role, count, season, useTicket);
       if (out.error) { sendTo(ws, { type: 'vault_error', error: out.error, reqId: message.reqId }); break; }
+      
+      // 1. Immediately send pull result to pulling player to begin client-side summon sequence
       sendTo(ws, { type: 'vault_pull_result', role, results: out.results, reqId: message.reqId, profiles: publicProfiles(), season, usedTicket: useTicket });
+      
       const best = out.results.reduce((a, b) => (Costumes.RARITY[b.rarity].rank > Costumes.RARITY[a.rarity].rank ? b : a));
-      sendTo(partner, { type: 'vault_event', kind: 'pull', role, count, best, profiles: publicProfiles(), season });
-      console.log(`[Vault] ${role.toUpperCase()} pulled x${count} (${season})${useTicket ? ' [🎟️ TICKET]' : ''}: ${out.results.map((r) => r.rarity[0].toUpperCase()).join('')}`);
+      const pullerName = (message.username && String(message.username).trim()) ||
+                         (ws.userName && String(ws.userName).trim()) ||
+                         (role === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+
+      // 2. Synchronized reaction delay: wait for the puller's card reveal animation before broadcasting to active passengers
+      const delayMs = best.rarity === 'mythic' ? 5300 : (best.rarity === 'epic' ? 3900 : 2900);
+      setTimeout(() => {
+        const broadcastMsg = {
+          type: 'vault_event',
+          kind: 'pull',
+          role,
+          username: pullerName,
+          count,
+          best,
+          profiles: publicProfiles(),
+          season
+        };
+        // Broadcast to ALL active online passengers across the server
+        broadcastToActivePassengers(broadcastMsg, ws);
+      }, delayMs);
+
+      console.log(`[Vault] ${pullerName} (${role.toUpperCase()}) pulled x${count} (${season})${useTicket ? ' [🎟️ TICKET]' : ''}: ${out.results.map((r) => r.rarity[0].toUpperCase()).join('')} (sync broadcast in ${delayMs}ms)`);
       daily.track(role, 'pull', 1);
       break;
     }
@@ -577,7 +611,26 @@ function handleVaultMessage(ws, message) {
       const out = vaultExchange(role, message.costumeId);
       if (out.error) { sendTo(ws, { type: 'vault_error', error: out.error, reqId: message.reqId }); break; }
       sendTo(ws, { type: 'vault_pull_result', role, results: out.results, reqId: message.reqId, profiles: publicProfiles(), exchanged: true });
-      sendTo(partner, { type: 'vault_profiles', profiles: publicProfiles() });
+      
+      const best = out.results && out.results[0];
+      if (best) {
+        const pullerName = (message.username && String(message.username).trim()) ||
+                           (ws.userName && String(ws.userName).trim()) ||
+                           (role === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+        const delayMs = best.rarity === 'mythic' ? 5300 : (best.rarity === 'epic' ? 3900 : 2900);
+        setTimeout(() => {
+          broadcastToActivePassengers({
+            type: 'vault_event',
+            kind: 'pull',
+            role,
+            username: pullerName,
+            count: 1,
+            best,
+            profiles: publicProfiles(),
+            exchanged: true
+          }, ws);
+        }, delayMs);
+      }
       break;
     }
     case 'vault_equip': {
@@ -1285,9 +1338,12 @@ staleRoomSweeper.unref();
 wss.on('connection', (ws, req) => {
   const parsedUrl = url.parse(req.url, true);
   const terminal = (parsedUrl.query.terminal || '').toLowerCase();
+  const usernameParam = parsedUrl.query.username;
+  if (usernameParam) ws.userName = decodeURIComponent(usernameParam).slice(0, 32);
 
-  console.log(`[Signaling] Terminal connection request: "${terminal}"`);
+  console.log(`[Signaling] Terminal connection request: "${terminal}"${ws.userName ? ` (${ws.userName})` : ''}`);
   serverEvent('ws_connect', terminal, {
+    username: ws.userName || null,
     ip: req.headers['cf-connecting-ip'] || req.socket.remoteAddress,
     country: req.headers['cf-ipcountry'] || null,
     userAgent: req.headers['user-agent'] || null
@@ -1395,6 +1451,32 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data.toString());
+
+      if (message.type === 'identify') {
+        if (message.username) ws.userName = String(message.username).slice(0, 32);
+        if (message.terminal && (message.terminal === 'bkk' || message.terminal === 'dxb')) {
+          if (ws.terminal !== message.terminal) {
+            const oldRole = ws.terminal;
+            if (message.terminal === 'bkk') {
+              if (bkkSocket && bkkSocket !== ws) {
+                try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+              }
+              bkkSocket = ws;
+              if (dxbSocket === ws) dxbSocket = null;
+              ws.terminal = 'bkk';
+            } else if (message.terminal === 'dxb') {
+              if (dxbSocket && dxbSocket !== ws) {
+                try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+              }
+              dxbSocket = ws;
+              if (bkkSocket === ws) bkkSocket = null;
+              ws.terminal = 'dxb';
+            }
+            console.log(`[Signaling] Passenger seat reassigned from ${oldRole ? oldRole.toUpperCase() : 'NONE'} to [${ws.terminal.toUpperCase()}] for ${ws.userName || 'Passenger'}`);
+          }
+        }
+        return;
+      }
 
       // 🛫 Sky Party: Flight Rooms & Departure Board
       if (message.type && message.type.startsWith('room_')) {

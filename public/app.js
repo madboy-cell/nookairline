@@ -382,13 +382,20 @@ window.myTerminal = myTerminal;
 function initSignaling() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const terminal = getTerminal();
-  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}`;
+  const uname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
+  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}${uname ? `&username=${encodeURIComponent(uname)}` : ''}`;
 
   console.log(`[Signaling] Connecting to ${wsUrl}`);
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
     console.log('[Signaling] Connected to flight dispatch.');
+    const currentUname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
+    if (currentUname) {
+      try {
+        ws.send(JSON.stringify({ type: 'identify', terminal, username: currentUname }));
+      } catch (e) {}
+    }
     tlog('ws_open', { callActive: isCallActive });
     updateBadge('Connected to Flight Network', false);
     if (typeof window.onWebSocketReconnect === 'function') {
@@ -657,11 +664,45 @@ if (typeof window !== 'undefined') {
   });
 
   window.addEventListener('sky:character_base_changed', (e) => {
-    if (e.detail && e.detail.base) {
-      myTerminal = e.detail.base;
+    const base = (e.detail && (e.detail.base || e.detail.characterBase)) || null;
+    if (base) {
+      const oldTerminal = myTerminal;
+      myTerminal = base;
       window.myTerminal = myTerminal;
       const seatTag = document.getElementById('seatTag');
       if (seatTag) seatTag.textContent = `SEAT ${myTerminal.toUpperCase()}`;
+
+      const currentUname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'identify', terminal: myTerminal, username: currentUname }));
+        } catch (err) {}
+      }
+      if (oldTerminal !== myTerminal && ws) {
+        console.log(`[Signaling] Re-syncing socket connection for new seat: ${myTerminal}`);
+        try { ws.close(); } catch (err) {}
+      }
+    }
+  });
+
+  window.addEventListener('sky:onboarding_completed', (e) => {
+    const user = e.detail && e.detail.user;
+    if (user) {
+      if (user.character_base) {
+        myTerminal = user.character_base;
+        window.myTerminal = myTerminal;
+        const seatTag = document.getElementById('seatTag');
+        if (seatTag) seatTag.textContent = `SEAT ${myTerminal.toUpperCase()}`;
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({
+            type: 'identify',
+            terminal: myTerminal,
+            username: user.username || ''
+          }));
+        } catch (err) {}
+      }
     }
   });
 }

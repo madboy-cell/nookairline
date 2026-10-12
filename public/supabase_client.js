@@ -20,7 +20,8 @@
     COUPLES: 'sky_party_couples_store',
     FRIENDS: 'sky_party_friends_store',
     PRESENCE: 'sky_party_presence_state',
-    ONBOARDING: 'sky_party_onboarding_done'
+    ONBOARDING: 'sky_party_onboarding_done',
+    RESET_EPOCH: 'sky_party_reset_epoch'
   };
 
   function safeDispatch(type, detail) {
@@ -162,6 +163,21 @@
      * Initializes SDK. Checks for live Supabase credentials or falls back to Guest/Local mode.
      */
     async init(customConfig = null) {
+      // Clean slate check: if client has old storage epoch, purge stale local records
+      try {
+        const CURRENT_EPOCH = '2026_10_12_clean_slate';
+        const savedEpoch = localStorage.getItem(STORAGE_KEYS.RESET_EPOCH);
+        if (savedEpoch !== CURRENT_EPOCH) {
+          localStorage.removeItem(STORAGE_KEYS.PROFILE);
+          localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+          localStorage.removeItem(STORAGE_KEYS.COUPLES);
+          localStorage.removeItem(STORAGE_KEYS.FRIENDS);
+          localStorage.removeItem('sky_active_persona');
+          localStorage.setItem(STORAGE_KEYS.RESET_EPOCH, CURRENT_EPOCH);
+          console.log('[SkySupabase] Clean slate applied: local storage reset to epoch', CURRENT_EPOCH);
+        }
+      } catch (e) {}
+
       let cfg = customConfig;
       if (!cfg) {
         try {
@@ -247,10 +263,17 @@
               isGuest: false
             };
           } else {
+            const fallbackName = user.user_metadata?.full_name || 
+                                 user.user_metadata?.name || 
+                                 `Captain_${user.id.slice(0, 4).toUpperCase()}`;
+            const personaChoice = extraMeta.character_base || 
+                                  user.user_metadata?.character_base || 
+                                  (typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null) || 
+                                  'bkk';
             const initial = {
               id: user.id,
-              username: extraMeta.username || user.user_metadata?.username || `Captain_${user.id.slice(0, 4).toUpperCase()}`,
-              character_base: extraMeta.character_base || user.user_metadata?.character_base || 'bkk',
+              username: extraMeta.username || user.user_metadata?.username || fallbackName,
+              character_base: (personaChoice === 'dxb' ? 'dxb' : 'bkk'),
               equipped_costume: 'pilot',
               diamonds: 5000,
               stardust: 0,
@@ -487,12 +510,12 @@
         } catch (e) {
           console.error('[SkySupabase] Live update exception:', e);
         }
-      } else {
-        this.localProvider.saveProfile(this.currentUser);
       }
+      this.localProvider.saveProfile(this.currentUser);
 
       // Broadcast event so UI (Wardrobe, HUD, Lobby) automatically re-renders
       safeDispatch('sky:character_base_changed', {
+        base,
         characterBase: base,
         user: this.currentUser
       });
@@ -539,10 +562,14 @@
       if (!this.currentUser) return null;
       Object.assign(this.currentUser, updates, { updated_at: new Date().toISOString() });
       if (this.isLiveClient && !this.currentUser.isGuest) {
-        await this.client.from('profiles').update(updates).eq('id', this.currentUser.id);
-      } else {
-        this.localProvider.saveProfile(this.currentUser);
+        try {
+          await this.client.from('profiles').update(updates).eq('id', this.currentUser.id);
+        } catch (e) {
+          console.warn('[SkySupabase] Update profile live notice:', e);
+        }
       }
+      this.localProvider.saveProfile(this.currentUser);
+      this._broadcastCurrentPresence();
       return this.currentUser;
     }
 
@@ -580,6 +607,7 @@
         localStorage.setItem(STORAGE_KEYS.ONBOARDING, 'true');
       } catch (e) {}
       safeDispatch('sky:onboarding_completed', { user: this.currentUser });
+      this._broadcastCurrentPresence();
       return this.currentUser;
     }
 

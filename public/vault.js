@@ -1541,7 +1541,9 @@
     }, 9000);
     Sound.tap();
     openPullFx();
-    send({ type: 'vault_pull', count, reqId, season });
+    const pullerName = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) ||
+                       (myRole() === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+    send({ type: 'vault_pull', count, reqId, season, username: pullerName });
   }
 
   function pullTicket() {
@@ -1562,7 +1564,9 @@
     }, 9000);
     Sound.tap();
     openPullFx();
-    send({ type: 'vault_pull', count: 1, reqId, season, useTicket: true });
+    const pullerName = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) ||
+                       (myRole() === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+    send({ type: 'vault_pull', count: 1, reqId, season, useTicket: true, username: pullerName });
   }
 
   function exchange(id) {
@@ -1576,7 +1580,9 @@
     const reqId = `x${++S.reqSeq}_${Date.now()}`;
     S.pending = { reqId, count: 1 };
     openPullFx();
-    send({ type: 'vault_exchange', costumeId: id, reqId });
+    const pullerName = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) ||
+                       (myRole() === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+    send({ type: 'vault_exchange', costumeId: id, reqId, username: pullerName });
   }
 
   // ---------------------------------------------------------------------------
@@ -1865,8 +1871,9 @@
   }
 
   function partnerToast(msg) {
+    if (msg.role === myRole()) return; // Don't show toast to the summoner on their own screen
     if (msg.kind === 'bot_hard_win') {
-      const who = msg.role === 'dxb' ? 'DXB' : 'BKK';
+      const who = msg.username || (msg.role === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
       toast(`<div><b>😼 ${who} defeated Hard Captain Whiskers!</b><span>+${fmt(msg.payout)} 💎 banked${msg.streak > 1 ? ` · ${msg.streak}x Streak! 🔥` : ''}</span></div>`, 't-mythic', 5000);
       return;
     }
@@ -1874,12 +1881,22 @@
     const c = C.BY_ID[msg.best.id];
     if (!c) return;
     const r = msg.best.rarity;
-    const who = msg.role === 'dxb' ? 'DXB' : 'BKK';
-    const hype = r === 'mythic' ? '🌟 WOW' : r === 'epic' ? '💜' : '💎';
+    const who = msg.username || (msg.role === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
+    const hype = r === 'mythic' ? '🌟 MYTHIC DROP!' : r === 'epic' ? '💜 EPIC SUMMON!' : '💎 LUCKY DRAW';
+    
+    // Server-wide celebratory audio & particle FX for rare reveals
+    if (r === 'mythic') {
+      try { Sound.mythic(); } catch (e) {}
+      try { diamondRain(60); } catch (e) {}
+    } else if (r === 'epic') {
+      try { Sound.epic(); } catch (e) {}
+      try { diamondRain(25); } catch (e) {}
+    }
+
     toast(`
       <img class="vt-art" src="${thumbOf(c.sprite)}" alt="">
-      <div><b>${hype} ${who} pulled ×${msg.count}</b><span>Best: <em class="t-${r}">${label(r)}</em> · ${c.name}</span></div>`,
-      `t-${r} with-art`, r === 'mythic' ? 6000 : 4200);
+      <div><b>${hype}</b><span><b>${who}</b> pulled ×${msg.count || 1} · Best: <em class="t-${r}">${label(r)}</em> · ${c.name}</span></div>`,
+      `t-${r} with-art`, r === 'mythic' ? 7000 : (r === 'epic' ? 5200 : 4200));
   }
 
   function onAward(award) {
