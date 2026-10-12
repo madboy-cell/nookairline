@@ -1,4 +1,10 @@
 {
+  "main": {
+    "id": "main",
+    "name": "Sky Classic: Grand All-Stars",
+    "startsAt": 0,
+    "endsAt": null
+  },
   "s1": {
     "id": "s1",
     "name": "Bangkok After Dark",

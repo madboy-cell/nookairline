@@ -1230,6 +1230,36 @@
   border-color: rgba(253, 224, 71, 0.45);
   box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3), 0 0 30px rgba(236, 72, 153, 0.2);
 }
+.vg-banner.season-main {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 20px 60px rgba(56, 189, 248, 0.3), 0 0 35px rgba(129, 140, 248, 0.25);
+}
+.vg-ribbon-badge.main-badge {
+  background: linear-gradient(135deg, #0284c7, #6366f1);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.6);
+}
+.vg-ribbon-chip.is-main-banner {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+.vg-ribbon-chip.is-main-banner.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.26), rgba(99, 102, 241, 0.32));
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.vg-ribbon-timer.perm {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.vg-banner-timer.permanent-timer {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(52, 211, 153, 0.5);
+  color: #a7f3d0;
+}
+.vg-timer-dot.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
 .vg-sky { position: absolute; inset: 0; z-index: -1; background: #0b0620; }
 .vg-art {
   position: absolute; inset: 0;

@@ -168,6 +168,15 @@
   };
 
   const SEASONS = {
+    main: {
+      id: 'main',
+      name: 'Sky Classic: Grand All-Stars',
+      tagline: 'Permanent collection of all legendary realms & future destinies ✈️✨💎',
+      icon: '⭐',
+      banner: 'assets/ui/banner_main.jpg',
+      isMain: true,
+      endsAt: null
+    },
     s1: {
       id: 's1',
       name: 'Bangkok After Dark',
@@ -835,7 +844,10 @@
 
   const BY_ID = Object.fromEntries(COSTUMES.map((c) => [c.id, c]));
 
-  function poolFor(role, season = 's1') {
+  function poolFor(role, season = 'main') {
+    if (season === 'main' || season === 'standard' || season === 'all') {
+      return COSTUMES.filter((c) => c.role === role);
+    }
     return COSTUMES.filter((c) => c.role === role && c.season === season);
   }
 

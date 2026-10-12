@@ -146,6 +146,7 @@ function makeProfile() {
     owned: {},            // costumeId -> copies
     equipped: null,       // last equipped costume/character id (classic or season)
     pity: { epic: 0, mythic: 0 },
+    pityByBanner: {},     // bannerId -> { epic: 0, mythic: 0 } (isolated per-banner pity)
     stats: { wins: 0, losses: 0, pulls: 0, earned: 0, gifted: 0, received: 0 },
     botStats: { played: 0, wins: 0, hardStreak: 0, hardLossStreak: 0, net: 0 },
     lastDaily: '',
@@ -160,6 +161,9 @@ try {
     const parsed = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
     ['bkk', 'dxb'].forEach((r) => {
       vault[r] = { ...makeProfile(), ...(parsed[r] || {}) };
+      if (!vault[r].pityByBanner || typeof vault[r].pityByBanner !== 'object') {
+        vault[r].pityByBanner = {};
+      }
       if (!Array.isArray(vault[r].envelopes)) vault[r].envelopes = [];
       if (!Array.isArray(vault[r].envelopesSent)) vault[r].envelopesSent = [];
     });
@@ -197,6 +201,15 @@ function loadBannerSchedules() {
   }
   const now = Date.now();
   let changed = false;
+  if (!bannerSchedules.main) {
+    bannerSchedules.main = {
+      id: 'main',
+      name: 'Sky Classic: Grand All-Stars',
+      startsAt: 0,
+      endsAt: null
+    };
+    changed = true;
+  }
   if (!bannerSchedules.s1 || !bannerSchedules.s1.endsAt) {
     bannerSchedules.s1 = {
       id: 's1',
@@ -317,27 +330,44 @@ const monoBot = createMonoBot({
   daily
 });
 
-function rollRarity(p) {
-  p.pity.epic += 1;
-  p.pity.mythic += 1;
+function getBannerPity(p, season = 'main') {
+  if (!p.pityByBanner || typeof p.pityByBanner !== 'object') {
+    p.pityByBanner = {};
+  }
+  const sKey = String(season || 'main');
+  if (!p.pityByBanner[sKey]) {
+    p.pityByBanner[sKey] = { epic: 0, mythic: 0 };
+  }
+  return p.pityByBanner[sKey];
+}
+
+function rollRarity(p, season = 'main') {
+  const pity = getBannerPity(p, season);
+  pity.epic = (pity.epic || 0) + 1;
+  pity.mythic = (pity.mythic || 0) + 1;
   let mythicChance = ECON.RATES.mythic;
-  if (p.pity.mythic > ECON.MYTHIC_SOFT_PITY) mythicChance += (p.pity.mythic - ECON.MYTHIC_SOFT_PITY) * ECON.MYTHIC_SOFT_STEP;
-  if (p.pity.mythic >= ECON.MYTHIC_HARD_PITY || Math.random() < mythicChance) {
-    p.pity.mythic = 0;
-    p.pity.epic = 0;
+  if (pity.mythic > ECON.MYTHIC_SOFT_PITY) {
+    mythicChance += (pity.mythic - ECON.MYTHIC_SOFT_PITY) * ECON.MYTHIC_SOFT_STEP;
+  }
+  if (pity.mythic >= ECON.MYTHIC_HARD_PITY || Math.random() < mythicChance) {
+    pity.mythic = 0;
+    pity.epic = 0;
+    p.pity = { ...pity };
     return 'mythic';
   }
-  if (p.pity.epic >= ECON.EPIC_PITY || Math.random() < ECON.RATES.epic / (1 - ECON.RATES.mythic)) {
-    p.pity.epic = 0;
+  if (pity.epic >= ECON.EPIC_PITY || Math.random() < ECON.RATES.epic / (1 - ECON.RATES.mythic)) {
+    pity.epic = 0;
+    p.pity = { ...pity };
     return 'epic';
   }
+  p.pity = { ...pity };
   return 'rare';
 }
 
-function vaultPull(role, count, season = 's1', useTicket = false) {
+function vaultPull(role, count, season = 'main', useTicket = false) {
   loadBannerSchedules();
   const sched = bannerSchedules[season];
-  if (sched && sched.endsAt && Date.now() > sched.endsAt) {
+  if (season !== 'main' && sched && sched.endsAt && Date.now() > sched.endsAt) {
     return { error: `Season ${sched.name || season} banner has ended!` };
   }
   const p = vault[role];
@@ -362,7 +392,7 @@ function vaultPull(role, count, season = 's1', useTicket = false) {
   if (!pool || pool.length === 0) return { error: 'Invalid season pool' };
   const results = [];
   for (let i = 0; i < count; i++) {
-    const rarity = rollRarity(p);
+    const rarity = rollRarity(p, season);
     const options = pool.filter((c) => c.rarity === rarity);
     const pick = options[Math.floor(Math.random() * options.length)];
     const dupe = (p.owned[pick.id] || 0) > 0;
@@ -574,7 +604,7 @@ function handleVaultMessage(ws, message) {
     case 'vault_pull': {
       const useTicket = !!message.useTicket;
       const count = useTicket ? 1 : (message.count === 10 ? 10 : 1);
-      const season = String(message.season || 's3').slice(0, 16);
+      const season = String(message.season || 'main').slice(0, 16);
       const out = vaultPull(role, count, season, useTicket);
       if (out.error) { sendTo(ws, { type: 'vault_error', error: out.error, reqId: message.reqId }); break; }
       

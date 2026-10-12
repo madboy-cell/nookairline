@@ -1137,6 +1137,12 @@
       if (endsAt && now > endsAt) return;
       active.push({ ...s, endsAt: endsAt || null });
     });
+    // Permanent main banner is always pinned first, followed by active limited seasons
+    active.sort((a, b) => {
+      if (a.isMain || a.id === 'main') return -1;
+      if (b.isMain || b.id === 'main') return 1;
+      return 0;
+    });
     return active;
   }
 
@@ -1245,8 +1251,10 @@
     const epics = pool.filter((c) => c.rarity === 'epic');
 
     const heroMythic = mythics[S.featuredMythicIdx % (mythics.length || 1)] || pool[0];
-    const pMythicPity = (p.pity && p.pity.mythic) || 0;
-    const pEpicPity = (p.pity && p.pity.epic) || 0;
+    // Per-banner pity separation: read the active banner's specific pity counter
+    const bannerPity = (p.pityByBanner && p.pityByBanner[sKey]) || (p.pity && !p.pityByBanner ? p.pity : { epic: 0, mythic: 0 });
+    const pMythicPity = bannerPity.mythic || 0;
+    const pEpicPity = bannerPity.epic || 0;
     const mythicLeft = Math.max(1, E.MYTHIC_HARD_PITY - pMythicPity);
     const epicLeft = Math.max(1, E.EPIC_PITY - pEpicPity);
     const mythicPct = Math.min(100, (pMythicPity / E.MYTHIC_HARD_PITY) * 100);
@@ -1289,11 +1297,11 @@
           const timerText = leftMs != null ? formatShortTime(leftMs) : '';
           const shortName = s.name.split(':')[0].trim();
           return `
-            <button class="vg-ribbon-chip ${isAct ? 'active' : ''}" data-action="set-gacha-season" data-season="${s.id}" id="vaultGacha_${s.id}Btn" role="tab" aria-selected="${isAct}">
-              ${s.id === 's7' ? '<span class="vg-ribbon-badge">NEW</span>' : ''}
+            <button class="vg-ribbon-chip ${isAct ? 'active' : ''} ${s.isMain ? 'is-main-banner' : ''}" data-action="set-gacha-season" data-season="${s.id}" id="vaultGacha_${s.id}Btn" role="tab" aria-selected="${isAct}">
+              ${s.isMain ? '<span class="vg-ribbon-badge main-badge">PERMANENT</span>' : (s.id === 's11' ? '<span class="vg-ribbon-badge">NEW</span>' : '')}
               <span class="vg-ribbon-icon">${s.icon || '✨'}</span>
               <span class="vg-ribbon-label">${shortName}</span>
-              ${timerText ? `<span class="vg-ribbon-timer" data-ends-at="${s.endsAt}">⏳ ${timerText}</span>` : ''}
+              ${timerText ? `<span class="vg-ribbon-timer" data-ends-at="${s.endsAt}">⏳ ${timerText}</span>` : (s.isMain ? '<span class="vg-ribbon-timer perm">♾️ Forever</span>' : '')}
             </button>
           `;
         }).join('')}
@@ -1306,13 +1314,18 @@
         </div>
         <div class="vg-banner-copy">
           <div class="vg-kicker-row">
-            <span class="vg-kicker">${season.icon || '✨'} Limited ${season.name} Banner</span>
+            <span class="vg-kicker">${season.icon || '✨'} ${season.isMain ? 'Permanent Standard Collection' : `Limited ${season.name} Banner`}</span>
             ${bannerEndsAt ? `
               <span class="vg-banner-timer ${isUrgent ? 'urgent' : ''}">
                 <span class="vg-timer-dot"></span>
                 <span class="vg-countdown-val" data-ends-at="${bannerEndsAt}">⏳ ${formatLongTime(bannerEndsAt - Date.now())}</span>
               </span>
-            ` : ''}
+            ` : (season.isMain ? `
+              <span class="vg-banner-timer permanent-timer">
+                <span class="vg-timer-dot green"></span>
+                <span class="vg-countdown-val perm">♾️ Permanent Standard Pool</span>
+              </span>
+            ` : '')}
             ${mythics.length > 1 ? `<button class="vg-toggle-featured" data-action="toggle-featured-mythic" title="Toggle featured Mythic">⇄ Switch ${mythics[(S.featuredMythicIdx + 1) % mythics.length].name.split(' ')[0]}</button>` : ''}
           </div>
           <h3 class="vg-title">${season.name.replace(' ', '<br><em>')}</em></h3>
@@ -1594,7 +1607,7 @@
     if ((p.tickets || 0) < 1) { toast('🎟️ No Lucky Flight Tickets remaining'); return; }
     S.pulling = true;
     const reqId = `pt${++S.reqSeq}_${Date.now()}`;
-    const season = S.gachaSeason || 's5';
+    const season = S.gachaSeason || 'main';
     S.pending = { reqId, count: 1, season };
     clearTimeout(S.pendingTimer);
     S.pendingTimer = setTimeout(() => {
@@ -2382,6 +2395,19 @@
     if (typeof updateLobbySeats === 'function') {
       updateLobbySeats();
     }
+
+    // Synchronize diamonds, inventory, and isolated per-banner pity to Supabase user profile
+    try {
+      const p = me();
+      if (p && window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+        const updates = {};
+        if (typeof p.diamonds === 'number') updates.diamonds = p.diamonds;
+        if (typeof p.stardust === 'number') updates.stardust = p.stardust;
+        if (p.pityByBanner) updates.pity = p.pityByBanner;
+        if (p.owned) updates.inventory = Object.keys(p.owned);
+        window.SkySupabase.updateProfile(updates);
+      }
+    } catch (_) {}
   }
 
   function handleMessage(msg) {

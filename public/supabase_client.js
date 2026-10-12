@@ -277,7 +277,8 @@
               equipped_costume: 'pilot',
               diamonds: 5000,
               stardust: 0,
-              inventory: []
+              inventory: [],
+              pity: {}
             };
             const { data: created } = await this.client
               .from('profiles')
@@ -541,6 +542,7 @@
           diamonds: 5000,
           stardust: 0,
           inventory: [],
+          pity: {},
           isGuest: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

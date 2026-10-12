@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     diamonds BIGINT NOT NULL DEFAULT 5000 CHECK (diamonds >= 0),
     stardust BIGINT NOT NULL DEFAULT 0 CHECK (stardust >= 0),
     inventory JSONB NOT NULL DEFAULT '[]'::jsonb,
+    pity JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
