@@ -880,7 +880,7 @@ function handleRoomMessage(ws, message) {
         room: sanitizeRoom(active.room),
         slot: active.slot,
         inFlight: active.inFlight,
-        gameState: active.gameState || serverMonopolyState
+        gameState: active.gameState || (active.inFlight ? roomRegistry.createDefaultGameState(active.room.slots) : null)
       }));
     } else {
       ws.send(JSON.stringify({
@@ -913,7 +913,7 @@ function handleRoomMessage(ws, message) {
       room: sanitizeRoom(res.room),
       slot: res.slot,
       inFlight: res.inFlight,
-      gameState: res.gameState || serverMonopolyState
+      gameState: res.gameState || (res.inFlight ? roomRegistry.createDefaultGameState(res.room.slots) : null)
     }));
 
     broadcastToRoom(res.room, {
@@ -1036,7 +1036,7 @@ function handleRoomMessage(ws, message) {
       room: sanitizeRoom(res.room),
       slot: res.slot,
       spectator: !!res.spectator,
-      state: res.spectator ? (res.room.gameState || serverMonopolyState) : null
+      state: res.spectator ? (res.room.gameState || (res.room.status === 'in_flight' ? roomRegistry.createDefaultGameState(res.room.slots) : null)) : null
     }));
 
     broadcastToRoom(res.room, {
@@ -1138,6 +1138,8 @@ function handleRoomMessage(ws, message) {
     room.updatedAt = Date.now();
     if (message.state || message.initialState) {
       room.gameState = message.state || message.initialState;
+    } else if (!room.gameState) {
+      room.gameState = roomRegistry.createDefaultGameState(room.slots);
     }
     roomRegistry.db.updateRoom(room.id, { status: 'in_flight', game_state: room.gameState }).catch(() => {});
     broadcastToRoom(room, {
@@ -1145,7 +1147,7 @@ function handleRoomMessage(ws, message) {
       roomId: room.id,
       game: room.game || 'monopoly',
       room: sanitizeRoom(room),
-      state: room.gameState || serverMonopolyState
+      state: room.gameState
     });
     broadcastDepartureBoard();
     return;

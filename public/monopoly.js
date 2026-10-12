@@ -1322,22 +1322,28 @@ function getNextTurn(currentRole) {
 
 const MONOPOLY_LOCAL_KEY = 'nook_sky_monopoly_v5';
 const MONOPOLY_BOT_LOCAL_KEY = 'nook_sky_monopoly_bot_v1';
+const MONOPOLY_ROOM_LOCAL_KEY = 'nook_sky_monopoly_room_v1';
 
 function saveLocalMonopolyState() {
   try {
-    const isBot = monopolyState && monopolyState.mode === 'bot';
-    const key = isBot ? MONOPOLY_BOT_LOCAL_KEY : MONOPOLY_LOCAL_KEY;
+    if (!monopolyState) return;
+    const mode = monopolyState.mode || 'couple';
+    let key = MONOPOLY_LOCAL_KEY;
+    if (mode === 'bot') key = MONOPOLY_BOT_LOCAL_KEY;
+    else if (mode === '4p' || mode === 'room' || currentFlightRoom) key = MONOPOLY_ROOM_LOCAL_KEY;
+
     localStorage.setItem(key, JSON.stringify({ ...monopolyState, isRolling: false }));
-    if (monopolyState && monopolyState.mode) {
-      localStorage.setItem('nook_mono_active_mode', monopolyState.mode);
-    }
+    localStorage.setItem('nook_mono_active_mode', mode);
   } catch (e) {}
 }
 
 function loadLocalMonopolyState(preferredMode) {
   try {
     const activeMode = preferredMode || localStorage.getItem('nook_mono_active_mode') || 'couple';
-    const key = activeMode === 'bot' ? MONOPOLY_BOT_LOCAL_KEY : MONOPOLY_LOCAL_KEY;
+    let key = MONOPOLY_LOCAL_KEY;
+    if (activeMode === 'bot') key = MONOPOLY_BOT_LOCAL_KEY;
+    else if (activeMode === '4p' || activeMode === 'room') key = MONOPOLY_ROOM_LOCAL_KEY;
+
     const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -1354,14 +1360,6 @@ function loadLocalMonopolyState(preferredMode) {
         parsed.playedCardIds = Array.from(combined);
         savePersistentPlayedCardIds(parsed.playedCardIds);
         return parsed;
-      }
-    }
-    // Fallback if preferred key empty: check other key
-    if (activeMode === 'bot') {
-      const coupleRaw = localStorage.getItem(MONOPOLY_LOCAL_KEY);
-      if (coupleRaw) {
-        const p = JSON.parse(coupleRaw);
-        if (isV2State(p)) return p;
       }
     }
   } catch (e) {}
@@ -2787,7 +2785,7 @@ function startBotGame(level = 'hard') {
   };
   fresh.active = true;
   fresh.round = 1;
-  fresh.currentTurn = 'bkk';
+  fresh.currentTurn = fresh.turnOrder[0] || 'bkk';
 
   // Human player
   fresh.players[myRole].name = window.myAvatar?.name || fresh.players[myRole].name;
@@ -2817,6 +2815,16 @@ function startBotGame(level = 'hard') {
   }
 
   monopolyState = fresh;
+  if (currentFlightRoom) {
+    currentFlightRoom.gameState = fresh;
+    if (typeof sendSignaling === 'function') {
+      sendSignaling({
+        type: 'room_start',
+        roomId: currentFlightRoom.id,
+        initialState: fresh
+      });
+    }
+  }
   saveLocalMonopolyState();
   hideModal();
   hideCardOverlay();
@@ -2836,7 +2844,7 @@ function startBotGame(level = 'hard') {
     });
   }
 
-  if (fresh.currentTurn === botRole) {
+  if (fresh.players[fresh.currentTurn]?.isBot) {
     checkBotTurn();
   }
 }
@@ -4123,13 +4131,14 @@ function startNeoraRoomGame() {
       return;
     }
 
+    startPartyGame(currentFlightRoom || lobbyState);
     if (typeof sendSignaling === 'function') {
       sendSignaling({
         type: 'room_start',
-        roomId: currentFlightRoom.id
+        roomId: currentFlightRoom.id,
+        initialState: monopolyState
       });
     }
-    startPartyGame(lobbyState);
     hideDepartureBoard();
   } else {
     // Joiner toggles ready
@@ -4190,10 +4199,11 @@ function startPartyGame(config = {}) {
     return;
   }
 
-  // Preserve dedicated 1v1 Bot mode if configured
-  if (activeSlots.length === 2 && activeSlots[0].type === 'human' && activeSlots[1].type === 'bot' && lobbyState.mode === 'bot') {
+  // Preserve dedicated 1v1 Bot mode if configured (either via lobby mode or any 2-seat human+bot pairing)
+  if (activeSlots.length === 2 && (activeSlots[0].type === 'bot' || activeSlots[1].type === 'bot')) {
     hideMonopolyLobby();
-    const soloLevel = activeSlots[1].difficulty || config.soloBot || 'hard';
+    const botSlot = activeSlots[0].type === 'bot' ? activeSlots[0] : activeSlots[1];
+    const soloLevel = botSlot.difficulty || config.soloBot || 'easy';
     startBotGame(soloLevel);
     return;
   }
@@ -4201,8 +4211,9 @@ function startPartyGame(config = {}) {
   const myRole = getMonopolyMyRole();
   const partnerRole = otherRole(myRole);
 
+  const hasBots = activeSlots.some((s) => s.type === 'bot');
   const fresh = createDefaultMonopolyState();
-  fresh.mode = activeSlots.length > 2 ? '4p' : (lobbyState.mode || 'couple');
+  fresh.mode = activeSlots.length > 2 ? '4p' : (hasBots ? 'bot' : 'couple');
   fresh.active = true;
   fresh.players = {};
   const turnOrder = [];
@@ -4225,14 +4236,14 @@ function startPartyGame(config = {}) {
     if (p.isBot) {
       p.botLevel = slot.difficulty || 'easy';
       const isEasy = p.botLevel === 'easy';
-      p.name = slot.name || (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼');
-      p.sprite = slot.avatar || (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg');
+      p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼');
+      p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg');
       p.badge = `BOT${idx > 1 ? idx - 1 : ''}`;
       p.color = slot.id === 3 ? '#10b981' : (slot.id === 4 ? '#f59e0b' : '#06b6d4');
     } else {
-      const isMe = (slot.occupiedBy === `user_${myRole}`) || (slot.id === 1 && !slot.occupiedBy);
-      p.name = slot.name || (isMe ? myName : (slot.id === 2 ? partnerName : `Guest ${slot.id} ✈️`));
-      p.sprite = slot.avatar || (isMe ? mySprite : (slot.id === 2 ? partnerSprite : 'assets/bkk_warrior_idle.png'));
+      const isMe = (slot.occupiedBy === `user_${myRole}`) || (slot.id === 1 && !slot.occupiedBy) || (slot.id === 1 && isCurrentUserHost());
+      p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : (isMe ? myName : (slot.id === 2 ? partnerName : `Guest ${slot.id} ✈️`));
+      p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isMe ? mySprite : (slot.id === 2 ? partnerSprite : 'assets/bkk_warrior_idle.png'));
       p.color = slot.id === 1 ? '#ef4444' : (slot.id === 2 ? '#06b6d4' : (slot.id === 3 ? '#10b981' : '#f59e0b'));
       p.badge = `P${idx + 1}`;
     }
@@ -9941,6 +9952,18 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'monopoly_sync') {
+    // If user is currently in a flight room, in a bot match, or in a 4P match, do NOT let legacy 1-to-1 couple sync overwrite our match!
+    if (currentFlightRoom || (monopolyState && (monopolyState.mode === 'bot' || monopolyState.mode === '4p' || monopolyState.mode === 'room'))) {
+      if (Array.isArray(message.playedCardIds) && message.playedCardIds.length) {
+        const validServerCards = message.playedCardIds.map(Number).filter(isValidCardId);
+        savePersistentPlayedCardIds(validServerCards);
+        if (monopolyState) {
+          monopolyState.playedCardIds = [...new Set([...(monopolyState.playedCardIds || []), ...validServerCards])];
+        }
+      }
+      return;
+    }
+
     if (Array.isArray(message.playedCardIds) && message.playedCardIds.length) {
       const validServerCards = message.playedCardIds.map(Number).filter(isValidCardId);
       savePersistentPlayedCardIds(validServerCards);
@@ -10144,8 +10167,10 @@ function handleMonopolyMessage(message) {
     hideNeoraRejoinModal();
     if (message.state) {
       monopolyState = { ...message.state, active: true };
+      if (currentFlightRoom) currentFlightRoom.gameState = monopolyState;
+      saveLocalMonopolyState();
     } else if (!monopolyState || !monopolyState.active) {
-      startPartyGame(lobbyState);
+      startPartyGame(currentFlightRoom || lobbyState);
     }
     const modal = $m('monopolyModal');
     if (modal) {

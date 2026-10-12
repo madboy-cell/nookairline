@@ -176,6 +176,8 @@ function createMasterTestServer(port) {
           room.updatedAt = Date.now();
           if (msg.initialState || msg.state) {
             room.gameState = msg.initialState || msg.state;
+          } else if (!room.gameState) {
+            room.gameState = registry.createDefaultGameState(room.slots);
           }
           broadcastRoom(room, {
             type: 'room_start',
@@ -709,6 +711,42 @@ async function runMasterSuite() {
   }
 
   assertTest('5.1 All 21 complete simulated games reached genuine terminal game-over', totalSimCompleted === 21);
+
+  // -----------------------------------------------------------
+  // SECTION 6: 1 Human + 1 Bot Match Isolation & Anti-"Me vs Myself" Guard
+  // -----------------------------------------------------------
+  console.log('\n--- SECTION 6: 1 Human + 1 Bot Match Isolation & Anti-"Me vs Myself" Guard ---');
+  {
+    const host = await createClient(MASTER_TEST_PORT);
+    const hostUid = 'user_bkk_anti_self';
+    const hostName = 'Real Human 🐺';
+
+    // Create room with 1 Human + 1 Bot Easy (Slots 3 & 4 closed)
+    host.send({
+      type: 'room_create',
+      hostUid,
+      hostName,
+      slots: [
+        { id: 1, role: 'bkk', type: 'human', occupiedBy: hostUid, name: hostName },
+        { id: 2, role: 'dxb', type: 'bot', difficulty: 'easy', occupiedBy: null, name: 'Trainee Mochi 🐾' },
+        { id: 3, role: 'bot1', type: 'closed', difficulty: null, occupiedBy: null, name: 'Closed Seat' },
+        { id: 4, role: 'bot2', type: 'closed', difficulty: null, occupiedBy: null, name: 'Closed Seat' }
+      ]
+    });
+    const cMsg = await host.waitFor((m) => m.type === 'room_created');
+    const roomId = cMsg.room.id;
+
+    // Start without passing initialState to verify authoritative server generation
+    host.send({ type: 'room_start', roomId });
+    const sMsg = await host.waitFor((m) => m.type === 'room_start');
+
+    assertTest('6.1 Game state generates exactly 2 active players (Human + Bot)', Object.keys(sMsg.state.players).length === 2);
+    assertTest('6.2 Seat 1 is strictly Human with host identity', sMsg.state.players.bkk.isBot === false && sMsg.state.players.bkk.name === hostName);
+    assertTest('6.3 Seat 2 is strictly Bot Easy and NEVER cloned as human or host ("anti-me-vs-myself")', sMsg.state.players.dxb.isBot === true && sMsg.state.players.dxb.botLevel === 'easy' && sMsg.state.players.dxb.name === 'Trainee Mochi 🐾');
+    assertTest('6.4 Game mode is properly categorized as bot duel', sMsg.state.mode === 'bot');
+
+    host.close();
+  }
 
   // -----------------------------------------------------------
   // Summary

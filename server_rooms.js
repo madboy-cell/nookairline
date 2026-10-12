@@ -249,6 +249,58 @@ class RoomRegistry {
   }
 
   /**
+   * Generates a clean, authoritative Monopoly game state for a room's active slots.
+   */
+  createDefaultGameState(slots, startingMiles = 1200) {
+    const activeSlots = (slots || []).filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
+    const turnOrder = activeSlots.map((s) => s.role || (s.id === 1 ? 'bkk' : s.id === 2 ? 'dxb' : s.id === 3 ? 'bot1' : 'bot2'));
+    const players = {};
+    activeSlots.forEach((s, idx) => {
+      const role = s.role || (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2');
+      const isBot = s.type === 'bot' || s.controller === 'BOT_TEMPORARY' || s.controller === 'BOT_PERMANENT';
+      const isEasy = (s.difficulty || 'easy') === 'easy';
+      players[role] = {
+        id: role,
+        pos: 0,
+        miles: startingMiles,
+        clashTokens: 2,
+        vibePasses: 2,
+        inventory: [],
+        foxfireTails: 3,
+        ashPot: 0,
+        carpetCharges: 0,
+        ult: 0,
+        name: s.name || (isBot ? (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼') : `Player ${role.toUpperCase()}`),
+        sprite: s.avatar || (isBot ? (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg') : 'assets/bkk_warrior_idle.png'),
+        badge: isBot ? `BOT${idx > 1 ? idx - 1 : ''}` : `P${idx + 1}`,
+        color: s.id === 1 ? '#ef4444' : (s.id === 2 ? '#06b6d4' : (s.id === 3 ? '#10b981' : '#f59e0b')),
+        isBot,
+        botLevel: isBot ? (s.difficulty || 'easy') : null
+      };
+    });
+
+    return {
+      version: 2,
+      active: true,
+      mode: activeSlots.length > 2 ? '4p' : (activeSlots.some((s) => s.type === 'bot') ? 'bot' : 'couple'),
+      round: 1,
+      turnOrder,
+      currentTurn: turnOrder[0] || 'bkk',
+      isRolling: false,
+      turnResolver: null,
+      players,
+      properties: {},
+      pendingDecision: null,
+      activeChallenge: null,
+      activeDuel: null,
+      magnet: null,
+      cardDeck: [],
+      playedCardIds: [],
+      gameOver: null
+    };
+  }
+
+  /**
    * Joins a room by roomId or 6-digit code.
    * Handles duplicate sessions, re-admissions, and spectators.
    */
