@@ -952,7 +952,7 @@ function isClockworkSovereign(role) {
   if (costumeId.includes('cinderella') || costumeId.includes('clockwork') || costumeId.includes('glass_slipper') || costumeId.includes('s7_cinderella')) return true;
   if (p && p.costume) {
     const c = p.costume;
-    if (c.season === 's7' && c.rarity === 'mythic' && c.pair === 'clockwork_royalty') return true;
+    if (c.season === 's7' && c.rarity === 'mythic' && (c.pair === 'midnight_ball' || c.pair === 'clockwork_royalty')) return true;
   }
   const pk = perkOf(role);
   return !!(pk && (pk.pumpkinWarp || pk.glassSlipperTrial));
@@ -978,8 +978,8 @@ function isFrostSovereign(role) {
   if (!role) return false;
   const p = perkInfo(role);
   const costumeId = String(activeCostumeId(role) || '').toLowerCase();
-  if (['s8_empress_f', 's8_warden_m', 's8_crystal_f'].includes(costumeId)) return true;
-  if (costumeId.includes('empress') || costumeId.includes('warden') || costumeId.includes('frost') || costumeId.includes('glacial') || matchesSeasonId(costumeId, 's8')) return true;
+  if (['s8_empress_f', 's8_warden_m'].includes(costumeId)) return true;
+  if (costumeId.includes('empress') || costumeId.includes('warden') || (costumeId.includes('glacial') && !costumeId.includes('crystal')) || matchesSeasonId(costumeId, 's8')) return true;
   if (p && p.costume) {
     const c = p.costume;
     if (c.season === 's8' && c.rarity === 'mythic') return true;
@@ -7168,7 +7168,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     }
     if (rollVal === 6 && perkOf(playerKey).supernova6 && !monopolyState.hadBonusRoll) {
       monopolyState.bonusRoll = playerKey;
-      monopolyState.hadBonusRoll = true;
+      monopolyState.hadBonusRoll = playerKey;
       if (diceBox) {
         diceBox.classList.add('dice-supernova-flare');
         setTimeout(() => diceBox.classList.remove('dice-supernova-flare'), 1600);
@@ -7984,17 +7984,19 @@ function finishTurn() {
     return;
   }
   if (monopolyState.bonusRoll) {
-    const bonusPlayer = monopolyState.bonusRoll;
+    const bonusPlayer = (typeof monopolyState.bonusRoll === 'string') ? monopolyState.bonusRoll : monopolyState.currentTurn;
     monopolyState.bonusRoll = null;
-    setMonopolyTicker(`★ <strong>SUPERNOVA VELOCITY!</strong> ${monopolyState.players[bonusPlayer].name} takes a BONUS ROLL! ☄️★`);
-    floatText(monopolyState.players[bonusPlayer].pos, '☄️ BONUS ROLL!', 'pos');
-    emitFx({ kind: 'sound', name: 'fanfare' });
-    pushState();
-    renderAll();
-    if (monopolyState.players[bonusPlayer]?.isBot || (window.isMonopolyPlayerAway && bonusPlayer === getMonopolyMyRole())) {
-      checkBotTurn();
+    if (monopolyState.players && monopolyState.players[bonusPlayer]) {
+      setMonopolyTicker(`★ <strong>SUPERNOVA VELOCITY!</strong> ${monopolyState.players[bonusPlayer].name} takes a BONUS ROLL! ☄️★`);
+      floatText(monopolyState.players[bonusPlayer].pos, '☄️ BONUS ROLL!', 'pos');
+      emitFx({ kind: 'sound', name: 'fanfare' });
+      pushState();
+      renderAll();
+      if (monopolyState.players[bonusPlayer]?.isBot || (window.isMonopolyPlayerAway && bonusPlayer === getMonopolyMyRole())) {
+        checkBotTurn();
+      }
+      return;
     }
-    return;
   }
   endTurn();
 }
@@ -9089,6 +9091,9 @@ function cardPopClass(ov, key) {
 }
 
 function challengeNeeds(c) {
+  if (c && (c.visitor || c.owner)) {
+    return [c.visitor, c.owner].filter(Boolean);
+  }
   return ['bkk', 'dxb'];
 }
 
@@ -9452,7 +9457,7 @@ function renderDuelOverlay() {
   const rollBtn = ov.querySelector('[data-act="roll"]');
   if (rollBtn) rollBtn.addEventListener('click', () => { rollBtn.disabled = true; duelRoll(me); });
   const rollOther = ov.querySelector('[data-act="rollOther"]');
-  if (rollOther) rollOther.addEventListener('click', () => { rollOther.disabled = true; duelRoll(other); });
+  if (rollOther) rollOther.addEventListener('click', () => { rollOther.disabled = true; duelRoll(oppInDuel); });
   const rollBotBtn = ov.querySelector('[data-act="rollBot"]');
   if (rollBotBtn) rollBotBtn.addEventListener('click', () => {
     rollBotBtn.disabled = true;

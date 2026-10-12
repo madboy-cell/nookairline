@@ -724,6 +724,7 @@ img.fx-vis { object-fit: contain; }
   display: block;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 5px rgba(212, 175, 55, 0.6));
 }
+.board-token.is-bot .token-sprite,
 .board-token.token-bot1 .token-sprite,
 .board-token.token-bot2 .token-sprite {
   border-radius: 50%;
@@ -773,22 +774,25 @@ img.fx-vis { object-fit: contain; }
 /* Overhead Token Identification Tag */
 .board-token .token-name-tag {
   position: absolute;
-  top: -14px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   padding: 1px 4px;
-  font-size: 7.5px;
+  font-size: 7px;
   font-weight: 800;
   color: #fff;
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
   opacity: 0.95;
   letter-spacing: 0.2px;
+  max-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .board-token.token-color-ruby .token-name-tag,
 .board-token.token-bkk .token-name-tag { border-color: #ef4444; color: #fca5a5; }

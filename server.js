@@ -393,8 +393,10 @@ function vaultPull(role, count, season = 'main', useTicket = false) {
   const results = [];
   for (let i = 0; i < count; i++) {
     const rarity = rollRarity(p, season);
-    const options = pool.filter((c) => c.rarity === rarity);
+    let options = pool.filter((c) => c.rarity === rarity);
+    if (!options || options.length === 0) options = pool;
     const pick = options[Math.floor(Math.random() * options.length)];
+    if (!pick) continue;
     const dupe = (p.owned[pick.id] || 0) > 0;
     p.owned[pick.id] = (p.owned[pick.id] || 0) + 1;
     let dust = 0;
@@ -453,8 +455,12 @@ function vaultAward(gameKey, winner, matches, partyData) {
 
   const today = new Date().toISOString().slice(0, 10);
   const dailyTracker = {};
+  const activeParticipants = (partyData && Array.isArray(partyData.placements))
+    ? partyData.placements
+    : [winner, otherRole(winner)];
+
   ['bkk', 'dxb'].forEach((r) => {
-    if (vault[r].lastDaily !== today) {
+    if (activeParticipants.includes(r) && vault[r].lastDaily !== today) {
       dailyTracker[r] = true;
       vault[r].lastDaily = today;
     }
@@ -1618,8 +1624,10 @@ wss.on('connection', (ws, req) => {
 
           const myRole = clientData ? clientData.role : null;
           const currentTurn = currentRoom.gameState ? currentRoom.gameState.currentTurn : null;
-          const isBotTurn = currentRoom.gameState && currentRoom.gameState.players && currentRoom.gameState.players[currentTurn]?.isBot;
-          const isHost = clientData && clientData.slotId === 1;
+          const activeSlot = currentRoom.slots ? currentRoom.slots.find((s) => s.role === currentTurn) : null;
+          const isBotTurn = (currentRoom.gameState && currentRoom.gameState.players && currentRoom.gameState.players[currentTurn]?.isBot) ||
+                            (activeSlot && (activeSlot.type === 'bot' || activeSlot.controller === 'BOT_TEMPORARY' || activeSlot.controller === 'BOT_PERMANENT'));
+          const isHost = clientData && (clientData.uid === currentRoom.hostUid || clientData.slotId === 1);
 
           if (message.action === 'roll') {
             const isAuthorized = (myRole === currentTurn) || (isBotTurn && isHost);
@@ -1659,6 +1667,10 @@ wss.on('connection', (ws, req) => {
         }
 
         if (message.state) {
+          const clientData = currentRoom.clientData.get(ws);
+          if (clientData && clientData.spectator) {
+            return; // Reject spectator mutations to authoritative game state
+          }
           const oldTurn = currentRoom.gameState ? currentRoom.gameState.currentTurn : null;
           roomRegistry.updateGameState(currentRoom.id, message.state);
           const newTurn = message.state.currentTurn;
@@ -1718,9 +1730,13 @@ wss.on('connection', (ws, req) => {
       bkkSocket = null;
       if (bkkDisconnectTimer) clearTimeout(bkkDisconnectTimer);
       bkkDisconnectTimer = setTimeout(() => {
-        if (!bkkSocket && dxbSocket && dxbSocket.readyState === WebSocket.OPEN) {
-          console.log('[Signaling] BKK grace period expired. Broadcasting offline.');
-          dxbSocket.send(JSON.stringify({ type: 'partner_status', online: false }));
+        try {
+          if (!bkkSocket && dxbSocket && dxbSocket.readyState === WebSocket.OPEN) {
+            console.log('[Signaling] BKK grace period expired. Broadcasting offline.');
+            dxbSocket.send(JSON.stringify({ type: 'partner_status', online: false }));
+          }
+        } catch (e) {
+          console.warn('[Signaling] BKK grace status send error:', e.message);
         }
         bkkDisconnectTimer = null;
       }, DISCONNECT_GRACE_MS);
@@ -1728,9 +1744,13 @@ wss.on('connection', (ws, req) => {
       dxbSocket = null;
       if (dxbDisconnectTimer) clearTimeout(dxbDisconnectTimer);
       dxbDisconnectTimer = setTimeout(() => {
-        if (!dxbSocket && bkkSocket && bkkSocket.readyState === WebSocket.OPEN) {
-          console.log('[Signaling] DXB grace period expired. Broadcasting offline.');
-          bkkSocket.send(JSON.stringify({ type: 'partner_status', online: false }));
+        try {
+          if (!dxbSocket && bkkSocket && bkkSocket.readyState === WebSocket.OPEN) {
+            console.log('[Signaling] DXB grace period expired. Broadcasting offline.');
+            bkkSocket.send(JSON.stringify({ type: 'partner_status', online: false }));
+          }
+        } catch (e) {
+          console.warn('[Signaling] DXB grace status send error:', e.message);
         }
         dxbDisconnectTimer = null;
       }, DISCONNECT_GRACE_MS);

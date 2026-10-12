@@ -852,6 +852,7 @@ async function runSuite() {
   console.log(`TEST SUMMARY: ${passed}/11 Passed (0 Failed)`);
   console.log('============================================================');
   console.log('🎉 ALL 11 NEORA MATCHMAKING & RECONNECTION E2E SCENARIOS PASSED 100%!\n');
+  process.exit(0);
 }
 
 runSuite().catch((err) => {

@@ -152,6 +152,13 @@
     L.wrap = $('monopolyBoardWrap');
     L.grid = $('monopolyBoardGrid');
     L.tokens = $('monopolyTokenLayer');
+    if (!L.tokens && L.wrap) {
+      let tLayer = document.createElement('div');
+      tLayer.className = 'monopoly-token-layer';
+      tLayer.id = 'monopolyTokenLayer';
+      L.wrap.appendChild(tLayer);
+      L.tokens = tLayer;
+    }
     L.moment = $('monopolyMomentLayer');
     return !!L.moment;
   }
@@ -447,7 +454,7 @@
     const idx = sharingRoles.indexOf(role);
 
     let cx = box.x + box.w / 2;
-    let cy = box.y + box.h * 0.42;
+    let cy = box.y + box.h * 0.78;
     let s = 1;
 
     if (count === 2) {

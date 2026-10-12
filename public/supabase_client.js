@@ -1050,7 +1050,17 @@
         }
       }
 
-      // No Google session: enforce authentication
+      // Check if a local guest profile exists before resetting
+      const localGuest = this.localProvider ? this.localProvider.getProfile() : null;
+      if (localGuest && (localGuest.isGuest || !this.isLiveClient)) {
+        this.currentUser = localGuest;
+        await this.getCoupleStatus();
+        await this.getFriends();
+        safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+        return;
+      }
+
+      // No session and no local guest: enforce authentication
       this.currentUser = null;
       try {
         localStorage.removeItem(STORAGE_KEYS.PROFILE);

@@ -504,6 +504,8 @@
       // Listen for Global Supabase events
       window.addEventListener('sky:character_base_changed', () => this.render());
       window.addEventListener('sky:couple_updated', () => this.render());
+      window.addEventListener('sky:couple_status_changed', () => this.render());
+      window.addEventListener('sky:friends_changed', () => this.render());
       window.addEventListener('sky:auth_state_changed', (e) => {
         const user = e.detail?.user;
         if (user && !user.isGuest) {
@@ -1154,7 +1156,8 @@
         if (this.couplePartnerBase) this.couplePartnerBase.textContent = partnerIsBoy ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
 
         if (this.couplePartnerStatusText) {
-          this.couplePartnerStatusText.textContent = '🟢 Online · Ready for Call';
+          const isOnline = window.nookPartnerOnline === true;
+          this.couplePartnerStatusText.textContent = isOnline ? '🟢 Online · Ready for Call' : '⚪ Offline · In Transit';
         }
 
         if (this.coupleAnniversaryText && couple.anniversaryDate) {
