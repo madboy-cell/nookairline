@@ -138,6 +138,12 @@
       this.tabFriendsContent = $('socialTabFriendsContent');
       this.friendsCountEl = $('socialFriendsCount');
 
+      // Social Drawer Quick Auth Bar
+      this.socialAccountBar = $('socialAccountBar');
+      this.socialAccountDot = $('socialAccountDot');
+      this.socialAccountText = $('socialAccountText');
+      this.socialAuthActionBtn = $('socialAuthActionBtn');
+
       // Couple Sanctuary Cards
       this.coupleCardLinked = $('coupleCardLinked');
       this.coupleCardUnlinked = $('coupleCardUnlinked');
@@ -250,11 +256,19 @@
           e.stopPropagation();
           Sound.auth();
           try {
-            await window.SkySupabase.signInWithOAuth('google');
+            const res = await window.SkySupabase.signInWithOAuth('google');
+            if (res && res.redirected) return;
             Sound.claim();
             this.render();
+            if (typeof showToast === 'function') {
+              showToast('✨ Successfully connected with Google Cloud Vault!');
+            }
           } catch (err) {
-            alert('Google Auth: ' + err.message);
+            if (typeof showToast === 'function') {
+              showToast('⚠️ Google Auth: ' + err.message);
+            } else {
+              alert('Google Auth: ' + err.message);
+            }
           }
         });
       }
@@ -266,23 +280,81 @@
           const inp = this.authEmailInput;
           if (!inp || !inp.value.trim()) return;
           try {
-            await window.SkySupabase.signInWithOtp(inp.value.trim());
+            const res = await window.SkySupabase.signInWithOtp(inp.value.trim());
             Sound.claim();
             inp.value = '';
             this.render();
+            if (typeof showToast === 'function') {
+              showToast(res?.message || '✨ Magic link sent to your email.');
+            }
           } catch (err) {
-            alert(err.message);
+            if (typeof showToast === 'function') {
+              showToast('⚠️ ' + err.message);
+            } else {
+              alert(err.message);
+            }
           }
         });
       }
 
-      // Sign Out
+      // Open First Class Check-in Wizard from Passport
+      const passportOpenCheckinBtn = $('passportOpenCheckinBtn');
+      if (passportOpenCheckinBtn) {
+        passportOpenCheckinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          this.closeProfileModal();
+          this.openOnboarding(1);
+        });
+      }
+
+      // Sign Out with Confirmation
       if (this.profileSignOutBtn) {
         this.profileSignOutBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
           Sound.tap();
+          if (!confirm('Are you sure you want to sign out from your Cloud Vault account? (Local progress will switch to Guest mode)')) {
+            return;
+          }
           await window.SkySupabase.signOut();
           this.render();
+          if (typeof showToast === 'function') {
+            showToast('✈️ Signed out of Cloud Vault. Switched to Guest flight mode.');
+          }
+        });
+      }
+
+      // Social Drawer Auth Action Button
+      if (this.socialAuthActionBtn) {
+        this.socialAuthActionBtn.addEventListener('click', async () => {
+          Sound.tap();
+          const user = window.SkySupabase.getCurrentUser();
+          const isGuest = !user || !!user.isGuest || !user.email;
+          if (!isGuest) {
+            if (!confirm('Are you sure you want to sign out from your Cloud Vault account? (Local progress will switch to Guest mode)')) {
+              return;
+            }
+            await window.SkySupabase.signOut();
+            this.render();
+            if (typeof showToast === 'function') {
+              showToast('✈️ Signed out of Cloud Vault. Switched to Guest flight mode.');
+            }
+          } else {
+            this.closeDrawer();
+            this.openProfileModal();
+            setTimeout(() => {
+              const card = document.querySelector('.account-auth-card') || document.getElementById('accountGuestBox');
+              if (card && typeof card.scrollIntoView === 'function') {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.style.outline = '2px solid rgba(56, 189, 248, 0.8)';
+                card.style.boxShadow = '0 0 24px rgba(56, 189, 248, 0.4)';
+                setTimeout(() => {
+                  card.style.outline = '';
+                  card.style.boxShadow = '';
+                }, 2000);
+              }
+            }, 150);
+          }
         });
       }
 
@@ -424,7 +496,7 @@
       window.addEventListener('sky:couple_updated', () => this.render());
       window.addEventListener('sky:auth_state_changed', (e) => {
         const user = e.detail?.user;
-        if (user) {
+        if (user && !user.isGuest) {
           const callsignInput = $('onbCallsignInput');
           if (callsignInput) {
             const googleName = user.user_metadata?.full_name || user.user_metadata?.name || user.username;
@@ -437,10 +509,6 @@
             this.closeOnboarding(true);
           } else {
             this.openOnboarding(2);
-          }
-        } else {
-          if (window.SkySupabase && !window.SkySupabase.isOnboardingCompleted()) {
-            this.openOnboarding(1);
           }
         }
         this.render();
@@ -647,6 +715,18 @@
           } finally {
             if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = false;
           }
+        });
+      }
+
+      // Step 1: Continue as Guest Passenger
+      const onbContinueGuestBtn = $('onbContinueGuestBtn');
+      if (onbContinueGuestBtn) {
+        onbContinueGuestBtn.addEventListener('click', async () => {
+          Sound.tap();
+          if (window.SkySupabase) {
+            await window.SkySupabase.loginGuest();
+          }
+          this.setOnbStep(2);
         });
       }
 
@@ -918,6 +998,21 @@
       if (this.accountLoggedInBox) this.accountLoggedInBox.classList.toggle('hidden', isGuest);
       if (this.loggedUserEmail && user && user.email) {
         this.loggedUserEmail.textContent = user.email;
+      }
+
+      // Social Drawer Quick Auth Bar
+      if (this.socialAccountDot && this.socialAccountText && this.socialAuthActionBtn) {
+        if (!isGuest) {
+          this.socialAccountDot.className = 'social-account-dot online';
+          this.socialAccountText.textContent = `🛡️ ${user.email}`;
+          this.socialAuthActionBtn.textContent = 'Sign Out';
+          this.socialAuthActionBtn.className = 'social-auth-action-btn sign-out';
+        } else {
+          this.socialAccountDot.className = 'social-account-dot guest';
+          this.socialAccountText.textContent = '☁️ Guest Mode (Local)';
+          this.socialAuthActionBtn.textContent = 'Connect Cloud';
+          this.socialAuthActionBtn.className = 'social-auth-action-btn connect';
+        }
       }
 
       // Passport Couple Card status

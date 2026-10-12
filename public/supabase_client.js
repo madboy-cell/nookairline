@@ -500,7 +500,11 @@
 
       // Reset to Guest Profile
       localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+      this.coupleStatus = { isCouple: false, coupleId: null, partner: null, status: null, anniversaryDate: null };
+      this.friends = [];
       await this.loginGuest();
+      safeDispatch('sky:couple_status_changed', this.coupleStatus);
       safeDispatch('sky:auth_state_changed', { user: this.currentUser });
       console.log('[SkySupabase] Signed out. Reset to Guest Mode.');
       return { success: true };

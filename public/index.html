@@ -1622,6 +1622,15 @@
             <button class="social-base-btn" id="socialBaseBtnDxb" data-base="dxb" type="button">🐉 Dragon Girl</button>
           </div>
         </div>
+
+        <!-- Quick Account Status & Auth Bar -->
+        <div class="social-account-bar" id="socialAccountBar">
+          <div class="social-account-info" id="socialAccountInfo">
+            <span class="social-account-dot guest" id="socialAccountDot"></span>
+            <span class="social-account-text" id="socialAccountText">☁️ Guest Mode (Local)</span>
+          </div>
+          <button type="button" class="social-auth-action-btn connect" id="socialAuthActionBtn">Connect Cloud</button>
+        </div>
       </section>
 
       <!-- Segmented Social Tabs -->
@@ -1978,6 +1987,13 @@
                   <button type="submit" class="auth-pill-circle-btn" id="emailAuthSubmitBtn" aria-label="Submit Email">→</button>
                 </div>
               </form>
+
+              <!-- Full Check-in & Register link -->
+              <div class="passport-alt-auth-row">
+                <button type="button" class="passport-open-checkin-btn" id="passportOpenCheckinBtn">
+                  <span>✈️ Open First Class Check-in Wizard</span>
+                </button>
+              </div>
             </div>
 
             <!-- Authenticated State Box -->
@@ -2121,6 +2137,12 @@
                 <div class="onb-auth-msg hidden" id="onbAuthMsg"></div>
                 <button type="submit" class="onb-btn-primary pill-btn full-width" id="onbEmailSubmitBtn">Sign In →</button>
               </form>
+
+              <div class="onb-guest-play-row">
+                <button type="button" class="onb-guest-play-btn" id="onbContinueGuestBtn">
+                  <span>Continue as Guest Passenger</span> (Demo Flight) →
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -2367,8 +2389,8 @@
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dWx0dWZoY2RwaHJqcGxicmVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDM1MzEsImV4cCI6MjEwNzMxOTUzMX0.old1fleZdZwgRz_88SZOVE_1Ysm2gkGtp1kBgpjSvZ0'
     };
   </script>
-  <script src="supabase_client.js?v=20261012v6"></script>
-  <script src="social_ui.js?v=20261012v6"></script>
-  <script src="app.js?v=20261012v16"></script>
+  <script src="supabase_client.js?v=20261012v7"></script>
+  <script src="social_ui.js?v=20261012v7"></script>
+  <script src="app.js?v=20261012v17"></script>
 </body>
 </html>
