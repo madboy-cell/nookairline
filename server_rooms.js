@@ -21,6 +21,37 @@ class RoomRegistry {
   }
 
   /**
+   * Identifies automated test rooms and mock hosts to prevent production pollution.
+   */
+  isTestRoom(room) {
+    if (!room) return false;
+    const uid = String(room.hostUid || room.host_uid || '');
+    const name = String(room.hostName || room.host_name || '');
+    const roomName = String(room.name || room.flightName || '');
+    return uid.startsWith('test_') ||
+      uid.startsWith('leave_') ||
+      uid.startsWith('dup_') ||
+      uid.startsWith('user_host_g') ||
+      uid.startsWith('user_test') ||
+      uid.startsWith('takeover_') ||
+      uid.startsWith('host_') ||
+      uid === 'u_host' ||
+      uid === 'player_alpha' ||
+      uid.startsWith('user_eep') ||
+      uid.startsWith('user_6ei') ||
+      name.startsWith('Host F') ||
+      name.startsWith('Captain Takeover') ||
+      name.startsWith('Pilot Bob') ||
+      name.startsWith('Captain Widget') ||
+      name.startsWith('VIP Captain') ||
+      roomName.includes('Test Flight') ||
+      roomName.includes('Master Flight') ||
+      roomName.includes('Widget Express') ||
+      roomName.includes('Secret Penthouse') ||
+      (uid.startsWith('f') && uid.includes('_host'));
+  }
+
+  /**
    * Restores active rooms from database or persistent file backup.
    */
   async initFromDatabase() {
@@ -34,16 +65,10 @@ class RoomRegistry {
 
           const createdTime = raw.created_at ? new Date(raw.created_at).getTime() : now;
           const updatedTime = raw.updated_at ? new Date(raw.updated_at).getTime() : createdTime;
-          const isStale = (now - updatedTime) > 15 * 60 * 1000;
-          const isTestHost = typeof raw.host_uid === 'string' && (
-            (raw.host_uid.startsWith('f') && raw.host_uid.includes('_host')) ||
-            raw.host_uid.startsWith('test_') ||
-            raw.host_uid.startsWith('leave_') ||
-            raw.host_uid.startsWith('dup_') ||
-            raw.host_uid.startsWith('user_host_g') ||
-            raw.host_uid.startsWith('user_test') ||
-            (raw.host_name && raw.host_name.startsWith('Host F'))
-          );
+          const isLobbyStale = raw.status === 'lobby' && (now - updatedTime) > 2 * 60 * 1000;
+          const isFlightStale = raw.status === 'in_flight' && (now - updatedTime) > 3 * 60 * 1000;
+          const isStale = (now - updatedTime) > 10 * 60 * 1000 || isLobbyStale || isFlightStale;
+          const isTestHost = this.isTestRoom(raw);
 
           if (isStale || isTestHost) {
             this.db.updateRoom(raw.id, { status: 'finished' }).catch(() => {});
@@ -129,6 +154,9 @@ class RoomRegistry {
     const flightNumber = `SKY-${code.slice(0, 3)}`;
     const resolvedName = flightName || name || `${flightNumber} Express`;
 
+    // Automatically close any previous lingering lobby room created by this host to prevent duplicate orphans
+    this.closeExistingHostLobbyRoom(hostUid);
+
     const defaultSlots = [
       { id: 1, role: 'bkk', color: 'ruby', type: 'human', controller: 'HUMAN', difficulty: null, ready: true, occupiedBy: hostUid, name: hostName, avatar: hostAvatar, connected: true },
       { id: 2, role: 'dxb', color: 'cyan', type: 'human', controller: 'HUMAN', difficulty: null, ready: false, occupiedBy: null, name: 'Open Slot', avatar: '', connected: false },
@@ -198,6 +226,14 @@ class RoomRegistry {
     };
 
     if (ws) {
+      const prevRoomId = this.clientToRoomId.get(ws);
+      if (prevRoomId && prevRoomId !== roomId) {
+        const prevRoom = this.rooms.get(prevRoomId);
+        if (prevRoom) {
+          prevRoom.clients.delete(ws);
+          prevRoom.clientData.delete(ws);
+        }
+      }
       room.clients.add(ws);
       room.clientData.set(ws, {
         uid: hostUid,
@@ -225,6 +261,20 @@ class RoomRegistry {
     }).catch(() => {});
 
     return room;
+  }
+
+  /**
+   * Closes any previous lobby room created by this host to prevent duplicate orphans.
+   */
+  closeExistingHostLobbyRoom(hostUid) {
+    if (!hostUid) return;
+    for (const [roomId, room] of this.rooms.entries()) {
+      if (room.status === 'lobby' && room.hostUid === hostUid) {
+        console.log(`[RoomRegistry] Closing previous orphan lobby room ${roomId} for host ${hostUid}`);
+        room.status = 'finished';
+        this.deleteRoom(roomId);
+      }
+    }
   }
 
   getRoom(roomId) {
@@ -761,7 +811,7 @@ class RoomRegistry {
     // Remaining human players in this flight
     const remainingHumans = targetRoom.slots.filter((s) => s.type === 'human' && s.occupiedBy);
 
-    if (remainingHumans.length === 0 && targetRoom.clients.size === 0) {
+    if (remainingHumans.length === 0) {
       targetRoom.status = 'finished';
       this.deleteRoom(targetRoom.id);
       return { roomId: targetRoom.id, room: null, wasHost, empty: true, deleted: true };
@@ -797,7 +847,15 @@ class RoomRegistry {
     for (const room of this.rooms.values()) {
       if (room.status === 'in_flight') {
         const slot = room.slots.find((s) => s.occupiedBy === uid);
-        if (slot) return room;
+        if (slot) {
+          // If all human slots are disconnected and room has no connected clients, it's deserted — do not lock user out
+          const connectedHumans = room.slots.filter((s) => s.type === 'human' && s.occupiedBy && s.connected);
+          const hasClients = room.clients && room.clients.size > 0;
+          if (!hasClients && connectedHumans.length === 0) {
+            continue;
+          }
+          return room;
+        }
       }
     }
     return null;
@@ -1145,16 +1203,7 @@ class RoomRegistry {
       }
 
       // 3. Filter out automated test hosts from public departure board
-      const isTestHost = typeof room.hostUid === 'string' && (
-        (room.hostUid.startsWith('f') && room.hostUid.includes('_host')) ||
-        room.hostUid.startsWith('test_') ||
-        room.hostUid.startsWith('leave_') ||
-        room.hostUid.startsWith('dup_') ||
-        room.hostUid.startsWith('user_host_g') ||
-        room.hostUid.startsWith('user_test') ||
-        (room.hostName && room.hostName.startsWith('Host F'))
-      );
-      if (isTestHost) return;
+      if (this.isTestRoom(room)) return;
 
       const activeHumans = room.slots.filter((s) => s.type === 'human' && s.occupiedBy).length;
       const openSeats = room.slots.filter((s) => s.type === 'human' && !s.occupiedBy).length;
@@ -1336,12 +1385,13 @@ class RoomRegistry {
   /**
    * Cleans rooms with 0 connected clients older than maxAgeMs, deserted matches, or finished rooms.
    */
-  cleanStaleRooms(maxAgeMs = 15 * 60 * 1000) {
+  cleanStaleRooms(maxAgeMs = 2 * 60 * 1000) {
     const now = Date.now();
     let cleaned = 0;
     this.rooms.forEach((room, roomId) => {
       const lastActive = room.updatedAt || room.createdAt || now;
       const noClients = !room.clients || room.clients.size === 0;
+      const connectedHumans = (room.slots || []).filter((s) => s.type === 'human' && s.occupiedBy && s.connected);
 
       // 1. Finished rooms can be removed immediately from memory
       if (room.status === 'finished') {
@@ -1350,31 +1400,16 @@ class RoomRegistry {
         return;
       }
 
-      // 2. Automated test rooms lingering with 0 clients
-      const isTestHost = typeof room.hostUid === 'string' && (
-        (room.hostUid.startsWith('f') && room.hostUid.includes('_host')) ||
-        room.hostUid.startsWith('test_') ||
-        room.hostUid.startsWith('leave_') ||
-        room.hostUid.startsWith('dup_') ||
-        room.hostUid.startsWith('user_host_g') ||
-        room.hostUid.startsWith('user_test') ||
-        (room.hostName && room.hostName.startsWith('Host F'))
-      );
-      if (isTestHost && noClients) {
+      // 2. Automated test rooms lingering with 0 clients or 0 connected humans
+      if (this.isTestRoom(room) && (noClients || connectedHumans.length === 0)) {
         this.deleteRoom(roomId);
         cleaned++;
         return;
       }
 
-      // 3. In-flight games deserted by all players (> 3 minutes with 0 connected clients)
-      if (room.status === 'in_flight' && noClients && (now - lastActive > 3 * 60 * 1000)) {
-        this.deleteRoom(roomId);
-        cleaned++;
-        return;
-      }
-
-      // 4. Stale rooms older than maxAgeMs with 0 clients
-      if (noClients && (now - lastActive > maxAgeMs)) {
+      // 3. Stale deserted rooms older than maxAgeMs with 0 connected clients/humans
+      if ((noClients || connectedHumans.length === 0) && (now - lastActive > maxAgeMs)) {
+        room.status = 'finished';
         this.deleteRoom(roomId);
         cleaned++;
         return;

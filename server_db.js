@@ -45,11 +45,19 @@ class ServerDB {
   }
 
   writeLocalRooms(roomsObj) {
+    if (this.isTestEnv()) return;
     try {
       fs.writeFileSync(BACKUP_FILE, JSON.stringify(roomsObj, null, 2), 'utf8');
     } catch (e) {
       console.warn('[ServerDB] Error writing local rooms backup:', e.message);
     }
+  }
+
+  isTestEnv() {
+    if (process.env.NODE_ENV === 'test') return true;
+    if (typeof global !== 'undefined' && global.__TEST_MODE__) return true;
+    if (process.argv && process.argv.some((arg) => arg.includes('test') || arg.includes('tests/'))) return true;
+    return false;
   }
 
   // --- Supabase REST Operations ---
@@ -82,6 +90,9 @@ class ServerDB {
       updated_at: new Date().toISOString()
     };
     this.writeLocalRooms(local);
+
+    // Skip Supabase during tests to prevent orphan test room clutter
+    if (this.isTestEnv()) return true;
 
     // 2. Write to Supabase REST
     try {
@@ -133,6 +144,7 @@ class ServerDB {
     }
 
     // Update Supabase
+    if (this.isTestEnv()) return true;
     try {
       const res = await fetch(`${this.url}/rest/v1/monopoly_rooms?id=eq.${encodeURIComponent(roomId)}`, {
         method: 'PATCH',
@@ -159,6 +171,7 @@ class ServerDB {
     delete local[roomId];
     this.writeLocalRooms(local);
 
+    if (this.isTestEnv()) return true;
     try {
       const res = await fetch(`${this.url}/rest/v1/monopoly_rooms?id=eq.${encodeURIComponent(roomId)}`, {
         method: 'DELETE',
@@ -176,6 +189,7 @@ class ServerDB {
    */
   async saveMember(roomId, member) {
     if (!roomId || !member || !member.uid) return false;
+    if (this.isTestEnv()) return true;
     try {
       const payload = {
         room_id: roomId,
@@ -211,6 +225,7 @@ class ServerDB {
    */
   async updateMemberConnection(roomId, userUid, connected, disconnectedAt = null) {
     if (!roomId || !userUid) return false;
+    if (this.isTestEnv()) return true;
     try {
       const res = await fetch(
         `${this.url}/rest/v1/monopoly_room_members?room_id=eq.${encodeURIComponent(roomId)}&user_uid=eq.${encodeURIComponent(userUid)}`,
@@ -236,6 +251,7 @@ class ServerDB {
    */
   async removeMember(roomId, userUid) {
     if (!roomId || !userUid) return false;
+    if (this.isTestEnv()) return true;
     try {
       const res = await fetch(
         `${this.url}/rest/v1/monopoly_room_members?room_id=eq.${encodeURIComponent(roomId)}&user_uid=eq.${encodeURIComponent(userUid)}`,

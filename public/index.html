@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="avatar.css?v=20261013_tokenfix">
-  <link rel="stylesheet" href="monopoly.css?v=20261013_perfopt">
-  <link rel="stylesheet" href="monopoly_fx.css?v=20261013_perfopt">
+  <link rel="stylesheet" href="monopoly.css?v=20261013_roomfix">
+  <link rel="stylesheet" href="monopoly_fx.css?v=20261013_roomfix">
   <link rel="stylesheet" href="vault.css?v=20261013_stardustfix">
   <link rel="stylesheet" href="lounge.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="daily.css?v=20261013_tokenfix">
@@ -860,9 +860,14 @@
                 <span id="activeMatchBannerSub">Your seat is on auto-pilot. Tap to return!</span>
               </div>
             </div>
-            <button class="btn-rejoin-active-flight" id="btnRejoinActiveFlight" type="button">
-              Rejoin Match 🚀
-            </button>
+            <div class="active-match-actions">
+              <button class="btn-rejoin-active-flight" id="btnRejoinActiveFlight" type="button">
+                Rejoin Match 🚀
+              </button>
+              <button class="btn-abandon-active-flight" id="btnAbandonActiveFlight" type="button" title="Leave and forfeit this match">
+                ✕ Leave
+              </button>
+            </div>
           </div>
 
           <!-- Room Cards List (Scrollable Feed) -->
@@ -2444,7 +2449,7 @@
   <script src="monopoly_rules.js?v=20261013_perfopt"></script>
   <script src="monopoly_bot.js?v=20261013_perfopt"></script>
   <script src="monopoly_fx.js?v=20261013_perfopt"></script>
-  <script src="monopoly.js?v=20261013_perfopt"></script>
+  <script src="monopoly.js?v=20261013_roomfix"></script>
   <script src="skydash_audio.js?v=20261013_tokenfix"></script>
   <script src="skydash.js?v=20261013_tokenfix"></script>
   <!-- Phase 5 Supabase & Social SDK -->

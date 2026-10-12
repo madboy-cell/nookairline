@@ -1023,13 +1023,6 @@ const RoomRegistry = require('./server_rooms.js');
 const roomRegistry = new RoomRegistry();
 const departureBoardSubscribers = new Set();
 
-// Initialize RoomRegistry from persistent database/storage
-roomRegistry.initFromDatabase().then(() => {
-  console.log(`[RoomRegistry] Persistent room registry ready. Active rooms: ${roomRegistry.rooms.size}`);
-}).catch((err) => {
-  console.warn('[RoomRegistry] Database init warning:', err.message);
-});
-
 function sanitizeRoom(room) {
   if (!room) return null;
   return {
@@ -1084,6 +1077,21 @@ function broadcastDepartureBoard() {
 const BotTakeoverManager = require('./server_bot_takeover.js');
 const botTakeoverManager = new BotTakeoverManager(roomRegistry, broadcastToRoom, broadcastDepartureBoard);
 roomRegistry.botTakeoverManager = botTakeoverManager;
+
+// Initialize RoomRegistry from persistent database/storage
+roomRegistry.initFromDatabase().then(() => {
+  console.log(`[RoomRegistry] Persistent room registry ready. Active rooms: ${roomRegistry.rooms.size}`);
+  // Check abandonment on any in-flight room restored from cloud
+  if (roomRegistry.botTakeoverManager) {
+    roomRegistry.rooms.forEach((room) => {
+      if (room.status === 'in_flight') {
+        roomRegistry.botTakeoverManager.checkAbandonment(room);
+      }
+    });
+  }
+}).catch((err) => {
+  console.warn('[RoomRegistry] Database init warning:', err.message);
+});
 
 function handleRoomMessage(ws, message) {
   if (message.type === 'room_check_session') {
@@ -1167,18 +1175,62 @@ function handleRoomMessage(ws, message) {
     return;
   }
 
+  if (message.type === 'room_abandon_match') {
+    const uid = message.uid || (ws.terminal ? `user_${ws.terminal}` : null);
+    const roomId = message.roomId;
+    console.log(`[RoomRegistry] Player ${uid} explicitly abandoned match in room ${roomId}`);
+    const room = (roomId ? roomRegistry.getRoom(roomId) : null) || (uid ? roomRegistry.getActiveInFlightRoomForUser(uid) : null);
+    if (room) {
+      const slot = room.slots.find((s) => s.occupiedBy === uid);
+      if (slot) {
+        slot.occupiedBy = null;
+        slot.name = 'Open Slot';
+        slot.avatar = '';
+        slot.connected = false;
+        slot.controller = 'BOT_PERMANENT';
+        slot.difficulty = 'easy';
+      }
+      roomRegistry.db.removeMember(room.id, uid).catch(() => {});
+      const remainingHumans = room.slots.filter((s) => s.type === 'human' && s.occupiedBy);
+      if (remainingHumans.length === 0 || (room.clients && room.clients.size === 0)) {
+        room.status = 'finished';
+        roomRegistry.deleteRoom(room.id);
+      } else {
+        broadcastToRoom(room, {
+          type: 'room_update',
+          room: sanitizeRoom(room)
+        });
+      }
+    }
+    ws.send(JSON.stringify({
+      type: 'room_match_abandoned',
+      roomId: roomId || (room && room.id)
+    }));
+    broadcastDepartureBoard();
+    return;
+  }
+
   if (message.type === 'room_create') {
     const hostUid = message.hostUid || `user_${ws.terminal}_${Date.now().toString(36)}`;
-    const activeFlight = roomRegistry.getActiveInFlightRoomForUser(hostUid);
+    let activeFlight = roomRegistry.getActiveInFlightRoomForUser(hostUid);
     if (activeFlight) {
-      ws.send(JSON.stringify({
-        type: 'room_error',
-        error: 'ACTIVE_MATCH_IN_PROGRESS',
-        message: 'You have a match in progress. You must rejoin your original room.',
-        activeRoomId: activeFlight.id,
-        activeRoomCode: activeFlight.code
-      }));
-      return;
+      const activeClients = activeFlight.clients ? activeFlight.clients.size : 0;
+      const connectedHumans = activeFlight.slots ? activeFlight.slots.filter((s) => s.type === 'human' && s.occupiedBy && s.connected) : [];
+      if (message.forceAbandon || activeClients === 0 || connectedHumans.length === 0) {
+        console.log(`[RoomRegistry] Auto-abandoning deserted match ${activeFlight.id} for host ${hostUid} creating new room.`);
+        activeFlight.status = 'finished';
+        roomRegistry.deleteRoom(activeFlight.id);
+        activeFlight = null;
+      } else {
+        ws.send(JSON.stringify({
+          type: 'room_error',
+          error: 'ACTIVE_MATCH_IN_PROGRESS',
+          message: 'You have a match in progress. You must rejoin your original room.',
+          activeRoomId: activeFlight.id,
+          activeRoomCode: activeFlight.code
+        }));
+        return;
+      }
     }
 
     const room = roomRegistry.createRoom({

@@ -2302,10 +2302,12 @@ function initMonopoly() {
     boardHostFlightBtn.addEventListener('click', () => {
       const activeFlight = getActiveInFlightMatch();
       if (activeFlight) {
-        if (typeof showToast === 'function') {
-          showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+        if (confirm('You have a match in progress. Leave current match and host a new room?')) {
+          if (typeof abandonActiveFlight === 'function') abandonActiveFlight(activeFlight);
+          switchNeoraView('create');
+        } else {
+          highlightActiveMatchBanner();
         }
-        highlightActiveMatchBanner();
         return;
       }
       switchNeoraView('create');
@@ -2354,11 +2356,11 @@ function initMonopoly() {
       }
       const activeFlight = getActiveInFlightMatch();
       if (activeFlight) {
-        if (typeof showToast === 'function') {
-          showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+        if (confirm('Leave your previous match and host this new room?')) {
+          if (typeof abandonActiveFlight === 'function') abandonActiveFlight(activeFlight);
+        } else {
+          return;
         }
-        highlightActiveMatchBanner();
-        return;
       }
       const nameInp = $m('createRoomNameInput');
       const descInp = $m('createRoomDescInput');
@@ -3579,6 +3581,31 @@ function handleRejoinActiveFlight(targetFlight = null) {
   }
 }
 
+function abandonActiveFlight(targetFlight = null) {
+  const flight = targetFlight || getActiveInFlightMatch();
+  const myUid = getPersistentPlayerUid();
+  pendingActiveSession = null;
+  currentFlightRoom = null;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('sky_active_room_id');
+  }
+  const banner = $m('neoraActiveMatchBanner');
+  if (banner) banner.classList.add('hidden');
+
+  if (typeof sendSignaling === 'function') {
+    sendSignaling({
+      type: 'room_abandon_match',
+      roomId: flight?.id,
+      uid: myUid
+    });
+  }
+  if (typeof showToast === 'function') {
+    showToast('Flight forfeited. You can now host or join a new room.');
+  }
+  renderDepartureBoard();
+}
+window.abandonActiveFlight = abandonActiveFlight;
+
 function handleMonopolyExitGame() {
   const modal = $m('monopolyModal');
   if (modal) {
@@ -3671,6 +3698,15 @@ function renderDepartureBoard() {
         rejoinBtn.onclick = (e) => {
           e.stopPropagation();
           handleRejoinActiveFlight(activeFlight);
+        };
+      }
+      const abandonBtn = $m('btnAbandonActiveFlight');
+      if (abandonBtn) {
+        abandonBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm('Leave and forfeit this match? Your seat will be freed.')) {
+            abandonActiveFlight(activeFlight);
+          }
         };
       }
     } else {
@@ -4308,11 +4344,12 @@ function renderNeoraCreateRoom() {
 function createFlightRoom(isPublic = true, flightName = null, desc = null, tags = null, customSlots = null) {
   const activeMatch = getActiveInFlightMatch();
   if (activeMatch) {
-    if (typeof showToast === 'function') {
-      showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+    if (confirm('You have an active match in progress. Leave current match and host this new room?')) {
+      if (typeof abandonActiveFlight === 'function') abandonActiveFlight(activeMatch);
+    } else {
+      highlightActiveMatchBanner();
+      return;
     }
-    highlightActiveMatchBanner();
-    return;
   }
   const myAvatar = getEquippedCostumeAvatar();
   const myRole = getMonopolyMyRole();
@@ -4381,6 +4418,7 @@ function createFlightRoom(isPublic = true, flightName = null, desc = null, tags 
       description: resolvedDesc,
       tags: resolvedTags,
       game: 'monopoly',
+      forceAbandon: true,
       slots: slotsToUse
     });
   }
@@ -10554,6 +10592,16 @@ function handleMonopolyMessage(message) {
 
   if (message.type === 'room_list_update') {
     departureBoardFlights = Array.isArray(message.rooms) ? message.rooms : [];
+    renderDepartureBoard();
+    return;
+  }
+
+  if (message.type === 'room_match_abandoned') {
+    pendingActiveSession = null;
+    currentFlightRoom = null;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
+    const banner = $m('neoraActiveMatchBanner');
+    if (banner) banner.classList.add('hidden');
     renderDepartureBoard();
     return;
   }
