@@ -125,6 +125,12 @@ function createSimPlayer(role, policyType) {
     if (p.mythic.perk === 'foxfireShield') p.inventory.push('shield');
   }
 
+  // Veteran Captain starter kit for Hard Bot (Zero skills & Zero ultimates)
+  if (policyType === 'hard') {
+    p.miles += 100;
+    p.inventory.push('shield');
+  }
+
   return p;
 }
 

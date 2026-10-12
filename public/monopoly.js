@@ -2941,6 +2941,13 @@ function startBotGame(level = 'hard') {
     if (bpk.startItem && ITEMS[bpk.startItem] && bpl.inventory.length < MONO_CFG.MAX_ITEMS) bpl.inventory.push(bpk.startItem);
     if (bpk.reverseRentHex || isPhantomRoyalty(botRole)) bpl.phantomRentReversals = 2;
   }
+  if (level === 'hard') {
+    // Capt. Whiskers veteran captain starter kit (Strictly Zero skills & Zero ultimates)
+    fresh.players[botRole].miles += 200;
+    if (fresh.players[botRole].inventory.length < MONO_CFG.MAX_ITEMS) {
+      fresh.players[botRole].inventory.push('shield');
+    }
+  }
 
   monopolyState = fresh;
   if (currentFlightRoom) {
@@ -4732,6 +4739,17 @@ function startPartyGame(config = {}) {
       if (pk.reverseRentHex || isPhantomRoyalty(r)) pl.phantomRentReversals = 2;
     });
   }
+
+  // Veteran Captain starter kit for Hard Bots (Strictly Zero skills & Zero ultimates)
+  Object.keys(fresh.players).forEach((r) => {
+    const pl = fresh.players[r];
+    if (pl && pl.isBot && pl.botLevel === 'hard') {
+      pl.miles += 200;
+      if (pl.inventory.length < MONO_CFG.MAX_ITEMS) {
+        pl.inventory.push('shield');
+      }
+    }
+  });
 
   monopolyState = fresh;
   saveLocalMonopolyState();
