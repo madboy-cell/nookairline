@@ -575,17 +575,30 @@ function renderAvatarDOM(containerId, avatar, isMe = true) {
 
 // Check if partner is active (linked couple in Supabase or peer connected via signaling)
 function isPartnerActive() {
-  if (typeof window !== 'undefined' && window.nookPartnerOnline === true) return true;
   if (typeof window !== 'undefined' && window.SkySupabase) {
-    if (window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple) return true;
-    if (typeof window.SkySupabase.isCouple === 'function' && window.SkySupabase.isCouple()) return true;
+    const cs = window.SkySupabase.coupleStatus;
+    if (cs) {
+      if (!cs.isCouple) return false;
+      return window.nookPartnerOnline === true;
+    }
+    if (typeof window.SkySupabase.isCouple === 'function' && !window.SkySupabase.isCouple()) {
+      return false;
+    }
   }
+
+  // Fallback for legacy direct terminal testing via URL (?terminal=bkk / ?terminal=dxb)
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const hasExplicitTerminal = params && (params.has('terminal') || params.has('role'));
+  if (hasExplicitTerminal && typeof window !== 'undefined' && window.nookPartnerOnline === true) {
+    return true;
+  }
+
   return false;
 }
 
 // Update partner presence dynamically (e.g. peer connected, couple linked/unlinked)
 function updatePartnerPresence(online) {
-  const active = (typeof online === 'boolean') ? (online || isPartnerActive()) : isPartnerActive();
+  const active = isPartnerActive();
   const partnerEl = document.getElementById('partnerAvatar');
 
   if (active) {
@@ -1916,10 +1929,8 @@ function renderSeasonSceneryRow() {
 
 // Handle Incoming Avatar Messages from WebSocket Signaling
 function handleAvatarMessage(message) {
-  if (['avatar_move', 'avatar_outfit', 'avatar_hug', 'avatar_emote'].includes(message.type)) {
-    if (!isPartnerActive()) {
-      updatePartnerPresence(true);
-    }
+  if (!isPartnerActive()) {
+    return;
   }
 
   switch (message.type) {

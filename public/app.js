@@ -432,8 +432,9 @@ async function handleSignalingMessage(message) {
       myTerminal = message.terminal;
       window.myTerminal = myTerminal;
       window.nookPartnerOnline = !!message.partnerOnline;
+      const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
       if (typeof window.updatePartnerPresence === 'function') {
-        window.updatePartnerPresence(!!message.partnerOnline);
+        window.updatePartnerPresence(isCouple ? !!message.partnerOnline : false);
       }
       if (typeof updateMonopolyHUD === 'function') updateMonopolyHUD();
       if (window.NookTelemetry) window.NookTelemetry.setTerminal(myTerminal);
@@ -441,43 +442,42 @@ async function handleSignalingMessage(message) {
       const seatTag = document.getElementById('seatTag');
       if (seatTag) seatTag.textContent = `SEAT ${myTerminal.toUpperCase()}`;
       if (partnerName) {
-        const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
         partnerName.textContent = isCouple ? (window.SkySupabase.coupleStatus.partner?.username || 'Partner') : 'Co-Pilot Lounge';
       }
-      if (message.partnerOnline) {
-        updateCapsule('Partner Boarded • Ready to Fly ✈️', true);
-        updateBadge('Partner Boarded • Ready', true);
+      if (message.partnerOnline && isCouple) {
+        const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
+        updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
+        updateBadge(`${partnerUname} Boarded • Ready`, true);
+      } else if (isCouple) {
+        const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
+        updateCapsule(`Awaiting ${partnerUname}...`, false);
+        updateBadge(`Waiting for ${partnerUname}...`, false);
       } else {
-        const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
-        if (isCouple) {
-          const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
-          updateCapsule(`Awaiting ${partnerUname}...`, false);
-          updateBadge(`Waiting for ${partnerUname}...`, false);
-        } else {
-          updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
-          updateBadge('Solo Flight • Invite Partner', false);
-        }
+        updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
+        updateBadge('Solo Flight • Invite Partner', false);
       }
       break;
 
     case 'partner_status':
       window.nookPartnerOnline = !!message.online;
+      const isCoupleActive = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
       if (typeof window.updatePartnerPresence === 'function') {
-        window.updatePartnerPresence(!!message.online);
+        window.updatePartnerPresence(isCoupleActive ? !!message.online : false);
       }
-      if (message.online) {
+      if (message.online && isCoupleActive) {
         if (partnerOfflineGraceTimer) {
           clearTimeout(partnerOfflineGraceTimer);
           partnerOfflineGraceTimer = null;
           console.log('[Signaling] Partner back online, cleared offline grace timer.');
         }
-        updateCapsule('Partner Boarded • Ready to Fly ✈️', true);
-        updateBadge('Partner Boarded • Connected', true);
+        const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
+        updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
+        updateBadge(`${partnerUname} Boarded • Connected`, true);
         playCabinChime('board');
         if (typeof broadcastMyAvatar === 'function') {
           broadcastMyAvatar();
         }
-        if (message.role === 'caller' && !isCallActive) {
+        if (message.role === 'caller' && !isCallActive && window.SkySupabase?.checkCoupleCallAllowed?.()) {
           startCall();
         } else if (message.role === 'caller' && isCallActive) {
           // Partner may have reloaded mid-call: if our line doesn't recover, rebuild it fresh
@@ -488,6 +488,9 @@ async function handleSignalingMessage(message) {
             }
           }, 6000);
         }
+      } else if (!isCoupleActive) {
+        updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
+        updateBadge('Solo Flight • Invite Partner', false);
       } else {
         updateCapsule('Partner Signal Fluctuation • Reconnecting...', false);
         updateBadge('Reconnecting Line...', false);
@@ -596,6 +599,32 @@ async function handleSignalingMessage(message) {
       endCall(false);
       break;
   }
+}
+
+// Synchronize couple status transitions with the top capsule and cabin presence
+if (typeof window !== 'undefined') {
+  window.addEventListener('sky:couple_status_changed', (e) => {
+    const couple = e.detail || window.SkySupabase?.coupleStatus;
+    const isCouple = !!(couple && couple.isCouple);
+    const partnerUname = couple?.partner?.username || 'Partner';
+    const partnerNameEl = document.getElementById('partnerName');
+    if (partnerNameEl) {
+      partnerNameEl.textContent = isCouple ? partnerUname : 'Co-Pilot Lounge';
+    }
+    if (typeof window.updatePartnerPresence === 'function') {
+      window.updatePartnerPresence(isCouple ? !!window.nookPartnerOnline : false);
+    }
+    if (isCouple && window.nookPartnerOnline) {
+      updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
+      updateBadge(`${partnerUname} Boarded • Ready`, true);
+    } else if (isCouple) {
+      updateCapsule(`Awaiting ${partnerUname}...`, false);
+      updateBadge(`Waiting for ${partnerUname}...`, false);
+    } else {
+      updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
+      updateBadge('Solo Flight • Invite Partner', false);
+    }
+  });
 }
 
 // 4. Start WebRTC Call

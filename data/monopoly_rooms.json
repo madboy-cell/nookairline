@@ -2131,5 +2131,497 @@
       }
     ],
     "updated_at": "2026-10-12T11:06:08.016Z"
+  },
+  "flight_mv55n6be_liok": {
+    "id": "flight_mv55n6be_liok",
+    "code": "637135",
+    "flight_number": "SKY-637",
+    "name": "Master Flight",
+    "host_uid": "u_host",
+    "host_name": "Captain Nook",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "u_host",
+        "controller": "HUMAN",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672792
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "u_g1",
+        "controller": "HUMAN",
+        "name": "Guest 1",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672791
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": "u_g2",
+        "controller": "HUMAN",
+        "name": "Guest 2",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672789
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": "u_g3",
+        "controller": "HUMAN",
+        "name": "Guest 3",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672786
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "u_host",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803612762
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:32.792Z"
+  },
+  "flight_mv55n6hr_dcj5": {
+    "id": "flight_mv55n6hr_dcj5",
+    "code": "477688",
+    "flight_number": "SKY-477",
+    "name": "Widget Express",
+    "host_uid": "host_widget",
+    "host_name": "Captain Widget",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "host_widget",
+        "name": "Captain Widget",
+        "controller": "HUMAN",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672997
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "guest_joiner",
+        "name": "Luna Star",
+        "controller": "HUMAN",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803672998
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "bot",
+        "difficulty": "easy",
+        "name": "Trainee Mochi 🐾",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "bot",
+        "difficulty": "hard",
+        "name": "Capt. Whiskers 😼",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_widget",
+        "name": "Captain Widget",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803612991
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:32.999Z"
+  },
+  "flight_mv55n6i4_4lxj": {
+    "id": "flight_mv55n6i4_4lxj",
+    "code": "377429",
+    "flight_number": "SKY-377",
+    "name": "Master Flight",
+    "host_uid": "host_spec",
+    "host_name": "Pilot Bob",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "host_spec",
+        "controller": "HUMAN",
+        "name": "Pilot Bob",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803673143
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "guest_spec",
+        "controller": "HUMAN",
+        "name": "Alice",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803673141
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "bot",
+        "difficulty": "easy",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "name": "Cadet Mochi 🐣",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "bot",
+        "difficulty": "hard",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "name": "Admiral Claw 🦁",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_spec",
+        "name": "Pilot Bob",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803613004
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:33.143Z"
+  },
+  "flight_mv55n6m1_99cz": {
+    "id": "flight_mv55n6m1_99cz",
+    "code": "775153",
+    "flight_number": "SKY-775",
+    "name": "Master Flight",
+    "host_uid": "takeover_host",
+    "host_name": "Captain Takeover",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "takeover_host",
+        "name": "Captain Takeover",
+        "controller": "HUMAN",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803673236
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "takeover_guest",
+        "name": "Guest Dropper",
+        "controller": "HUMAN",
+        "avatar": "assets/got_queen_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803673238,
+        "takeoverAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "bot",
+        "difficulty": "easy",
+        "name": "Bot 1",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "bot",
+        "difficulty": "hard",
+        "name": "Bot 2",
+        "controller": "BOT_PERMANENT",
+        "occupiedBy": null,
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "takeover_host",
+        "name": "Captain Takeover",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803613145
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:33.238Z"
+  },
+  "flight_mv55n6op_di49": {
+    "id": "flight_mv55n6op_di49",
+    "code": "868777",
+    "flight_number": "SKY-868",
+    "name": "Master Flight",
+    "host_uid": "user_bkk_anti_self",
+    "host_name": "Real Human 🐺",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "user_bkk_anti_self",
+        "name": "Real Human 🐺",
+        "controller": "HUMAN",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": false,
+        "disconnectedAt": 1791803673244
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "bot",
+        "difficulty": "easy",
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "controller": "BOT_PERMANENT",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "closed",
+        "difficulty": null,
+        "occupiedBy": null,
+        "name": "Closed Seat",
+        "controller": "HUMAN",
+        "avatar": "",
+        "ready": false,
+        "connected": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "closed",
+        "difficulty": null,
+        "occupiedBy": null,
+        "name": "Closed Seat",
+        "controller": "HUMAN",
+        "avatar": "",
+        "ready": false,
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_bkk_anti_self",
+        "name": "Real Human",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803613241
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:33.244Z"
+  },
+  "flight_mv55n6ou_l5k4": {
+    "id": "flight_mv55n6ou_l5k4",
+    "code": "600682",
+    "flight_number": "SKY-600",
+    "name": "Master Flight",
+    "host_uid": "user_dxb_connected",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "user_dxb_connected",
+        "name": "Nook ✈️",
+        "controller": "HUMAN",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "bot",
+        "difficulty": "easy",
+        "occupiedBy": null,
+        "controller": "BOT_PERMANENT",
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "bot",
+        "difficulty": "easy",
+        "occupiedBy": null,
+        "controller": "BOT_PERMANENT",
+        "name": "Cadet Mochi 🐣",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "bot",
+        "difficulty": "easy",
+        "occupiedBy": null,
+        "controller": "BOT_PERMANENT",
+        "name": "Pilot Pip 🐱",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "ready": true,
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_dxb_connected",
+        "name": "Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791803613246
+      }
+    ],
+    "updated_at": "2026-10-12T11:14:33.247Z"
   }
 }
