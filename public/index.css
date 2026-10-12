@@ -285,7 +285,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 12px;
   background: rgba(212, 175, 55, 0.16);
   border: 1px solid rgba(212, 175, 55, 0.45);
@@ -294,17 +294,35 @@ html, body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 2px;
+  margin-left: 4px;
   flex-shrink: 0;
+  user-select: none;
+}
+
+.capsule-btn-icon {
+  font-size: 11px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .capsule-copy-btn:hover {
   background: rgba(212, 175, 55, 0.35);
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .capsule-copy-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
+}
+
+.capsule-copy-btn.is-connected {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
+}
+
+.capsule-copy-btn.is-connected:hover {
+  background: rgba(16, 185, 129, 0.32);
 }
 
 /* Toast Notification */

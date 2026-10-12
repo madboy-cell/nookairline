@@ -44,6 +44,13 @@
   const audioContexts = [];
 
   function detectTerminal() {
+    if (window.myTerminal) return window.myTerminal;
+    if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+      const base = window.SkySupabase.getCharacterBase();
+      if (base) return base;
+    }
+    const localBase = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
+    if (localBase) return localBase;
     const p = window.location.pathname.toLowerCase();
     if (p.includes('/bkk') || params.get('terminal') === 'bkk') return 'bkk';
     if (p.includes('/dxb') || params.get('terminal') === 'dxb') return 'dxb';

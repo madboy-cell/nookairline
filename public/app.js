@@ -140,6 +140,30 @@ function updateCapsule(text, isReady = false) {
   if (callActionBtn) {
     callActionBtn.classList.toggle('ready-to-connect', isReady && !isCallActive);
   }
+
+  const isCouple = !!(window.SkySupabase?.coupleStatus?.isCouple);
+  const capsuleBtnLabel = document.getElementById('capsuleBtnLabel');
+  const capsuleBtnIcon = document.getElementById('capsuleBtnIcon');
+
+  if (capsuleCopyBtn) {
+    if (!isCouple) {
+      if (capsuleBtnIcon) capsuleBtnIcon.textContent = '💞';
+      if (capsuleBtnLabel) capsuleBtnLabel.textContent = 'Pair Partner';
+      capsuleCopyBtn.title = 'Open Couple Sanctuary to Link Partner';
+      capsuleCopyBtn.classList.remove('is-connected');
+    } else if (isReady) {
+      if (capsuleBtnIcon) capsuleBtnIcon.textContent = '💚';
+      if (capsuleBtnLabel) capsuleBtnLabel.textContent = 'Connected';
+      capsuleCopyBtn.title = 'Partner Online • Couple Sanctuary';
+      capsuleCopyBtn.classList.add('is-connected');
+    } else {
+      const partnerUname = window.SkySupabase?.coupleStatus?.partner?.username || 'Partner';
+      if (capsuleBtnIcon) capsuleBtnIcon.textContent = '💌';
+      if (capsuleBtnLabel) capsuleBtnLabel.textContent = 'Invite';
+      capsuleCopyBtn.title = `Share Flight Invite Link with ${partnerUname}`;
+      capsuleCopyBtn.classList.remove('is-connected');
+    }
+  }
 }
 
 function showToast(text) {
@@ -338,11 +362,17 @@ function applyCameraUI() {
 }
 
 function getTerminal() {
+  if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+    const base = window.SkySupabase.getCharacterBase();
+    if (base === 'bkk' || base === 'dxb') return base;
+  }
+  const localBase = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
+  if (localBase === 'bkk' || localBase === 'dxb') return localBase;
   const path = window.location.pathname.toLowerCase();
   const params = new URLSearchParams(window.location.search);
   if (path.includes('/bkk') || params.get('terminal') === 'bkk' || params.get('role') === 'bkk') return 'bkk';
   if (path.includes('/dxb') || params.get('terminal') === 'dxb' || params.get('role') === 'dxb') return 'dxb';
-  return '';
+  return 'bkk';
 }
 
 let myTerminal = getTerminal();
@@ -450,11 +480,11 @@ async function handleSignalingMessage(message) {
         updateBadge(`${partnerUname} Boarded • Ready`, true);
       } else if (isCouple) {
         const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
-        updateCapsule(`Awaiting ${partnerUname}...`, false);
+        updateCapsule(`Awaiting ${partnerUname}... ⏳`, false);
         updateBadge(`Waiting for ${partnerUname}...`, false);
       } else {
-        updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
-        updateBadge('Solo Flight • Invite Partner', false);
+        updateCapsule('Solo Flight • Couple Sanctuary 💫', false);
+        updateBadge('Solo Flight • Couple Sanctuary', false);
       }
       break;
 
@@ -489,8 +519,8 @@ async function handleSignalingMessage(message) {
           }, 6000);
         }
       } else if (!isCoupleActive) {
-        updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
-        updateBadge('Solo Flight • Invite Partner', false);
+        updateCapsule('Solo Flight • Couple Sanctuary 💫', false);
+        updateBadge('Solo Flight • Couple Sanctuary', false);
       } else {
         updateCapsule('Partner Signal Fluctuation • Reconnecting...', false);
         updateBadge('Reconnecting Line...', false);
@@ -618,11 +648,20 @@ if (typeof window !== 'undefined') {
       updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
       updateBadge(`${partnerUname} Boarded • Ready`, true);
     } else if (isCouple) {
-      updateCapsule(`Awaiting ${partnerUname}...`, false);
+      updateCapsule(`Awaiting ${partnerUname}... ⏳`, false);
       updateBadge(`Waiting for ${partnerUname}...`, false);
     } else {
-      updateCapsule('Solo Flight • Tap Copy Link to Invite ✈️', false);
-      updateBadge('Solo Flight • Invite Partner', false);
+      updateCapsule('Solo Flight • Couple Sanctuary 💫', false);
+      updateBadge('Solo Flight • Couple Sanctuary', false);
+    }
+  });
+
+  window.addEventListener('sky:character_base_changed', (e) => {
+    if (e.detail && e.detail.base) {
+      myTerminal = e.detail.base;
+      window.myTerminal = myTerminal;
+      const seatTag = document.getElementById('seatTag');
+      if (seatTag) seatTag.textContent = `SEAT ${myTerminal.toUpperCase()}`;
     }
   });
 }
@@ -642,7 +681,7 @@ async function startCall() {
   isCaller = true;
   if (window.NookTelemetry) window.NookTelemetry.callStarted('caller');
   updateCallActionBtn(true);
-  updateBadge('Securing Dubai Line (TURNS 443)...', false);
+  updateBadge('Securing Couple Line (TURNS 443)...', false);
 
   createPeerConnection();
   addLocalMediaToPeer();
@@ -1249,31 +1288,55 @@ function setupEventListeners() {
     }
   });
 
-  // Tapping the status capsule when ready also starts the flight
+  // Tapping the status capsule when ready starts flight, or opens Couple Sanctuary when solo
   if (flightStatusCapsule) {
     flightStatusCapsule.addEventListener('click', (e) => {
       if (e.target.closest('#capsuleCopyBtn')) return;
       if (!isCallActive && flightStatusCapsule.classList.contains('ready')) {
-        callActionBtn.click();
+        if (callActionBtn) callActionBtn.click();
+      } else if (!window.SkySupabase?.coupleStatus?.isCouple) {
+        if (window.SkySocialUI && typeof window.SkySocialUI.openDrawer === 'function') {
+          window.SkySocialUI.openDrawer('couple');
+        }
       }
     });
   }
 
-  // Quick Copy Partner Link Button in Capsule
+  // Quick Action Button in Capsule (Couple Sanctuary / Flight Invite)
   if (capsuleCopyBtn) {
     capsuleCopyBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       triggerHaptic(12);
-      const partnerTerminal = myTerminal === 'bkk' ? 'dxb' : 'bkk';
-      const partnerUrl = `${window.location.origin}/${partnerTerminal}`;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(partnerUrl).then(() => {
-          showToast(`📋 ${partnerTerminal.toUpperCase()} link copied to clipboard!`);
-        }).catch(() => {
-          prompt('Copy partner link:', partnerUrl);
-        });
+      const isCouple = !!(window.SkySupabase?.coupleStatus?.isCouple);
+      if (!isCouple) {
+        if (window.SkySocialUI && typeof window.SkySocialUI.openDrawer === 'function') {
+          window.SkySocialUI.openDrawer('couple');
+        } else if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
+          window.SkySocialUI.showCoupleGatingModal();
+        } else {
+          showToast('💞 Open Social Drawer to pair your Couple Partner.');
+        }
+        return;
+      }
+
+      const partnerUname = window.SkySupabase?.coupleStatus?.partner?.username || 'Partner';
+      if (flightStatusCapsule && flightStatusCapsule.classList.contains('ready')) {
+        // Partner is connected & ready - open Couple Sanctuary
+        if (window.SkySocialUI && typeof window.SkySocialUI.openDrawer === 'function') {
+          window.SkySocialUI.openDrawer('couple');
+        }
       } else {
-        prompt('Copy partner link:', partnerUrl);
+        // Partner is offline - copy clean flight invite link without /dxb or /bkk
+        const flightUrl = `${window.location.origin}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(flightUrl).then(() => {
+            showToast(`💌 Flight invite link copied to share with ${partnerUname}!`);
+          }).catch(() => {
+            prompt('Copy flight invite link:', flightUrl);
+          });
+        } else {
+          prompt('Copy flight invite link:', flightUrl);
+        }
       }
     });
   }

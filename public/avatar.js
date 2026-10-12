@@ -415,8 +415,14 @@ try {
 } catch (_) {}
 let previewSceneryTheme = currentSceneryTheme;
 
-// Detect active terminal role from URL
+// Detect active terminal role from character base or URL
 function getTerminalRole() {
+  if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+    const base = window.SkySupabase.getCharacterBase();
+    if (base === 'bkk' || base === 'dxb') return base;
+  }
+  const localBase = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
+  if (localBase === 'bkk' || localBase === 'dxb') return localBase;
   const path = window.location.pathname.toLowerCase();
   const params = new URLSearchParams(window.location.search);
   if (path.includes('/dxb') || params.get('terminal') === 'dxb') return 'dxb';
@@ -598,7 +604,7 @@ function isPartnerActive() {
 
 // Update partner presence dynamically (e.g. peer connected, couple linked/unlinked)
 function updatePartnerPresence(online) {
-  const active = isPartnerActive();
+  const active = typeof online === 'boolean' ? online : isPartnerActive();
   const partnerEl = document.getElementById('partnerAvatar');
 
   if (active) {
