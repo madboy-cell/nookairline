@@ -2811,6 +2811,12 @@ function openMonopolyGame(broadcast = true) {
   modal.classList.add('active');
   monopolyState.active = true;
 
+  if (window.SkyPixi && typeof window.SkyPixi.init === 'function') {
+    window.SkyPixi.init().then(() => {
+      if (window.SkyPixi.resize) window.SkyPixi.resize();
+    }).catch(() => {});
+  }
+
   // Sync avatar costumes & sprites with current selections
   syncMonopolyCostumes();
   if (monopolyState.mode !== 'bot' && typeof sendSignaling === 'function') {
@@ -7113,6 +7119,9 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     } else {
       AudioFX.playDiceImpact();
       shakeBoard();
+      if (window.SkyPixi && window.SkyPixi.isReady && typeof window.SkyPixi.spawnDiceImpact === 'function') {
+        window.SkyPixi.spawnDiceImpact();
+      }
       if (shockwave) {
         shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
         void shockwave.offsetWidth;

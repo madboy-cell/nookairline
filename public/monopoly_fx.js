@@ -491,6 +491,9 @@
     ring(p.x, p.y + p.h * 0.1, Math.max(36, p.w * 0.9), 'rgba(255,255,255,0.85)', 450);
     burst({ x: p.x, y: p.y + p.h * 0.25, name: 'smoke', count: 3, spread: 40, up: 30, gravity: 0, life: 600, size: 16, filter: 'sepia(0.6) brightness(1.1)', rotate: false });
     sfx('playThud');
+    if (window.SkyPixi && window.SkyPixi.isReady && typeof window.SkyPixi.spawnTileLanding === 'function') {
+      window.SkyPixi.spawnTileLanding(p.x, p.y + p.h * 0.1);
+    }
   }
 
   function hop(role, fromId, toId, opts = {}) {

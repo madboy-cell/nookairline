@@ -56,6 +56,11 @@
       return false;
     }
 
+    if (SkyPixi.isReady && SkyPixi.app) {
+      resize();
+      return true;
+    }
+
     try {
       const boardWrap = document.getElementById('monopolyBoardWrap') || document.querySelector('.monopoly-board-wrap');
       if (!boardWrap) {
@@ -73,6 +78,8 @@
       }
       SkyPixi.canvas = canvas;
 
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
       // Initialize PixiJS v8 Application
       const app = new PIXI.Application();
       if (typeof app.init === 'function') {
@@ -81,7 +88,7 @@
           backgroundAlpha: 0,
           resizeTo: boardWrap,
           antialias: true,
-          resolution: window.devicePixelRatio || 1,
+          resolution: dpr,
           autoDensity: true
         });
       } else {
@@ -91,7 +98,7 @@
           backgroundAlpha: 0,
           resizeTo: boardWrap,
           antialias: true,
-          resolution: window.devicePixelRatio || 1,
+          resolution: dpr,
           autoDensity: true
         });
       }
@@ -118,7 +125,21 @@
         const delta = (time && time.deltaTime) ? time.deltaTime : 1;
         updateParticles(delta);
         updateMeshes(delta);
+        updateAmbient(delta);
       });
+
+      // Mobile Efficiency & Zero-CPU background hibernation
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('visibilitychange', () => {
+          if (!SkyPixi.app || !SkyPixi.app.ticker) return;
+          if (document.hidden) {
+            SkyPixi.app.ticker.stop();
+          } else {
+            SkyPixi.app.ticker.start();
+            resize();
+          }
+        });
+      }
 
       SkyPixi.isReady = true;
       console.log('✨ [SkyPixi] Hardware-Accelerated 120Hz WebGL Engine Active!');
@@ -128,6 +149,57 @@
       SkyPixi.isReady = false;
       return false;
     }
+  }
+
+  function resize() {
+    if (!SkyPixi.app || !SkyPixi.app.renderer) return;
+    const boardWrap = document.getElementById('monopolyBoardWrap') || document.querySelector('.monopoly-board-wrap');
+    if (!boardWrap) return;
+    const w = boardWrap.clientWidth;
+    const h = boardWrap.clientHeight;
+    if (w > 0 && h > 0 && typeof SkyPixi.app.renderer.resize === 'function') {
+      SkyPixi.app.renderer.resize(w, h);
+    }
+  }
+
+  let ambientTimer = 0;
+  function updateAmbient(delta) {
+    if (!SkyPixi.isReady || !SkyPixi.canvas) return;
+    ambientTimer += delta;
+    if (ambientTimer >= 55) {
+      ambientTimer = 0;
+      if (SkyPixi.activeParticles.length < 24) {
+        const dpr = window.devicePixelRatio || 1;
+        const cX = (SkyPixi.canvas.width / dpr) / 2;
+        const cY = (SkyPixi.canvas.height / dpr) / 2;
+        const spawnX = cX + rand(-90, 90);
+        const spawnY = cY + rand(-110, 110);
+        spawnRadialBurst(spawnX, spawnY, 'stardust', 1, {
+          minSpeed: 0.15,
+          maxSpeed: 0.65,
+          gravity: -0.015,
+          additive: true
+        });
+      }
+    }
+  }
+
+  function spawnTileLanding(x, y) {
+    if (!SkyPixi.isReady) return false;
+    spawnShockwaveRing(x, y, 0xfde047, 36, 260);
+    spawnRadialBurst(x, y, 'spark', 7, { minSpeed: 1, maxSpeed: 4, additive: true });
+    return true;
+  }
+
+  function spawnDiceImpact(x, y) {
+    if (!SkyPixi.isReady) return false;
+    const dpr = window.devicePixelRatio || 1;
+    const targetX = x != null ? x : ((SkyPixi.canvas ? SkyPixi.canvas.width / dpr : 380) / 2);
+    const targetY = y != null ? y : ((SkyPixi.canvas ? SkyPixi.canvas.height / dpr : 532) / 2);
+    spawnShockwaveRing(targetX, targetY, 0xf59e0b, 65, 340);
+    spawnShockwaveRing(targetX, targetY, 0x38bdf8, 95, 440);
+    spawnRadialBurst(targetX, targetY, 'spark', 15, { minSpeed: 2, maxSpeed: 6.5, additive: true });
+    return true;
   }
 
   /**
@@ -195,11 +267,21 @@
   // CORE PARTICLE & MOTION EMITTERS (120 FPS)
   // =========================================================
 
+  const MAX_PARTICLES = 350;
+
   /**
    * Updates all active GPU particles each animation frame.
    */
   function updateParticles(delta) {
     const list = SkyPixi.activeParticles;
+
+    // Mobile efficiency cap: prune oldest particles if burst volume exceeds 350 to ensure 120 FPS
+    while (list.length > MAX_PARTICLES) {
+      const old = list.shift();
+      if (old.parent) old.parent.removeChild(old);
+      old.destroy();
+    }
+
     for (let i = list.length - 1; i >= 0; i--) {
       const p = list[i];
       p.life += delta;
@@ -615,12 +697,32 @@
     }
   };
 
+  function clearAll() {
+    if (!SkyPixi.isReady) return;
+    const pList = SkyPixi.activeParticles;
+    while (pList.length > 0) {
+      const p = pList.pop();
+      if (p.parent) p.parent.removeChild(p);
+      p.destroy();
+    }
+    const mList = SkyPixi.activeMeshes;
+    while (mList.length > 0) {
+      const m = mList.pop();
+      if (m.graphics && m.graphics.parent) m.graphics.parent.removeChild(m.graphics);
+      if (m.graphics) m.graphics.destroy();
+    }
+  }
+
   // Expose API to window
   SkyPixi.init = init;
+  SkyPixi.resize = resize;
+  SkyPixi.clearAll = clearAll;
   SkyPixi.spawnCoinBurst = spawnCoinBurst;
   SkyPixi.spawnRadialBurst = spawnRadialBurst;
   SkyPixi.spawnShockwaveRing = spawnShockwaveRing;
   SkyPixi.spawnLightning = spawnLightning;
+  SkyPixi.spawnTileLanding = spawnTileLanding;
+  SkyPixi.spawnDiceImpact = spawnDiceImpact;
   SkyPixi.ultimates = ultimates;
 
   window.SkyPixi = SkyPixi;
