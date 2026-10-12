@@ -6664,8 +6664,31 @@ body.has-active-modal .vault-pill * {
   position: absolute;
   top: 4px;
   right: 6px;
-  font-size: 11px;
-  color: #64748b;
+  font-size: 13px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: all 0.2s ease;
+  z-index: 4;
+}
+.slot-more-dots:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 8px rgba(217, 70, 239, 0.4);
+}
+.neora-slot-card.host-interactive {
+  cursor: pointer;
+}
+.neora-slot-card.host-interactive:hover {
+  border-color: rgba(217, 70, 239, 0.5);
+  background: rgba(30, 34, 76, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(217, 70, 239, 0.25);
+}
+.neora-slot-card.host-interactive:hover .slot-more-dots {
+  color: #f472b6;
 }
 
 .slot-avatar-container {
@@ -6843,6 +6866,28 @@ body.has-active-modal .vault-pill * {
 .slot-popover-opt .opt-text { display: flex; flex-direction: column; }
 .slot-popover-opt .opt-text strong { font-size: 11px; }
 .slot-popover-opt .opt-text span { font-size: 8.5px; color: #94a3b8; }
+.slot-popover-opt.active-opt {
+  background: rgba(217, 70, 239, 0.22);
+  border-color: #d946ef;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.3);
+}
+.slot-popover-opt.opt-kick {
+  grid-column: 1 / -1;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  margin-top: 4px;
+}
+.slot-popover-opt.opt-kick:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: #f43f5e;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
+}
+.slot-popover-opt.opt-kick .opt-text strong {
+  color: #f43f5e;
+}
+.slot-popover-opt.opt-kick .opt-text span {
+  color: #fda4af;
+}
 
 /* In-Room Live Chat Container */
 .neora-chat-container {
@@ -7292,6 +7337,18 @@ body.has-active-modal .vault-pill * {
   box-sizing: border-box;
 }
 
+.slot-circle-icon {
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+.slot-avatar-circle.closed {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
 .slot-plus-circle {
   font-size: 22px;
   color: rgba(255, 255, 255, 0.5);

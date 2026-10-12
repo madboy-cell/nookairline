@@ -137,17 +137,30 @@ class RoomRegistry {
     ];
 
     const initialSlots = Array.isArray(slots) && slots.length === 4
-      ? slots.map((s, idx) => ({
-          ...s,
-          id: idx + 1,
-          type: s.type || 'human',
-          controller: s.type === 'bot' ? 'BOT_PERMANENT' : 'HUMAN',
-          occupiedBy: s.type === 'bot' ? null : (idx === 0 ? hostUid : (s.occupiedBy || null)),
-          name: s.type === 'bot' ? (s.name || (idx === 2 ? (s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣') : (idx === 3 ? (s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱') : (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾')))) : (idx === 0 ? hostName : (s.name || `Open Slot`)),
-          avatar: s.type === 'bot' ? (s.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png') : (idx === 0 ? hostAvatar : (s.avatar || '')),
-          ready: s.type === 'bot' ? true : (idx === 0 ? true : (s.ready !== undefined ? s.ready : false)),
-          connected: s.type === 'bot' || (idx === 0)
-        }))
+      ? slots.map((s, idx) => {
+          const type = s.type || 'human';
+          const isHost = idx === 0;
+          const isBot = type === 'bot';
+          const isClosed = type === 'closed';
+
+          const defaultBotName = (idx === 2)
+            ? (s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣')
+            : (idx === 3)
+              ? (s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱')
+              : (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+
+          return {
+            ...s,
+            id: idx + 1,
+            type,
+            controller: isBot ? 'BOT_PERMANENT' : (isClosed ? 'NONE' : 'HUMAN'),
+            occupiedBy: isBot || isClosed ? null : (isHost ? hostUid : (s.occupiedBy || null)),
+            name: isBot ? (s.name || defaultBotName) : (isClosed ? 'Closed Seat' : (isHost ? hostName : (s.name || 'Open Slot'))),
+            avatar: isBot ? (s.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png') : (isClosed ? '' : (isHost ? hostAvatar : (s.avatar || ''))),
+            ready: isBot ? true : (isHost ? true : false),
+            connected: isBot || isHost
+          };
+        })
       : defaultSlots;
 
     const room = {
@@ -780,6 +793,70 @@ class RoomRegistry {
   }
 
   /**
+   * Host kicks a passenger from a seat.
+   */
+  kickPlayer(roomId, slotId, requesterWs = null) {
+    const room = this.getRoom(roomId);
+    if (!room) return null;
+    if (requesterWs) {
+      const data = room.clientData.get(requesterWs);
+      const isHostWs = data && (data.uid === room.hostUid || data.slotId === 1);
+      if (!isHostWs) {
+        return { error: 'NOT_AUTHORIZED', message: 'Only the flight captain can remove passengers.' };
+      }
+    }
+
+    if (slotId === 1) return { error: 'CANNOT_KICK_HOST', message: 'Host seat cannot be removed.' };
+
+    const slot = room.slots.find((s) => s.id === slotId);
+    if (!slot) return null;
+
+    let kickedWs = null;
+    const kickedUid = slot.occupiedBy;
+    const kickedName = slot.name;
+
+    // Evict occupant websocket
+    for (const [cWs, cData] of room.clientData.entries()) {
+      if (cData.slotId === slotId || (kickedUid && cData.uid === kickedUid)) {
+        kickedWs = cWs;
+        room.clients.delete(cWs);
+        room.clientData.delete(cWs);
+        this.clientToRoomId.delete(cWs);
+        break;
+      }
+    }
+
+    // Reset slot to open seat
+    slot.type = 'human';
+    slot.controller = 'HUMAN';
+    slot.occupiedBy = null;
+    slot.ready = false;
+    slot.connected = false;
+    slot.name = 'Open Slot';
+    slot.avatar = '';
+    slot.difficulty = null;
+
+    if (kickedUid) {
+      this.db.removeMember(roomId, kickedUid).catch(() => {});
+    }
+    room.updatedAt = Date.now();
+    this.db.updateRoom(roomId, { slots: room.slots }).catch(() => {});
+
+    // System message
+    room.messages.push({
+      id: `msg_kick_${Date.now().toString(36)}`,
+      uid: 'system',
+      name: 'Flight System ✈️',
+      avatar: 'assets/ui/neora_ref/avatar_nook.png',
+      text: `${kickedName || 'Passenger'} was removed from Seat ${slotId}.`,
+      time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      timestamp: Date.now()
+    });
+
+    return { success: true, room, slot, kickedWs, kickedUid };
+  }
+
+  /**
    * Host cycles or updates a slot in the room.
    */
   updateSlot(roomId, slotId, update = {}, requesterWs = null) {
@@ -787,30 +864,65 @@ class RoomRegistry {
     if (!room) return null;
     if (requesterWs) {
       const data = room.clientData.get(requesterWs);
-      if (!data || data.uid !== room.hostUid) {
+      const isHostWs = data && (data.uid === room.hostUid || data.slotId === 1);
+      if (!isHostWs) {
         return { error: 'NOT_AUTHORIZED', message: 'Only the flight captain can configure seats.' };
       }
     }
 
     const slot = room.slots.find((s) => s.id === slotId);
     if (!slot) return null;
-    if (slotId === 1) return { success: true, slot }; // Host seat is protected
+    if (slotId === 1) return { success: true, room, slot }; // Host seat is protected
+
+    let kickedWs = null;
+    const prevOccupiedBy = slot.occupiedBy;
+
+    // If seat was occupied by human player and new configuration clears them or changes slot type
+    const isReplacingHuman = slot.type === 'human' && prevOccupiedBy && (update.type !== 'human' || update.occupiedBy === null || update.kick);
+    if (isReplacingHuman) {
+      for (const [cWs, cData] of room.clientData.entries()) {
+        if (cData.slotId === slotId || cData.uid === prevOccupiedBy) {
+          kickedWs = cWs;
+          room.clients.delete(cWs);
+          room.clientData.delete(cWs);
+          this.clientToRoomId.delete(cWs);
+          break;
+        }
+      }
+      if (prevOccupiedBy) {
+        this.db.removeMember(roomId, prevOccupiedBy).catch(() => {});
+      }
+    }
 
     // Apply allowed fields
     if (update.type !== undefined) {
       slot.type = update.type;
       if (update.type === 'bot') {
+        slot.controller = 'BOT_PERMANENT';
         slot.occupiedBy = null;
         slot.ready = true;
         slot.connected = true;
+        slot.difficulty = update.difficulty || slot.difficulty || 'easy';
+        slot.name = update.name || (slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+        slot.avatar = update.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png';
       } else if (update.type === 'closed') {
+        slot.controller = 'NONE';
         slot.occupiedBy = null;
         slot.ready = false;
         slot.connected = false;
-      } else if (update.type === 'human' && !update.occupiedBy) {
-        slot.occupiedBy = null;
-        slot.ready = false;
-        slot.connected = false;
+        slot.difficulty = null;
+        slot.name = update.name || 'Closed Seat';
+        slot.avatar = '';
+      } else if (update.type === 'human') {
+        slot.controller = 'HUMAN';
+        slot.difficulty = null;
+        if (!update.occupiedBy) {
+          slot.occupiedBy = null;
+          slot.ready = false;
+          slot.connected = false;
+          slot.name = update.name || 'Open Slot';
+          slot.avatar = '';
+        }
       }
     }
     if (update.difficulty !== undefined) slot.difficulty = update.difficulty;
@@ -821,7 +933,7 @@ class RoomRegistry {
 
     room.updatedAt = Date.now();
     this.db.updateRoom(roomId, { slots: room.slots }).catch(() => {});
-    return { success: true, room, slot };
+    return { success: true, room, slot, kickedWs };
   }
 
   /**

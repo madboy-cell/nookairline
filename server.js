@@ -1180,9 +1180,39 @@ function handleRoomMessage(ws, message) {
     return;
   }
 
+  if (message.type === 'room_kick_player') {
+    const res = roomRegistry.kickPlayer(message.roomId, message.slotId, ws);
+    if (res && res.success) {
+      if (res.kickedWs) {
+        try {
+          res.kickedWs.send(JSON.stringify({
+            type: 'room_kicked',
+            roomId: message.roomId,
+            reason: 'You were removed from the flight room by the captain.'
+          }));
+        } catch (e) {}
+      }
+      broadcastToRoom(res.room, {
+        type: 'room_update',
+        room: sanitizeRoom(res.room)
+      });
+      broadcastDepartureBoard();
+    }
+    return;
+  }
+
   if (message.type === 'room_update_slots') {
     const res = roomRegistry.updateSlot(message.roomId, message.slotId, message.update, ws);
     if (res && res.success) {
+      if (res.kickedWs) {
+        try {
+          res.kickedWs.send(JSON.stringify({
+            type: 'room_kicked',
+            roomId: message.roomId,
+            reason: 'Seat configuration was updated by the captain.'
+          }));
+        } catch (e) {}
+      }
       broadcastToRoom(res.room, {
         type: 'room_update',
         room: sanitizeRoom(res.room)

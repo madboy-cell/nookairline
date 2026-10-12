@@ -875,6 +875,13 @@
                   <span>Lock seat closed</span>
                 </div>
               </button>
+              <button class="slot-popover-opt opt-kick hidden" id="slotPopoverKickBtn" data-opt="kick" type="button">
+                <span class="opt-icon">👢</span>
+                <div class="opt-text">
+                  <strong>Kick Passenger</strong>
+                  <span>Remove player from flight room</span>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -1006,30 +1013,41 @@
                 <span class="slot-player-name" id="createSlot1Name">Nook ✈️</span>
               </div>
 
-              <!-- Slot 2 (Open Slot) -->
-              <div class="create-slot-card slot-configurable" id="createSlot2" data-slot="2" data-type="human" title="Click to choose Open or Bot">
-                <div class="slot-plus-circle">➕</div>
-                <span class="slot-state-label" id="createSlot2Label">Open Slot</span>
+              <!-- Slot 2 (Configurable Slot) -->
+              <div class="create-slot-card slot-configurable" id="createSlot2" data-slot="2">
+                <button class="slot-remove-btn" id="createSlot2RemoveBtn" type="button" title="Set to Open Slot">✕</button>
+                <div class="slot-avatar-circle" id="createSlot2AvatarCircle">
+                  <span class="slot-circle-icon" id="createSlot2Icon">➕</span>
+                  <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img hidden" id="createSlot2Img" alt="" />
+                </div>
+                <select class="slot-bot-select" id="createSlot2Select">
+                  <option value="open" selected>Open Slot</option>
+                  <option value="easy">Bot (Easy) ⌵</option>
+                  <option value="hard">Bot (Hard) ⌵</option>
+                  <option value="closed">Closed</option>
+                </select>
               </div>
 
-              <!-- Slot 3 (Bot Easy with remove button and selector) -->
-              <div class="create-slot-card slot-bot" id="createSlot3" data-slot="3" data-type="bot">
+              <!-- Slot 3 (Configurable Slot) -->
+              <div class="create-slot-card slot-configurable" id="createSlot3" data-slot="3">
                 <button class="slot-remove-btn" id="createSlot3RemoveBtn" type="button" title="Set to Open Slot">✕</button>
-                <div class="slot-avatar-circle bot">
+                <div class="slot-avatar-circle bot" id="createSlot3AvatarCircle">
+                  <span class="slot-circle-icon hidden" id="createSlot3Icon">➕</span>
                   <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" id="createSlot3Img" alt="" />
                 </div>
                 <select class="slot-bot-select" id="createSlot3Select">
-                  <option value="easy" selected>Bot (Easy) ⌵</option>
-                  <option value="hard">Bot (Hard) ⌵</option>
+                  <option value="easy">Bot (Easy) ⌵</option>
+                  <option value="hard" selected>Bot (Hard) ⌵</option>
                   <option value="open">Open Slot</option>
                   <option value="closed">Closed</option>
                 </select>
               </div>
 
-              <!-- Slot 4 (Bot Easy with remove button and selector) -->
-              <div class="create-slot-card slot-bot" id="createSlot4" data-slot="4" data-type="bot">
+              <!-- Slot 4 (Configurable Slot) -->
+              <div class="create-slot-card slot-configurable" id="createSlot4" data-slot="4">
                 <button class="slot-remove-btn" id="createSlot4RemoveBtn" type="button" title="Set to Open Slot">✕</button>
-                <div class="slot-avatar-circle bot">
+                <div class="slot-avatar-circle bot" id="createSlot4AvatarCircle">
+                  <span class="slot-circle-icon hidden" id="createSlot4Icon">➕</span>
                   <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" id="createSlot4Img" alt="" />
                 </div>
                 <select class="slot-bot-select" id="createSlot4Select">

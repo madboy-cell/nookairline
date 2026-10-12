@@ -179,6 +179,65 @@ it('2.6 toggleAutoFill populates unoccupied human slots with bots', () => {
   assert.strictEqual(roomA.slots[3].type, 'human');
 });
 
+it('2.7 Host dynamically changes space configuration (bot easy -> bot hard -> closed -> open)', () => {
+  const hostWs = {};
+  roomA.clients.add(hostWs);
+  roomA.clientData.set(hostWs, { uid: roomA.hostUid, slotId: 1 });
+
+  // 1. Change slot 3 to bot easy
+  const resEasy = registry.updateSlot(roomA.id, 3, { type: 'bot', difficulty: 'easy' }, hostWs);
+  assert.strictEqual(resEasy.success, true);
+  assert.strictEqual(roomA.slots[2].type, 'bot');
+  assert.strictEqual(roomA.slots[2].difficulty, 'easy');
+  assert.strictEqual(roomA.slots[2].ready, true);
+
+  // 2. Change slot 3 to bot hard
+  const resHard = registry.updateSlot(roomA.id, 3, { type: 'bot', difficulty: 'hard' }, hostWs);
+  assert.strictEqual(resHard.success, true);
+  assert.strictEqual(roomA.slots[2].difficulty, 'hard');
+
+  // 3. Change slot 3 to closed
+  const resClosed = registry.updateSlot(roomA.id, 3, { type: 'closed' }, hostWs);
+  assert.strictEqual(resClosed.success, true);
+  assert.strictEqual(roomA.slots[2].type, 'closed');
+  assert.strictEqual(roomA.slots[2].ready, false);
+
+  // 4. Change slot 3 back to open
+  const resOpen = registry.updateSlot(roomA.id, 3, { type: 'human' }, hostWs);
+  assert.strictEqual(resOpen.success, true);
+  assert.strictEqual(roomA.slots[2].type, 'human');
+  assert.strictEqual(roomA.slots[2].occupiedBy, null);
+});
+
+it('2.8 Host kicks connected passenger; non-host kick attempt rejected with NOT_AUTHORIZED', () => {
+  const hostWs = {};
+  const joinerWs = {};
+  roomA.clients.add(hostWs);
+  roomA.clientData.set(hostWs, { uid: roomA.hostUid, slotId: 1 });
+
+  roomA.clients.add(joinerWs);
+  roomA.clientData.set(joinerWs, { uid: 'user_dxb_test2', slotId: 2 });
+  roomA.slots[1].occupiedBy = 'user_dxb_test2';
+  roomA.slots[1].connected = true;
+
+  // 1. Non-host attempts to kick -> rejected
+  const nonHostKick = registry.kickPlayer(roomA.id, 2, joinerWs);
+  assert.strictEqual(nonHostKick.error, 'NOT_AUTHORIZED');
+
+  // 2. Host attempts to kick host seat (slot 1) -> rejected
+  const hostKickSelf = registry.kickPlayer(roomA.id, 1, hostWs);
+  assert.strictEqual(hostKickSelf.error, 'CANNOT_KICK_HOST');
+
+  // 3. Host kicks joiner from seat 2 -> success & evicts socket
+  const kickRes = registry.kickPlayer(roomA.id, 2, hostWs);
+  assert.strictEqual(kickRes.success, true);
+  assert.strictEqual(kickRes.kickedWs, joinerWs);
+  assert.strictEqual(roomA.slots[1].occupiedBy, null);
+  assert.strictEqual(roomA.slots[1].name, 'Open Slot');
+  assert.strictEqual(roomA.slots[1].connected, false);
+  assert.strictEqual(roomA.clients.has(joinerWs), false, 'Kicked socket must be evicted from room');
+});
+
 // -------------------------------------------------------------
 // 3. Client Simulation & Costume Mapping to Game Board
 // -------------------------------------------------------------
@@ -497,6 +556,19 @@ it('3.5 Host clicks + Create Room: transitions from Screen 3 to Screen 2 and dis
   assert.strictEqual(signalingSent[0].slots.length, 4, '4 slots must be configured');
   assert.strictEqual(signalingSent[0].slots[0].type, 'human');
   assert.strictEqual(signalingSent[0].slots[0].id, 1);
+});
+
+it('3.6 Create Room Modal: slots 2, 3, and 4 have identical customizable structure in index.html', () => {
+  const htmlContent = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  [2, 3, 4].forEach((slotId) => {
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}"`), `createSlot${slotId} card must exist`);
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}RemoveBtn"`), `createSlot${slotId}RemoveBtn must exist`);
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}AvatarCircle"`), `createSlot${slotId}AvatarCircle must exist`);
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}Select"`), `createSlot${slotId}Select must exist`);
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}Icon"`), `createSlot${slotId}Icon must exist`);
+    assert.ok(htmlContent.includes(`id="createSlot${slotId}Img"`), `createSlot${slotId}Img must exist`);
+  });
+  assert.ok(htmlContent.includes('id="slotPopoverKickBtn"'), 'slotPopoverKickBtn must exist in popover');
 });
 
 console.log('\n============================================================');

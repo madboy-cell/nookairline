@@ -2312,48 +2312,71 @@ function initMonopoly() {
       const myRole = getMonopolyMyRole();
       const hostUid = `user_${myRole}_${Date.now().toString(36)}`;
 
-      // Read custom slot configurations from Screen 3
-      const s2Type = $m('createSlot2')?.dataset.type || 'human';
-      const s2Diff = $m('createSlot2')?.dataset.diff || null;
-      const s3Val = $m('createSlot3Select')?.value || 'easy';
-      const s4Val = $m('createSlot4Select')?.value || 'easy';
-
+      // Read custom slot configurations from Screen 3 (slots 2, 3, 4)
       const customSlots = [
-        { id: 1, role: 'bkk', color: 'ruby', type: 'human', difficulty: null, ready: true, occupiedBy: hostUid, name: myAvatar.name, avatar: myAvatar.sprite },
-        {
-          id: 2,
-          role: 'dxb',
-          color: 'cyan',
-          type: s2Type === 'bot' ? 'bot' : 'human',
-          difficulty: s2Type === 'bot' ? (s2Diff || 'easy') : null,
-          ready: s2Type === 'bot',
-          occupiedBy: null,
-          name: s2Type === 'bot' ? (s2Diff === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾') : 'Open Slot',
-          avatar: s2Type === 'bot' ? 'assets/ui/neora_ref/avatar_bot_blue.png' : ''
-        },
-        {
-          id: 3,
-          role: 'bot1',
-          color: 'emerald',
-          type: s3Val === 'open' ? 'human' : (s3Val === 'closed' ? 'closed' : 'bot'),
-          difficulty: (s3Val === 'easy' || s3Val === 'hard') ? s3Val : null,
-          ready: (s3Val === 'easy' || s3Val === 'hard'),
-          occupiedBy: null,
-          name: s3Val === 'open' ? 'Open Slot' : (s3Val === 'hard' ? 'Capt. Whiskers 😼' : (s3Val === 'easy' ? 'Trainee Mochi 🐾' : 'Closed Seat')),
-          avatar: s3Val === 'open' ? '' : (s3Val === 'closed' ? '' : 'assets/ui/neora_ref/avatar_bot_blue.png')
-        },
-        {
-          id: 4,
-          role: 'bot2',
-          color: 'amber',
-          type: s4Val === 'open' ? 'human' : (s4Val === 'closed' ? 'closed' : 'bot'),
-          difficulty: (s4Val === 'easy' || s4Val === 'hard') ? s4Val : null,
-          ready: (s4Val === 'easy' || s4Val === 'hard'),
-          occupiedBy: null,
-          name: s4Val === 'open' ? 'Open Slot' : (s4Val === 'hard' ? 'Capt. Whiskers 😼' : (s4Val === 'easy' ? 'Trainee Mochi 🐾' : 'Closed Seat')),
-          avatar: s4Val === 'open' ? '' : (s4Val === 'closed' ? '' : 'assets/ui/neora_ref/avatar_bot_blue.png')
-        }
+        { id: 1, role: 'bkk', color: 'ruby', type: 'human', difficulty: null, ready: true, occupiedBy: hostUid, name: myAvatar.name, avatar: myAvatar.sprite }
       ];
+
+      const roles = ['dxb', 'bot1', 'bot2'];
+      const colors = ['cyan', 'emerald', 'amber'];
+
+      [2, 3, 4].forEach((slotId, idx) => {
+        const sel = $m(`createSlot${slotId}Select`);
+        const val = sel?.value || (slotId === 2 ? 'open' : (slotId === 3 ? 'hard' : 'easy'));
+        const role = roles[idx];
+        const color = colors[idx];
+
+        if (val === 'easy') {
+          customSlots.push({
+            id: slotId,
+            role,
+            color,
+            type: 'bot',
+            difficulty: 'easy',
+            ready: true,
+            occupiedBy: null,
+            name: idx === 1 ? 'Cadet Mochi 🐣' : (idx === 2 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾'),
+            avatar: 'assets/ui/neora_ref/avatar_bot_blue.png'
+          });
+        } else if (val === 'hard') {
+          customSlots.push({
+            id: slotId,
+            role,
+            color,
+            type: 'bot',
+            difficulty: 'hard',
+            ready: true,
+            occupiedBy: null,
+            name: idx === 1 ? 'Major Whiskers 🐯' : (idx === 2 ? 'Admiral Claw 🦁' : 'Capt. Whiskers 😼'),
+            avatar: 'assets/ui/neora_ref/avatar_bot_blue.png'
+          });
+        } else if (val === 'closed') {
+          customSlots.push({
+            id: slotId,
+            role,
+            color,
+            type: 'closed',
+            difficulty: null,
+            ready: false,
+            occupiedBy: null,
+            name: 'Closed Seat',
+            avatar: ''
+          });
+        } else {
+          // Open slot
+          customSlots.push({
+            id: slotId,
+            role,
+            color,
+            type: 'human',
+            difficulty: null,
+            ready: false,
+            occupiedBy: null,
+            name: 'Open Slot',
+            avatar: ''
+          });
+        }
+      });
 
       createFlightRoom(isPublic, roomName, roomDesc, ['Casual', 'Make Friends', 'Voice Chat'], customSlots);
     } catch (err) {
@@ -2367,61 +2390,45 @@ function initMonopoly() {
     btnSubmitCreateRoom.onclick = submitNeoraCreateRoom;
   }
 
-  // Slot 2 cycle in Create Room: Open -> Bot (Easy) -> Bot (Hard) -> Open
-  const createSlot2 = $m('createSlot2');
-  if (createSlot2) {
-    createSlot2.addEventListener('click', () => {
-      const curType = createSlot2.dataset.type || 'human';
-      const curDiff = createSlot2.dataset.diff || '';
-      if (curType === 'human') {
-        createSlot2.dataset.type = 'bot';
-        createSlot2.dataset.diff = 'easy';
-        createSlot2.innerHTML = `
-          <div class="slot-avatar-circle bot">
-            <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" alt="" />
-          </div>
-          <span class="slot-state-label">Bot (Easy)</span>
-        `;
-      } else if (curType === 'bot' && curDiff === 'easy') {
-        createSlot2.dataset.type = 'bot';
-        createSlot2.dataset.diff = 'hard';
-        createSlot2.innerHTML = `
-          <div class="slot-avatar-circle bot">
-            <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" alt="" />
-          </div>
-          <span class="slot-state-label">Bot (Hard)</span>
-        `;
+  // Slots 2, 3, 4 unified customization listeners in Create Room
+  [2, 3, 4].forEach((slotId) => {
+    const sel = $m(`createSlot${slotId}Select`);
+    const removeBtn = $m(`createSlot${slotId}RemoveBtn`);
+    const circle = $m(`createSlot${slotId}AvatarCircle`);
+    const icon = $m(`createSlot${slotId}Icon`);
+    const img = $m(`createSlot${slotId}Img`);
+
+    function syncCreateSlotUI() {
+      const val = sel?.value || (slotId === 2 ? 'open' : (slotId === 3 ? 'hard' : 'easy'));
+      if (val === 'open') {
+        if (circle) circle.className = 'slot-avatar-circle';
+        if (icon) { icon.textContent = '➕'; icon.classList.remove('hidden'); }
+        if (img) img.classList.add('hidden');
+      } else if (val === 'closed') {
+        if (circle) circle.className = 'slot-avatar-circle closed';
+        if (icon) { icon.textContent = '🔒'; icon.classList.remove('hidden'); }
+        if (img) img.classList.add('hidden');
       } else {
-        createSlot2.dataset.type = 'human';
-        createSlot2.dataset.diff = '';
-        createSlot2.innerHTML = `
-          <div class="slot-plus-circle">➕</div>
-          <span class="slot-state-label" id="createSlot2Label">Open Slot</span>
-        `;
+        // easy or hard bot
+        if (circle) circle.className = 'slot-avatar-circle bot';
+        if (icon) icon.classList.add('hidden');
+        if (img) img.classList.remove('hidden');
       }
-    });
-  }
+    }
 
-  // Slot 3 & 4 remove button and selector listeners in Create Room
-  const s3Remove = $m('createSlot3RemoveBtn');
-  const s3Select = $m('createSlot3Select');
-  if (s3Remove && s3Select) {
-    s3Remove.addEventListener('click', (e) => {
-      e.stopPropagation();
-      s3Select.value = 'open';
-      if (typeof showToast === 'function') showToast('Slot 3 set to Open Slot');
-    });
-  }
-
-  const s4Remove = $m('createSlot4RemoveBtn');
-  const s4Select = $m('createSlot4Select');
-  if (s4Remove && s4Select) {
-    s4Remove.addEventListener('click', (e) => {
-      e.stopPropagation();
-      s4Select.value = 'open';
-      if (typeof showToast === 'function') showToast('Slot 4 set to Open Slot');
-    });
-  }
+    if (sel) sel.addEventListener('change', syncCreateSlotUI);
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sel) {
+          sel.value = 'open';
+          syncCreateSlotUI();
+          if (typeof showToast === 'function') showToast(`Slot ${slotId} set to Open Slot`);
+        }
+      });
+    }
+    syncCreateSlotUI();
+  });
 
   // Privacy options cards in Create Room
   const privOpen = $m('createPrivacyOpen');
@@ -3633,24 +3640,28 @@ function renderNeoraWaitingRoom() {
     const myRole = getMonopolyMyRole();
     const myUid = `user_${myRole}`;
     const myAvatar = getEquippedCostumeAvatar();
+    const amIHost = isCurrentUserHost();
 
     for (let i = 1; i <= 4; i++) {
       const slot = (room.slots || []).find((s) => s.id === i) || { id: i, type: 'human', occupiedBy: null };
       const card = document.createElement('div');
       card.className = 'neora-slot-card';
+      if (amIHost && i > 1) {
+        card.classList.add('host-interactive');
+      }
       card.dataset.slot = i;
 
-      const isHost = slot.id === 1 || slot.occupiedBy === room.hostUid;
-      const isMe = slot.occupiedBy === myUid || (isHost && room.clientData && room.clientData.get && room.clientData.get(myUid));
+      const isSlotHost = slot.id === 1 || slot.occupiedBy === room.hostUid;
+      const isMe = slot.occupiedBy === myUid || (isSlotHost && amIHost);
 
       if (slot.type === 'human' && slot.occupiedBy) {
         // Human occupant: strictly map avatar to exact equipped costume sprite!
-        const avatarSrc = isMe ? myAvatar.sprite : (slot.avatar || (isHost ? 'assets/ui/neora_ref/avatar_nook.png' : 'assets/ui/neora_ref/avatar_luna.png'));
+        const avatarSrc = isMe ? myAvatar.sprite : (slot.avatar || (isSlotHost ? 'assets/ui/neora_ref/avatar_nook.png' : 'assets/ui/neora_ref/avatar_luna.png'));
         const pName = isMe ? myAvatar.name : (slot.name || `Player ${i}`);
-        const prefixIcon = isHost ? '<span class="badge-prefix">🪪</span> ' : (slot.id === 2 ? '⭐ ' : '');
+        const prefixIcon = isSlotHost ? '<span class="badge-prefix">🪪</span> ' : (slot.id === 2 ? '⭐ ' : '');
         const suffixIcon = slot.id === 2 ? ' ⭐' : '';
         card.innerHTML = `
-          ${isHost ? '<span class="slot-crown-badge">👑</span>' : ''}
+          ${isSlotHost ? '<span class="slot-crown-badge">👑</span>' : ''}
           <span class="slot-more-dots" title="Seat Options">···</span>
           <div class="slot-avatar-container">
             <img src="${avatarSrc}" class="slot-avatar-img" alt="" />
@@ -3698,7 +3709,7 @@ function renderNeoraWaitingRoom() {
       // If host clicks slot > 1 -> opens config popover
       // If joiner clicks their own occupied seat -> toggles ready status
       // If joiner clicks open slot -> copies room invite code
-      if (isHost && i > 1) {
+      if (amIHost && i > 1) {
         card.onclick = () => openSlotConfigPopover(i);
         const dots = card.querySelector('.slot-more-dots');
         if (dots) {
@@ -3707,7 +3718,7 @@ function renderNeoraWaitingRoom() {
             openSlotConfigPopover(i);
           };
         }
-      } else if (isMe && !isHost) {
+      } else if (isMe && !amIHost) {
         card.onclick = () => {
           if (typeof sendSignaling === 'function' && currentFlightRoom) {
             sendSignaling({
@@ -3806,12 +3817,49 @@ function sendNeoraChatMessage() {
 let activeConfigSlotId = null;
 
 function openSlotConfigPopover(slotId) {
-  if (!isCurrentUserHost()) return;
+  if (!isCurrentUserHost() || !currentFlightRoom) return;
   activeConfigSlotId = slotId;
+  const slot = (currentFlightRoom.slots || []).find((s) => s.id === slotId);
   const pop = $m('neoraSlotConfigPopover');
   const title = $m('slotPopoverTitle');
-  if (title) title.textContent = `Configure Slot ${slotId}`;
-  if (pop) pop.classList.remove('hidden');
+  const kickBtn = $m('slotPopoverKickBtn');
+
+  if (title) {
+    if (slot && slot.type === 'human' && slot.occupiedBy) {
+      title.textContent = `Configure Seat ${slotId} · ${slot.name || 'Passenger'}`;
+    } else if (slot && slot.type === 'bot') {
+      title.textContent = `Configure Seat ${slotId} · ${slot.name || 'Bot'}`;
+    } else if (slot && slot.type === 'closed') {
+      title.textContent = `Configure Seat ${slotId} · Closed`;
+    } else {
+      title.textContent = `Configure Seat ${slotId} · Open Slot`;
+    }
+  }
+
+  if (kickBtn) {
+    if (slot && slot.type === 'human' && slot.occupiedBy) {
+      kickBtn.classList.remove('hidden');
+    } else {
+      kickBtn.classList.add('hidden');
+    }
+  }
+
+  if (pop) {
+    const opts = pop.querySelectorAll('.slot-popover-opt');
+    opts.forEach((btn) => {
+      const opt = btn.dataset.opt;
+      if (opt === 'kick') return;
+      let isActive = false;
+      if (slot) {
+        if (opt === 'open' && slot.type === 'human' && !slot.occupiedBy) isActive = true;
+        else if (opt === 'easy' && slot.type === 'bot' && slot.difficulty !== 'hard') isActive = true;
+        else if (opt === 'hard' && slot.type === 'bot' && slot.difficulty === 'hard') isActive = true;
+        else if (opt === 'closed' && slot.type === 'closed') isActive = true;
+      }
+      btn.classList.toggle('active-opt', isActive);
+    });
+    pop.classList.remove('hidden');
+  }
 }
 
 function closeSlotConfigPopover() {
@@ -3832,9 +3880,26 @@ function initNeoraSlotConfigPopover() {
     btn.onclick = () => {
       if (!currentFlightRoom || !activeConfigSlotId) return;
       const opt = btn.dataset.opt;
+      const slotId = activeConfigSlotId;
+
+      if (opt === 'kick') {
+        if (typeof sendSignaling === 'function') {
+          sendSignaling({
+            type: 'room_kick_player',
+            roomId: currentFlightRoom.id,
+            slotId
+          });
+        }
+        if (typeof showToast === 'function') {
+          showToast(`Passenger removed from Seat ${slotId}`);
+        }
+        closeSlotConfigPopover();
+        return;
+      }
+
       let update = {};
       if (opt === 'open') {
-        update = { type: 'human', difficulty: null, name: 'Open Slot', avatar: '', ready: false, occupiedBy: null };
+        update = { type: 'human', difficulty: null, name: 'Open Slot', avatar: '', ready: false, occupiedBy: null, kick: true };
       } else if (opt === 'easy') {
         update = { type: 'bot', difficulty: 'easy', name: 'Trainee Mochi 🐾', avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
       } else if (opt === 'hard') {
@@ -3842,16 +3907,27 @@ function initNeoraSlotConfigPopover() {
       } else if (opt === 'closed') {
         update = { type: 'closed', difficulty: null, name: 'Closed Seat', avatar: '', ready: false, occupiedBy: null };
       }
+
       if (typeof sendSignaling === 'function') {
         sendSignaling({
           type: 'room_update_slots',
           roomId: currentFlightRoom.id,
-          slotId: activeConfigSlotId,
+          slotId,
           update
         });
       }
+      if (typeof showToast === 'function') {
+        const label = opt === 'open' ? 'Open' : (opt === 'easy' ? 'Bot (Easy)' : (opt === 'hard' ? 'Bot (Hard)' : 'Closed'));
+        showToast(`Seat ${slotId} configured: ${label}`);
+      }
       closeSlotConfigPopover();
     };
+  });
+
+  document.addEventListener('click', (e) => {
+    if (pop.classList.contains('hidden')) return;
+    if (pop.contains(e.target) || e.target.closest('.neora-slot-card') || e.target.closest('.slot-more-dots')) return;
+    closeSlotConfigPopover();
   });
 }
 
@@ -3902,6 +3978,28 @@ function renderNeoraCreateRoom() {
   const slot1Name = $m('createSlot1Name');
   if (slot1Img) slot1Img.src = myAvatar.sprite;
   if (slot1Name) slot1Name.textContent = myAvatar.name;
+
+  // Sync slots 2, 3, 4 UI
+  [2, 3, 4].forEach((slotId) => {
+    const sel = $m(`createSlot${slotId}Select`);
+    const circle = $m(`createSlot${slotId}AvatarCircle`);
+    const icon = $m(`createSlot${slotId}Icon`);
+    const img = $m(`createSlot${slotId}Img`);
+    const val = sel?.value || (slotId === 2 ? 'open' : (slotId === 3 ? 'hard' : 'easy'));
+    if (val === 'open') {
+      if (circle) circle.className = 'slot-avatar-circle';
+      if (icon) { icon.textContent = '➕'; icon.classList.remove('hidden'); }
+      if (img) img.classList.add('hidden');
+    } else if (val === 'closed') {
+      if (circle) circle.className = 'slot-avatar-circle closed';
+      if (icon) { icon.textContent = '🔒'; icon.classList.remove('hidden'); }
+      if (img) img.classList.add('hidden');
+    } else {
+      if (circle) circle.className = 'slot-avatar-circle bot';
+      if (icon) icon.classList.add('hidden');
+      if (img) img.classList.remove('hidden');
+    }
+  });
 
   // Live counter inputs
   const nameInp = $m('createRoomNameInput');
@@ -10259,7 +10357,7 @@ function handleMonopolyMessage(message) {
     return;
   }
 
-  if (message.type === 'room_left') {
+  if (message.type === 'room_left' || message.type === 'room_kicked') {
     hideFloatingRoomWidget();
     currentFlightRoom = null;
     currentFlightRoomIsHost = false;
@@ -10269,6 +10367,9 @@ function handleMonopolyMessage(message) {
     if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
     hideNeoraRejoinModal();
     switchNeoraView('browser');
+    if (message.type === 'room_kicked' && typeof showToast === 'function') {
+      showToast(message.reason || '👢 You were removed from the flight room by the captain.');
+    }
     return;
   }
 
