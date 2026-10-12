@@ -156,6 +156,7 @@
       this.couplePartnerStatusText = $('couplePartnerStatusText');
       this.coupleAnniversaryText = $('coupleAnniversaryText');
       this.coupleStartCallBtn = $('coupleStartCallBtn');
+      this.coupleGiftPartnerBtn = $('coupleGiftPartnerBtn');
       this.coupleDecoupleBtn = $('coupleDecoupleBtn');
       this.coupleInviteForm = $('coupleInviteForm');
       this.coupleInviteInput = $('coupleInviteInput');
@@ -471,6 +472,16 @@
           this.closeDrawer();
           const callBtn = $('callActionBtn');
           if (callBtn) callBtn.click();
+        });
+      }
+
+      if (this.coupleGiftPartnerBtn) {
+        this.coupleGiftPartnerBtn.addEventListener('click', () => {
+          Sound.tap();
+          this.closeDrawer();
+          if (window.NookVault && typeof window.NookVault.openEnvelopeSender === 'function') {
+            window.NookVault.openEnvelopeSender();
+          }
         });
       }
 
@@ -1225,11 +1236,29 @@
                   </div>
                 </div>
                 <div class="friend-actions">
+                  <button class="friend-action-btn gift-btn" data-action="gift-friend" data-id="${f.id}" data-username="${f.username}" data-base="${f.character_base || 'dxb'}" title="Gift Red Envelope 💎">🧧 Gift</button>
                   <button class="friend-action-btn remove" data-action="remove-friend" data-id="${f.friendshipId}" title="Remove Friend">✕</button>
                 </div>
               </div>`;
             })
             .join('');
+
+          // Bind gift buttons
+          this.friendsListContainer.querySelectorAll('[data-action="gift-friend"]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              Sound.tap();
+              const fId = btn.dataset.id;
+              const fName = btn.dataset.username;
+              const fBase = btn.dataset.base;
+              this.closeDrawer();
+              if (window.NookVault && typeof window.NookVault.openEnvelopeSenderForFriend === 'function') {
+                window.NookVault.openEnvelopeSenderForFriend({ id: fId, username: fName, character_base: fBase });
+              } else if (window.NookVault && typeof window.NookVault.openEnvelopeSender === 'function') {
+                window.NookVault.openEnvelopeSender(null, { type: 'friend', id: fId, username: fName, name: fName, base: fBase });
+              }
+            });
+          });
 
           // Bind remove buttons
           this.friendsListContainer.querySelectorAll('[data-action="remove-friend"]').forEach((btn) => {

@@ -920,15 +920,17 @@
             `)
             .eq('user_id', this.currentUser.id);
 
-          if (!error && data) {
-            this.friends = data.map((d) => ({
-              friendshipId: d.id,
-              id: d.friend.id,
-              username: d.friend.username,
-              character_base: d.friend.character_base,
-              status: d.status,
-              isOnline: this.localProvider.onlinePlayers.has(d.friend.id)
-            }));
+          if (!error && Array.isArray(data)) {
+            this.friends = data
+              .filter((d) => d && d.friend)
+              .map((d) => ({
+                friendshipId: d.id,
+                id: d.friend.id,
+                username: d.friend.username || 'Co-Pilot',
+                character_base: d.friend.character_base || 'dxb',
+                status: d.status,
+                isOnline: this.localProvider.onlinePlayers.has(d.friend.id)
+              }));
           }
         } catch (e) {
           console.warn('[SkySupabase] Failed to fetch live friends:', e);
@@ -943,6 +945,13 @@
 
       safeDispatch('sky:friends_changed', { friends: this.friends });
       return this.friends;
+    }
+
+    /**
+     * Add Friend by username or user ID (alias to sendFriendRequest)
+     */
+    async addFriend(targetUsernameOrId) {
+      return this.sendFriendRequest(targetUsernameOrId);
     }
 
     async sendFriendRequest(targetUsernameOrId) {

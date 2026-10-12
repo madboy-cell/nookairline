@@ -508,34 +508,50 @@ function vaultAward(gameKey, winner, matches, partyData) {
   return payouts;
 }
 
-function vaultSendEnvelope(senderRole, amount, messageText, blessingKey) {
+function vaultSendEnvelope(senderRole, amount, messageText, blessingKey, targetData = {}, senderUid = null, senderName = null) {
   const amt = Math.floor(Number(amount));
   if (!amt || isNaN(amt) || amt < 1) return { error: 'Please enter at least 1 diamond' };
   const sender = vault[senderRole];
   if (!sender) return { error: 'Invalid sender' };
   if (sender.diamonds < amt) return { error: `Not enough diamonds (you have ${sender.diamonds}💎)` };
 
-  const receiverRole = senderRole === 'bkk' ? 'dxb' : 'bkk';
-  const receiver = vault[receiverRole];
-  if (!receiver) return { error: 'Invalid recipient' };
+  const targetType = targetData.targetType || 'couple';
+  let receiverRole = targetData.targetRole || (senderRole === 'bkk' ? 'dxb' : 'bkk');
+  let receiverUid = targetData.targetUid || null;
+  let receiverName = targetData.targetUsername || (receiverRole === 'bkk' ? 'Wolf Boy' : 'Dragon Girl');
+
+  // Deduct from sender immediately and timestamp deduction to prevent vault_sync_cloud inflation
+  sender.diamonds -= amt;
+  sender.lastSpentAt = Date.now();
+  sender.stats = sender.stats || {};
+  sender.stats.gifted = (sender.stats.gifted || 0) + amt;
+
+  let receiver = null;
+  if (targetType === 'friend' && receiverUid) {
+    if (!vault[receiverUid]) vault[receiverUid] = makeProfile();
+    receiver = vault[receiverUid];
+  } else {
+    receiver = vault[receiverRole];
+  }
+
+  if (receiver) {
+    receiver.diamonds = (receiver.diamonds || 0) + amt;
+    receiver.stats = receiver.stats || {};
+    receiver.stats.received = (receiver.stats.received || 0) + amt;
+  }
 
   const cleanMsg = String(messageText || '').trim().slice(0, 100);
   const cleanBlessing = String(blessingKey || 'luck').slice(0, 32);
 
-  // Transfer diamonds
-  sender.diamonds -= amt;
-  receiver.diamonds += amt;
-
-  sender.stats = sender.stats || {};
-  sender.stats.gifted = (sender.stats.gifted || 0) + amt;
-
-  receiver.stats = receiver.stats || {};
-  receiver.stats.received = (receiver.stats.received || 0) + amt;
-
   const env = {
     id: `env_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    from: senderRole,
-    to: receiverRole,
+    from: senderName || (senderRole === 'bkk' ? 'Wolf Boy' : 'Dragon Girl'),
+    fromRole: senderRole,
+    fromUid: senderUid,
+    to: receiverName,
+    toRole: receiverRole,
+    toUid: receiverUid,
+    targetType,
     amount: amt,
     message: cleanMsg,
     blessing: cleanBlessing,
@@ -543,20 +559,22 @@ function vaultSendEnvelope(senderRole, amount, messageText, blessingKey) {
     claimed: false
   };
 
-  if (!Array.isArray(receiver.envelopes)) receiver.envelopes = [];
-  receiver.envelopes.unshift(env);
-  if (receiver.envelopes.length > 50) receiver.envelopes.length = 50;
+  if (receiver) {
+    if (!Array.isArray(receiver.envelopes)) receiver.envelopes = [];
+    receiver.envelopes.unshift(env);
+    if (receiver.envelopes.length > 50) receiver.envelopes.length = 50;
+  }
 
   if (!Array.isArray(sender.envelopesSent)) sender.envelopesSent = [];
   sender.envelopesSent.unshift(env);
   if (sender.envelopesSent.length > 50) sender.envelopesSent.length = 50;
 
   persistVault();
-  return { ok: true, envelope: env };
+  return { ok: true, envelope: env, targetType, receiverRole, receiverUid, receiverName };
 }
 
-function vaultClaimEnvelope(role, envId) {
-  const p = vault[role];
+function vaultClaimEnvelope(roleOrUid, envId) {
+  const p = vault[roleOrUid];
   if (!p || !Array.isArray(p.envelopes)) return { ok: false };
   const env = p.envelopes.find((e) => e.id === envId);
   if (env) {
@@ -616,9 +634,12 @@ function handleVaultMessage(ws, message) {
           }
         });
       }
-      if (typeof message.diamonds === 'number' && message.diamonds > vault[role].diamonds) {
-        vault[role].diamonds = message.diamonds;
-        changed = true;
+      const timeSinceSpent = Date.now() - (vault[role].lastSpentAt || 0);
+      if (typeof message.diamonds === 'number') {
+        if (timeSinceSpent > 60000 && message.diamonds > vault[role].diamonds) {
+          vault[role].diamonds = message.diamonds;
+          changed = true;
+        }
       }
       if (typeof message.stardust === 'number' && message.stardust > vault[role].stardust) {
         vault[role].stardust = message.stardust;
@@ -714,7 +735,21 @@ function handleVaultMessage(ws, message) {
       break;
     }
     case 'vault_send_envelope': {
-      const out = vaultSendEnvelope(role, message.amount, message.message, message.blessing);
+      const targetData = {
+        targetType: message.targetType || 'couple',
+        targetUid: message.targetUid,
+        targetUsername: message.targetUsername,
+        targetRole: message.targetRole
+      };
+      const out = vaultSendEnvelope(
+        role,
+        message.amount,
+        message.message,
+        message.blessing,
+        targetData,
+        ws.userUid,
+        ws.userName
+      );
       if (out.error) {
         sendTo(ws, { type: 'vault_error', error: out.error, reqId: message.reqId });
         break;
@@ -725,18 +760,40 @@ function handleVaultMessage(ws, message) {
         reqId: message.reqId,
         profiles: publicProfiles()
       });
-      sendTo(partner, {
-        type: 'vault_envelope_received',
-        envelope: out.envelope,
-        profiles: publicProfiles()
-      });
+
+      let delivered = false;
+      if (out.targetType === 'friend' && (out.receiverUid || out.receiverName)) {
+        if (typeof wss !== 'undefined' && wss.clients) {
+          wss.clients.forEach((client) => {
+            const matchesUid = out.receiverUid && client.userUid === out.receiverUid;
+            const matchesName = out.receiverName && client.userName && client.userName.toLowerCase() === String(out.receiverName).toLowerCase();
+            if (client.readyState === WebSocket.OPEN && (matchesUid || matchesName)) {
+              sendTo(client, {
+                type: 'vault_envelope_received',
+                envelope: out.envelope,
+                profiles: publicProfiles()
+              });
+              delivered = true;
+            }
+          });
+        }
+      } else {
+        sendTo(partner, {
+          type: 'vault_envelope_received',
+          envelope: out.envelope,
+          profiles: publicProfiles()
+        });
+        delivered = !!partner;
+      }
+
       broadcastVault();
-      console.log(`[Vault] 🧧 ${role.toUpperCase()} sent Red Envelope (${out.envelope.amount}💎) to ${role === 'bkk' ? 'DXB' : 'BKK'}: "${out.envelope.message}"`);
+      console.log(`[Vault] 🧧 ${role.toUpperCase()} sent Red Envelope (${out.envelope.amount}💎) to ${out.receiverName}: "${out.envelope.message}" (delivered: ${delivered})`);
       daily.track(role, 'envelope', 1);
       break;
     }
     case 'vault_claim_envelope': {
       vaultClaimEnvelope(role, message.envelopeId);
+      if (ws.userUid) vaultClaimEnvelope(ws.userUid, message.envelopeId);
       broadcastVault();
       break;
     }

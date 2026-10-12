@@ -2629,6 +2629,75 @@
   padding: 18px;
 }
 
+/* Recipient Picker Chips */
+.ve-recip-picker-wrap {
+  margin-bottom: 16px;
+}
+.ve-recip-chips-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+}
+.ve-recip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font: 700 12px/1 var(--v-font-d);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex: none;
+}
+.ve-recip-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.ve-recip-chip.selected {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.55), rgba(185, 28, 28, 0.75));
+  border-color: #fde047;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.35);
+  color: #fff;
+}
+.ve-recip-chip.locked {
+  opacity: 0.55;
+  border-style: dashed;
+}
+.ve-rc-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fde68a;
+  letter-spacing: 0.04em;
+}
+.ve-badge-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-weight: 700;
+}
+.ve-badge-pill.couple {
+  background: rgba(244, 63, 94, 0.25);
+  border: 1px solid rgba(244, 63, 94, 0.5);
+  color: #fda4af;
+}
+.ve-badge-pill.friend {
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+}
+
 /* Target Recipient Card */
 .ve-target-card {
   display: flex;
@@ -2639,6 +2708,10 @@
   background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(120, 15, 20, 0.35));
   border: 1px solid rgba(251, 191, 36, 0.3);
   margin-bottom: 18px;
+}
+.ve-target-card.target-friend {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(17, 24, 39, 0.45));
+  border: 1px solid rgba(96, 165, 250, 0.35);
 }
 .ve-target-avatar {
   flex: none;

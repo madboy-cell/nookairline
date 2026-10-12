@@ -39,17 +39,21 @@
     envelopeAmount: 50,
     envelopeMessage: 'Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨',
     envelopeBlessing: 'mythic',
-    showingEnvelope: null
+    showingEnvelope: null,
+    envelopeTarget: null
   };
 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
   const myRole = () => {
+    if (window.myTerminal && (window.myTerminal === 'bkk' || window.myTerminal === 'dxb')) {
+      return window.myTerminal;
+    }
     if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
       return window.SkySupabase.getCharacterBase();
     }
-    return window.myTerminal || (window.getTerminalRole ? window.getTerminalRole() : 'bkk');
+    return window.getTerminalRole ? window.getTerminalRole() : 'bkk';
   };
   const partnerRole = () => (myRole() === 'bkk' ? 'dxb' : 'bkk');
   const me = () => (S.profiles ? S.profiles[myRole()] : null);
@@ -410,20 +414,21 @@
     const deckBtn = $('openWardrobeBtn');
     if (deckBtn) deckBtn.classList.toggle('vault-can-pull', !!(p && p.diamonds >= E.PULL_1));
     const isPair = isCoupleActive();
+    const friends = (window.SkySupabase && Array.isArray(window.SkySupabase.friends)) ? window.SkySupabase.friends : [];
     const unclaimed = p && Array.isArray(p.envelopes) ? p.envelopes.filter((e) => !e.claimed) : [];
     const rEl = $('vaultRedEnvelopeBtn');
     if (rEl) {
       rEl.classList.toggle('has-gift', unclaimed.length > 0);
-      rEl.classList.toggle('vault-gift-locked', !isPair && unclaimed.length === 0);
+      rEl.classList.toggle('vault-gift-locked', !isPair && friends.length === 0 && unclaimed.length === 0);
       if (unclaimed.length > 0) {
         rEl.innerHTML = `🧧 <b>Claim (${unclaimed.length})!</b>`;
         rEl.setAttribute('data-tooltip', `🧧 ${unclaimed.length} Red Envelopes waiting to be claimed!`);
-      } else if (!isPair) {
+      } else if (!isPair && friends.length === 0) {
         rEl.innerHTML = `🧧 <b>Gift</b> <span style="opacity:0.75;font-size:11px;">🔒</span>`;
         rEl.setAttribute('data-tooltip', `🔒 Gifting Red Envelopes is exclusive to linked couples in Couple Sanctuary`);
       } else {
         rEl.innerHTML = `🧧 <b>Gift</b><span class="gift-gem"> 💎</span>`;
-        rEl.setAttribute('data-tooltip', `🧧 Send Chinese Red Envelope (Ang Pao) to Partner`);
+        rEl.setAttribute('data-tooltip', isPair ? `🧧 Send Chinese Red Envelope (Ang Pao) to Partner or Friends` : `🧧 Send Red Envelope to Friends`);
       }
     }
     if (deckBtn) {
@@ -1581,6 +1586,17 @@
         }
         break;
       case 'close-envelope-modal': closeEnvelopeModal(); break;
+      case 'set-envelope-target': {
+        const tType = t.dataset.type;
+        if (tType === 'couple') {
+          S.envelopeTarget = { type: 'couple', name: t.dataset.name, role: t.dataset.role };
+        } else {
+          S.envelopeTarget = { type: 'friend', id: t.dataset.id, name: t.dataset.name, username: t.dataset.name, base: t.dataset.base };
+        }
+        Sound.tap();
+        renderEnvelopeModal();
+        break;
+      }
       case 'envelope-tab': S.envelopeTab = t.dataset.tab; Sound.tap(); renderEnvelopeModal(); break;
       case 'set-envelope-amt': S.envelopeAmount = Number(t.dataset.amount) || 50; Sound.tap(); renderEnvelopeModal(); break;
       case 'set-envelope-blessing': S.envelopeBlessing = t.dataset.blessing; S.envelopeMessage = t.dataset.text; Sound.tap(); renderEnvelopeModal(); break;
@@ -2057,11 +2073,12 @@
     setTimeout(() => rain.remove(), 4200);
   }
 
-  function openEnvelopeSender(initialAmt) {
+  function openEnvelopeSender(initialAmt, target) {
     const isPair = isCoupleActive();
+    const friends = (window.SkySupabase && Array.isArray(window.SkySupabase.friends)) ? window.SkySupabase.friends : [];
     const p = me();
     const unclaimed = p && Array.isArray(p.envelopes) ? p.envelopes.filter((e) => !e.claimed) : [];
-    if (!isPair && unclaimed.length === 0) {
+    if (!target && !isPair && friends.length === 0 && unclaimed.length === 0) {
       if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
         window.SkySocialUI.showCoupleGatingModal('Red Envelope Gifting');
         return;
@@ -2070,9 +2087,41 @@
     build();
     S.envelopeModalOpen = true;
     if (initialAmt) S.envelopeAmount = Number(initialAmt) || 50;
+
+    if (target) {
+      S.envelopeTarget = target;
+    } else if (!S.envelopeTarget) {
+      if (isPair) {
+        S.envelopeTarget = { type: 'couple', name: partnerRole().toUpperCase(), role: partnerRole() };
+      } else if (friends.length > 0) {
+        const first = friends[0];
+        const frUser = first.friend || first;
+        S.envelopeTarget = {
+          type: 'friend',
+          id: first.id || frUser.id,
+          name: frUser.username || frUser.display_name || 'Friend',
+          username: frUser.username || frUser.display_name,
+          base: frUser.character_base || 'bkk'
+        };
+      } else {
+        S.envelopeTarget = { type: 'couple', name: partnerRole().toUpperCase(), role: partnerRole() };
+      }
+    }
     renderEnvelopeModal();
     const modal = $('vaultEnvelopeModal');
     if (modal) modal.classList.add('open');
+  }
+
+  function openEnvelopeSenderForFriend(friend) {
+    if (!friend) return;
+    const target = {
+      type: 'friend',
+      id: friend.id,
+      name: friend.username || friend.display_name || 'Friend',
+      username: friend.username || friend.display_name,
+      base: friend.character_base || 'bkk'
+    };
+    openEnvelopeSender(null, target);
   }
 
   function closeEnvelopeModal() {
@@ -2087,6 +2136,8 @@
     const p = me();
     const diamonds = p ? p.diamonds : 0;
     const partner = partnerRole().toUpperCase();
+    const isPair = isCoupleActive();
+    const friends = (window.SkySupabase && Array.isArray(window.SkySupabase.friends)) ? window.SkySupabase.friends : [];
     const envelopesReceived = (p && p.envelopes) || [];
     const envelopesSent = (p && p.envelopesSent) || [];
     const allHistory = [
@@ -2106,7 +2157,7 @@
     const canSend = diamonds >= curAmt && curAmt >= 1;
 
     const blessings = [
-      { key: 'mythic', icon: '🌸', text: 'Good luck pulling Mythic in Season 2!' },
+      { key: 'mythic', icon: '🌸', text: 'Good luck pulling Mythic in Season 7!' },
       { key: 'love', icon: '❤️', text: 'For you with all my love and hugs! ❤️' },
       { key: 'fortune', icon: '🧧', text: '大吉大利 · Gong Xi Fa Cai & great luck!' },
       { key: 'wish', icon: '✨', text: 'May your next 10-pull shine bright gold!' }
@@ -2115,7 +2166,7 @@
 
     let bodyHtml = '';
     if (isSend) {
-      if (!isCoupleActive()) {
+      if (!isPair && friends.length === 0) {
         bodyHtml = `
           <div class="ve-send-pane" style="text-align:center;padding:36px 20px;">
             <div style="font-size:48px;margin-bottom:12px;">🧧🔒</div>
@@ -2128,15 +2179,72 @@
             </button>
           </div>`;
       } else {
+        // Active target
+        let curTarget = S.envelopeTarget;
+        if (!curTarget) {
+          if (isPair) {
+            curTarget = { type: 'couple', name: partner, role: partnerRole() };
+          } else if (friends.length > 0) {
+            const f0 = friends[0];
+            const frU = f0.friend || f0;
+            curTarget = {
+              type: 'friend',
+              id: f0.id || frU.id,
+              name: frU.username || frU.display_name || 'Friend',
+              username: frU.username || frU.display_name,
+              base: frU.character_base || 'bkk'
+            };
+          }
+          S.envelopeTarget = curTarget;
+        }
+
+        const isCoupleTarget = !curTarget || curTarget.type === 'couple';
+        const targetDisplayName = isCoupleTarget ? partner : (curTarget.name || curTarget.username || 'Friend');
+
+        // Recipient Picker HTML
+        const recipPickerHtml = `
+          <div class="ve-recip-picker-wrap">
+            <label class="ve-label" style="margin-bottom:6px;">Select Recipient 🧧</label>
+            <div class="ve-recip-chips-row">
+              ${isPair ? `
+                <button type="button" class="ve-recip-chip ${isCoupleTarget ? 'selected' : ''}" data-action="set-envelope-target" data-type="couple" data-role="${partnerRole()}" data-name="${partner}">
+                  <span>💞</span> <b>Partner (${partner})</b>
+                  <span class="ve-rc-badge">Couple</span>
+                </button>
+              ` : `
+                <button type="button" class="ve-recip-chip locked" data-action="open-sanctuary" title="Link Co-Pilot in Couple Sanctuary">
+                  <span>💞</span> <b>Partner (Locked)</b>
+                  <span class="ve-rc-badge">🔒</span>
+                </button>
+              `}
+              ${friends.map((f) => {
+                const frU = f.friend || f;
+                const fId = f.id || frU.id;
+                const fName = frU.username || frU.display_name || 'Friend';
+                const fBase = frU.character_base || 'bkk';
+                const isSel = !isCoupleTarget && curTarget && (curTarget.id === fId || curTarget.name === fName);
+                return `
+                  <button type="button" class="ve-recip-chip ${isSel ? 'selected' : ''}" data-action="set-envelope-target" data-type="friend" data-id="${fId}" data-name="${fName}" data-base="${fBase}">
+                    <span>${fBase === 'dxb' ? '🐉' : '🐺'}</span> <b>${fName}</b>
+                    <span class="ve-rc-badge">Friend</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+
         bodyHtml = `
         <div class="ve-send-pane">
-          <div class="ve-target-card">
+          ${recipPickerHtml}
+
+          <div class="ve-target-card ${isCoupleTarget ? '' : 'target-friend'}">
             <div class="ve-target-avatar">
-              <span class="ve-target-flag">${partner === 'DXB' ? '🇦🇪 DXB' : '🇹🇭 BKK'}</span>
+              <span class="ve-target-flag">${isCoupleTarget ? (partner === 'DXB' ? '🇦🇪 DXB' : '🇹🇭 BKK') : ((curTarget && curTarget.base === 'dxb' ? '🐉 DXB' : '🐺 BKK'))}</span>
             </div>
             <div class="ve-target-info">
-              <h4>Gift Red Envelope to <b>${partner}</b></h4>
-              <p>Traditional Chinese Ang Pao with sparkling diamonds & warm blessings</p>
+              <h4>Gift Red Envelope to <b>${targetDisplayName}</b> <span class="ve-badge-pill ${isCoupleTarget ? 'couple' : 'friend'}">${isCoupleTarget ? '💞 Co-Pilot' : '🤝 Friend'}</span></h4>
+              <p>${isCoupleTarget ? 'Traditional Chinese Ang Pao with sparkling diamonds & warm blessings' : 'Send lucky Ang Pao diamonds & warm wishes to your friend!'}</p>
             </div>
             <div class="ve-my-balance">
               <small>Your Balance</small>
@@ -2183,7 +2291,7 @@
               <div class="ve-prev-badge">💎 ${fmt(curAmt)}</div>
             </div>
             <div class="ve-prev-text">
-              <small>Preview for ${partner}</small>
+              <small>Preview for ${targetDisplayName}</small>
               <p>“${curMsg || '大吉大利 · Good fortune!'}”</p>
             </div>
           </div>
@@ -2205,7 +2313,7 @@
             <div class="ve-history-empty">
               <span class="ve-empty-icon">🧧</span>
               <h4>No Red Envelopes Yet</h4>
-              <p>Send a red envelope to surprise ${partner} with diamonds and lucky blessings!</p>
+              <p>Send a red envelope to surprise your partner or friends with diamonds and lucky blessings!</p>
               <button class="ve-tab-switch-btn" data-action="envelope-tab" data-tab="send">Send First Red Envelope ✨</button>
             </div>
           ` : `
@@ -2270,13 +2378,16 @@
   }
 
   function submitEnvelope() {
-    if (!isCoupleActive()) {
-      if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
-        window.SkySocialUI.showCoupleGatingModal('Red Envelope Gifting');
-      } else {
-        toast('🔒 Gifting is exclusive to linked couples in Couple Sanctuary');
+    const target = S.envelopeTarget;
+    if (!target || target.type === 'couple') {
+      if (!isCoupleActive()) {
+        if (window.SkySocialUI && typeof window.SkySocialUI.showCoupleGatingModal === 'function') {
+          window.SkySocialUI.showCoupleGatingModal('Red Envelope Gifting');
+        } else {
+          toast('🔒 Gifting is exclusive to linked couples in Couple Sanctuary');
+        }
+        return;
       }
-      return;
     }
     const p = me();
     if (!p) return;
@@ -2285,14 +2396,41 @@
     if (p.diamonds < amt) { toast(`⚠️ Not enough diamonds (you have ${p.diamonds}💎)`); return; }
     const msg = (S.envelopeMessage || '').trim() || '大吉大利 · Good fortune and joy!';
     const blessing = S.envelopeBlessing || 'luck';
+
+    // Authoritative local deduction immediately to avoid race conditions & duplication
+    p.diamonds -= amt;
+    p.lastSpentAt = Date.now();
+    if (!Array.isArray(p.envelopesSent)) p.envelopesSent = [];
+    const targetRecipientName = target && target.type === 'friend' ? (target.username || target.name) : partnerRole().toUpperCase();
+    p.envelopesSent.push({
+      id: `env_${Date.now()}`,
+      to: targetRecipientName,
+      amount: amt,
+      message: msg,
+      blessing: blessing,
+      timestamp: new Date().toISOString()
+    });
+
+    if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+      window.SkySupabase.updateProfile({ diamonds: p.diamonds });
+    }
+
     send({
       type: 'vault_send_envelope',
       amount: amt,
       message: msg,
       blessing: blessing,
+      targetType: target ? target.type : 'couple',
+      targetUid: target && target.type === 'friend' ? target.id : null,
+      targetUsername: target && target.type === 'friend' ? (target.username || target.name) : null,
+      targetRole: target && target.type === 'friend' ? null : partnerRole(),
       reqId: `env_${Date.now()}`
     });
     Sound.envelopeSend();
+    toast(`🧧 Sent ${amt}💎 Red Envelope to ${targetRecipientName}!`);
+    closeEnvelopeModal();
+    updatePills();
+    if (S.open) render();
   }
 
   function ensureEnvelopeReveal() {
@@ -2345,9 +2483,9 @@
                 <small class="ver-amt-label">DIAMONDS</small>
               </div>
               ${env.message ? `<div class="ver-msg-quote">“${env.message}”</div>` : ''}
-              <div class="ver-from-note">With endless love from <b>${env.from.toUpperCase()}</b> ❤️</div>
+              <div class="ver-from-note">${env.targetType === 'friend' ? `With warm friendship from <b>${env.from ? String(env.from).toUpperCase() : 'FRIEND'}</b> ✨` : `With endless love from <b>${env.from ? String(env.from).toUpperCase() : 'CO-PILOT'}</b> ❤️`}</div>
               <button class="ver-claim-btn" data-action="claim-envelope" data-id="${env.id}">
-                ✨ Claim & Thank ${env.from.toUpperCase()}
+                ✨ Claim & Thank ${env.from ? String(env.from).toUpperCase() : 'CO-PILOT'}
               </button>
             </div>
           </div>
@@ -2386,7 +2524,7 @@
     }
     S.showingEnvelope = null;
     Sound.coin();
-    toast(`💎 Claimed +${env ? fmt(env.amount) : ''} diamonds from ${env ? env.from.toUpperCase() : 'partner'}!`);
+    toast(`💎 Claimed +${env ? fmt(env.amount) : ''} diamonds from ${env && env.from ? String(env.from).toUpperCase() : 'partner'}!`);
     updatePills();
   }
 
@@ -2683,6 +2821,8 @@
 
   window.NookVault = {
     open, close, handleMessage, monopolyPerks, equippedOf, getMythicUltimate,
+    openEnvelopeSender,
+    openEnvelopeSenderForFriend,
     getProfiles: () => S.profiles,
     getMyProfile: me,
     lastAward: () => S.lastAward,
