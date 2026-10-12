@@ -1,0 +1,9 @@
+node_modules/
+.git/
+.DS_Store
+*.log
+backup/
+data_backups/
+neora_hud_patch_assets/
+neora_component_asset_breakdown/
+scratch/
