@@ -1032,7 +1032,7 @@ function handleRoomMessage(ws, message) {
       room: sanitizeRoom(res.room),
       slot: res.slot,
       spectator: !!res.spectator,
-      state: res.spectator ? serverMonopolyState : null
+      state: res.spectator ? (res.room.gameState || serverMonopolyState) : null
     }));
 
     broadcastToRoom(res.room, {
@@ -1446,12 +1446,12 @@ wss.on('connection', (ws, req) => {
     serverEvent('ws_close', ws.terminal, { code, reason: reasonBuf ? reasonBuf.toString() : '' });
 
     departureBoardSubscribers.delete(ws);
-    const leaveRes = roomRegistry.leaveRoom(ws, { explicit: false });
-    if (leaveRes && leaveRes.room) {
-      broadcastToRoom(leaveRes.room, {
+    const discRes = roomRegistry.handleDisconnect(ws);
+    if (discRes && discRes.room) {
+      broadcastToRoom(discRes.room, {
         type: 'room_update',
-        room: sanitizeRoom(leaveRes.room),
-        disconnectedUser: leaveRes.disconnectedUser
+        room: sanitizeRoom(discRes.room),
+        disconnectedUser: discRes.disconnectedUser
       });
       broadcastDepartureBoard();
     }

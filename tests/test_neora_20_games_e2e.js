@@ -742,7 +742,7 @@ async function runSuite() {
         hostUid,
         hostName: hostSlot.name,
         flightName: `Flight SKY-${seed}`,
-        isPublic: true,
+        isPublic: false,
         slots
       });
 
@@ -905,7 +905,7 @@ async function runSuite() {
       type: 'room_create',
       hostUid,
       hostName: 'Captain F1 ✈️',
-      isPublic: true
+      isPublic: false
     });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
@@ -953,7 +953,7 @@ async function runSuite() {
     const hostUid = 'f2_host_uid';
     const guestUid = 'f2_guest_uid';
 
-    host.send({ type: 'room_create', hostUid, hostName: 'Host F2', isPublic: true });
+    host.send({ type: 'room_create', hostUid, hostName: 'Host F2', isPublic: false });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
 
@@ -995,7 +995,7 @@ async function runSuite() {
     const hostUid = 'f3_host_uid';
     const guestUid = 'f3_guest_uid';
 
-    host.send({ type: 'room_create', hostUid, hostName: 'Original Host', isPublic: true });
+    host.send({ type: 'room_create', hostUid, hostName: 'Original Host', isPublic: false });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
 
@@ -1022,7 +1022,7 @@ async function runSuite() {
     const hostUid = 'f4_host_uid';
     const guestUid = 'f4_guest_uid';
 
-    host.send({ type: 'room_create', hostUid, hostName: 'Host F4', isPublic: true });
+    host.send({ type: 'room_create', hostUid, hostName: 'Host F4', isPublic: false });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
 
@@ -1057,7 +1057,7 @@ async function runSuite() {
     const hostUid = 'f5_host_uid';
     const guestUid = 'f5_guest_uid';
 
-    host.send({ type: 'room_create', hostUid, hostName: 'Host F5', isPublic: true });
+    host.send({ type: 'room_create', hostUid, hostName: 'Host F5', isPublic: false });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
 
@@ -1111,7 +1111,7 @@ async function runSuite() {
     const hostUid = 'f7_host_uid';
     const guestUid = 'f7_guest_uid';
 
-    host.send({ type: 'room_create', hostUid, hostName: 'Host F7', isPublic: true });
+    host.send({ type: 'room_create', hostUid, hostName: 'Host F7', isPublic: false });
     const cMsg = await host.waitFor((m) => m.type === 'room_created');
     const rId = cMsg.room.id;
 

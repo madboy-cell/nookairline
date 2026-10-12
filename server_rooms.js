@@ -17,6 +17,7 @@ class RoomRegistry {
     this.disconnectedClients = new Map(); // uid -> { roomId, slotId, disconnectedAt, timer, role, name, avatar }
     this.disconnectTimers = new Map(); // uid -> Timeout
     this.db = db;
+    this.startStaleRoomReaper();
   }
 
   /**
@@ -26,9 +27,28 @@ class RoomRegistry {
     try {
       const activeRooms = await db.loadActiveRooms();
       if (Array.isArray(activeRooms)) {
+        const now = Date.now();
         for (const raw of activeRooms) {
           if (!raw.id || !raw.code) continue;
           if (raw.status === 'finished') continue;
+
+          const createdTime = raw.created_at ? new Date(raw.created_at).getTime() : now;
+          const updatedTime = raw.updated_at ? new Date(raw.updated_at).getTime() : createdTime;
+          const isStale = (now - updatedTime) > 15 * 60 * 1000;
+          const isTestHost = typeof raw.host_uid === 'string' && (
+            (raw.host_uid.startsWith('f') && raw.host_uid.includes('_host')) ||
+            raw.host_uid.startsWith('test_') ||
+            raw.host_uid.startsWith('leave_') ||
+            raw.host_uid.startsWith('dup_') ||
+            raw.host_uid.startsWith('user_host_g') ||
+            raw.host_uid.startsWith('user_test') ||
+            (raw.host_name && raw.host_name.startsWith('Host F'))
+          );
+
+          if (isStale || isTestHost) {
+            this.db.updateRoom(raw.id, { status: 'finished' }).catch(() => {});
+            continue;
+          }
 
           // Rebuild room object in memory
           const room = {
@@ -859,9 +879,36 @@ class RoomRegistry {
    */
   listPublicRooms() {
     const result = [];
+    const now = Date.now();
 
     this.rooms.forEach((room) => {
       if (!room.isPublic || room.status === 'finished') return;
+
+      const connectedCount = room.clients ? room.clients.size : 0;
+
+      // 1. Hide in-flight games if 0 players are currently connected.
+      // Spectating an abandoned match only displays an idle board.
+      if (room.status === 'in_flight' && connectedCount === 0) {
+        return;
+      }
+
+      // 2. Hide abandoned lobby rooms where all clients disconnected > 2 minutes ago
+      const updatedTime = room.updatedAt || room.createdAt || now;
+      if (room.status === 'lobby' && connectedCount === 0 && (now - updatedTime > 2 * 60 * 1000)) {
+        return;
+      }
+
+      // 3. Filter out automated test hosts from public departure board
+      const isTestHost = typeof room.hostUid === 'string' && (
+        (room.hostUid.startsWith('f') && room.hostUid.includes('_host')) ||
+        room.hostUid.startsWith('test_') ||
+        room.hostUid.startsWith('leave_') ||
+        room.hostUid.startsWith('dup_') ||
+        room.hostUid.startsWith('user_host_g') ||
+        room.hostUid.startsWith('user_test') ||
+        (room.hostName && room.hostName.startsWith('Host F'))
+      );
+      if (isTestHost) return;
 
       const activeHumans = room.slots.filter((s) => s.type === 'human' && s.occupiedBy).length;
       const openSeats = room.slots.filter((s) => s.type === 'human' && !s.occupiedBy).length;
@@ -1024,16 +1071,67 @@ class RoomRegistry {
   }
 
   /**
-   * Cleans rooms with 0 connected clients older than maxAgeMs.
+   * Starts periodic background reaper that automatically sweeps deserted rooms every 30 seconds.
    */
-  cleanStaleRooms(maxAgeMs = 30 * 60 * 1000) {
+  startStaleRoomReaper() {
+    if (this._reaperInterval) clearInterval(this._reaperInterval);
+    this._reaperInterval = setInterval(() => {
+      try {
+        this.cleanStaleRooms();
+      } catch (err) {
+        console.warn('[RoomRegistry] Stale reaper warning:', err.message);
+      }
+    }, 30 * 1000);
+    if (this._reaperInterval && this._reaperInterval.unref) {
+      this._reaperInterval.unref();
+    }
+  }
+
+  /**
+   * Cleans rooms with 0 connected clients older than maxAgeMs, deserted matches, or finished rooms.
+   */
+  cleanStaleRooms(maxAgeMs = 15 * 60 * 1000) {
     const now = Date.now();
     let cleaned = 0;
     this.rooms.forEach((room, roomId) => {
-      const isDead = room.status === 'finished' || (room.clients.size === 0 && now - room.updatedAt > maxAgeMs);
-      if (isDead) {
+      const lastActive = room.updatedAt || room.createdAt || now;
+      const noClients = !room.clients || room.clients.size === 0;
+
+      // 1. Finished rooms can be removed immediately from memory
+      if (room.status === 'finished') {
         this.deleteRoom(roomId);
         cleaned++;
+        return;
+      }
+
+      // 2. Automated test rooms lingering with 0 clients
+      const isTestHost = typeof room.hostUid === 'string' && (
+        (room.hostUid.startsWith('f') && room.hostUid.includes('_host')) ||
+        room.hostUid.startsWith('test_') ||
+        room.hostUid.startsWith('leave_') ||
+        room.hostUid.startsWith('dup_') ||
+        room.hostUid.startsWith('user_host_g') ||
+        room.hostUid.startsWith('user_test') ||
+        (room.hostName && room.hostName.startsWith('Host F'))
+      );
+      if (isTestHost && noClients) {
+        this.deleteRoom(roomId);
+        cleaned++;
+        return;
+      }
+
+      // 3. In-flight games deserted by all players (> 3 minutes with 0 connected clients)
+      if (room.status === 'in_flight' && noClients && (now - lastActive > 3 * 60 * 1000)) {
+        this.deleteRoom(roomId);
+        cleaned++;
+        return;
+      }
+
+      // 4. Stale rooms older than maxAgeMs with 0 clients
+      if (noClients && (now - lastActive > maxAgeMs)) {
+        this.deleteRoom(roomId);
+        cleaned++;
+        return;
       }
     });
     return cleaned;

@@ -1,9 +1,9 @@
 {
   "bkk": {
-    "diamonds": 5470,
-    "stardust": 456,
+    "diamonds": 6020,
+    "stardust": 466,
     "tickets": 8,
-    "fish": 295,
+    "fish": 297,
     "owned": {
       "s1_songkran_m": 7,
       "s1_rooftop_m": 6,
@@ -88,9 +88,9 @@
     },
     "stats": {
       "wins": 26,
-      "losses": 26,
+      "losses": 28,
       "pulls": 312,
-      "earned": 41241,
+      "earned": 41791,
       "gifted": 11061,
       "received": 50
     },
@@ -101,7 +101,7 @@
       "hardLossStreak": 0,
       "net": 3550
     },
-    "lastDaily": "2026-10-09",
+    "lastDaily": "2026-10-12",
     "envelopes": [
       {
         "id": "env_1791466680587_yh6t",
@@ -265,10 +265,10 @@
     }
   },
   "dxb": {
-    "diamonds": 26424,
-    "stardust": 393,
+    "diamonds": 27574,
+    "stardust": 453,
     "tickets": 10,
-    "fish": 225,
+    "fish": 235,
     "owned": {
       "s1_market_f": 6,
       "s1_songkran_f": 2,
@@ -359,10 +359,10 @@
       "mythic": 0
     },
     "stats": {
-      "wins": 22,
+      "wins": 24,
       "losses": 30,
       "pulls": 310,
-      "earned": 44573,
+      "earned": 45723,
       "received": 11061,
       "gifted": 50
     },
@@ -373,7 +373,7 @@
       "hardLossStreak": 0,
       "net": 0
     },
-    "lastDaily": "2026-10-09",
+    "lastDaily": "2026-10-12",
     "envelopes": [
       {
         "id": "env_1791564590842_d1xw",
@@ -582,7 +582,9 @@
     "mv1fsf5jjpah-1791579646106",
     "mv1hvm66agqc-1791582728832",
     "mv1ie2f5d1j6-1791583630734",
-    "mv1iuxpx34a5-1791584550911"
+    "mv1iuxpx34a5-1791584550911",
+    "mv52cvqoaqz0-1791798496114",
+    "mv52cvqoaqz0-1791798502725"
   ],
   "couple": {
     "streak": 1,
