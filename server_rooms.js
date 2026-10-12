@@ -143,7 +143,7 @@ class RoomRegistry {
           type: s.type || 'human',
           controller: s.type === 'bot' ? 'BOT_PERMANENT' : 'HUMAN',
           occupiedBy: s.type === 'bot' ? null : (idx === 0 ? hostUid : (s.occupiedBy || null)),
-          name: s.type === 'bot' ? (s.name || (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾')) : (idx === 0 ? hostName : (s.name || `Open Slot`)),
+          name: s.type === 'bot' ? (s.name || (idx === 2 ? (s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣') : (idx === 3 ? (s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱') : (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾')))) : (idx === 0 ? hostName : (s.name || `Open Slot`)),
           avatar: s.type === 'bot' ? (s.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png') : (idx === 0 ? hostAvatar : (s.avatar || '')),
           ready: s.type === 'bot' ? true : (idx === 0 ? true : (s.ready !== undefined ? s.ready : false)),
           connected: s.type === 'bot' || (idx === 0)
@@ -270,7 +270,7 @@ class RoomRegistry {
         ashPot: 0,
         carpetCharges: 0,
         ult: 0,
-        name: s.name || (isBot ? (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼') : `Player ${role.toUpperCase()}`),
+        name: s.name || (isBot ? (idx === 2 ? (isEasy ? 'Cadet Mochi 🐣' : 'Major Whiskers 🐯') : (idx === 3 ? (isEasy ? 'Pilot Pip 🐱' : 'Admiral Claw 🦁') : (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼'))) : `Player ${role.toUpperCase()}`),
         sprite: s.avatar || (isBot ? (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg') : 'assets/bkk_warrior_idle.png'),
         badge: isBot ? `BOT${idx > 1 ? idx - 1 : ''}` : `P${idx + 1}`,
         color: s.id === 1 ? '#ef4444' : (s.id === 2 ? '#06b6d4' : (s.id === 3 ? '#10b981' : '#f59e0b')),

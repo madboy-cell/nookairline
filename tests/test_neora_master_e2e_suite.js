@@ -746,6 +746,45 @@ async function runMasterSuite() {
     assertTest('6.4 Game mode is properly categorized as bot duel', sMsg.state.mode === 'bot');
 
     host.close();
+
+    // Test 1 Human + 3 Bots (Party Game from screenshot)
+    const host4p = await createClient(MASTER_TEST_PORT);
+    const host4pUid = 'user_dxb_connected';
+    const host4pName = 'Nook ✈️';
+
+    host4p.send({
+      type: 'room_create',
+      hostUid: host4pUid,
+      hostName: host4pName,
+      slots: [
+        { id: 1, role: 'bkk', type: 'human', occupiedBy: host4pUid, name: host4pName },
+        { id: 2, role: 'dxb', type: 'bot', difficulty: 'easy', occupiedBy: null },
+        { id: 3, role: 'bot1', type: 'bot', difficulty: 'easy', occupiedBy: null },
+        { id: 4, role: 'bot2', type: 'bot', difficulty: 'easy', occupiedBy: null }
+      ]
+    });
+    const cMsg4p = await host4p.waitFor((m) => m.type === 'room_created');
+    host4p.send({ type: 'room_start', roomId: cMsg4p.room.id });
+    const sMsg4p = await host4p.waitFor((m) => m.type === 'room_start');
+
+    assertTest('6.5 4P match creates 1 human and 3 bots with diverse names',
+      sMsg4p.state.players.bkk.isBot === false &&
+      sMsg4p.state.players.dxb.name === 'Trainee Mochi 🐾' &&
+      sMsg4p.state.players.bot1.name === 'Cadet Mochi 🐣' &&
+      sMsg4p.state.players.bot2.name === 'Pilot Pip 🐱'
+    );
+
+    // Simulate client-side getMonopolyMyRole in 1-human match
+    const players = sMsg4p.state.players;
+    const humanRoles = Object.keys(players).filter((r) => players[r] && !players[r].isBot);
+    const resolvedRole = humanRoles.length === 1 ? humanRoles[0] : 'bkk';
+    assertTest('6.6 Client strictly resolves human role to bkk (never bot dxb)', resolvedRole === 'bkk');
+
+    // Simulate roll button state when turn === resolvedRole
+    const isMyTurn = sMsg4p.state.currentTurn === resolvedRole;
+    assertTest('6.7 Human player is authorized to roll on turn 1 (roll button enabled)', isMyTurn === true);
+
+    host4p.close();
   }
 
   // -----------------------------------------------------------

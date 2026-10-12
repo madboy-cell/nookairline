@@ -1371,24 +1371,67 @@ let monopolyState = loadLocalMonopolyState() || createDefaultMonopolyState();
 let manualRoleOverride = null;
 
 /**
- * Robust terminal & role resolution: 'bkk' or 'dxb'.
+ * Robust terminal & role resolution: 'bkk', 'dxb', 'bot1', or 'bot2'.
+ * Guarantees a human player is NEVER assigned to an AI bot role.
  */
 function getMonopolyMyRole() {
   if (manualRoleOverride) return manualRoleOverride;
+
+  // 1. If an active match is in progress:
+  //    A human player NEVER controls an AI bot!
+  if (monopolyState && monopolyState.active && monopolyState.players) {
+    const players = monopolyState.players;
+    const humanRoles = Object.keys(players).filter((r) => players[r] && !players[r].isBot);
+    // If there is ONLY ONE human player in the game, the local user MUST be that human!
+    if (humanRoles.length === 1) {
+      return humanRoles[0];
+    }
+  }
+
+  // 2. If inside an active Flight Room:
+  if (currentFlightRoom) {
+    if (currentFlightRoomSlot && currentFlightRoomSlot.role) {
+      return currentFlightRoomSlot.role;
+    }
+    if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) {
+      const slot1 = currentFlightRoom.slots?.[0];
+      if (slot1 && slot1.role) return slot1.role;
+      return 'bkk';
+    }
+    const myUid = getPersistentPlayerUid();
+    const mySlot = (currentFlightRoom.slots || []).find((s) => s.occupiedBy && (s.occupiedBy === myUid || s.occupiedBy === `user_${myUid}`));
+    if (mySlot && mySlot.role) return mySlot.role;
+  }
+
+  // 3. Explicit URL parameters
   const search = window.location.search.toLowerCase();
   if (search.includes('role=bkk') || search.includes('terminal=bkk')) return 'bkk';
   if (search.includes('role=dxb') || search.includes('terminal=dxb')) return 'dxb';
+
+  // 4. Candidate terminal from WebSocket or pathname
+  let candidate = null;
   if (window.myTerminal) {
     const t = String(window.myTerminal).toLowerCase();
-    if (t === 'bkk' || t === 'dxb') return t;
+    if (t === 'bkk' || t === 'dxb') candidate = t;
   }
-  if (typeof getTerminal === 'function') {
+  if (!candidate && typeof getTerminal === 'function') {
     const t = getTerminal();
-    if (t === 'bkk' || t === 'dxb') return t;
+    if (t === 'bkk' || t === 'dxb') candidate = t;
   }
   const path = window.location.pathname.toLowerCase();
-  if (path.includes('/dxb')) return 'dxb';
-  return 'bkk';
+  if (!candidate && path.includes('/dxb')) candidate = 'dxb';
+
+  const defaultRole = candidate || 'bkk';
+
+  // 5. Final guard against assigning a human to a bot player
+  if (monopolyState && monopolyState.active && monopolyState.players) {
+    if (monopolyState.players[defaultRole] && monopolyState.players[defaultRole].isBot) {
+      const humanRole = Object.keys(monopolyState.players).find((r) => !monopolyState.players[r].isBot);
+      if (humanRole) return humanRole;
+    }
+  }
+
+  return defaultRole;
 }
 
 function getPersistentPlayerUid() {
@@ -1422,8 +1465,11 @@ function isResolver() {
   if (st.mode === 'bot') return true;
   const currentP = st.players && st.players[st.currentTurn];
   if (currentP && currentP.isBot) {
+    if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) return true;
     const me = getMonopolyMyRole();
     if (me === 'bkk') return true;
+    const firstHuman = Object.keys(st.players).find(r => !st.players[r].isBot);
+    if (firstHuman && me === firstHuman) return true;
     if (partnerAway() || window.nookPartnerOnline === false) return true;
     if (st.turnResolver === me) return true;
     return false;
@@ -2676,6 +2722,12 @@ function initMonopoly() {
       updateMonopolyHUD();
       reconcileOverlays();
     }
+    // Bot watchdog: if it's currently an AI bot's turn and no roll or animation is active, schedule roll
+    if (st && st.active && !st.gameOver && st.players && st.players[st.currentTurn]?.isBot) {
+      if (!st.isRolling && !isAnimating && !botActionTimer && isResolver()) {
+        checkBotTurn();
+      }
+    }
   }, 1000);
 
   document.addEventListener('visibilitychange', () => {
@@ -2750,6 +2802,7 @@ function closeMonopolyGame(broadcast = true) {
 }
 
 function startBotGame(level = 'hard') {
+  manualRoleOverride = null;
   const myRole = getMonopolyMyRole();
   const botRole = otherRole(myRole);
   const isEasy = (level === 'easy');
@@ -3198,6 +3251,8 @@ function broadcastLobbyState() {
 // NEORA Flight Departure Board & Room Registry Client Controller
 // -------------------------------------------------------------
 let currentFlightRoom = null;
+let currentFlightRoomIsHost = false;
+let currentFlightRoomSlot = null;
 let currentNeoraView = 'browser'; // 'browser' | 'room' | 'create'
 let departureBoardFlights = [];
 let departureBoardFilter = 'all';
@@ -3522,14 +3577,15 @@ function renderDepartureBoard() {
 
 function isCurrentUserHost() {
   if (!currentFlightRoom) return true;
-  const myRole = getMonopolyMyRole();
-  const myPrefix = `user_${myRole}`;
-  const mySlot = (currentFlightRoom.slots || []).find((s) => s.occupiedBy && String(s.occupiedBy).startsWith(myPrefix));
-  if (mySlot && mySlot.id > 1) return false;
-  if (currentFlightRoom.hostUid && String(currentFlightRoom.hostUid).startsWith(myPrefix)) return true;
+  if (currentFlightRoomIsHost) return true;
+  if (currentFlightRoomSlot && currentFlightRoomSlot.id === 1) return true;
+  const myUid = getPersistentPlayerUid();
+  if (currentFlightRoom.hostUid && (currentFlightRoom.hostUid === myUid || currentFlightRoom.hostUid === `user_${myUid}`)) return true;
   const slot1 = currentFlightRoom.slots?.[0];
-  if (slot1 && slot1.occupiedBy && String(slot1.occupiedBy).startsWith(myPrefix)) return true;
-  return true;
+  if (slot1 && slot1.occupiedBy && (slot1.occupiedBy === myUid || slot1.occupiedBy === `user_${myUid}`)) return true;
+  const myRole = (window.myTerminal || '').toLowerCase();
+  if (myRole && slot1 && slot1.occupiedBy && String(slot1.occupiedBy).includes(myRole)) return true;
+  return false;
 }
 
 function renderNeoraWaitingRoom() {
@@ -3912,6 +3968,9 @@ function createFlightRoom(isPublic = true, flightName = null, desc = null, tags 
   };
 
   currentFlightRoom = newRoom;
+  currentFlightRoomIsHost = true;
+  currentFlightRoomSlot = { id: 1, role: 'bkk' };
+  manualRoleOverride = null;
   lobbyState.slots = newRoom.slots;
   switchNeoraView('room');
 
@@ -4116,6 +4175,7 @@ function updateFloatingRoomWidget() {
 }
 
 function startNeoraRoomGame() {
+  manualRoleOverride = null;
   if (!currentFlightRoom) return;
   const isHost = isCurrentUserHost();
 
@@ -4186,6 +4246,7 @@ function updateLobbyFlightRoomUI() {
 }
 
 function startPartyGame(config = {}) {
+  manualRoleOverride = null;
   const slotsSource = (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) ? currentFlightRoom.slots : lobbyState.slots;
   if (!Array.isArray(slotsSource) || slotsSource.length !== 4) {
     lobbyState.slots = getDefaultLobbySlots(lobbyState.mode);
@@ -4236,7 +4297,10 @@ function startPartyGame(config = {}) {
     if (p.isBot) {
       p.botLevel = slot.difficulty || 'easy';
       const isEasy = p.botLevel === 'easy';
-      p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼');
+      let defaultBotName = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
+      if (idx === 2) defaultBotName = isEasy ? 'Cadet Mochi 🐣' : 'Major Whiskers 🐯';
+      if (idx === 3) defaultBotName = isEasy ? 'Pilot Pip 🐱' : 'Admiral Claw 🦁';
+      p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : defaultBotName;
       p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg');
       p.badge = `BOT${idx > 1 ? idx - 1 : ''}`;
       p.color = slot.id === 3 ? '#10b981' : (slot.id === 4 ? '#f59e0b' : '#06b6d4');
@@ -10023,6 +10087,9 @@ function handleMonopolyMessage(message) {
 
   if (message.type === 'room_rejoined') {
     currentFlightRoom = message.room;
+    currentFlightRoomSlot = message.slot;
+    currentFlightRoomIsHost = message.slot && message.slot.id === 1;
+    manualRoleOverride = null;
     if (message.room && Array.isArray(message.room.slots)) {
       lobbyState.slots = message.room.slots;
     }
@@ -10066,6 +10133,9 @@ function handleMonopolyMessage(message) {
 
   if (message.type === 'room_created' || message.type === 'room_joined') {
     currentFlightRoom = message.room;
+    currentFlightRoomIsHost = (message.type === 'room_created') || (message.slot && message.slot.id === 1);
+    currentFlightRoomSlot = message.slot || (message.room && message.room.slots && message.room.slots[0]);
+    manualRoleOverride = null;
     if (message.room && message.room.id && typeof localStorage !== 'undefined') {
       localStorage.setItem('sky_active_room_id', message.room.id);
     }
@@ -10192,6 +10262,9 @@ function handleMonopolyMessage(message) {
   if (message.type === 'room_left') {
     hideFloatingRoomWidget();
     currentFlightRoom = null;
+    currentFlightRoomIsHost = false;
+    currentFlightRoomSlot = null;
+    manualRoleOverride = null;
     pendingActiveSession = null;
     if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
     hideNeoraRejoinModal();
