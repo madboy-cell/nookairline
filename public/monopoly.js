@@ -497,21 +497,21 @@ const ZONES = {
 // =========================================================
 const MONOPOLY_TILES = [
   { id: 0, name: 'Departure Gate', shortName: 'START', icon: '🛫', zone: 'corner', type: 'start', price: 0, rent: 0, desc: 'Pass or land to collect +200 miles.' },
-  { id: 1, name: 'Yaowarat Street', shortName: 'Yaowarat', icon: '🥢', zone: 'bkk', type: 'property', price: 100, rent: 30, desc: 'Sizzling night market, Michelin seafood & gold shops.' },
+  { id: 1, name: 'Yaowarat Street', shortName: 'Yaowarat', icon: '👜', zone: 'bkk', type: 'property', price: 100, rent: 30, desc: 'Sizzling night market, Michelin seafood & gold shops.' },
   { id: 2, name: 'Siam Paragon', shortName: 'Paragon', icon: '🛍️', zone: 'bkk', type: 'property', price: 140, rent: 45, desc: 'Luxury flagship boutiques & sweet dessert cafes.' },
-  { id: 3, name: 'Chatuchak Market', shortName: 'Chatuchak', icon: '🛺', zone: 'bkk', type: 'property', price: 160, rent: 55, desc: 'Vintage treasures, coconut ice cream & artisan art.' },
+  { id: 3, name: 'Chatuchak Market', shortName: 'Chatuchak', icon: '🎪', zone: 'bkk', type: 'property', price: 160, rent: 55, desc: 'Vintage treasures, coconut ice cream & artisan art.' },
   { id: 4, name: 'Sky Casino', shortName: 'CASINO', icon: '🎰', zone: 'corner', type: 'casino', price: 0, rent: 0, desc: 'Spin the slots for 100 miles. Jackpot pays 1,000!' },
-  { id: 5, name: 'Dubai Gold Souk', shortName: 'Gold Souk', icon: '🍫', zone: 'dxb', type: 'property', price: 180, rent: 60, desc: 'Pistachio knafeh chocolates & gleaming gold filigree.' },
-  { id: 6, name: 'Palm Jumeirah', shortName: 'Palm', icon: '🏖️', zone: 'dxb', type: 'property', price: 220, rent: 75, desc: 'Arabian sunset villas & private yachts.' },
+  { id: 5, name: 'Dubai Gold Souk', shortName: 'Gold Souk', icon: '🧈', zone: 'dxb', type: 'property', price: 180, rent: 60, desc: 'Pistachio knafeh chocolates & gleaming gold filigree.' },
+  { id: 6, name: 'Palm Jumeirah', shortName: 'Palm', icon: '🌴', zone: 'dxb', type: 'property', price: 220, rent: 75, desc: 'Arabian sunset villas & private yachts.' },
   { id: 7, name: 'Airdrop Crate', shortName: 'AIRDROP', icon: '🪂', zone: 'special', type: 'airdrop', price: 0, rent: 0, desc: 'A cargo plane drops you a free sabotage item!' },
   { id: 8, name: 'Burj Khalifa', shortName: 'Burj', icon: '🏙️', zone: 'dxb', type: 'property', price: 260, rent: 90, desc: 'The world’s highest lounge with fountain views.' },
   { id: 9, name: 'Sky Bridge', shortName: 'BRIDGE', icon: '✈️', zone: 'special', type: 'bridge', price: 0, rent: 0, desc: 'First-class teleport straight to your opponent.' },
   { id: 10, name: 'Mystery Cargo', shortName: 'MYSTERY', icon: '🎁', zone: 'corner', type: 'market', price: 0, rent: 0, desc: 'Instant party drop: win prank items, sabotage gear, or tax-free cash!' },
-  { id: 11, name: 'Shibuya Crossing', shortName: 'Shibuya', icon: '🍣', zone: 'tyo', type: 'property', price: 280, rent: 95, desc: 'Neon lights, ramen bars & purikura photobooths.' },
+  { id: 11, name: 'Shibuya Crossing', shortName: 'Shibuya', icon: '🏬', zone: 'tyo', type: 'property', price: 280, rent: 95, desc: 'Neon lights, ramen bars & purikura photobooths.' },
   { id: 12, name: 'Akihabara', shortName: 'Akiba', icon: '🎮', zone: 'tyo', type: 'property', price: 300, rent: 100, desc: 'Arcades, anime towers & maid cafés.' },
   { id: 13, name: 'Shinjuku Golden Gai', shortName: 'Shinjuku', icon: '🏮', zone: 'tyo', type: 'property', price: 320, rent: 110, desc: 'Tiny lantern-lit bars hidden in neon alleys.' },
   { id: 14, name: 'Takeover Arena', shortName: 'ARENA', icon: '⚔️', zone: 'corner', type: 'arena', price: 0, rent: 0, desc: 'Free duel: win to seize a property or raid a 5-star hotel for +150 cash!' },
-  { id: 15, name: 'Paris Eiffel Tower', shortName: 'Paris', icon: '🥐', zone: 'eu', type: 'property', price: 340, rent: 115, desc: 'Croissants, champagne & starry Seine walks.' },
+  { id: 15, name: 'Paris Eiffel Tower', shortName: 'Paris', icon: '🗼', zone: 'eu', type: 'property', price: 340, rent: 115, desc: 'Croissants, champagne & starry Seine walks.' },
   { id: 16, name: 'Santorini Caldera', shortName: 'Santorini', icon: '🏛️', zone: 'eu', type: 'property', price: 360, rent: 125, desc: 'White cliff villas over the azure Aegean.' },
   { id: 17, name: 'Winterfell Heart Tree', shortName: 'Winterfell', icon: '🐺', zone: 'got', type: 'property', price: 380, rent: 135, desc: 'Ancient weirwood in the snow where wolves rule.' },
   { id: 18, name: 'The Red Keep', shortName: 'Red Keep', icon: '👑', zone: 'got', type: 'property', price: 420, rent: 150, desc: 'The Iron Throne overlooking Blackwater Bay.' },
@@ -2135,6 +2135,16 @@ function initMonopoly() {
     });
   }
   if (rulesBtn) rulesBtn.addEventListener('click', showRulesModal);
+  const settingsBtn = $m('monopolySettingsBtn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      if (window.socialUI && typeof window.socialUI.openProfileModal === 'function') {
+        window.socialUI.openProfileModal();
+      } else {
+        showRulesModal();
+      }
+    });
+  }
   if (lobbyBtn) lobbyBtn.addEventListener('click', handleMonopolyExitGame);
   if (btnRejoinActiveFlight) {
     btnRejoinActiveFlight.addEventListener('click', () => {
@@ -4867,19 +4877,21 @@ function ensureBoardBuilt() {
   MONOPOLY_TILES.forEach((tile) => {
     const pos = TILE_GRID_POSITIONS[tile.id];
     const el = document.createElement('div');
-    el.className = `board-tile tile-type-${tile.type}`;
+    el.className = `board-tile tile-type-${tile.type} tile-zone-${tile.zone}`;
     if (tile.zone === 'corner') el.classList.add('corner-tile');
     el.id = `boardTile_${tile.id}`;
     el.style.gridRow = pos.row;
     el.style.gridColumn = pos.col;
     const isProp = tile.type === 'property';
+    const zoneLabel = ZONES[tile.zone] ? ZONES[tile.zone].label.toUpperCase() : '';
     el.innerHTML = `
+      ${isProp ? `<div class="tile-category-strip zone-${tile.zone}"><span class="category-name">${zoneLabel}</span></div>` : ''}
       ${isProp ? '<div class="tile-owner-ribbon unowned"></div>' : ''}
       <div class="tile-zone-bar zone-${tile.zone}"></div>
       ${isProp ? '<div class="tile-monopoly-buildings"></div>' : ''}
       <div class="tile-content-body">
         <span class="tile-icon">${tile.icon}</span>
-        ${isProp ? `<span class="tile-name">${tile.shortName}</span>` : ''}
+        <span class="tile-name">${tile.shortName}</span>
         <span class="tile-pill"></span>
       </div>`;
     el.addEventListener('click', () => inspectTile(tile));
@@ -5059,10 +5071,18 @@ function updateMonopolyHUD() {
     if (!card) return;
     const p = st.players[r];
     if (!p) {
-      card.classList.add('hidden');
+      card.classList.remove('hidden');
+      card.classList.add('is-empty-seat');
+      card.classList.remove('active-turn', 'is-me', 'magnetized', 'is-bankrupt');
+      const set = (id, html) => { const el = $m(id); if (el) el.innerHTML = html; };
+      const defaultName = r === 'bot1' ? 'Zero' : r === 'bot2' ? 'Luna' : 'Open';
+      set(`monopoly${cap}Name`, defaultName);
+      set(`monopoly${cap}Miles`, '—');
+      set(`monopoly${cap}Nw`, '<span class="empty-seat-tag">OPEN</span>');
       return;
     }
     card.classList.remove('hidden');
+    card.classList.remove('is-empty-seat');
 
     const set = (id, html) => { const el = $m(id); if (el) el.innerHTML = html; };
     const pinfo = perkInfo(r);
@@ -5119,10 +5139,21 @@ function updateMonopolyHUD() {
   const turnBadge = $m('monopolyTurnBadge');
   if (turnBadge) {
     const isMyTurn = turn === me;
-    turnBadge.className = `turn-badge ${isMyTurn && !st.gameOver ? 'my-turn' : ''}`;
-    turnBadge.innerHTML = st.gameOver
-      ? '<span>🏁 Game over</span>'
-      : isMyTurn ? '<span>🎲 Your turn</span>' : `<span>⏳ ${st.players[turn].name}</span>`;
+    turnBadge.className = `turn-badge neora-turn-badge ${isMyTurn && !st.gameOver ? 'my-turn' : ''}`;
+    const p = st.players && st.players[turn];
+    const avatarEl = $m('monopolyTurnAvatarMini');
+    const textEl = $m('monopolyTurnText');
+    if (avatarEl && p && p.sprite) {
+      if (avatarEl.getAttribute('src') !== p.sprite) avatarEl.src = p.sprite;
+    }
+    const label = st.gameOver
+      ? 'Game over'
+      : isMyTurn ? 'Your turn' : `${p ? p.name : 'Rival'}'s turn`;
+    if (textEl) {
+      textEl.textContent = label;
+    } else {
+      turnBadge.innerHTML = `<span class="turn-avatar-mini-wrap"><img id="monopolyTurnAvatarMini" src="${p?.sprite || 'assets/bkk_warrior_idle.png'}" class="turn-avatar-mini" alt="Turn" /></span><span id="monopolyTurnText">${label}</span>`;
+    }
   }
 
   const rollBtn = $m('btnRollDice');

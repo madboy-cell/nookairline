@@ -8041,3 +8041,767 @@ body.has-active-modal .vault-pill * {
   box-shadow: 0 0 14px rgba(217, 70, 239, 0.5) !important;
   font-weight: 800 !important;
 }
+
+/* =========================================================
+   NEORA RETRO-FUTURISTIC AIRLINE BOARD GAME SYSTEM
+   Design spec matching neora_component_asset_breakdown/
+   Target: iPhone 18 Pro & Modern Mobile Displays
+   ========================================================= */
+
+/* --- 1. NEORA Header Navigation --- */
+.neora-game-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 4px 6px !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.neora-brand-col,
+.neora-brand-title-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 1px !important;
+}
+
+.neora-brand-logo-row {
+  display: flex;
+  align-items: center;
+}
+
+.neora-logo-title,
+.neora-logo-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  font-family: var(--font-heading, system-ui, sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.8px !important;
+  line-height: 1.1 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fef08a 40%, #f59e0b 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: 0 2px 10px rgba(245, 158, 11, 0.35) !important;
+}
+
+.neora-planet-o {
+  font-size: 11.5px;
+  -webkit-text-fill-color: initial;
+  display: inline-block;
+  margin: 0 0.5px;
+}
+
+.neora-tagline {
+  font-size: 6.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.7px !important;
+  text-transform: uppercase !important;
+  color: rgba(226, 232, 240, 0.65) !important;
+}
+
+.neora-header-nav,
+.neora-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.neora-nav-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  padding: 3.5px 8px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #f1f5f9 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+}
+
+.neora-nav-btn:hover,
+.neora-nav-btn:active {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border-color: #f59e0b !important;
+  color: #fff !important;
+  transform: scale(0.97) !important;
+}
+.neora-nav-btn.lobby-btn:active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fff;
+  transform: scale(0.97);
+}
+
+.neora-nav-icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.neora-nav-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.neora-nav-icon-btn.close-btn:hover,
+.neora-nav-icon-btn.close-btn:active {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* --- 2. Four Compact Player Cards in a Single Row --- */
+.neora-players-bar,
+.monopoly-players-bar,
+.monopoly-players-bar.party-4p {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 4px !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.neora-player-card,
+.monopoly-player-card,
+.monopoly-players-bar.party-4p .monopoly-player-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 3px 2px 4px !important;
+  border-radius: 11px !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-sizing: border-box !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 48px !important;
+}
+
+/* Player Role Borders & Active Turn Glow */
+.neora-player-card.player-bkk { border-color: rgba(59, 130, 246, 0.35) !important; }
+.neora-player-card.player-dxb { border-color: rgba(236, 72, 153, 0.35) !important; }
+.neora-player-card.player-bot1 { border-color: rgba(16, 185, 129, 0.35) !important; }
+.neora-player-card.player-bot2 { border-color: rgba(245, 158, 11, 0.35) !important; }
+
+.neora-player-card.active-turn {
+  transform: translateY(-1px) scale(1.02);
+  z-index: 5;
+}
+.neora-player-card.player-bkk.active-turn {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.6), inset 0 0 8px rgba(59, 130, 246, 0.3) !important;
+}
+.neora-player-card.player-dxb.active-turn {
+  background: linear-gradient(180deg, rgba(236, 72, 153, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  border-color: #ec4899 !important;
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.6), inset 0 0 8px rgba(236, 72, 153, 0.3) !important;
+}
+.neora-player-card.player-bot1.active-turn {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 8px rgba(16, 185, 129, 0.3) !important;
+}
+.neora-player-card.player-bot2.active-turn {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.6), inset 0 0 8px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Empty Seat State (Preserves 4-card horizontal balance) */
+.neora-player-card.is-empty-seat {
+  opacity: 0.42 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+.neora-player-card.is-empty-seat .player-thumb-mini {
+  filter: grayscale(1) opacity(0.4) !important;
+}
+.empty-seat-tag {
+  font-size: 6.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.4px;
+}
+
+/* Card Header: Seat Tag & Crown & Signal */
+.player-card-avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-crown-icon {
+  position: absolute;
+  top: -8px;
+  left: -2px;
+  font-size: 9px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+  z-index: 2;
+}
+.neora-player-card .player-thumb-mini {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+.neora-player-card .player-signal-bars {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 7px;
+  color: rgba(52, 211, 153, 0.85);
+  line-height: 1;
+}
+
+.neora-player-card .player-info-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 1px;
+}
+.player-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  max-width: 100%;
+}
+.player-seat-tag {
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 0 2.5px;
+  border-radius: 4px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.player-seat-tag.p1-tag { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
+.player-seat-tag.p2-tag { color: #f472b6; background: rgba(236, 72, 153, 0.15); }
+.player-seat-tag.p3-tag { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+.player-seat-tag.p4-tag { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+
+.neora-player-card .player-name-mini {
+  font-size: 8px !important;
+  font-weight: 800;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 58px;
+}
+.player-balance-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5px;
+  line-height: 1;
+}
+.player-balance-row .coin-icon {
+  font-size: 7px;
+}
+.player-balance-row .player-miles-pill {
+  font-size: 8px !important;
+  font-weight: 800;
+  color: #fde047;
+}
+.player-nw-badge {
+  font-size: 6.8px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 0.5px solid rgba(56, 189, 248, 0.35);
+  border-radius: 5px;
+  padding: 0.5px 3.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* --- 3. Board Grid & Perimeter Layout --- */
+.monopoly-board-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1.08fr !important;
+  gap: 3.5px !important;
+  width: 100% !important;
+  aspect-ratio: 5 / 7 !important;
+  background: rgba(6, 10, 20, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 16px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Category Strip (BANGKOK, DUBAI, TOKYO, EUROPE, WESTEROS) */
+.tile-category-strip {
+  width: 100%;
+  height: 10.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6.2px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.tile-category-strip.zone-bkk { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.tile-category-strip.zone-dxb { background: linear-gradient(90deg, #0284c7, #06b6d4); }
+.tile-category-strip.zone-tyo { background: linear-gradient(90deg, #c026d3, #a855f7); }
+.tile-category-strip.zone-eu { background: linear-gradient(90deg, #1d4ed8, #3b82f6); }
+.tile-category-strip.zone-got { background: linear-gradient(90deg, #b91c1c, #dc2626); }
+
+.tile-owner-ribbon.unowned {
+  display: none !important;
+}
+
+/* Tile Content Body */
+.board-tile .tile-content-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 1px 2px;
+  gap: 1px;
+}
+.board-tile .tile-icon {
+  font-size: 14.5px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+.board-tile .tile-name {
+  font-size: 7.2px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.15px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.board-tile .tile-pill {
+  font-size: 6.8px;
+  font-weight: 800;
+  color: #fde047;
+  background: rgba(0, 0, 0, 0.65);
+  border: 0.5px solid rgba(245, 158, 11, 0.4);
+  padding: 0.5px 3.5px;
+  border-radius: 5px;
+  line-height: 1.2;
+}
+
+/* Corner & Special Tiles Glow Enhancements */
+.board-tile.tile-type-start {
+  background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.28) 0%, rgba(6, 78, 59, 0.4) 100%) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.35) !important;
+}
+.board-tile.tile-type-start .tile-pill {
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+
+.board-tile.tile-type-casino {
+  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, rgba(131, 24, 67, 0.4) 100%) !important;
+  border-color: rgba(236, 72, 153, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(236, 72, 153, 0.35) !important;
+}
+.board-tile.tile-type-casino .tile-pill {
+  color: #f472b6 !important;
+  border-color: rgba(236, 72, 153, 0.5) !important;
+}
+
+.board-tile.tile-type-airdrop {
+  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.25) 0%, rgba(21, 94, 117, 0.4) 100%) !important;
+  border-color: rgba(6, 182, 212, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.35) !important;
+}
+.board-tile.tile-type-airdrop .tile-pill {
+  color: #38bdf8 !important;
+  border-color: rgba(6, 182, 212, 0.5) !important;
+}
+
+.board-tile.tile-type-bridge {
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25) 0%, rgba(30, 58, 138, 0.4) 100%) !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.35) !important;
+}
+.board-tile.tile-type-bridge .tile-pill {
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Mystery Corner (Tile 10, Right Column, Row 7 Col 5) - Strictly aligned */
+#boardTile_10,
+.board-tile.tile-type-market {
+  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.25) 0%, rgba(88, 28, 135, 0.4) 100%) !important;
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.35) !important;
+  grid-row: 7 !important;
+  grid-column: 5 !important;
+}
+.board-tile.tile-type-market .tile-pill {
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.5) !important;
+}
+
+.board-tile.tile-type-arena {
+  background: radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.25) 0%, rgba(154, 52, 18, 0.4) 100%) !important;
+  border-color: rgba(249, 115, 22, 0.55) !important;
+  box-shadow: inset 0 0 10px rgba(249, 115, 22, 0.35) !important;
+}
+.board-tile.tile-type-arena .tile-pill {
+  color: #fb923c !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+}
+
+/* --- 4. Center Game Stage Hub --- */
+.monopoly-center-hub.neora-center-hub {
+  grid-column: 2 / 5 !important;
+  grid-row: 2 / 7 !important;
+  background: url('assets/ui/neora_center_bg.png') center / cover no-repeat !important;
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 5px 6px 8px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.neora-cloud-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, rgba(10, 15, 28, 0.3) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Round & Reward Bar */
+.round-reward-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 2.5px 8px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.reward-divider {
+  color: rgba(255, 255, 255, 0.3);
+}
+.round-reward-bar .goal-pill {
+  color: #fbbf24;
+}
+
+/* NEORA Turn Badge Pill */
+.neora-turn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 2px 8px 2px 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #ffffff;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+.neora-turn-badge.my-turn {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: #f59e0b;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+  animation: turnPulseGlow 1.8s infinite;
+}
+@keyframes turnPulseGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 22px rgba(245, 158, 11, 0.8); }
+}
+.turn-avatar-mini-wrap {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+.turn-avatar-mini {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Glowing Circular Dice Platform Dais */
+.dice-platform-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  margin-bottom: 2px;
+}
+.dice-stage-dais {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(56, 189, 248, 0.08) 55%, transparent 72%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.25), inset 0 0 16px rgba(245, 158, 11, 0.15);
+  pointer-events: none;
+  animation: daisSpinGlow 8s linear infinite;
+}
+@keyframes daisSpinGlow {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+  50% { transform: scale(1.05) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.85; }
+}
+
+/* --- 5. Bottom Action Bar --- */
+.neora-bottom-dock,
+.monopoly-dock {
+  display: grid !important;
+  grid-template-columns: 88px 1fr 78px !important;
+  gap: 6px !important;
+  align-items: center !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.neora-item-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.neora-slot.item-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  padding: 2px;
+  min-height: 42px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.neora-slot.item-slot:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.neora-slot.item-slot.usable {
+  border-style: solid;
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+/* Roll Dice Button CTA */
+.neora-roll-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  height: 44px !important;
+  border-radius: 22px !important;
+  font-family: var(--font-heading, system-ui, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.4px !important;
+  color: #0f172a !important;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%) !important;
+  border: 1.5px solid #fef08a !important;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.55), inset 0 1px 1px #ffffff !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+}
+.neora-roll-btn:hover,
+.neora-roll-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.65), inset 0 1px 1px #ffffff !important;
+}
+.neora-roll-btn.roll-disabled {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Ultimate Ability Button */
+.neora-ult-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 4px;
+}
+.dock-ult-fill-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+.dock-ult-fill-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #a855f7 100%);
+  opacity: 0.45;
+  transition: width 0.3s ease;
+}
+.dock-ult-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+.dock-ult-icon {
+  font-size: 11px;
+  color: #fde047;
+}
+.dock-ult-label {
+  font-size: 8px;
+  font-weight: 800;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+.neora-ult-btn.is-ready {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.55) !important;
+  animation: ultReadyPulse 1.4s infinite !important;
+}
+.neora-ult-btn.is-ready .dock-ult-fill-bar {
+  opacity: 0.85;
+  background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+}
+@keyframes ultReadyPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 22px rgba(245, 158, 11, 0.75); }
+}
+
+/* --- 6. iPhone 18 Pro & Mobile Viewport Optimization --- */
+@media screen and (max-width: 430px) {
+  .monopoly-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: max(4px, env(safe-area-inset-top, 0px)) 5px max(4px, env(safe-area-inset-bottom, 0px)) !important;
+    gap: 4px !important;
+    border-radius: 18px !important;
+  }
+  .neora-logo-title {
+    font-size: 12px !important;
+  }
+  .neora-tagline {
+    font-size: 5.8px !important;
+  }
+  .neora-player-card,
+  .monopoly-player-card {
+    min-height: 44px !important;
+    padding: 2px 1px 3px !important;
+  }
+  .neora-player-card .player-thumb-mini,
+  .monopoly-player-card .player-thumb-mini {
+    width: 21px !important;
+    height: 21px !important;
+  }
+  .neora-player-card .player-name-mini,
+  .monopoly-player-card .player-name-mini {
+    font-size: 7.2px !important;
+    max-width: 48px !important;
+  }
+  .player-seat-tag {
+    font-size: 6.8px !important;
+  }
+  .player-balance-row .player-miles-pill {
+    font-size: 7.2px !important;
+  }
+  .player-nw-badge {
+    font-size: 6.2px !important;
+    padding: 0.5px 2.5px !important;
+  }
+  .board-tile .tile-icon {
+    font-size: 13px !important;
+  }
+  .board-tile .tile-name {
+    font-size: 6.5px !important;
+  }
+  .board-tile .tile-pill {
+    font-size: 6.2px !important;
+    padding: 0.5px 2px !important;
+  }
+  .neora-roll-btn {
+    height: 40px !important;
+    font-size: 12px !important;
+  }
+  .neora-slot.item-slot,
+  .neora-ult-btn {
+    height: 40px !important;
+    min-height: 40px !important;
+  }
+}
+

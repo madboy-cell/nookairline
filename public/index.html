@@ -236,93 +236,138 @@
     <!-- Sky Monopoly Board Game Modal -->
     <div class="monopoly-modal hidden" id="monopolyModal">
       <div class="monopoly-container">
-        <!-- Header -->
-        <div class="monopoly-header">
-          <div class="monopoly-brand">
-            <span>✈️</span>
-            <span>SKY MONOPOLY</span>
+        <!-- NEORA Game Header (Matches reference_crops/02_header_navigation.png) -->
+        <div class="neora-game-header" id="neoraGameHeader">
+          <div class="neora-brand-title-wrap">
+            <div class="neora-brand-logo-row">
+              <span class="neora-logo-text">NE<span class="neora-planet-o">🪐</span>RA</span>
+            </div>
+            <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
           </div>
-          <div class="monopoly-header-actions">
-            <button class="monopoly-reset-btn" id="monopolyExitGameBtn" title="Exit to Departures Lounge">🚪 Exit Game</button>
-            <button class="monopoly-reset-btn" id="monopolyRulesBtn" title="How to play">❔ Rules</button>
-            <button class="monopoly-close-btn" id="closeMonopolyBtn" title="Exit Game">✕</button>
+          <div class="neora-header-actions">
+            <button class="neora-nav-btn" id="monopolyLobbyBtn" title="Boarding Gate Lobby" type="button">
+              <span class="nav-icon">⌂</span> Lobby
+            </button>
+            <button class="neora-nav-btn" id="monopolyRulesBtn" title="How to Play & Rules" type="button">
+              <span class="nav-icon">✦</span> Rules
+            </button>
+            <button class="neora-nav-icon-btn" id="monopolySettingsBtn" title="Settings & Profile" type="button" aria-label="Settings">
+              ⚙
+            </button>
+            <button class="neora-nav-icon-btn neora-close-btn" id="closeMonopolyBtn" title="Exit Game" type="button" aria-label="Exit Game">
+              ✕
+            </button>
+            <!-- Backwards-compatibility hook -->
+            <button id="monopolyExitGameBtn" style="display:none;" type="button"></button>
           </div>
         </div>
 
-        <!-- Players HUD (Responsive 2-4 Players) -->
-        <div class="monopoly-players-bar" id="monopolyPlayersBar">
-          <div class="monopoly-player-card player-bkk" id="monopolyPlayerCardBkk">
-            <img src="assets/bkk_warrior_idle.png" class="player-thumb-mini" id="monopolyBkkThumb" alt="BKK" />
+        <!-- Four Compact Player Cards in a Single Row (Matches reference_crops/03_four_player_cards.png) -->
+        <div class="monopoly-players-bar neora-players-bar" id="monopolyPlayersBar">
+          <!-- Card 1: P1 (Host / You) -->
+          <div class="monopoly-player-card player-bkk" id="monopolyPlayerCardBkk" data-seat="1">
+            <div class="player-card-avatar-wrap">
+              <span class="player-crown-icon" aria-hidden="true">👑</span>
+              <img src="assets/bkk_warrior_idle.png" class="player-thumb-mini" id="monopolyBkkThumb" alt="P1" />
+            </div>
             <div class="player-info-mini">
-              <span class="player-name-mini" id="monopolyBkkName">Lord of BKK 🐺</span>
-              <div class="player-stats-row">
-                <span class="player-miles-pill" id="monopolyBkkMiles">1,200 🪙</span>
-                <span class="player-nw-pill" id="monopolyBkkNw">NW 1,200</span>
-                <span class="player-prop-badge" id="monopolyBkkProps">🏰 0</span>
+              <div class="player-label-row">
+                <span class="player-seat-tag p1-tag">P1</span>
+                <span class="player-name-mini" id="monopolyBkkName">Nook</span>
               </div>
-              <div class="player-extras-row">
-                <span class="player-passes" id="monopolyBkkPasses">🎟️🎟️🎟️</span>
-                <span class="player-items-mini" id="monopolyBkkItems"></span>
+              <div class="player-balance-row">
+                <span class="coin-icon">🪙</span>
+                <span class="player-miles-pill" id="monopolyBkkMiles">1,200</span>
               </div>
-              <div class="player-ult-track" id="monopolyBkkUltTrack" title="Ultimate Charge">
-                <div class="player-ult-fill" id="monopolyBkkUltFill" style="width: 0%;"></div>
-                <span class="player-ult-label" id="monopolyBkkUltLabel">0%</span>
-              </div>
+              <div class="player-nw-badge" id="monopolyBkkNw">NW 1,200</div>
+            </div>
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <!-- Hidden compatibility hooks -->
+            <span class="player-prop-badge hidden" id="monopolyBkkProps">🏰 0</span>
+            <span class="player-passes hidden" id="monopolyBkkPasses"></span>
+            <span class="player-items-mini hidden" id="monopolyBkkItems"></span>
+            <div class="player-ult-track hidden" id="monopolyBkkUltTrack">
+              <div class="player-ult-fill" id="monopolyBkkUltFill"></div>
+              <span class="player-ult-label" id="monopolyBkkUltLabel">0%</span>
             </div>
           </div>
-          <div class="monopoly-player-card player-dxb" id="monopolyPlayerCardDxb">
-            <img src="assets/got_queen_idle.png" class="player-thumb-mini" id="monopolyDxbThumb" alt="DXB" />
+
+          <!-- Card 2: P2 (Co-Pilot / Rival) -->
+          <div class="monopoly-player-card player-dxb" id="monopolyPlayerCardDxb" data-seat="2">
+            <div class="player-card-avatar-wrap">
+              <img src="assets/got_queen_idle.png" class="player-thumb-mini" id="monopolyDxbThumb" alt="P2" />
+            </div>
             <div class="player-info-mini">
-              <span class="player-name-mini" id="monopolyDxbName">Khaleesi 🐉</span>
-              <div class="player-stats-row">
-                <span class="player-miles-pill" id="monopolyDxbMiles">1,200 🪙</span>
-                <span class="player-nw-pill" id="monopolyDxbNw">NW 1,200</span>
-                <span class="player-prop-badge" id="monopolyDxbProps">🏰 0</span>
+              <div class="player-label-row">
+                <span class="player-seat-tag p2-tag">P2</span>
+                <span class="player-name-mini" id="monopolyDxbName">Khaleesi</span>
               </div>
-              <div class="player-extras-row">
-                <span class="player-passes" id="monopolyDxbPasses">🎟️🎟️🎟️</span>
-                <span class="player-items-mini" id="monopolyDxbItems"></span>
+              <div class="player-balance-row">
+                <span class="coin-icon">🪙</span>
+                <span class="player-miles-pill" id="monopolyDxbMiles">1,200</span>
               </div>
-              <div class="player-ult-track" id="monopolyDxbUltTrack" title="Ultimate Charge">
-                <div class="player-ult-fill" id="monopolyDxbUltFill" style="width: 0%;"></div>
-                <span class="player-ult-label" id="monopolyDxbUltLabel">0%</span>
-              </div>
+              <div class="player-nw-badge" id="monopolyDxbNw">NW 1,200</div>
+            </div>
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <!-- Hidden compatibility hooks -->
+            <span class="player-prop-badge hidden" id="monopolyDxbProps">🏰 0</span>
+            <span class="player-passes hidden" id="monopolyDxbPasses"></span>
+            <span class="player-items-mini hidden" id="monopolyDxbItems"></span>
+            <div class="player-ult-track hidden" id="monopolyDxbUltTrack">
+              <div class="player-ult-fill" id="monopolyDxbUltFill"></div>
+              <span class="player-ult-label" id="monopolyDxbUltLabel">0%</span>
             </div>
           </div>
-          <div class="monopoly-player-card player-bot1 hidden" id="monopolyPlayerCardBot1">
-            <img src="assets/bot_mochi.jpg" class="player-thumb-mini" id="monopolyBot1Thumb" alt="Bot 1" />
+
+          <!-- Card 3: P3 (Bot 1 / Guest 3) -->
+          <div class="monopoly-player-card player-bot1" id="monopolyPlayerCardBot1" data-seat="3">
+            <div class="player-card-avatar-wrap">
+              <img src="assets/bot_mochi.jpg" class="player-thumb-mini" id="monopolyBot1Thumb" alt="P3" />
+            </div>
             <div class="player-info-mini">
-              <span class="player-name-mini" id="monopolyBot1Name">Trainee Mochi 🐣</span>
-              <div class="player-stats-row">
-                <span class="player-miles-pill" id="monopolyBot1Miles">1,200 🪙</span>
-                <span class="player-nw-pill" id="monopolyBot1Nw">NW 1,200</span>
-                <span class="player-prop-badge" id="monopolyBot1Props">🏰 0</span>
+              <div class="player-label-row">
+                <span class="player-seat-tag p3-tag">P3</span>
+                <span class="player-name-mini" id="monopolyBot1Name">Zero</span>
               </div>
-              <div class="player-extras-row">
-                <span class="player-items-mini" id="monopolyBot1Items"></span>
+              <div class="player-balance-row">
+                <span class="coin-icon">🪙</span>
+                <span class="player-miles-pill" id="monopolyBot1Miles">1,200</span>
               </div>
-              <div class="player-ult-track" id="monopolyBot1UltTrack" title="Ultimate Charge">
-                <div class="player-ult-fill" id="monopolyBot1UltFill" style="width: 0%;"></div>
-                <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
-              </div>
+              <div class="player-nw-badge" id="monopolyBot1Nw">NW 1,200</div>
+            </div>
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <!-- Hidden compatibility hooks -->
+            <span class="player-prop-badge hidden" id="monopolyBot1Props">🏰 0</span>
+            <span class="player-items-mini hidden" id="monopolyBot1Items"></span>
+            <div class="player-ult-track hidden" id="monopolyBot1UltTrack">
+              <div class="player-ult-fill" id="monopolyBot1UltFill"></div>
+              <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
             </div>
           </div>
-          <div class="monopoly-player-card player-bot2 hidden" id="monopolyPlayerCardBot2">
-            <img src="assets/bot_captain.jpg" class="player-thumb-mini" id="monopolyBot2Thumb" alt="Bot 2" />
+
+          <!-- Card 4: P4 (Bot 2 / Guest 4) -->
+          <div class="monopoly-player-card player-bot2" id="monopolyPlayerCardBot2" data-seat="4">
+            <div class="player-card-avatar-wrap">
+              <img src="assets/bot_captain.jpg" class="player-thumb-mini" id="monopolyBot2Thumb" alt="P4" />
+            </div>
             <div class="player-info-mini">
-              <span class="player-name-mini" id="monopolyBot2Name">Capt. Whiskers 😈</span>
-              <div class="player-stats-row">
-                <span class="player-miles-pill" id="monopolyBot2Miles">1,200 🪙</span>
-                <span class="player-nw-pill" id="monopolyBot2Nw">NW 1,200</span>
-                <span class="player-prop-badge" id="monopolyBot2Props">🏰 0</span>
+              <div class="player-label-row">
+                <span class="player-seat-tag p4-tag">P4</span>
+                <span class="player-name-mini" id="monopolyBot2Name">Luna</span>
               </div>
-              <div class="player-extras-row">
-                <span class="player-items-mini" id="monopolyBot2Items"></span>
+              <div class="player-balance-row">
+                <span class="coin-icon">🪙</span>
+                <span class="player-miles-pill" id="monopolyBot2Miles">1,200</span>
               </div>
-              <div class="player-ult-track" id="monopolyBot2UltTrack" title="Ultimate Charge">
-                <div class="player-ult-fill" id="monopolyBot2UltFill" style="width: 0%;"></div>
-                <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
-              </div>
+              <div class="player-nw-badge" id="monopolyBot2Nw">NW 1,200</div>
+            </div>
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <!-- Hidden compatibility hooks -->
+            <span class="player-prop-badge hidden" id="monopolyBot2Props">🏰 0</span>
+            <span class="player-items-mini hidden" id="monopolyBot2Items"></span>
+            <div class="player-ult-track hidden" id="monopolyBot2UltTrack">
+              <div class="player-ult-fill" id="monopolyBot2UltFill"></div>
+              <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
             </div>
           </div>
         </div>
@@ -495,18 +540,28 @@
                 <div class="hub-radar-rings"></div>
                 <div class="hub-radar-beam"></div>
               </div>
-              <div class="hub-pill-row">
+              <div class="hub-pill-row round-reward-bar" id="roundRewardBar">
                 <span class="round-pill" id="monopolyRoundPill">ROUND 1 / 20</span>
                 <span class="goal-pill" id="monopolyGoalPill">🏆 5,500 NW</span>
               </div>
               <div class="final-boarding-banner hidden" id="monopolyFinalBoarding">🔥 FINAL BOARDING · RENT ×1.5</div>
 
-              <div class="turn-badge my-turn" id="monopolyTurnBadge">
-                <span>🎲 Your Turn</span>
+              <!-- Turn Indicator Pill (Matches reference_crops/09_turn_indicator.png) -->
+              <div class="turn-badge my-turn neora-turn-badge" id="monopolyTurnBadge">
+                <div class="turn-avatar-wrap turn-avatar-mini-wrap">
+                  <img src="assets/bkk_warrior_idle.png" class="turn-avatar-mini" id="monopolyTurnAvatarMini" alt="Turn Avatar" />
+                </div>
+                <span class="turn-label-text" id="monopolyTurnText">Your turn</span>
               </div>
 
-              <!-- 3D Pixel Dice -->
-              <div class="monopoly-dice-container" id="monopolyDiceContainer">
+              <!-- Glowing Dice Platform Dais (Matches reference_crops/08_dice_platform.png) -->
+              <div class="dice-platform-wrap" id="dicePlatformWrap">
+                <div class="dice-stage-dais" id="diceStageDais">
+                  <div class="dais-glow"></div>
+                  <div class="dais-rings"></div>
+                </div>
+                <!-- 3D Pixel Dice -->
+                <div class="monopoly-dice-container" id="monopolyDiceContainer">
                 <div class="dice-shadow" id="diceShadow"></div>
                 <div class="dice-shockwave" id="diceShockwave"></div>
                 <div class="monaco-dice-orbit hidden" id="monacoDiceOrbit">
@@ -645,24 +700,25 @@
           <div class="monopoly-fx-layer" id="monopolyFxLayer"></div>
         </div>
 
-        <!-- Bottom Thumb Dock: Dual Item Slots + Massive Roll + Ultimate -->
-        <div class="monopoly-dock" id="monopolyDock">
-          <div class="monopoly-item-dock" id="monopolyItemDock">
-            <button class="item-slot empty" id="monopolyItemSlot0" title="Item Slot 1">
+        <!-- Bottom Action Bar (Matches reference_crops/11_bottom_controls.png) -->
+        <div class="monopoly-dock neora-bottom-dock" id="monopolyDock">
+          <div class="monopoly-item-dock neora-item-dock" id="monopolyItemDock">
+            <button class="item-slot empty" id="monopolyItemSlot0" title="Item Slot 1" type="button">
               <span class="item-slot-icon">＋</span>
               <span class="item-slot-label">Empty</span>
             </button>
-            <button class="item-slot empty" id="monopolyItemSlot1" title="Item Slot 2">
+            <button class="item-slot empty" id="monopolyItemSlot1" title="Item Slot 2" type="button">
               <span class="item-slot-icon">＋</span>
               <span class="item-slot-label">Empty</span>
             </button>
           </div>
-          <button class="btn-roll-dice" id="btnRollDice">
+          <button class="btn-roll-dice neora-roll-btn" id="btnRollDice" type="button">
             <span class="roll-shimmer"></span>
-            <span class="roll-btn-text">ROLL DICE 🎲</span>
+            <span class="roll-btn-icon">🎲</span>
+            <span class="roll-btn-text">ROLL DICE</span>
+            <span class="roll-btn-sparkle">✨</span>
           </button>
-          <button class="ult-dock-btn" id="monopolyUltBtn" title="Cast Mythic Signature Ultimate">
-            <div class="ult-dock-core"></div>
+          <button class="ult-dock-btn neora-ult-btn" id="monopolyUltBtn" title="Cast Mythic Signature Ultimate" type="button">
             <span class="ult-dock-icon">⚡</span>
             <span class="ult-dock-label" id="monopolyDockUltLabel">ULT 0%</span>
             <div class="ult-dock-track">
