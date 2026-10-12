@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=20261011v1">
   <link rel="stylesheet" href="avatar.css?v=20261012v3">
-  <link rel="stylesheet" href="monopoly.css?v=20261012v7">
+  <link rel="stylesheet" href="monopoly.css?v=20261012v11">
   <link rel="stylesheet" href="monopoly_fx.css?v=20261012v4">
   <link rel="stylesheet" href="vault.css?v=20261012v4">
   <link rel="stylesheet" href="lounge.css?v=20261012v3">
@@ -653,66 +653,432 @@
       </div>
     </div>
 
-    <!-- Flight Departure Board Modal (Airport Flip-Board Terminal) -->
-    <div class="departure-board-modal hidden" id="departureBoardModal">
-      <div class="departure-board-container">
-        <!-- Header -->
-        <div class="departure-board-header">
-          <div class="board-brand">
-            <span class="board-airport-icon">🛫</span>
-            <div class="board-title-group">
-              <h2 class="board-title">FLIGHT DEPARTURES</h2>
-              <span class="board-subtitle">BANGKOK ⇄ DUBAI · SKY PARTY NETWORK</span>
-            </div>
-            <span class="board-live-pill"><span class="pulse-indicator"></span> LIVE TERMINAL</span>
-          </div>
-          <div class="board-header-actions">
-            <button class="board-action-btn btn-host-flight" id="boardHostFlightBtn" type="button">➕ Host Flight</button>
-            <button class="board-action-btn btn-code-toggle" id="boardCodeToggleBtn" type="button">🔑 Enter Code</button>
-            <button class="board-close-btn" id="boardCloseBtn" title="Close Departure Board" type="button">✕</button>
-          </div>
-        </div>
+    <!-- NEORA Monopoly Lobby & Flight Departure System (3-Screen Reference Matching) -->
+    <div class="departure-board-modal neora-lobby-modal hidden" id="departureBoardModal">
+      <div class="neora-lobby-backdrop"></div>
+      <div class="neora-lobby-shell">
 
-        <!-- Private Code Entry Drawer / Bar (Collapsible / Toggleable) -->
-        <div class="flight-code-drawer hidden" id="flightCodeDrawer">
-          <div class="code-drawer-inner">
-            <span class="code-label">ENTER 6-DIGIT FLIGHT CODE:</span>
-            <div class="code-input-group">
-              <input type="text" maxlength="6" id="flightCodeInput" class="flight-code-input" placeholder="e.g. 778921" inputmode="numeric" />
-              <button class="btn-board-code" id="btnBoardWithCode" type="button">BOARD FLIGHT 🚀</button>
+        <!-- ============================================================== -->
+        <!-- SCREEN 1: LOBBY BROWSER (ROOM DISCOVERY & QUICK JOIN)          -->
+        <!-- ============================================================== -->
+        <div class="neora-screen-view neora-view-browser active" id="neoraViewBrowser">
+          <!-- Top Bar: Logo & Utility Controls -->
+          <div class="neora-top-nav">
+            <div class="neora-brand-block">
+              <div class="neora-logo-wrap">
+                <span class="neora-logo-text">NEORA</span>
+                <span class="neora-orbit-ring"></span>
+                <span class="neora-orbit-rocket">🚀</span>
+              </div>
+              <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
             </div>
-            <div class="code-error-msg hidden" id="flightCodeError"></div>
+            <div class="neora-top-actions">
+              <button class="neora-icon-btn" id="neoraHelpBtn" title="How to Play & Room Guide" type="button">?</button>
+              <button class="neora-icon-btn neora-notif-btn" id="neoraNotifBtn" title="Notifications" type="button">
+                <span class="icon-bell">🔔</span>
+                <span class="notif-badge-dot"></span>
+              </button>
+              <button class="neora-icon-btn neora-exit-btn" id="boardCloseBtn" title="Close Lobby" type="button">✕</button>
+            </div>
           </div>
-        </div>
 
-        <!-- Filter & Search Bar -->
-        <div class="board-filter-bar">
-          <div class="board-search-box">
+          <!-- Select Game Tabs Row -->
+          <div class="neora-game-tabs-scroll" id="neoraGameTabsScroll">
+            <div class="neora-game-tab active" data-game="monopoly">
+              <div class="game-tab-icon-wrap icon-dice-glow">
+                <img src="assets/ui/neora_ref/dice_thumb_square.png" class="game-tab-img" alt="Monopoly" />
+              </div>
+              <span class="game-tab-label">Monopoly</span>
+            </div>
+            <div class="neora-game-tab is-coming-soon" data-game="sky_run" title="Coming Soon">
+              <span class="tab-soon-badge">SOON</span>
+              <div class="game-tab-icon-wrap icon-cat">
+                <img src="assets/ui/neora_ref/icon_skyrun.png" class="game-tab-img" alt="Sky Run" />
+              </div>
+              <span class="game-tab-label">Sky Run</span>
+            </div>
+            <div class="neora-game-tab is-coming-soon" data-game="card_party" title="Coming Soon">
+              <span class="tab-soon-badge">SOON</span>
+              <div class="game-tab-icon-wrap icon-cards">
+                <img src="assets/ui/neora_ref/icon_cardparty.png" class="game-tab-img" alt="Card Party" />
+              </div>
+              <span class="game-tab-label">Card Party</span>
+            </div>
+            <div class="neora-game-tab is-coming-soon" data-game="couple_quiz" title="Coming Soon">
+              <span class="tab-soon-badge">SOON</span>
+              <div class="game-tab-icon-wrap icon-heart">
+                <img src="assets/ui/neora_ref/icon_couplequiz.png" class="game-tab-img" alt="Couple Quiz" />
+              </div>
+              <span class="game-tab-label">Couple Quiz</span>
+            </div>
+            <div class="neora-game-tab is-coming-soon" data-game="more" title="Coming Soon">
+              <span class="tab-soon-badge">SOON</span>
+              <div class="game-tab-icon-wrap icon-more">
+                <div class="icon-more-grid"><span></span><span></span><span></span><span></span></div>
+              </div>
+              <span class="game-tab-label">More</span>
+            </div>
+          </div>
+
+          <!-- Filter Chips & Sorting Header (Directly under tabs matching reference) -->
+          <div class="neora-filter-strip">
+            <div class="neora-chip-group">
+              <button class="neora-chip active" data-filter="all" id="filterPillAll" type="button">
+                All Rooms <span class="chip-count" id="countAllFlights">24</span>
+              </button>
+              <button class="neora-chip" data-filter="open" id="filterPillBoarding" type="button">
+                Open <span class="chip-count" id="countBoardingFlights">16</span>
+              </button>
+              <button class="neora-chip" data-filter="playing" id="filterPillInFlight" type="button">
+                Playing <span class="chip-count" id="countInFlight">6</span>
+              </button>
+              <button class="neora-chip" data-filter="close" id="filterPillClose" type="button">
+                Close <span class="chip-count" id="countCloseFlights">2</span>
+              </button>
+            </div>
+            <div class="neora-sort-wrap">
+              <select class="neora-sort-select" id="neoraSortSelect">
+                <option value="latest" selected>Latest ⌵</option>
+                <option value="players">Most Players ⌵</option>
+                <option value="fast">Fast Start ⌵</option>
+              </select>
+              <button class="board-action-btn btn-code-toggle" id="boardCodeToggleBtn" title="Enter 6-digit Code" type="button">🔑</button>
+              <button class="board-refresh-btn" id="boardRefreshBtn" title="Refresh Rooms" type="button">🔄</button>
+            </div>
+          </div>
+
+          <!-- Private Code Entry Drawer / Bar (Collapsible) -->
+          <div class="flight-code-drawer hidden" id="flightCodeDrawer">
+            <div class="code-drawer-inner">
+              <span class="code-label">ENTER 6-DIGIT FLIGHT CODE:</span>
+              <div class="code-input-group">
+                <input type="text" maxlength="6" id="flightCodeInput" class="flight-code-input" placeholder="e.g. 472910" inputmode="numeric" />
+                <button class="btn-board-code" id="btnBoardWithCode" type="button">BOARD FLIGHT 🚀</button>
+              </div>
+              <div class="code-error-msg hidden" id="flightCodeError"></div>
+            </div>
+          </div>
+
+          <!-- Search Bar (Optional filter) -->
+          <div class="neora-search-bar" id="neoraSearchBar" style="display: none;">
             <span class="search-icon">🔍</span>
-            <input type="text" id="departureSearchInput" class="departure-search-input" placeholder="Search Flight #, Pilot, or Route..." />
+            <input type="text" id="departureSearchInput" class="departure-search-input" placeholder="Search room or host..." />
           </div>
-          <div class="board-filter-pills">
-            <button class="filter-pill active" data-filter="all" id="filterPillAll" type="button">All Flights (<span id="countAllFlights">0</span>)</button>
-            <button class="filter-pill" data-filter="boarding" id="filterPillBoarding" type="button">Boarding (<span id="countBoardingFlights">0</span>)</button>
-            <button class="filter-pill" data-filter="in_flight" id="filterPillInFlight" type="button">In Flight (<span id="countInFlight">0</span>)</button>
+
+          <!-- Room Cards List (Scrollable Feed) -->
+          <div class="neora-rooms-feed" id="departureFlightsList">
+            <!-- Dynamically populated room cards matching reference -->
           </div>
-          <button class="board-refresh-btn" id="boardRefreshBtn" title="Refresh Flights" type="button">🔄 Refresh</button>
+
+          <!-- Screen 1 Action Dock: Floating Create Room & Quick Join -->
+          <div class="neora-floating-dock">
+            <button class="neora-btn-primary btn-create-room" id="boardHostFlightBtn" type="button">
+              <span class="btn-symbol">➕</span>
+              <span class="btn-text">Create Room</span>
+            </button>
+            <button class="neora-btn-secondary btn-quick-join" id="neoraQuickJoinBtn" type="button">
+              <span class="btn-symbol">⚡</span>
+              <div class="btn-text-group">
+                <span class="btn-title">Quick Join</span>
+                <span class="btn-subtitle">Find available room</span>
+              </div>
+            </button>
+          </div>
         </div>
 
-        <!-- Flight Flip-Board Table / Cards Grid -->
-        <div class="board-flights-scroll">
-          <div class="board-flights-header">
-            <span class="col-flight">FLIGHT #</span>
-            <span class="col-name">ROUTE / CALLSIGN</span>
-            <span class="col-captain">CAPTAIN</span>
-            <span class="col-seats">SEATS</span>
-            <span class="col-status">STATUS</span>
-            <span class="col-action">GATE ACTION</span>
+
+        <!-- ============================================================== -->
+        <!-- SCREEN 2: IN-ROOM WAITING LOBBY (MIDDLE SCREEN)                -->
+        <!-- ============================================================== -->
+        <div class="neora-screen-view neora-view-room" id="neoraViewRoom">
+          <!-- Room Navigation Bar -->
+          <div class="neora-room-nav">
+            <button class="neora-nav-back-btn" id="neoraRoomBackBtn" type="button" title="Back to Lobby">‹</button>
+            <div class="neora-brand-block mini">
+              <div class="neora-logo-wrap">
+                <span class="neora-logo-text">NEORA</span>
+                <span class="neora-orbit-ring"></span>
+              </div>
+              <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
+            </div>
+            <div class="neora-room-nav-actions">
+              <button class="neora-icon-btn" id="neoraShareRoomBtn" title="Share Room Code" type="button">🔗</button>
+              <button class="neora-icon-btn" id="neoraRoomOptionsBtn" title="Room Options" type="button">···</button>
+            </div>
           </div>
-          <div class="board-flights-list" id="departureFlightsList">
-            <!-- Dynamic flight cards injected here -->
+
+          <!-- Room Info Banner Card -->
+          <div class="neora-room-banner">
+            <div class="room-banner-thumb-wrap">
+              <img src="assets/ui/neora_ref/dice_thumb_square.png" class="room-banner-thumb" alt="Room Thumbnail" />
+            </div>
+            <div class="room-banner-info">
+              <div class="room-banner-title-row">
+                <h3 class="room-banner-title" id="roomBannerTitle">Monopoly · Chill Game</h3>
+                <span class="room-status-badge badge-open" id="roomBannerStatus">● Open 📶</span>
+                <button class="room-id-badge" id="roomBannerIdBtn" title="Click to copy Room ID" type="button">
+                  Room ID <strong id="roomBannerIdText">#BKK-4729</strong> ⧉
+                </button>
+              </div>
+              <div class="room-tags-row" id="roomBannerTags">
+                <span class="neora-tag-pill">Casual</span>
+                <span class="neora-tag-pill">Make Friends</span>
+                <span class="neora-tag-pill">Voice Chat</span>
+              </div>
+              <p class="room-banner-quote" id="roomBannerDesc">Relaxed game, make friends! All are welcome ♡</p>
+            </div>
+          </div>
+
+          <!-- Players Header Strip -->
+          <div class="neora-players-header">
+            <div class="players-title-group">
+              <span class="players-title-icon">👥</span>
+              <span class="players-title-text">Players (<span id="roomPlayersCount">3/4</span>)</span>
+            </div>
+            <div class="auto-fill-toggle-wrap">
+              <label class="auto-fill-switch-label" for="autoFillToggle">
+                <span class="auto-fill-label-text">🤖 Auto Fill</span>
+                <input type="checkbox" id="autoFillToggle" class="auto-fill-checkbox" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 4 Player Slots Grid -->
+          <div class="neora-slots-grid" id="neoraSlotsGrid">
+            <!-- Dynamic 4 Slots populated by renderNeoraWaitingRoom() -->
+          </div>
+
+          <!-- Slot Configuration Popover Modal for Host -->
+          <div class="neora-slot-config-popover hidden" id="neoraSlotConfigPopover">
+            <div class="slot-popover-header">
+              <span class="slot-popover-title" id="slotPopoverTitle">Configure Seat</span>
+              <button class="slot-popover-close" id="slotPopoverCloseBtn" type="button">✕</button>
+            </div>
+            <div class="slot-popover-options">
+              <button class="slot-popover-opt" data-opt="open" type="button">
+                <span class="opt-icon">🌐</span>
+                <div class="opt-text">
+                  <strong>Open Slot</strong>
+                  <span>Anyone can join</span>
+                </div>
+              </button>
+              <button class="slot-popover-opt" data-opt="easy" type="button">
+                <span class="opt-icon">🤖</span>
+                <div class="opt-text">
+                  <strong>Bot (Easy)</strong>
+                  <span>Casual AI passenger</span>
+                </div>
+              </button>
+              <button class="slot-popover-opt" data-opt="hard" type="button">
+                <span class="opt-icon">😼</span>
+                <div class="opt-text">
+                  <strong>Bot (Hard)</strong>
+                  <span>Competitive AI strategist</span>
+                </div>
+              </button>
+              <button class="slot-popover-opt" data-opt="closed" type="button">
+                <span class="opt-icon">🔒</span>
+                <div class="opt-text">
+                  <strong>Closed</strong>
+                  <span>Lock seat closed</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- In-Room Live Chat Feed -->
+          <div class="neora-chat-container">
+            <div class="neora-chat-messages" id="neoraChatMessages">
+              <!-- Dynamic chat bubbles -->
+            </div>
+            <!-- Quick Emoji Selection Bar -->
+            <div class="neora-emoji-picker hidden" id="neoraEmojiPicker">
+              <button class="emoji-pick-btn" type="button" data-emoji="🎲">🎲</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="💖">💖</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="✈️">✈️</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="🐱">🐱</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="😊">😊</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="🚀">🚀</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="🌸">🌸</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="🔥">🔥</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="👑">👑</button>
+              <button class="emoji-pick-btn" type="button" data-emoji="⭐">⭐</button>
+            </div>
+            <div class="neora-chat-bar">
+              <button class="chat-emoji-btn" id="chatEmojiBtn" type="button">😊</button>
+              <input type="text" class="chat-text-input" id="chatTextInput" placeholder="Send a message..." maxlength="120" />
+              <button class="chat-send-btn" id="chatSendBtn" type="button">➤</button>
+            </div>
+          </div>
+
+          <!-- Room Bottom Action Bar -->
+          <div class="neora-room-footer">
+            <button class="room-footer-btn btn-leave" id="neoraLeaveRoomBtn" type="button">
+              <span class="btn-icon">🚪</span>
+              <span class="btn-label">Leave</span>
+            </button>
+            <button class="room-footer-btn-main btn-start-game" id="neoraStartGameBtn" type="button">
+              <span class="btn-icon">▶</span>
+              <span class="btn-label" id="neoraStartBtnLabel">Start Game</span>
+            </button>
+            <button class="room-footer-btn btn-settings" id="neoraRoomSettingsBtn" type="button">
+              <span class="btn-icon">⚙</span>
+              <span class="btn-label">Settings</span>
+            </button>
           </div>
         </div>
+
+
+        <!-- ============================================================== -->
+        <!-- SCREEN 3: CREATE ROOM MODAL / DRAWER (RIGHT SCREEN)           -->
+        <!-- ============================================================== -->
+        <div class="neora-screen-view neora-view-create" id="neoraViewCreate">
+          <!-- Back navigation -->
+          <div class="neora-create-top-bar">
+            <button class="neora-nav-back-btn" id="neoraCreateBackBtn" type="button" title="Back to Browser">‹</button>
+          </div>
+
+          <!-- Hero Banner Header Card (Matching Reference Screen 3) -->
+          <div class="create-hero-banner">
+            <div class="create-hero-icon-wrap">
+              <span class="create-hero-icon">➕</span>
+            </div>
+            <div class="create-hero-text">
+              <h2 class="create-hero-title">Create Room</h2>
+              <p class="create-hero-sub">Set up your game and invite friends or open to public.</p>
+            </div>
+          </div>
+
+          <!-- Select Game Section -->
+          <div class="create-section">
+            <label class="create-section-label">👥 Select Game</label>
+            <div class="create-game-selector" id="createGameSelector">
+              <div class="create-game-card active" data-game="monopoly">
+                <span class="game-crown-pill">👑</span>
+                <img src="assets/ui/neora_ref/dice_thumb_square.png" class="create-game-thumb" alt="" />
+                <span class="create-game-name">Monopoly</span>
+              </div>
+              <div class="create-game-card is-coming-soon" data-game="sky_run" title="Coming Soon">
+                <span class="tab-soon-badge">SOON</span>
+                <img src="assets/ui/neora_ref/icon_skyrun.png" class="create-game-thumb" alt="" />
+                <span class="create-game-name">Sky Run</span>
+              </div>
+              <div class="create-game-card is-coming-soon" data-game="card_party" title="Coming Soon">
+                <span class="tab-soon-badge">SOON</span>
+                <img src="assets/ui/neora_ref/icon_cardparty.png" class="create-game-thumb" alt="" />
+                <span class="create-game-name">Card Party</span>
+              </div>
+              <div class="create-game-card is-coming-soon" data-game="couple_quiz" title="Coming Soon">
+                <span class="tab-soon-badge">SOON</span>
+                <img src="assets/ui/neora_ref/icon_couplequiz.png" class="create-game-thumb" alt="" />
+                <span class="create-game-name">Couple Quiz</span>
+              </div>
+              <div class="create-game-card is-coming-soon" data-game="more" title="Coming Soon">
+                <span class="tab-soon-badge">SOON</span>
+                <div class="icon-more-grid"><span></span><span></span><span></span><span></span></div>
+                <span class="create-game-name">More</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Room Settings Section -->
+          <div class="create-section">
+            <label class="create-section-label">👥 Room Settings</label>
+            <div class="create-field-group">
+              <div class="field-label-row">
+                <span class="field-title">Room Name</span>
+                <span class="char-count" id="createNameCount">20/30</span>
+              </div>
+              <input type="text" class="create-text-input" id="createRoomNameInput" value="Monopoly · Chill Game" maxlength="30" />
+            </div>
+            <div class="create-field-group">
+              <div class="field-label-row">
+                <span class="field-title">Description (Optional)</span>
+                <span class="char-count" id="createDescCount">48/100</span>
+              </div>
+              <textarea class="create-textarea" id="createRoomDescInput" maxlength="100" rows="2">Relaxed game, make friends! All are welcome ♡</textarea>
+            </div>
+          </div>
+
+          <!-- Player Slots (4 max) Section (Matching Reference Screen 3) -->
+          <div class="create-section">
+            <label class="create-section-label">Player Slots (4 max)</label>
+            <div class="create-slots-row">
+              <!-- Slot 1 (Host) -->
+              <div class="create-slot-card slot-host" id="createSlot1">
+                <span class="slot-crown">👑</span>
+                <span class="slot-lock-badge" title="Host Seat">✕</span>
+                <div class="slot-avatar-circle">
+                  <img src="assets/ui/neora_ref/avatar_nook.png" class="slot-avatar-img" id="createSlot1Img" alt="" />
+                </div>
+                <span class="slot-player-name" id="createSlot1Name">Nook ✈️</span>
+              </div>
+
+              <!-- Slot 2 (Open Slot) -->
+              <div class="create-slot-card slot-configurable" id="createSlot2" data-slot="2" data-type="human" title="Click to choose Open or Bot">
+                <div class="slot-plus-circle">➕</div>
+                <span class="slot-state-label" id="createSlot2Label">Open Slot</span>
+              </div>
+
+              <!-- Slot 3 (Bot Easy with remove button and selector) -->
+              <div class="create-slot-card slot-bot" id="createSlot3" data-slot="3" data-type="bot">
+                <button class="slot-remove-btn" id="createSlot3RemoveBtn" type="button" title="Set to Open Slot">✕</button>
+                <div class="slot-avatar-circle bot">
+                  <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" id="createSlot3Img" alt="" />
+                </div>
+                <select class="slot-bot-select" id="createSlot3Select">
+                  <option value="easy" selected>Bot (Easy) ⌵</option>
+                  <option value="hard">Bot (Hard) ⌵</option>
+                  <option value="open">Open Slot</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <!-- Slot 4 (Bot Easy with remove button and selector) -->
+              <div class="create-slot-card slot-bot" id="createSlot4" data-slot="4" data-type="bot">
+                <button class="slot-remove-btn" id="createSlot4RemoveBtn" type="button" title="Set to Open Slot">✕</button>
+                <div class="slot-avatar-circle bot">
+                  <img src="assets/ui/neora_ref/avatar_bot_blue.png" class="slot-avatar-img" id="createSlot4Img" alt="" />
+                </div>
+                <select class="slot-bot-select" id="createSlot4Select">
+                  <option value="easy" selected>Bot (Easy) ⌵</option>
+                  <option value="hard">Bot (Hard) ⌵</option>
+                  <option value="open">Open Slot</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Room Privacy Section -->
+          <div class="create-section">
+            <label class="create-section-label">Room Privacy</label>
+            <div class="privacy-cards-row">
+              <div class="privacy-option-card active" id="createPrivacyOpen" data-privacy="open">
+                <span class="privacy-icon">🌐</span>
+                <div class="privacy-text-group">
+                  <strong class="privacy-title">Open</strong>
+                  <span class="privacy-subtitle">Anyone can join</span>
+                </div>
+              </div>
+              <div class="privacy-option-card" id="createPrivacyPrivate" data-privacy="private">
+                <span class="privacy-icon">🔒</span>
+                <div class="privacy-text-group">
+                  <strong class="privacy-title">Private</strong>
+                  <span class="privacy-subtitle">Invite only</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="create-footer-actions">
+            <button class="btn-cancel-create" id="btnCancelCreateRoom" type="button">Cancel</button>
+            <button class="btn-submit-create" id="btnSubmitCreateRoom" onclick="submitNeoraCreateRoom()" type="button">+ Create Room</button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1808,7 +2174,7 @@
   <script src="monopoly_rules.js?v=20261010a"></script>
   <script src="monopoly_bot.js?v=20261009m"></script>
   <script src="monopoly_fx.js?v=20261012v6"></script>
-  <script src="monopoly.js?v=20261012v8"></script>
+  <script src="monopoly.js?v=20261012v11"></script>
   <script src="skydash_audio.js?v=20261009a"></script>
   <script src="skydash.js?v=20261009e"></script>
   <!-- Phase 5 Supabase & Social SDK -->
@@ -1821,6 +2187,6 @@
   </script>
   <script src="supabase_client.js?v=20261012v5"></script>
   <script src="social_ui.js?v=20261012v5"></script>
-  <script src="app.js?v=20261012v12"></script>
+  <script src="app.js?v=20261012v14"></script>
 </body>
 </html>

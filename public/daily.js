@@ -231,10 +231,8 @@
       <section class="dly-panel profile-panel" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
         <div class="dly-panel-embers">${embers(14)}</div>
 
-        <!-- Luxury Sunset Window Backdrop Header with Aviator Bunny on Sill -->
-        <div class="modal-window-backdrop flightlog-window-bg" style="background-image: url('assets/ui/header_window_flightlog.png');">
-          <img src="assets/ui/aviator_bunny_fade.png" alt="Aviator Bunny" class="modal-aviator-bunny-sill" onerror="this.src='assets/ui/aviator_bunny.png'">
-        </div>
+        <!-- Luxury Sunset Window Backdrop Header -->
+        <div class="modal-window-backdrop flightlog-window-bg" style="background-image: url('assets/ui/header_window_flightlog.png');"></div>
 
         <!-- Top Navigation / Brand Bar -->
         <header class="dly-head modal-brand-head">
@@ -337,7 +335,7 @@
             <p>Unlock shared 2-player frames, weekly milestone chests (+150💎), and 30-day jackpot bonuses (+500💎)!</p>
           </div>
           <div class="dly-cl-art">
-            <img src="assets/ui/couple_bunnies_fade.png" alt="Couple Bunnies" class="dly-couple-bunnies-art" onerror="this.src='assets/ui/couple_bunnies.png'">
+            <img src="assets/ui/couple_bunnies_premium.png" alt="Couple Bunnies" class="dly-couple-bunnies-art" onerror="this.src='assets/ui/couple_bunnies.png'">
           </div>
         </div>
         <button type="button" class="dly-open-sanctuary-btn pill-btn full-width" data-d="open-sanctuary" id="dlyOpenSanctuaryFromStreak">
@@ -400,7 +398,7 @@
   function soloCallCard() {
     return `
       <!-- CARD 3: Together Time 1:1 Calls Gated Card -->
-      <article class="dly-card dly-call dly-call-gated-card" id="dailyCallCard">
+      <article class="dly-card dly-call-gated-card" id="dailyCallCard">
         <span class="dly-kicker kicker-amber">🔒 Together Time (Couple Only)</span>
         <div class="dly-gated-call-row">
           <div class="dly-gated-camera-circle">

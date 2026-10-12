@@ -542,6 +542,14 @@ async function handleSignalingMessage(message) {
     case 'monopoly_sync':
     case 'monopoly_lobby_update':
     case 'monopoly_start_party':
+    case 'room_list_update':
+    case 'room_created':
+    case 'room_joined':
+    case 'room_update':
+    case 'room_chat':
+    case 'room_start':
+    case 'room_error':
+    case 'room_left':
       if (typeof handleMonopolyMessage === 'function') {
         handleMonopolyMessage(message);
       }

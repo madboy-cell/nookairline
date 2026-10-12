@@ -388,6 +388,14 @@ async function main() {
 
     for (let g = 0; g < gameCount; g++) {
       try {
+        currentFlightRoom = {
+          slots: [
+            { id: 1, role: 'bkk', type: 'human', occupiedBy: 'user_bkk', name: 'Nook ✈️' },
+            { id: 2, role: 'dxb', type: 'human', occupiedBy: 'user_dxb', name: 'Luna 🌸' },
+            { id: 3, role: 'bot1', type: 'bot', difficulty: 'hard', name: 'Capt. Whiskers 😼' },
+            { id: 4, role: 'bot2', type: 'bot', difficulty: 'hard', name: 'Trainee Mochi 🐾' }
+          ]
+        };
         startPartyGame({ mode: '4p', bot1: 'hard', bot2: 'hard' });
         const st = monopolyState;
 
@@ -406,6 +414,7 @@ async function main() {
           st.players[role].costume = cid;
           st.players[role].ult = 70;
           st.perks[role] = { costume: cid, ...(perkDef?.effects?.monopoly || {}) };
+          st.players[role].inventory = st.players[role].inventory || [];
           if (perkDef?.effects?.monopoly?.startItem) {
             st.players[role].inventory.push(perkDef.effects.monopoly.startItem);
           }
@@ -469,7 +478,7 @@ async function main() {
         }
       } catch (err) {
         errorCount++;
-        console.error(`  Error in 4P game ${g}:`, err.message);
+        console.error(`  Error in 4P game ${g}:`, err.stack);
       }
     }
 

@@ -806,6 +806,11 @@ function sanitizeRoom(room) {
     hostUid: room.hostUid,
     hostName: room.hostName,
     hostAvatar: room.hostAvatar,
+    description: room.description || 'Relaxed game, make friends! All are welcome ♡',
+    tags: room.tags || ['Casual', 'Make Friends', 'Voice Chat'],
+    game: room.game || 'monopoly',
+    autoFill: !!room.autoFill,
+    messages: Array.isArray(room.messages) ? room.messages : [],
     isPublic: room.isPublic,
     status: room.status,
     slots: room.slots,
@@ -831,7 +836,7 @@ function broadcastDepartureBoard() {
   if (departureBoardSubscribers.size === 0) return;
   const msg = JSON.stringify({
     type: 'room_list_update',
-    rooms: roomRegistry.listPublicRooms()
+    rooms: typeof roomRegistry.listDisplayRooms === 'function' ? roomRegistry.listDisplayRooms() : roomRegistry.listPublicRooms()
   });
   departureBoardSubscribers.forEach((ws) => {
     if (ws.readyState === WebSocket.OPEN) {
@@ -847,7 +852,7 @@ function handleRoomMessage(ws, message) {
     departureBoardSubscribers.add(ws);
     ws.send(JSON.stringify({
       type: 'room_list_update',
-      rooms: roomRegistry.listPublicRooms()
+      rooms: typeof roomRegistry.listDisplayRooms === 'function' ? roomRegistry.listDisplayRooms() : roomRegistry.listPublicRooms()
     }));
     return;
   }
@@ -863,7 +868,11 @@ function handleRoomMessage(ws, message) {
       hostName: message.hostName || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
       hostAvatar: message.hostAvatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png'),
       hostRole: ws.terminal || 'bkk',
-      flightName: message.flightName || null,
+      flightName: message.flightName || message.name || null,
+      description: message.description || null,
+      tags: message.tags || null,
+      game: message.game || 'monopoly',
+      autoFill: !!message.autoFill,
       isPublic: message.isPublic !== undefined ? message.isPublic : true,
       slots: message.slots || null,
       ws
@@ -878,12 +887,61 @@ function handleRoomMessage(ws, message) {
     return;
   }
 
+  if (message.type === 'room_quick_join') {
+    const playerInfo = {
+      uid: message.uid || `user_${ws.terminal}_${Date.now().toString(36)}`,
+      name: message.name || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
+      avatar: message.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png')
+    };
+
+    let targetRoom = roomRegistry.findQuickJoinRoom();
+    if (targetRoom) {
+      const res = roomRegistry.joinRoom(targetRoom.id, playerInfo, ws);
+      if (res.success) {
+        ws.send(JSON.stringify({
+          type: 'room_joined',
+          room: sanitizeRoom(res.room),
+          slot: res.slot
+        }));
+        broadcastToRoom(res.room, {
+          type: 'room_update',
+          room: sanitizeRoom(res.room)
+        });
+        broadcastDepartureBoard();
+        return;
+      }
+    }
+
+    // No open room found: auto-create fresh room
+    const newRoom = roomRegistry.createRoom({
+      hostUid: playerInfo.uid,
+      hostName: playerInfo.name,
+      hostAvatar: playerInfo.avatar,
+      hostRole: ws.terminal || 'bkk',
+      flightName: 'Monopoly · Chill Game',
+      description: 'Relaxed game, make friends! All are welcome ♡',
+      tags: ['Casual', 'Make Friends', 'Voice Chat'],
+      game: 'monopoly',
+      isPublic: true,
+      ws
+    });
+
+    ws.send(JSON.stringify({
+      type: 'room_created',
+      room: sanitizeRoom(newRoom),
+      slot: newRoom.slots[0]
+    }));
+    broadcastDepartureBoard();
+    return;
+  }
+
   if (message.type === 'room_join' || message.type === 'room_join_code') {
     const key = message.type === 'room_join' ? message.roomId : message.code;
     const playerInfo = {
       uid: message.uid || `user_${ws.terminal}_${Date.now().toString(36)}`,
       name: message.name || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
-      avatar: message.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png')
+      avatar: message.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png'),
+      spectator: !!message.spectator
     };
     const res = roomRegistry.joinRoom(key, playerInfo, ws);
     if (!res.success) {
@@ -898,7 +956,9 @@ function handleRoomMessage(ws, message) {
     ws.send(JSON.stringify({
       type: 'room_joined',
       room: sanitizeRoom(res.room),
-      slot: res.slot
+      slot: res.slot,
+      spectator: !!res.spectator,
+      state: res.spectator ? serverMonopolyState : null
     }));
 
     broadcastToRoom(res.room, {
@@ -906,6 +966,66 @@ function handleRoomMessage(ws, message) {
       room: sanitizeRoom(res.room)
     });
 
+    broadcastDepartureBoard();
+    return;
+  }
+
+  if (message.type === 'room_chat') {
+    const room = roomRegistry.getRoom(message.roomId) || roomRegistry.getClientRoom(ws);
+    if (!room) return;
+    const msgObj = roomRegistry.addMessage(room.id, {
+      uid: message.sender?.uid || `user_${ws.terminal || 'guest'}`,
+      name: message.sender?.name || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
+      avatar: message.sender?.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png'),
+      text: message.text
+    });
+    if (msgObj) {
+      broadcastToRoom(room, {
+        type: 'room_chat',
+        roomId: room.id,
+        message: msgObj
+      });
+    }
+    return;
+  }
+
+  if (message.type === 'room_toggle_ready') {
+    const room = roomRegistry.getRoom(message.roomId) || roomRegistry.getClientRoom(ws);
+    if (!room) return;
+    const data = room.clientData.get(ws);
+    if (data && data.slotId) {
+      roomRegistry.toggleSlotReady(room.id, data.slotId);
+      broadcastToRoom(room, {
+        type: 'room_update',
+        room: sanitizeRoom(room)
+      });
+    }
+    return;
+  }
+
+  if (message.type === 'room_autofill') {
+    const room = roomRegistry.getRoom(message.roomId) || roomRegistry.getClientRoom(ws);
+    if (!room) return;
+    roomRegistry.toggleAutoFill(room.id, message.autoFill);
+    broadcastToRoom(room, {
+      type: 'room_update',
+      room: sanitizeRoom(room)
+    });
+    broadcastDepartureBoard();
+    return;
+  }
+
+  if (message.type === 'room_start') {
+    const room = roomRegistry.getRoom(message.roomId) || roomRegistry.getClientRoom(ws);
+    if (!room) return;
+    room.status = 'in_flight';
+    room.updatedAt = Date.now();
+    broadcastToRoom(room, {
+      type: 'room_start',
+      roomId: room.id,
+      game: room.game || 'monopoly',
+      room: sanitizeRoom(room)
+    });
     broadcastDepartureBoard();
     return;
   }

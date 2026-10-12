@@ -195,20 +195,30 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 250px;
-  height: 200px;
+  width: 260px;
+  height: 220px;
   background-size: cover;
   background-position: top right;
   pointer-events: none;
-  opacity: 0.95;
-  mask-image: radial-gradient(circle at 75% 25%, black 65%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle at 75% 25%, black 65%, transparent 100%);
-  z-index: 1;
+  opacity: 0.32;
+  mask-image: radial-gradient(circle at 80% 20%, black 40%, rgba(0, 0, 0, 0.35) 70%, transparent 95%);
+  -webkit-mask-image: radial-gradient(circle at 80% 20%, black 40%, rgba(0, 0, 0, 0.35) 70%, transparent 95%);
+  z-index: 0;
+  transition: opacity 0.3s ease;
 }
 
 .passport-window-bg {
-  width: 260px;
-  height: 210px;
+  width: 270px;
+  height: 225px;
+  opacity: 0.32;
+  z-index: 0;
+}
+
+.flightlog-window-bg {
+  width: 285px;
+  height: 245px;
+  opacity: 0.32;
+  z-index: 0;
 }
 
 /* Modal Top Navigation & Brand Header */
@@ -287,8 +297,12 @@
 
 /* Card 1: Profile & Passport Card */
 .profile-passport-card {
-  background: rgba(28, 18, 50, 0.75);
-  border: 1px solid rgba(168, 85, 247, 0.25);
+  position: relative;
+  z-index: 2;
+  background: rgba(28, 18, 50, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 85, 247, 0.28);
   border-radius: 22px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -922,12 +936,12 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 200px;
+  height: 270px;
   background-size: cover;
   background-position: top right;
   background-repeat: no-repeat;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 60%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 60%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 75%, rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1496,36 +1510,46 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .pill-input-icon {
   position: absolute;
   left: 14px;
-  font-size: 13px;
-  color: rgba(220, 210, 245, 0.6);
+  font-size: 14px;
+  color: rgba(220, 210, 245, 0.7);
   pointer-events: none;
+  z-index: 2;
 }
 
-.social-pill-input {
+.social-pill-input,
+.pill-input,
+.social-input {
   width: 100%;
-  padding: 10px 14px 10px 38px;
+  box-sizing: border-box;
+  padding: 11px 16px 11px 40px;
   border-radius: 999px;
-  background: rgba(18, 12, 34, 0.88);
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: rgba(22, 14, 42, 0.75);
+  border: 1.5px solid rgba(168, 85, 247, 0.35);
   color: #fff;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12px;
+  font-family: 'Outfit', -apple-system, sans-serif;
+  font-size: 13px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.social-pill-input:focus {
+.social-pill-input:focus,
+.pill-input:focus,
+.social-input:focus {
   border-color: #ec4899;
-  box-shadow: 0 0 12px rgba(236, 72, 153, 0.35);
+  background: rgba(30, 18, 58, 0.88);
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.4);
 }
 
-.social-pill-input::placeholder {
-  color: rgba(220, 210, 245, 0.5);
+.social-pill-input::placeholder,
+.pill-input::placeholder,
+.social-input::placeholder {
+  color: rgba(220, 210, 245, 0.45);
 }
 
 /* Send Invite Gradient Button */
@@ -2010,8 +2034,13 @@
 }
 
 .onb-window-bg {
-  width: 260px;
-  height: 220px;
+  width: 220px;
+  height: 195px;
+  opacity: 0.18;
+  mask-image: radial-gradient(circle at 88% 14%, black 25%, rgba(0, 0, 0, 0.25) 55%, transparent 85%);
+  -webkit-mask-image: radial-gradient(circle at 88% 14%, black 25%, rgba(0, 0, 0, 0.25) 55%, transparent 85%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .onboarding-header {
@@ -2097,12 +2126,13 @@
 }
 
 .onboarding-step-view {
-  display: none;
+  display: none !important;
   animation: onbStepSlide 0.25s ease-out forwards;
 }
 
 .onboarding-step-view.active {
-  display: block;
+  display: flex !important;
+  flex-direction: column;
 }
 
 @keyframes onbStepSlide {
@@ -2111,6 +2141,8 @@
 }
 
 .onb-step-header {
+  position: relative;
+  z-index: 2;
   margin-bottom: 16px;
 }
 
@@ -2120,19 +2152,22 @@
   letter-spacing: 0.1em;
   display: block;
   margin-bottom: 4px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
 }
 
 .onb-step-title {
   font: 800 22px/1.2 'Outfit', sans-serif;
   color: #fff;
   margin: 0 0 4px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
 }
 
 .onb-step-subtitle {
   font-size: 12px;
-  color: rgba(226, 218, 245, 0.72);
+  color: rgba(226, 218, 245, 0.85);
   margin: 0;
   line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
 }
 
 /* Step 1 Persona Grid */
@@ -2918,4 +2953,106 @@
 .onb-actions-row.center {
   justify-content: center;
 }
+
+/* -------------------------------------------------------------
+   Mobile & iPhone Pro Viewport Perfection (iPhone 15/16/18 Pro)
+   ------------------------------------------------------------- */
+@media (max-width: 600px) {
+  .onboarding-modal-backdrop {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .onboarding-modal-container {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(236, 72, 153, 0.18) 0%, rgba(168, 85, 247, 0.08) 40%, transparent 75%),
+      linear-gradient(180deg, #160c28 0%, #0d0718 100%);
+  }
+
+  .onboarding-header {
+    padding-top: max(16px, env(safe-area-inset-top, 24px));
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .onboarding-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .onboarding-step-view {
+    display: none !important;
+  }
+
+  .onboarding-step-view.active {
+    flex: 1;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .onb-window-bg {
+    width: 210px;
+    height: 180px;
+    opacity: 0.18;
+    mask-image: radial-gradient(circle at 88% 14%, black 25%, rgba(0, 0, 0, 0.2) 55%, transparent 85%);
+    -webkit-mask-image: radial-gradient(circle at 88% 14%, black 25%, rgba(0, 0, 0, 0.2) 55%, transparent 85%);
+  }
+
+  .onb-step-title {
+    font-size: 22px;
+  }
+
+  .onb-persona-grid {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .onb-persona-card {
+    padding: 16px 12px 14px;
+  }
+
+  .onb-actions-row {
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  /* Social Drawer Mobile Refinements */
+  .social-header-window-bg {
+    height: 280px;
+  }
+
+  .social-drawer-header {
+    padding-top: max(16px, env(safe-area-inset-top, 20px));
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .social-profile-card {
+    margin: 4px 14px 14px;
+    padding: 14px;
+  }
+
+  .social-drawer-tabs {
+    padding: 0 14px;
+  }
+
+  .social-tab-content {
+    padding: 14px;
+  }
+}
+
 

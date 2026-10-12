@@ -109,7 +109,9 @@ CREATE POLICY "Participants can delete friendships"
 
 -- 5. AUTOMATIC PROFILE CREATION TRIGGER ON SIGNUP
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SET search_path = public, auth
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, username, character_base, diamonds, stardust)
     VALUES (
@@ -124,13 +126,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM anon;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM authenticated;
+
 CREATE OR REPLACE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- 6. AUTOMATIC UPDATED_AT TIMESTAMP TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SET search_path = public
+AS $$
 BEGIN
     NEW.updated_at = timezone('utc'::text, now());
     RETURN NEW;

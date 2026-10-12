@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/test_server_health.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_partner_presence_solo.js",
+    "test": "node tests/test_server_health.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_partner_presence_solo.js && node tests/test_neora_lobby_interaction.js && node tests/test_neora_multiplayer_cases.js",
     "test:all": "node tests/test_server_health.js && node tests/test_room_registry_logic.js && node tests/test_dynamic_slots_logic.js && node tests/test_pixi_engine_integrity.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node scripts/test_monopoly_comprehensive.js && node scripts/test_monopoly_concurrency.js"
   },
   "engines": {

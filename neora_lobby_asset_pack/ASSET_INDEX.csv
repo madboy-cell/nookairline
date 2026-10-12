@@ -1,0 +1,43 @@
+filename,width,height,source_bbox_xyxy,description,extraction_note
+screens/01_room_browser.png,555,1024,"[0, 0, 555, 1024]",Full screen panel crop for layout reference,Raster crop from flattened reference; background may be included.
+screens/02_room_lobby.png,501,1024,"[556, 0, 1057, 1024]",Full screen panel crop for layout reference,Raster crop from flattened reference; background may be included.
+screens/03_create_room.png,478,1024,"[1058, 0, 1536, 1024]",Full screen panel crop for layout reference,Raster crop from flattened reference; background may be included.
+components/brand_header_left.png,392,140,"[18, 18, 410, 158]",NEORA logo and lobby header,Raster crop from flattened reference; background may be included.
+components/room_card_monopoly_chill.png,511,122,"[19, 396, 530, 518]",Room list card example,Raster crop from flattened reference; background may be included.
+components/room_card_newbie_friendly.png,511,119,"[19, 525, 530, 644]",Room list card example,Raster crop from flattened reference; background may be included.
+components/room_card_pro_only.png,511,122,"[19, 652, 530, 774]",Room list card example,Raster crop from flattened reference; background may be included.
+components/room_card_just_for_fun.png,511,120,"[19, 781, 530, 901]",Room list card example,Raster crop from flattened reference; background may be included.
+components/room_card_afk_welcome.png,511,109,"[19, 909, 530, 1018]",Room list card example,Raster crop from flattened reference; background may be included.
+components/lobby_game_title_and_room_id.png,474,166,"[566, 139, 1040, 305]","Room title, status, ID, tags and description",Raster crop from flattened reference; background may be included.
+components/player_grid.png,468,213,"[569, 353, 1037, 566]",Player slots and ready indicators,Raster crop from flattened reference; background may be included.
+components/chat_panel.png,465,294,"[570, 576, 1035, 870]",Chat history and message input,Raster crop from flattened reference; background may be included.
+components/start_game_footer.png,465,96,"[571, 882, 1036, 978]","Leave, start game and settings controls",Raster crop from flattened reference; background may be included.
+components/create_room_header.png,443,98,"[1073, 136, 1516, 234]",Create room title and intro,Raster crop from flattened reference; background may be included.
+components/create_room_game_picker.png,441,120,"[1076, 271, 1517, 391]",Game selection row,Raster crop from flattened reference; background may be included.
+components/create_room_settings.png,441,219,"[1077, 394, 1518, 613]","Room name, description and player slots",Raster crop from flattened reference; background may be included.
+components/create_room_privacy.png,441,90,"[1077, 623, 1518, 713]",Open/private room selection,Raster crop from flattened reference; background may be included.
+components/create_room_footer.png,438,72,"[1080, 917, 1518, 989]",Cancel and create room buttons,Raster crop from flattened reference; background may be included.
+components/game_category_tabs.png,509,89,"[20, 164, 529, 253]",Top-level game category tabs,Raster crop from flattened reference; background may be included.
+components/room_browser_actions.png,509,68,"[20, 264, 529, 332]",Create Room and Quick Join buttons,Raster crop from flattened reference; background may be included.
+components/room_browser_filters.png,509,52,"[20, 337, 529, 389]",Room status filters and sort control,Raster crop from flattened reference; background may be included.
+game_tiles/game_tile_monopoly.png,86,109,"[1081, 274, 1167, 383]",Monopoly picker tile,Raster crop from flattened reference; background may be included.
+game_tiles/game_tile_sky_run.png,87,109,"[1176, 274, 1263, 383]",Sky Run picker tile,Raster crop from flattened reference; background may be included.
+game_tiles/game_tile_card_party.png,87,109,"[1270, 274, 1357, 383]",Card Party picker tile,Raster crop from flattened reference; background may be included.
+game_tiles/game_tile_couple_quiz.png,87,109,"[1365, 274, 1452, 383]",Couple Quiz picker tile,Raster crop from flattened reference; background may be included.
+game_tiles/game_tile_more.png,58,109,"[1459, 274, 1517, 383]",More games picker tile,Raster crop from flattened reference; background may be included.
+avatars/avatar_nook_lobby.png,99,111,"[578, 357, 677, 468]",Nook avatar card crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_luna_lobby.png,98,111,"[692, 357, 790, 468]",Luna avatar card crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_kai_lobby.png,99,111,"[806, 357, 905, 468]",Kai avatar card crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_momo_room.png,41,42,"[57, 446, 98, 488]",Momo small avatar crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_zephyr_room.png,42,42,"[118, 446, 160, 488]",Zephyr small avatar crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_cherry_room.png,41,42,"[57, 833, 98, 875]",Cherry small avatar crop,Raster crop from flattened reference; background may be included.
+avatars/avatar_zen_room.png,41,42,"[57, 954, 98, 996]",Zen small avatar crop,Raster crop from flattened reference; background may be included.
+controls/button_create_room.png,270,67,"[20, 264, 290, 331]",Create Room button style,Raster crop from flattened reference; background may be included.
+controls/button_quick_join.png,223,67,"[306, 264, 529, 331]",Quick Join button style,Raster crop from flattened reference; background may be included.
+controls/button_join_room.png,117,44,"[403, 459, 520, 503]",Join button style,Raster crop from flattened reference; background may be included.
+controls/button_start_game.png,250,73,"[679, 890, 929, 963]",Start Game button style,Raster crop from flattened reference; background may be included.
+controls/button_create_room_submit.png,261,66,"[1252, 918, 1513, 984]",Create Room submit button,Raster crop from flattened reference; background may be included.
+controls/privacy_open.png,206,72,"[1084, 625, 1290, 697]",Open privacy option,Raster crop from flattened reference; background may be included.
+controls/privacy_private.png,214,72,"[1301, 625, 1515, 697]",Private privacy option,Raster crop from flattened reference; background may be included.
+controls/status_open_badge.png,65,25,"[334, 405, 399, 430]",Open room status badge,Raster crop from flattened reference; background may be included.
+controls/status_playing_badge.png,90,25,"[335, 663, 425, 688]",Playing room status badge,Raster crop from flattened reference; background may be included.

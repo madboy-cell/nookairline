@@ -393,6 +393,7 @@
       Sound.tap();
       this.isProfileOpen = true;
       if (this.profileSheet) {
+        this.profileSheet.classList.remove('hidden');
         this.profileSheet.classList.add('open');
         this.profileSheet.setAttribute('aria-hidden', 'false');
       }
@@ -404,6 +405,7 @@
       this.isProfileOpen = false;
       if (this.profileSheet) {
         this.profileSheet.classList.remove('open');
+        this.profileSheet.classList.add('hidden');
         this.profileSheet.setAttribute('aria-hidden', 'true');
       }
     }

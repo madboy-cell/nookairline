@@ -1,0 +1,557 @@
+{
+  "project": "NEORA Lobby Reference Asset Pack",
+  "source_image": "MONOPOLY Neora Neon Game Lobby Triptych.png",
+  "source_dimensions": {
+    "width": 1536,
+    "height": 1024
+  },
+  "note": "Assets are crops from a flattened reference, not original editable layers. Many crops include their original UI/background context.",
+  "assets": [
+    {
+      "filename": "screens/01_room_browser.png",
+      "width": 555,
+      "height": 1024,
+      "source_bbox_xyxy": [
+        0,
+        0,
+        555,
+        1024
+      ],
+      "description": "Full screen panel crop for layout reference",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "screens/02_room_lobby.png",
+      "width": 501,
+      "height": 1024,
+      "source_bbox_xyxy": [
+        556,
+        0,
+        1057,
+        1024
+      ],
+      "description": "Full screen panel crop for layout reference",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "screens/03_create_room.png",
+      "width": 478,
+      "height": 1024,
+      "source_bbox_xyxy": [
+        1058,
+        0,
+        1536,
+        1024
+      ],
+      "description": "Full screen panel crop for layout reference",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/brand_header_left.png",
+      "width": 392,
+      "height": 140,
+      "source_bbox_xyxy": [
+        18,
+        18,
+        410,
+        158
+      ],
+      "description": "NEORA logo and lobby header",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_card_monopoly_chill.png",
+      "width": 511,
+      "height": 122,
+      "source_bbox_xyxy": [
+        19,
+        396,
+        530,
+        518
+      ],
+      "description": "Room list card example",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_card_newbie_friendly.png",
+      "width": 511,
+      "height": 119,
+      "source_bbox_xyxy": [
+        19,
+        525,
+        530,
+        644
+      ],
+      "description": "Room list card example",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_card_pro_only.png",
+      "width": 511,
+      "height": 122,
+      "source_bbox_xyxy": [
+        19,
+        652,
+        530,
+        774
+      ],
+      "description": "Room list card example",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_card_just_for_fun.png",
+      "width": 511,
+      "height": 120,
+      "source_bbox_xyxy": [
+        19,
+        781,
+        530,
+        901
+      ],
+      "description": "Room list card example",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_card_afk_welcome.png",
+      "width": 511,
+      "height": 109,
+      "source_bbox_xyxy": [
+        19,
+        909,
+        530,
+        1018
+      ],
+      "description": "Room list card example",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/lobby_game_title_and_room_id.png",
+      "width": 474,
+      "height": 166,
+      "source_bbox_xyxy": [
+        566,
+        139,
+        1040,
+        305
+      ],
+      "description": "Room title, status, ID, tags and description",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/player_grid.png",
+      "width": 468,
+      "height": 213,
+      "source_bbox_xyxy": [
+        569,
+        353,
+        1037,
+        566
+      ],
+      "description": "Player slots and ready indicators",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/chat_panel.png",
+      "width": 465,
+      "height": 294,
+      "source_bbox_xyxy": [
+        570,
+        576,
+        1035,
+        870
+      ],
+      "description": "Chat history and message input",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/start_game_footer.png",
+      "width": 465,
+      "height": 96,
+      "source_bbox_xyxy": [
+        571,
+        882,
+        1036,
+        978
+      ],
+      "description": "Leave, start game and settings controls",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/create_room_header.png",
+      "width": 443,
+      "height": 98,
+      "source_bbox_xyxy": [
+        1073,
+        136,
+        1516,
+        234
+      ],
+      "description": "Create room title and intro",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/create_room_game_picker.png",
+      "width": 441,
+      "height": 120,
+      "source_bbox_xyxy": [
+        1076,
+        271,
+        1517,
+        391
+      ],
+      "description": "Game selection row",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/create_room_settings.png",
+      "width": 441,
+      "height": 219,
+      "source_bbox_xyxy": [
+        1077,
+        394,
+        1518,
+        613
+      ],
+      "description": "Room name, description and player slots",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/create_room_privacy.png",
+      "width": 441,
+      "height": 90,
+      "source_bbox_xyxy": [
+        1077,
+        623,
+        1518,
+        713
+      ],
+      "description": "Open/private room selection",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/create_room_footer.png",
+      "width": 438,
+      "height": 72,
+      "source_bbox_xyxy": [
+        1080,
+        917,
+        1518,
+        989
+      ],
+      "description": "Cancel and create room buttons",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/game_category_tabs.png",
+      "width": 509,
+      "height": 89,
+      "source_bbox_xyxy": [
+        20,
+        164,
+        529,
+        253
+      ],
+      "description": "Top-level game category tabs",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_browser_actions.png",
+      "width": 509,
+      "height": 68,
+      "source_bbox_xyxy": [
+        20,
+        264,
+        529,
+        332
+      ],
+      "description": "Create Room and Quick Join buttons",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "components/room_browser_filters.png",
+      "width": 509,
+      "height": 52,
+      "source_bbox_xyxy": [
+        20,
+        337,
+        529,
+        389
+      ],
+      "description": "Room status filters and sort control",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "game_tiles/game_tile_monopoly.png",
+      "width": 86,
+      "height": 109,
+      "source_bbox_xyxy": [
+        1081,
+        274,
+        1167,
+        383
+      ],
+      "description": "Monopoly picker tile",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "game_tiles/game_tile_sky_run.png",
+      "width": 87,
+      "height": 109,
+      "source_bbox_xyxy": [
+        1176,
+        274,
+        1263,
+        383
+      ],
+      "description": "Sky Run picker tile",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "game_tiles/game_tile_card_party.png",
+      "width": 87,
+      "height": 109,
+      "source_bbox_xyxy": [
+        1270,
+        274,
+        1357,
+        383
+      ],
+      "description": "Card Party picker tile",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "game_tiles/game_tile_couple_quiz.png",
+      "width": 87,
+      "height": 109,
+      "source_bbox_xyxy": [
+        1365,
+        274,
+        1452,
+        383
+      ],
+      "description": "Couple Quiz picker tile",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "game_tiles/game_tile_more.png",
+      "width": 58,
+      "height": 109,
+      "source_bbox_xyxy": [
+        1459,
+        274,
+        1517,
+        383
+      ],
+      "description": "More games picker tile",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_nook_lobby.png",
+      "width": 99,
+      "height": 111,
+      "source_bbox_xyxy": [
+        578,
+        357,
+        677,
+        468
+      ],
+      "description": "Nook avatar card crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_luna_lobby.png",
+      "width": 98,
+      "height": 111,
+      "source_bbox_xyxy": [
+        692,
+        357,
+        790,
+        468
+      ],
+      "description": "Luna avatar card crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_kai_lobby.png",
+      "width": 99,
+      "height": 111,
+      "source_bbox_xyxy": [
+        806,
+        357,
+        905,
+        468
+      ],
+      "description": "Kai avatar card crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_momo_room.png",
+      "width": 41,
+      "height": 42,
+      "source_bbox_xyxy": [
+        57,
+        446,
+        98,
+        488
+      ],
+      "description": "Momo small avatar crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_zephyr_room.png",
+      "width": 42,
+      "height": 42,
+      "source_bbox_xyxy": [
+        118,
+        446,
+        160,
+        488
+      ],
+      "description": "Zephyr small avatar crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_cherry_room.png",
+      "width": 41,
+      "height": 42,
+      "source_bbox_xyxy": [
+        57,
+        833,
+        98,
+        875
+      ],
+      "description": "Cherry small avatar crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "avatars/avatar_zen_room.png",
+      "width": 41,
+      "height": 42,
+      "source_bbox_xyxy": [
+        57,
+        954,
+        98,
+        996
+      ],
+      "description": "Zen small avatar crop",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/button_create_room.png",
+      "width": 270,
+      "height": 67,
+      "source_bbox_xyxy": [
+        20,
+        264,
+        290,
+        331
+      ],
+      "description": "Create Room button style",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/button_quick_join.png",
+      "width": 223,
+      "height": 67,
+      "source_bbox_xyxy": [
+        306,
+        264,
+        529,
+        331
+      ],
+      "description": "Quick Join button style",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/button_join_room.png",
+      "width": 117,
+      "height": 44,
+      "source_bbox_xyxy": [
+        403,
+        459,
+        520,
+        503
+      ],
+      "description": "Join button style",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/button_start_game.png",
+      "width": 250,
+      "height": 73,
+      "source_bbox_xyxy": [
+        679,
+        890,
+        929,
+        963
+      ],
+      "description": "Start Game button style",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/button_create_room_submit.png",
+      "width": 261,
+      "height": 66,
+      "source_bbox_xyxy": [
+        1252,
+        918,
+        1513,
+        984
+      ],
+      "description": "Create Room submit button",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/privacy_open.png",
+      "width": 206,
+      "height": 72,
+      "source_bbox_xyxy": [
+        1084,
+        625,
+        1290,
+        697
+      ],
+      "description": "Open privacy option",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/privacy_private.png",
+      "width": 214,
+      "height": 72,
+      "source_bbox_xyxy": [
+        1301,
+        625,
+        1515,
+        697
+      ],
+      "description": "Private privacy option",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/status_open_badge.png",
+      "width": 65,
+      "height": 25,
+      "source_bbox_xyxy": [
+        334,
+        405,
+        399,
+        430
+      ],
+      "description": "Open room status badge",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    },
+    {
+      "filename": "controls/status_playing_badge.png",
+      "width": 90,
+      "height": 25,
+      "source_bbox_xyxy": [
+        335,
+        663,
+        425,
+        688
+      ],
+      "description": "Playing room status badge",
+      "extraction_note": "Raster crop from flattened reference; background may be included."
+    }
+  ]
+}
