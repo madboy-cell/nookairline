@@ -700,6 +700,13 @@ async function runMasterSuite() {
           break;
         }
 
+        if (turns >= maxTurns) {
+          const alive = st.turnOrder.filter((r) => !st.players[r].bankrupt);
+          alive.sort((a, b) => st.players[b].nw - st.players[a].nw);
+          st.gameOver = { winner: alive[0], reason: 'turn_limit_net_worth' };
+          break;
+        }
+
         // Advance turn
         st.currentTurn = st.turnOrder[(st.turnOrder.indexOf(currentRole) + 1) % st.turnOrder.length];
       }

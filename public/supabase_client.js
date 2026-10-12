@@ -215,6 +215,10 @@
       return !this.currentUser || !!this.currentUser.isGuest;
     }
 
+    isLoggedIn() {
+      return !!(this.currentUser && !this.currentUser.isGuest && this.currentUser.id && !String(this.currentUser.id).startsWith('guest_'));
+    }
+
     getCurrentUser() {
       return this.currentUser;
     }
@@ -309,6 +313,9 @@
 
       // Local Guest fallback
       if (!this.currentUser) await this.loginGuest(metadata.username, metadata.character_base);
+      if (String(this.currentUser.id).startsWith('guest_')) {
+        this.currentUser.id = `usr_${Math.abs(email.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(36)}`;
+      }
       this.currentUser.email = email;
       this.currentUser.username = metadata.username || this.currentUser.username;
       this.currentUser.character_base = metadata.character_base || this.currentUser.character_base;
@@ -342,6 +349,9 @@
 
       // Local Guest fallback
       if (!this.currentUser) await this.loginGuest();
+      if (String(this.currentUser.id).startsWith('guest_')) {
+        this.currentUser.id = `usr_${Math.abs(email.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(36)}`;
+      }
       this.currentUser.email = email;
       this.currentUser.auth_provider = 'email';
       this.currentUser.isGuest = false;
@@ -371,6 +381,9 @@
       // Guest / Local fallback flow for Google/OAuth
       const simulatedEmail = `${(this.currentUser && this.currentUser.username ? this.currentUser.username.toLowerCase().replace(/[^a-z0-9]/g, '') : 'pilot')}@gmail.com`;
       if (!this.currentUser) await this.loginGuest();
+      if (String(this.currentUser.id).startsWith('guest_')) {
+        this.currentUser.id = `usr_${Math.abs(simulatedEmail.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(36)}`;
+      }
       this.currentUser.email = simulatedEmail;
       this.currentUser.auth_provider = provider;
       this.currentUser.isGuest = false;
@@ -537,22 +550,21 @@
      * Checks if user has completed the onboarding flow
      */
     isOnboardingCompleted() {
-      try {
-        return !!localStorage.getItem(STORAGE_KEYS.ONBOARDING);
-      } catch (e) {
-        return false;
-      }
+      if (!this.isLoggedIn()) return false;
+      const u = this.currentUser;
+      const hasBase = u && (u.character_base === 'bkk' || u.character_base === 'dxb');
+      const hasOnbFlag = localStorage.getItem(STORAGE_KEYS.ONBOARDING) === 'true';
+      return !!(hasBase && hasOnbFlag);
     }
 
     /**
      * Finalizes onboarding: saves persona, username, optional couple invite, and marks complete
      */
     async completeOnboarding({ persona, username, partnerInvite } = {}) {
-      if (!this.currentUser) {
-        await this.loginGuest(username, persona);
-      }
+      if (!this.currentUser) return null;
       if (persona && (persona === 'bkk' || persona === 'dxb')) {
         await this.updateCharacterBase(persona);
+        try { localStorage.setItem('sky_active_persona', persona); } catch (e) {}
       }
       if (username && username.trim()) {
         await this.updateProfile({ username: username.trim() });
@@ -890,7 +902,10 @@
         try {
           const { data: { session } } = await this.client.auth.getSession();
           if (session && session.user) {
-            const { data: profile } = await this.client.from('profiles').select('*').eq('id', session.user.id).single();
+            let { data: profile } = await this.client.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+            if (!profile) {
+              profile = await this._fetchOrCreateProfile(session.user);
+            }
             if (profile) {
               this.currentUser = {
                 ...profile,
@@ -900,6 +915,7 @@
               this.localProvider.saveProfile(this.currentUser);
               await this.getCoupleStatus();
               await this.getFriends();
+              safeDispatch('sky:auth_state_changed', { user: this.currentUser });
               return;
             }
           }
@@ -908,15 +924,12 @@
         }
       }
 
-      // If user profile is in localStorage, restore it
-      const saved = this.localProvider._load(STORAGE_KEYS.PROFILE, null);
-      if (saved) {
-        this.currentUser = saved;
-      } else {
-        await this.loginGuest();
-      }
-      await this.getCoupleStatus();
-      await this.getFriends();
+      // No Google session: enforce authentication
+      this.currentUser = null;
+      try {
+        localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      } catch (e) {}
+      safeDispatch('sky:auth_state_changed', { user: null });
     }
   }
 

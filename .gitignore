@@ -18,6 +18,7 @@ data/monopoly_played_cards.json
 scratch/
 backup/
 data_backups/
+neora_hud_patch_assets/
 
 # Environment variables
 .env

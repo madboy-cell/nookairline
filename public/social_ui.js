@@ -76,7 +76,8 @@
 
       setTimeout(() => {
         if (window.SkySupabase && !window.SkySupabase.isOnboardingCompleted()) {
-          this.openOnboarding(1);
+          const startStep = window.SkySupabase.isLoggedIn() ? 2 : 1;
+          this.openOnboarding(startStep);
         }
       }, 700);
     }
@@ -386,7 +387,29 @@
       // Listen for Global Supabase events
       window.addEventListener('sky:character_base_changed', () => this.render());
       window.addEventListener('sky:couple_updated', () => this.render());
-      window.addEventListener('sky:auth_state_changed', () => this.render());
+      window.addEventListener('sky:auth_state_changed', (e) => {
+        const user = e.detail?.user;
+        if (user) {
+          const callsignInput = $('onbCallsignInput');
+          if (callsignInput) {
+            const googleName = user.user_metadata?.full_name || user.user_metadata?.name || user.username;
+            if (googleName && (!callsignInput.value || callsignInput.value === 'Captain Sky')) {
+              callsignInput.value = googleName.slice(0, 16);
+              this.onbUsername = callsignInput.value;
+            }
+          }
+          if (window.SkySupabase && window.SkySupabase.isOnboardingCompleted()) {
+            this.closeOnboarding(true);
+          } else {
+            this.openOnboarding(2);
+          }
+        } else {
+          if (window.SkySupabase && !window.SkySupabase.isOnboardingCompleted()) {
+            this.openOnboarding(1);
+          }
+        }
+        this.render();
+      });
     }
 
     openProfileModal() {
@@ -418,7 +441,10 @@
       }
     }
 
-    closeOnboarding() {
+    closeOnboarding(force = false) {
+      if (!force && window.SkySupabase && !window.SkySupabase.isLoggedIn()) {
+        return; // Gatekeeper is locked until logged in
+      }
       if (this.onboardingModal) {
         this.onboardingModal.classList.add('hidden');
       }
@@ -468,12 +494,7 @@
         'Cloud Dancer', 'Storm Wolf', 'Valkyrie Ace', 'Starlight One'
       ];
 
-      const onbPersonaBkk = $('onbPersonaBkk');
-      const onbPersonaDxb = $('onbPersonaDxb');
-      const onbCallsignInput = $('onbCallsignInput');
-      const onbRandomNameBtn = $('onbRandomNameBtn');
-      const onbNextBtn1 = $('onbNextBtn1');
-
+      // Step 1: Google & Email Authentication Gatekeeper
       const onbGoogleAuthBtn = $('onbGoogleAuthBtn');
       const onbTabLogin = $('onbTabLogin');
       const onbTabRegister = $('onbTabRegister');
@@ -482,15 +503,24 @@
       const onbPasswordInput = $('onbPasswordInput');
       const onbAuthMsg = $('onbAuthMsg');
       const onbEmailSubmitBtn = $('onbEmailSubmitBtn');
-      const onbGuestBtn = $('onbGuestBtn');
-      const onbBackBtn2 = $('onbBackBtn2');
 
+      // Step 2: Persona & Callsign
+      const onbPersonaBkk = $('onbPersonaBkk');
+      const onbPersonaDxb = $('onbPersonaDxb');
+      const onbCallsignInput = $('onbCallsignInput');
+      const onbRandomNameBtn = $('onbRandomNameBtn');
+      const onbBackBtn2 = $('onbBackBtn2');
+      const onbNextBtn2 = $('onbNextBtn2') || $('onbNextBtn1');
+
+      // Step 3: Couple Sanctuary
       const onbChoicePair = $('onbChoicePair');
       const onbChoiceSolo = $('onbChoiceSolo');
       const onbPartnerInput = $('onbPartnerInput');
       const onbBackBtn3 = $('onbBackBtn3');
       const onbNextBtn3 = $('onbNextBtn3');
+      const onbContinueSoloBtn = $('onbContinueSoloBtn');
 
+      // Step 4: Boarding Pass
       const onbCompleteBtn = $('onbCompleteBtn');
       const passportViewTicketBtn = $('passportViewTicketBtn');
 
@@ -503,7 +533,77 @@
         });
       }
 
-      // Step 1: Persona choice
+      // --- STEP 1 HANDLERS ---
+      if (onbGoogleAuthBtn) {
+        onbGoogleAuthBtn.addEventListener('click', async () => {
+          Sound.auth();
+          try {
+            await window.SkySupabase.signInWithOAuth('google');
+            // When running in local simulation/test environment:
+            this.setOnbStep(2);
+          } catch (err) {
+            if (onbAuthMsg) {
+              onbAuthMsg.textContent = err.message || 'Google Auth Error';
+              onbAuthMsg.className = 'onb-auth-msg';
+              onbAuthMsg.classList.remove('hidden');
+            }
+          }
+        });
+      }
+
+      if (onbTabLogin && onbTabRegister) {
+        onbTabLogin.addEventListener('click', () => {
+          Sound.tap();
+          this.onbAuthMode = 'login';
+          onbTabLogin.classList.add('active');
+          onbTabRegister.classList.remove('active');
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Sign In →';
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+        });
+        onbTabRegister.addEventListener('click', () => {
+          Sound.tap();
+          this.onbAuthMode = 'register';
+          onbTabRegister.classList.add('active');
+          onbTabLogin.classList.remove('active');
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Create Account →';
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+        });
+      }
+
+      if (onbEmailForm) {
+        onbEmailForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = onbEmailInput ? onbEmailInput.value.trim() : '';
+          const pass = onbPasswordInput ? onbPasswordInput.value : '';
+          if (!email || !pass) return;
+
+          if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = true;
+          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
+
+          try {
+            if (this.onbAuthMode === 'register') {
+              await window.SkySupabase.signUpWithPassword(email, pass, {
+                username: this.onbUsername,
+                character_base: this.onbPersona
+              });
+            } else {
+              await window.SkySupabase.signInWithPassword(email, pass);
+            }
+            Sound.claim();
+            this.setOnbStep(2);
+          } catch (err) {
+            if (onbAuthMsg) {
+              onbAuthMsg.textContent = err.message || 'Authentication error';
+              onbAuthMsg.className = 'onb-auth-msg';
+              onbAuthMsg.classList.remove('hidden');
+            }
+          } finally {
+            if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = false;
+          }
+        });
+      }
+
+      // --- STEP 2 HANDLERS ---
       if (onbPersonaBkk) {
         onbPersonaBkk.addEventListener('click', () => {
           Sound.tap();
@@ -539,92 +639,6 @@
         });
       }
 
-      if (onbNextBtn1) {
-        onbNextBtn1.addEventListener('click', () => {
-          Sound.tap();
-          if (onbCallsignInput && onbCallsignInput.value.trim()) {
-            this.onbUsername = onbCallsignInput.value.trim();
-          }
-          this.setOnbStep(2);
-        });
-      }
-
-      // Step 2: Auth
-      if (onbGoogleAuthBtn) {
-        onbGoogleAuthBtn.addEventListener('click', async () => {
-          Sound.auth();
-          try {
-            await window.SkySupabase.signInWithOAuth('google');
-            this.setOnbStep(3);
-          } catch (err) {
-            if (onbAuthMsg) {
-              onbAuthMsg.textContent = err.message || 'Google Auth Error';
-              onbAuthMsg.className = 'onb-auth-msg';
-              onbAuthMsg.classList.remove('hidden');
-            }
-          }
-        });
-      }
-
-      if (onbTabLogin && onbTabRegister) {
-        onbTabLogin.addEventListener('click', () => {
-          Sound.tap();
-          this.onbAuthMode = 'login';
-          onbTabLogin.classList.add('active');
-          onbTabRegister.classList.remove('active');
-          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Sign In with Email';
-          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
-        });
-        onbTabRegister.addEventListener('click', () => {
-          Sound.tap();
-          this.onbAuthMode = 'register';
-          onbTabRegister.classList.add('active');
-          onbTabLogin.classList.remove('active');
-          if (onbEmailSubmitBtn) onbEmailSubmitBtn.textContent = 'Create New Account';
-          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
-        });
-      }
-
-      if (onbEmailForm) {
-        onbEmailForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const email = onbEmailInput ? onbEmailInput.value.trim() : '';
-          const pass = onbPasswordInput ? onbPasswordInput.value : '';
-          if (!email || !pass) return;
-
-          if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = true;
-          if (onbAuthMsg) onbAuthMsg.classList.add('hidden');
-
-          try {
-            if (this.onbAuthMode === 'register') {
-              await window.SkySupabase.signUpWithPassword(email, pass, {
-                username: this.onbUsername,
-                character_base: this.onbPersona
-              });
-            } else {
-              await window.SkySupabase.signInWithPassword(email, pass);
-            }
-            Sound.claim();
-            this.setOnbStep(3);
-          } catch (err) {
-            if (onbAuthMsg) {
-              onbAuthMsg.textContent = err.message || 'Authentication error';
-              onbAuthMsg.className = 'onb-auth-msg';
-              onbAuthMsg.classList.remove('hidden');
-            }
-          } finally {
-            if (onbEmailSubmitBtn) onbEmailSubmitBtn.disabled = false;
-          }
-        });
-      }
-
-      if (onbGuestBtn) {
-        onbGuestBtn.addEventListener('click', () => {
-          Sound.tap();
-          this.setOnbStep(3);
-        });
-      }
-
       if (onbBackBtn2) {
         onbBackBtn2.addEventListener('click', () => {
           Sound.tap();
@@ -632,7 +646,17 @@
         });
       }
 
-      // Step 3: Couple Choice
+      if (onbNextBtn2) {
+        onbNextBtn2.addEventListener('click', () => {
+          Sound.tap();
+          if (onbCallsignInput && onbCallsignInput.value.trim()) {
+            this.onbUsername = onbCallsignInput.value.trim();
+          }
+          this.setOnbStep(3);
+        });
+      }
+
+      // --- STEP 3 HANDLERS ---
       if (onbChoicePair) {
         onbChoicePair.addEventListener('click', () => {
           Sound.tap();
@@ -652,34 +676,11 @@
         });
       }
 
-      const onbContinueSoloBtn = $('onbContinueSoloBtn');
       if (onbContinueSoloBtn) {
         onbContinueSoloBtn.addEventListener('click', () => {
           Sound.tap();
           this.onbIsPair = false;
           this.setOnbStep(4);
-        });
-      }
-
-      const onbTopBackBtn = $('onbTopBackBtn');
-      if (onbTopBackBtn) {
-        onbTopBackBtn.addEventListener('click', () => {
-          Sound.tap();
-          if (this.onbStep > 1) {
-            this.setOnbStep(this.onbStep - 1);
-          } else {
-            this.closeOnboarding();
-          }
-        });
-      }
-
-      const onbTogglePwBtn = $('onbTogglePwBtn');
-      if (onbTogglePwBtn) {
-        onbTogglePwBtn.addEventListener('click', () => {
-          const pw = $('onbPasswordInput');
-          if (pw) {
-            pw.type = pw.type === 'password' ? 'text' : 'password';
-          }
         });
       }
 
@@ -697,7 +698,28 @@
         });
       }
 
-      // Step 4: Complete Boarding
+      // Top Back Arrow Button
+      const onbTopBackBtn = $('onbTopBackBtn');
+      if (onbTopBackBtn) {
+        onbTopBackBtn.addEventListener('click', () => {
+          Sound.tap();
+          if (this.onbStep > 1) {
+            this.setOnbStep(this.onbStep - 1);
+          }
+        });
+      }
+
+      const onbTogglePwBtn = $('onbTogglePwBtn');
+      if (onbTogglePwBtn) {
+        onbTogglePwBtn.addEventListener('click', () => {
+          const pw = $('onbPasswordInput');
+          if (pw) {
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+          }
+        });
+      }
+
+      // --- STEP 4 HANDLERS: Complete Boarding ---
       if (onbCompleteBtn) {
         onbCompleteBtn.addEventListener('click', async () => {
           Sound.claim();
@@ -707,7 +729,7 @@
             username: this.onbUsername,
             partnerInvite: partnerName
           });
-          this.closeOnboarding();
+          this.closeOnboarding(true);
           this.render();
           
           if (window.NookCats && typeof window.NookCats.renderAll === 'function') {

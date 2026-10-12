@@ -1961,12 +1961,87 @@
       <!-- Main Step Body Container -->
       <div class="onboarding-body">
         
-        <!-- STEP 1: Persona & Callsign (01 / 04) -->
+        <!-- STEP 1: First Class Passport Check-in (01 / 04) -->
         <section class="onboarding-step-view active" id="onbStepView1">
           <div class="onb-step-header">
             <span class="onb-step-counter">01 / 04</span>
-            <h2 class="onb-step-title" id="onboardingModalTitle">Choose Your Cabin Persona</h2>
-            <p class="onb-step-subtitle" id="onboardingSubtitle">Your journey, your story. Pick a persona and create your pilot callsign.</p>
+            <h2 class="onb-step-title" id="onboardingModalTitle">First Class Passport Check-in</h2>
+            <p class="onb-step-subtitle" id="onboardingSubtitle">Sign in with Google to secure your permanent Cloud Vault, unlock your 5,000 💎 Starter Treasury, and board your flight.</p>
+          </div>
+
+          <!-- Benefits Highlight Card -->
+          <div class="onb-benefits-card">
+            <div class="onb-benefit-item">
+              <span class="onb-benefit-icon">💎</span>
+              <div class="onb-benefit-text">
+                <strong>5,000 Diamonds Starter Treasury</strong>
+                <small>Claim your first-class treasury upon boarding</small>
+              </div>
+            </div>
+            <div class="onb-benefit-item">
+              <span class="onb-benefit-icon">☁️</span>
+              <div class="onb-benefit-text">
+                <strong>Cloud Vault Sync</strong>
+                <small>Never lose your wardrobe, dice rolls, or stats</small>
+              </div>
+            </div>
+            <div class="onb-benefit-item">
+              <span class="onb-benefit-icon">🐺🐉</span>
+              <div class="onb-benefit-text">
+                <strong>Wolf Boy &amp; Dragon Girl Personas</strong>
+                <small>Full access to BKK &amp; DXB cabins and couple sanctuary</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Google 1-Tap OAuth (Primary Action) -->
+          <div class="onb-auth-card">
+            <button type="button" class="google-auth-btn onb-google-btn pill-btn glow-btn" id="onbGoogleAuthBtn">
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.27-2.09 3.67-5.17 3.67-9.15z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+              </svg>
+              <span>Continue with Google</span>
+              <span class="auth-arrow">&gt;</span>
+            </button>
+
+            <div class="onb-divider"><span>or sign in with email</span></div>
+
+            <!-- Email / Password Form with Sign In / Register tabs -->
+            <div class="onb-auth-box-card">
+              <div class="onb-email-tabs">
+                <button type="button" class="onb-email-tab active" id="onbTabLogin">Sign In</button>
+                <button type="button" class="onb-email-tab" id="onbTabRegister">New Account</button>
+              </div>
+
+              <form class="onb-email-form" id="onbEmailForm">
+                <div class="onb-input-group">
+                  <span class="onb-field-icon">✉️</span>
+                  <input type="email" id="onbEmailInput" class="onb-pill-field" placeholder="Email address" required autocomplete="email">
+                </div>
+                <div class="onb-input-group">
+                  <span class="onb-field-icon">🔒</span>
+                  <input type="password" id="onbPasswordInput" class="onb-pill-field" placeholder="Password" required autocomplete="current-password">
+                  <button type="button" class="onb-toggle-pw-btn" id="onbTogglePwBtn" title="Toggle password visibility">👁️</button>
+                </div>
+                <div class="onb-forgot-pw-row">
+                  <a href="#" class="onb-forgot-link" onclick="return false;">Forgot password?</a>
+                </div>
+                <div class="onb-auth-msg hidden" id="onbAuthMsg"></div>
+                <button type="submit" class="onb-btn-primary pill-btn full-width" id="onbEmailSubmitBtn">Sign In →</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 2: Persona & Callsign (02 / 04) -->
+        <section class="onboarding-step-view" id="onbStepView2">
+          <div class="onb-step-header">
+            <span class="onb-step-counter">02 / 04</span>
+            <h2 class="onb-step-title">Choose Your Cabin Persona</h2>
+            <p class="onb-step-subtitle">Your journey, your story. Pick a persona and confirm your pilot callsign.</p>
           </div>
 
           <!-- Persona Cards -->
@@ -2000,78 +2075,17 @@
           <div class="onb-callsign-box">
             <label for="onbCallsignInput">Your Pilot Callsign</label>
             <div class="onb-callsign-input-row">
-              <input type="text" id="onbCallsignInput" class="onb-pill-input" maxlength="16" placeholder="Pilot Callsign" value="Nook">
+              <input type="text" id="onbCallsignInput" class="onb-pill-input" maxlength="16" placeholder="Pilot Callsign" value="Captain Sky">
               <button type="button" class="onb-dice-btn" id="onbRandomNameBtn" title="Randomize Name">🎲</button>
             </div>
             <small class="onb-input-hint">2–16 characters. Letters, numbers, spaces.</small>
           </div>
 
           <div class="onb-actions-row">
-            <button type="button" class="onb-btn-primary pill-btn full-width" id="onbNextBtn1">
+            <button type="button" class="onb-btn-secondary pill-btn" id="onbBackBtn2">← Back</button>
+            <button type="button" class="onb-btn-primary pill-btn full-width" id="onbNextBtn2">
               <span>Continue</span> →
             </button>
-          </div>
-        </section>
-
-        <!-- STEP 2: Account & Cloud Backup (02 / 04) -->
-        <section class="onboarding-step-view" id="onbStepView2">
-          <div class="onb-step-header">
-            <span class="onb-step-counter">02 / 04</span>
-            <h2 class="onb-step-title">Account &amp; Cloud Backup</h2>
-            <p class="onb-step-subtitle">Save your journey, sync across devices, and never lose your memories.</p>
-          </div>
-
-          <!-- Google 1-Tap OAuth -->
-          <div class="onb-auth-card">
-            <button type="button" class="google-auth-btn onb-google-btn pill-btn" id="onbGoogleAuthBtn">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.27-2.09 3.67-5.17 3.67-9.15z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
-              </svg>
-              <span>Continue with Google</span>
-              <span class="auth-arrow">&gt;</span>
-            </button>
-
-            <div class="onb-divider"><span>or</span></div>
-
-            <!-- Email / Password Form with Sign In / Register tabs -->
-            <div class="onb-auth-box-card">
-              <div class="onb-email-tabs">
-                <button type="button" class="onb-email-tab active" id="onbTabLogin">Sign In</button>
-                <button type="button" class="onb-email-tab" id="onbTabRegister">New Account</button>
-              </div>
-
-              <form class="onb-email-form" id="onbEmailForm">
-                <div class="onb-input-group">
-                  <span class="onb-field-icon">✉️</span>
-                  <input type="email" id="onbEmailInput" class="onb-pill-field" placeholder="Email address" required autocomplete="email">
-                </div>
-                <div class="onb-input-group">
-                  <span class="onb-field-icon">🔒</span>
-                  <input type="password" id="onbPasswordInput" class="onb-pill-field" placeholder="Password" required autocomplete="current-password">
-                  <button type="button" class="onb-toggle-pw-btn" id="onbTogglePwBtn" title="Toggle password visibility">👁️</button>
-                </div>
-                <div class="onb-forgot-pw-row">
-                  <a href="#" class="onb-forgot-link" onclick="return false;">Forgot password?</a>
-                </div>
-                <div class="onb-auth-msg hidden" id="onbAuthMsg"></div>
-                <button type="submit" class="onb-btn-primary pill-btn full-width" id="onbEmailSubmitBtn">Sign In →</button>
-              </form>
-            </div>
-          </div>
-
-          <!-- Instant Guest Option -->
-          <div class="onb-guest-box">
-            <button type="button" class="onb-guest-btn pill-btn full-width" id="onbGuestBtn">
-              <span>👤 Continue as Guest Passenger</span>
-            </button>
-            <small>Play instantly. You can link your account anytime.</small>
-          </div>
-
-          <div class="onb-actions-row">
-            <button type="button" class="onb-btn-secondary pill-btn" id="onbBackBtn2">← Back</button>
           </div>
         </section>
 
