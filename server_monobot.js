@@ -55,20 +55,23 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
       // -----------------------------------------------------------------------
       // 1. START BOT MATCH
       // -----------------------------------------------------------------------
-      case 'vault_bot_start': {
-        const level = msg.level === 'easy' ? 'easy' : 'hard';
+        const level = (msg.level === 'easy' || msg.level === 'insane') ? msg.level : 'hard';
         const stats = ensureBotStats(role);
         let stake = 0;
 
-        if (level === 'hard') {
+        if (level === 'hard' || level === 'insane') {
           const isComeback = (stats.hardLossStreak || 0) >= 2;
-          stake = isComeback ? ECON.HARD_COMEBACK_STAKE : ECON.HARD_STAKE;
+          if (level === 'insane') {
+            stake = isComeback ? (ECON.INSANE_COMEBACK_STAKE || 75) : (ECON.INSANE_STAKE || 150);
+          } else {
+            stake = isComeback ? ECON.HARD_COMEBACK_STAKE : ECON.HARD_STAKE;
+          }
 
           if ((vault[role].diamonds || 0) < stake) {
             sendTo(ws, {
               type: 'vault_error',
               scope: 'monobot',
-              error: `Not enough diamonds for Hard stake (${stake}💎 needed)`,
+              error: `Not enough diamonds for ${level.toUpperCase()} stake (${stake}💎 needed)`,
               reqId: msg.reqId
             });
             return;
@@ -154,14 +157,34 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
           if (winner === 'me') {
             stats.wins = (stats.wins || 0) + 1;
             payout = ECON.EASY_WIN;
-            breakdown = `Victory vs Easy Captain Whiskers (+${payout}💎)`;
+            breakdown = `Victory vs Trainee Mochi (+${payout}💎)`;
           } else {
             payout = ECON.EASY_LOSS;
             breakdown = winner === 'draw'
-              ? `Draw vs Easy Captain Whiskers (+${payout}💎)`
-              : `Good effort vs Easy Captain Whiskers (+${payout}💎)`;
+              ? `Draw vs Trainee Mochi (+${payout}💎)`
+              : `Good effort vs Trainee Mochi (+${payout}💎)`;
           }
           stats.net = (stats.net || 0) + payout;
+        } else if (session.level === 'insane') {
+          // Insane mode
+          if (winner === 'me') {
+            stats.wins = (stats.wins || 0) + 1;
+            stats.hardStreak = (stats.hardStreak || 0) + 1;
+            stats.hardLossStreak = 0;
+            const baseWin = ECON.INSANE_WIN || 750;
+            const streakBonus = Math.min((stats.hardStreak - 1) * ECON.STREAK_BONUS_PER_WIN, ECON.MAX_STREAK_BONUS);
+            payout = baseWin + streakBonus;
+            stats.net = (stats.net || 0) + (payout - session.stake);
+            breakdown = streakBonus > 0
+              ? `Victory vs Apex Sovereign (+${baseWin}💎 + ${streakBonus}💎 Streak Bonus!)`
+              : `Victory vs Apex Sovereign (+${baseWin}💎)`;
+          } else {
+            stats.hardStreak = 0;
+            stats.hardLossStreak = (stats.hardLossStreak || 0) + 1;
+            payout = ECON.INSANE_LOSS || 0;
+            stats.net = (stats.net || 0) - session.stake;
+            breakdown = `Defeat vs Apex Sovereign (-${session.stake}💎 stake)`;
+          }
         } else {
           // Hard mode
           if (winner === 'me') {

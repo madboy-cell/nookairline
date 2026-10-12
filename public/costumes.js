@@ -35,6 +35,10 @@
       HARD_COMEBACK_STAKE: 50,
       HARD_WIN: 450,
       HARD_LOSS: 0,
+      INSANE_STAKE: 150,
+      INSANE_COMEBACK_STAKE: 75,
+      INSANE_WIN: 750,
+      INSANE_LOSS: 0,
       STREAK_BONUS_PER_WIN: 50,
       MAX_STREAK_BONUS: 200,
       MIN_ROUNDS_PLAUSIBLE: 6
@@ -807,19 +811,19 @@
     const humans = pList.filter((p) => p && !p.isBot && !String(p.role || p.id).startsWith('bot'));
 
     if (humans.length === 1 && bots.length >= 2) {
-      const hardBots = bots.filter((b) => b.botLevel === 'hard').length;
-      if (hardBots >= 2) return 'gauntlet_hard';
+      const highThreatBots = bots.filter((b) => b.botLevel === 'hard' || b.botLevel === 'insane').length;
+      if (highThreatBots >= 2) return 'gauntlet_hard';
     }
 
     if (bots.length === 0) return 'couple';
 
     if (bots.length === 1) {
-      return bots[0].botLevel === 'hard' ? 'hard_3p' : 'easy_3p';
+      return (bots[0].botLevel === 'hard' || bots[0].botLevel === 'insane') ? 'hard_3p' : 'easy_3p';
     }
 
-    const hardBots = bots.filter((b) => b.botLevel === 'hard').length;
-    if (hardBots >= 2) return 'extreme';
-    if (hardBots === 1) return 'high';
+    const highThreatBots = bots.filter((b) => b.botLevel === 'hard' || b.botLevel === 'insane').length;
+    if (highThreatBots >= 2) return 'extreme';
+    if (highThreatBots === 1) return 'high';
     return 'standard';
   }
 
