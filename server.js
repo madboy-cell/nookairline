@@ -1403,11 +1403,14 @@ wss.on('connection', (ws, req) => {
   const parsedUrl = url.parse(req.url, true);
   const terminal = (parsedUrl.query.terminal || '').toLowerCase();
   const usernameParam = parsedUrl.query.username;
+  const uidParam = parsedUrl.query.uid;
   if (usernameParam) ws.userName = decodeURIComponent(usernameParam).slice(0, 32);
+  if (uidParam) ws.userUid = decodeURIComponent(uidParam).slice(0, 64);
 
-  console.log(`[Signaling] Terminal connection request: "${terminal}"${ws.userName ? ` (${ws.userName})` : ''}`);
+  console.log(`[Signaling] Terminal connection request: "${terminal}"${ws.userName ? ` (${ws.userName})` : ''}${ws.userUid ? ` [${ws.userUid.slice(0, 8)}]` : ''}`);
   serverEvent('ws_connect', terminal, {
     username: ws.userName || null,
+    uid: ws.userUid || null,
     ip: req.headers['cf-connecting-ip'] || req.socket.remoteAddress,
     country: req.headers['cf-ipcountry'] || null,
     userAgent: req.headers['user-agent'] || null
@@ -1432,30 +1435,57 @@ wss.on('connection', (ws, req) => {
     if (rtt > 1500) serverEvent('ws_slow_pong', ws.terminal, { rttMs: rtt });
   });
 
+  const isSameUser = (existingSocket) => {
+    if (!existingSocket) return false;
+    if (ws.userUid && existingSocket.userUid && ws.userUid === existingSocket.userUid) return true;
+    if (ws.userName && existingSocket.userName && ws.userName === existingSocket.userName) return true;
+    return false;
+  };
+
   if (terminal === 'bkk') {
     if (bkkDisconnectTimer) {
       clearTimeout(bkkDisconnectTimer);
       bkkDisconnectTimer = null;
       console.log('[Signaling] BKK reconnected within grace period.');
     }
-    if (bkkSocket && bkkSocket !== ws) {
-      console.log('[Signaling] Closing older BKK session.');
-      try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+    // If bkk is already occupied by a DIFFERENT user, avoid kicking them! Route incoming user to DXB!
+    if (bkkSocket && bkkSocket !== ws && !isSameUser(bkkSocket)) {
+      console.log(`[Signaling] Conflict avoided: BKK is occupied by ${bkkSocket.userName || 'user'}. Assigning ${ws.userName || 'passenger'} to DXB.`);
+      if (dxbSocket && dxbSocket !== ws && isSameUser(dxbSocket)) {
+        try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      dxbSocket = ws;
+      ws.terminal = 'dxb';
+    } else {
+      if (bkkSocket && bkkSocket !== ws) {
+        console.log('[Signaling] Closing older BKK session for same user.');
+        try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      bkkSocket = ws;
+      ws.terminal = 'bkk';
     }
-    bkkSocket = ws;
-    ws.terminal = 'bkk';
   } else if (terminal === 'dxb') {
     if (dxbDisconnectTimer) {
       clearTimeout(dxbDisconnectTimer);
       dxbDisconnectTimer = null;
       console.log('[Signaling] DXB reconnected within grace period.');
     }
-    if (dxbSocket && dxbSocket !== ws) {
-      console.log('[Signaling] Closing older DXB session.');
-      try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+    // If dxb is already occupied by a DIFFERENT user, avoid kicking them! Route incoming user to BKK!
+    if (dxbSocket && dxbSocket !== ws && !isSameUser(dxbSocket)) {
+      console.log(`[Signaling] Conflict avoided: DXB is occupied by ${dxbSocket.userName || 'user'}. Assigning ${ws.userName || 'passenger'} to BKK.`);
+      if (bkkSocket && bkkSocket !== ws && isSameUser(bkkSocket)) {
+        try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      bkkSocket = ws;
+      ws.terminal = 'bkk';
+    } else {
+      if (dxbSocket && dxbSocket !== ws) {
+        console.log('[Signaling] Closing older DXB session for same user.');
+        try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      dxbSocket = ws;
+      ws.terminal = 'dxb';
     }
-    dxbSocket = ws;
-    ws.terminal = 'dxb';
   } else {
     // Auto-assign: if BKK is free, assign BKK. Otherwise assign DXB.
     if (!bkkSocket) {
@@ -1518,25 +1548,33 @@ wss.on('connection', (ws, req) => {
 
       if (message.type === 'identify') {
         if (message.username) ws.userName = String(message.username).slice(0, 32);
+        if (message.uid) ws.userUid = String(message.uid).slice(0, 64);
         if (message.terminal && (message.terminal === 'bkk' || message.terminal === 'dxb')) {
           if (ws.terminal !== message.terminal) {
             const oldRole = ws.terminal;
-            if (message.terminal === 'bkk') {
-              if (bkkSocket && bkkSocket !== ws) {
-                try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+            const targetRole = message.terminal;
+            const targetSocket = targetRole === 'bkk' ? bkkSocket : dxbSocket;
+            const isSameUser = !targetSocket || targetSocket === ws ||
+              (ws.userUid && targetSocket.userUid && ws.userUid === targetSocket.userUid) ||
+              (ws.userName && targetSocket.userName && ws.userName === targetSocket.userName);
+
+            if (isSameUser) {
+              if (targetSocket && targetSocket !== ws) {
+                try { targetSocket.close(4001, 'replaced'); } catch (e) {}
               }
-              bkkSocket = ws;
-              if (dxbSocket === ws) dxbSocket = null;
-              ws.terminal = 'bkk';
-            } else if (message.terminal === 'dxb') {
-              if (dxbSocket && dxbSocket !== ws) {
-                try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+              if (targetRole === 'bkk') {
+                bkkSocket = ws;
+                if (dxbSocket === ws) dxbSocket = null;
+                ws.terminal = 'bkk';
+              } else if (targetRole === 'dxb') {
+                dxbSocket = ws;
+                if (bkkSocket === ws) bkkSocket = null;
+                ws.terminal = 'dxb';
               }
-              dxbSocket = ws;
-              if (bkkSocket === ws) bkkSocket = null;
-              ws.terminal = 'dxb';
+              console.log(`[Signaling] Passenger seat reassigned from ${oldRole ? oldRole.toUpperCase() : 'NONE'} to [${ws.terminal.toUpperCase()}] for ${ws.userName || 'Passenger'}`);
+            } else {
+              console.log(`[Signaling] Prevented hijack: ${ws.userName || 'User'} tried to claim seat ${targetRole.toUpperCase()} held by ${targetSocket.userName || 'another passenger'}`);
             }
-            console.log(`[Signaling] Passenger seat reassigned from ${oldRole ? oldRole.toUpperCase() : 'NONE'} to [${ws.terminal.toUpperCase()}] for ${ws.userName || 'Passenger'}`);
           }
         }
         return;

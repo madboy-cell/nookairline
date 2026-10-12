@@ -211,6 +211,30 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', unlockAudio);
 });
 
+// Reconcile terminal smoothly upon cloud authentication to eliminate false "seat taken" locks
+window.addEventListener('sky:auth_state_changed', (e) => {
+  const u = e.detail?.user;
+  if (!u) return;
+  const currentBase = u.character_base;
+  if (currentBase && (currentBase === 'bkk' || currentBase === 'dxb')) {
+    if (myTerminal !== currentBase) {
+      console.log(`[Signaling] Reconciling seat terminal from ${myTerminal} to ${currentBase} for ${u.username}`);
+      myTerminal = currentBase;
+      window.myTerminal = currentBase;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'identify',
+          terminal: currentBase,
+          username: u.username,
+          uid: u.id
+        }));
+      }
+      const el = document.getElementById('seatTakenOverlay');
+      if (el) el.classList.remove('open');
+    }
+  }
+});
+
 // Audio SDP Optimizer, tuned for a thin uplink behind TURN + VPN:
 //  - 60 ms packets (~17 pkt/s instead of 50) => far less per-packet IP/UDP/TURN/SRTP/VPN overhead
 //  - 24 kbps VBR mono voice with in-band FEC
@@ -366,6 +390,14 @@ function getTerminal() {
     const base = window.SkySupabase.getCharacterBase();
     if (base === 'bkk' || base === 'dxb') return base;
   }
+  // Synchronous profile cache in localStorage (crucial for initial page load before async auth completes!)
+  try {
+    const raw = localStorage.getItem('sky_party_user_profile');
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p.character_base === 'bkk' || p.character_base === 'dxb') return p.character_base;
+    }
+  } catch (_) {}
   const localBase = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
   if (localBase === 'bkk' || localBase === 'dxb') return localBase;
   const path = window.location.pathname.toLowerCase();
@@ -382,18 +414,33 @@ window.myTerminal = myTerminal;
 function initSignaling() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const terminal = getTerminal();
-  const uname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
-  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}${uname ? `&username=${encodeURIComponent(uname)}` : ''}`;
+  myTerminal = terminal;
+  window.myTerminal = terminal;
+
+  const cu = (window.SkySupabase && window.SkySupabase.getCurrentUser()) || null;
+  let uid = cu?.id || '';
+  let uname = cu?.username || '';
+  if (!uid) {
+    try {
+      const raw = localStorage.getItem('sky_party_user_profile');
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.id) uid = p.id;
+        if (p.username) uname = p.username;
+      }
+    } catch (_) {}
+  }
+
+  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}${uname ? `&username=${encodeURIComponent(uname)}` : ''}${uid ? `&uid=${encodeURIComponent(uid)}` : ''}`;
 
   console.log(`[Signaling] Connecting to ${wsUrl}`);
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
     console.log('[Signaling] Connected to flight dispatch.');
-    const currentUname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
-    if (currentUname) {
+    if (uname || uid) {
       try {
-        ws.send(JSON.stringify({ type: 'identify', terminal, username: currentUname }));
+        ws.send(JSON.stringify({ type: 'identify', terminal, username: uname, uid }));
       } catch (e) {}
     }
     tlog('ws_open', { callActive: isCallActive });

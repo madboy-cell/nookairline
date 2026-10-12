@@ -115,6 +115,9 @@
 
     saveProfile(profile) {
       this._save(STORAGE_KEYS.PROFILE, profile);
+      if (profile && profile.character_base) {
+        try { localStorage.setItem('sky_active_persona', profile.character_base); } catch (e) {}
+      }
       return profile;
     }
 
