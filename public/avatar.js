@@ -264,6 +264,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Weirwood Tree & Stark Hearth Fire',
     badge: 'Winterfell 🐺❄️',
     thumb: 'assets/scenes/winterfell_thumb.jpg',
+    wide: 'assets/scenes/winterfell_wide.jpg',
     mood: 'Ancient northern stone castle sanctuary with glowing red Weirwood leaves, Direwolf banners, and crackling braziers.'
   },
   classic: {
@@ -272,6 +273,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Classic Sky Party Lounge',
     badge: 'Classic ✈️',
     thumb: 'assets/scenes/classic_thumb.jpg',
+    wide: 'assets/scenes/classic_wide.jpg',
     mood: 'Cream & gold first-class suite with pink sunset clouds outside the windows.'
   },
   kyoto: {
@@ -280,6 +282,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Torii Gate & Mount Fuji Sunset',
     badge: 'Kyoto 🇯🇵',
     thumb: 'assets/scenes/kyoto_thumb.jpg',
+    wide: 'assets/scenes/kyoto_wide.jpg',
     mood: 'Cherry-blossom shrine with a glowing stone lantern beneath Mount Fuji at sunset.'
   },
   santorini: {
@@ -288,6 +291,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Aegean Sunset Terrace',
     badge: 'Greece 🇬🇷',
     thumb: 'assets/scenes/santorini_thumb.jpg',
+    wide: 'assets/scenes/santorini_wide.jpg',
     mood: 'Whitewashed cliffside villas with blue domes overlooking the sparkling sea.'
   },
   paris: {
@@ -296,6 +300,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Eiffel Tower Night Glow',
     badge: 'Paris 🇫🇷',
     thumb: 'assets/scenes/paris_thumb.jpg',
+    wide: 'assets/scenes/paris_wide.jpg',
     mood: 'Romantic cobblestone promenade with vintage street lamps under starlit skies.'
   },
   maldives: {
@@ -304,6 +309,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Turquoise Paradise Sunset',
     badge: 'Maldives 🇲🇻',
     thumb: 'assets/scenes/maldives_thumb.jpg',
+    wide: 'assets/scenes/maldives_wide.jpg',
     mood: 'Crystal lagoon boardwalk and swaying palms beneath vibrant tropical skies.'
   },
   swiss: {
@@ -312,6 +318,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Matterhorn & Milky Way Night',
     badge: 'Swiss Alps 🇨🇭',
     thumb: 'assets/scenes/swiss_thumb.jpg',
+    wide: 'assets/scenes/swiss_wide.jpg',
     mood: 'Snowy alpine village chalets under the starry Matterhorn night sky.'
   },
   dubai: {
@@ -320,6 +327,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Golden Dunes & Burj Mirage',
     badge: 'Dubai 🏜️✨',
     thumb: 'assets/scenes/dubai_thumb.jpg',
+    wide: 'assets/scenes/dubai_wide.jpg',
     mood: 'Enchanting golden desert dunes under starlit Arabian skies with glowing brass lanterns, Persian majlis lounge, and distant Burj Khalifa.'
   },
   montecarlo: {
@@ -328,6 +336,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Casino Palace & Riviera Harbor',
     badge: 'Monaco 🎰🇲🇨',
     thumb: 'assets/scenes/montecarlo_thumb.jpg',
+    wide: 'assets/scenes/montecarlo_wide.jpg',
     mood: 'Glamorous private casino penthouse terrace with velvet armchairs and glowing candelabras overlooking the illuminated Monte Carlo palace and superyacht bay.'
   },
   atlantis: {
@@ -336,6 +345,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Sunken Spires & Bioluminescent Reefs',
     badge: 'Atlantis 🔱💎',
     thumb: 'assets/scenes/atlantis_thumb.jpg',
+    wide: 'assets/scenes/atlantis_wide.jpg',
     mood: 'Atmospheric sunken observation salon overlooking glowing crystal palace spires, luminous coral reefs, and drifting jellyfish schools.'
   },
   starlight: {
@@ -344,6 +354,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Cosmic Galaxy & Stardust Spire',
     badge: 'Starlight 🌌✨',
     thumb: 'assets/scenes/starlight_thumb.jpg',
+    wide: 'assets/scenes/starlight_wide.jpg',
     mood: 'Majestic open-air glass dome observatory suspended among swirling nebulae, glowing constellations, shooting stars, and radiant golden zodiac rings.'
   },
   fairytale: {
@@ -352,6 +363,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Royal Palace Balcony & Floating Sky Lanterns',
     badge: 'Fairytale 🏰✨',
     thumb: 'assets/scenes/fairytale_thumb.jpg',
+    wide: 'assets/scenes/fairytale_wide.jpg',
     mood: 'Majestic fairytale castle balcony under a twilight lavender sky filled with thousands of glowing floating lanterns, distant crystal spires, and glowing rose gardens.'
   },
   permafrost: {
@@ -360,6 +372,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Ice Palace Balcony & Nordic Aurora',
     badge: 'Glacial ❄️✨',
     thumb: 'assets/scenes/permafrost_thumb.jpg',
+    wide: 'assets/scenes/permafrost_wide.jpg',
     mood: 'Breathtaking glacial throne terrace overlooking crystalline ice spires, glowing frozen bridges, and vibrant emerald-cyan aurora borealis.'
   },
   luxor: {
@@ -368,6 +381,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Golden Nile & Great Pyramids Sunset',
     badge: 'Egypt 🏺☀️',
     thumb: 'assets/scenes/s9_luxor_thumb.jpg',
+    wide: 'assets/scenes/s9_luxor_wide.jpg',
     mood: 'Opulent royal Egyptian palace terrace in Luxor overlooking the golden Nile river and the distant Great Pyramids at radiant sunset with warm brass lanterns.'
   },
   venice: {
@@ -376,6 +390,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Grand Canal & St. Mark Midnight Moon',
     badge: 'Venice 🎭🥀',
     thumb: 'assets/scenes/s10_venice_thumb.jpg',
+    wide: 'assets/scenes/s10_venice_wide.jpg',
     mood: 'Lavish Gothic palazzo terrace overlooking the mist-shrouded Grand Canal of Venice at midnight with floating lantern gondolas, velvet seating, and candle candelabras.'
   },
   olympus: {
@@ -384,6 +399,7 @@ const CABIN_SCENERIES = {
     subtitle: 'Celestial Pantheon & Elysian Dawn',
     badge: 'Olympus ⚡🏛️',
     thumb: 'assets/scenes/s11_olympus_thumb.jpg',
+    wide: 'assets/scenes/s11_olympus_wide.jpg',
     mood: 'Majestic open-air white marble temple terrace on the summit of Mount Olympus overlooking cascading waterfalls, floating Elysian sanctuaries, and divine golden lightning auroras.'
   }
 };
@@ -1651,10 +1667,10 @@ function previewCabinScenery(themeId) {
     lounge.classList.add(`theme-${themeId}`);
   }
 
-  // Update Hero Preview Window behind cabin frame
+  // Update Hero Preview Window behind cabin frame (high-res panoramic wide image)
   const heroImg = document.getElementById('sceneryHeroPreviewImg');
   if (heroImg && CABIN_SCENERIES[themeId]) {
-    heroImg.src = CABIN_SCENERIES[themeId].thumb;
+    heroImg.src = CABIN_SCENERIES[themeId].wide || CABIN_SCENERIES[themeId].thumb;
   }
 
   renderSceneryGrid();
@@ -1667,6 +1683,7 @@ function setupSceneryModal() {
   const saveBtn = document.getElementById('saveSceneryBtn');
   const modal = document.getElementById('sceneryModal');
   const backdrop = document.getElementById('sceneryCardBackdrop');
+  const previewCabinBtn = document.getElementById('sceneryPreviewInCabinBtn');
 
   if (openBtn) {
     openBtn.addEventListener('click', (e) => {
@@ -1697,6 +1714,34 @@ function setupSceneryModal() {
     });
   }
 
+  if (previewCabinBtn) {
+    previewCabinBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (modal) {
+        modal.classList.add('peeking');
+        let toast = document.getElementById('sceneryPeekToast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'sceneryPeekToast';
+          toast.className = 'scenery-peek-toast';
+          toast.innerHTML = '👁️ Peeking at Live Cabin · Tap anywhere to return';
+          document.body.appendChild(toast);
+        }
+        toast.classList.add('visible');
+
+        const restore = (ev) => {
+          if (ev) ev.stopPropagation();
+          modal.classList.remove('peeking');
+          if (toast) toast.classList.remove('visible');
+          document.removeEventListener('click', restore, true);
+        };
+        setTimeout(() => {
+          document.addEventListener('click', restore, true);
+        }, 150);
+      }
+    });
+  }
+
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
@@ -1713,11 +1758,14 @@ function setupSceneryModal() {
 
   const scrollBody = document.getElementById('sceneryScrollBody');
 
+  let isManualTabScroll = false;
   if (tabScenery && secScenery) {
     tabScenery.addEventListener('click', () => {
       tabScenery.classList.add('active');
       if (tabSeason) tabSeason.classList.remove('active');
-      secScenery.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      isManualTabScroll = true;
+      secScenery.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => { isManualTabScroll = false; }, 600);
     });
   }
 
@@ -1725,14 +1773,17 @@ function setupSceneryModal() {
     tabSeason.addEventListener('click', () => {
       tabSeason.classList.add('active');
       if (tabScenery) tabScenery.classList.remove('active');
-      secSeason.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      isManualTabScroll = true;
+      secSeason.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => { isManualTabScroll = false; }, 600);
     });
   }
 
-  if (scrollBody && secScenery && secSeason) {
+  if (scrollBody && secSeason) {
     scrollBody.addEventListener('scroll', () => {
-      const seasonTop = secSeason.offsetTop - scrollBody.offsetTop;
-      if (scrollBody.scrollTop >= seasonTop - 50) {
+      if (isManualTabScroll) return;
+      const seasonTop = secSeason.offsetTop;
+      if (scrollBody.scrollTop >= seasonTop - 90) {
         if (tabSeason) tabSeason.classList.add('active');
         if (tabScenery) tabScenery.classList.remove('active');
       } else {
@@ -1747,7 +1798,7 @@ function openSceneryModal() {
   previewSceneryTheme = currentSceneryTheme;
   const heroImg = document.getElementById('sceneryHeroPreviewImg');
   if (heroImg && CABIN_SCENERIES[currentSceneryTheme]) {
-    heroImg.src = CABIN_SCENERIES[currentSceneryTheme].thumb;
+    heroImg.src = CABIN_SCENERIES[currentSceneryTheme].wide || CABIN_SCENERIES[currentSceneryTheme].thumb;
   }
 
   const sCount = document.getElementById('sceneryCountBadge');
