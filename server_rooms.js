@@ -130,16 +130,18 @@ class RoomRegistry {
     const resolvedName = flightName || name || `${flightNumber} Express`;
 
     const defaultSlots = [
-      { id: 1, role: 'bkk', color: 'ruby', type: 'human', difficulty: null, ready: true, occupiedBy: hostUid, name: hostName, avatar: hostAvatar, connected: true },
-      { id: 2, role: 'dxb', color: 'cyan', type: 'human', difficulty: null, ready: false, occupiedBy: null, name: 'Open Slot', avatar: '', connected: false },
-      { id: 3, role: 'bot1', color: 'emerald', type: 'bot', difficulty: 'easy', ready: true, occupiedBy: null, name: 'Trainee Mochi 🐾', avatar: 'assets/bot_mochi.jpg', connected: true },
-      { id: 4, role: 'bot2', color: 'amber', type: 'bot', difficulty: 'hard', ready: true, occupiedBy: null, name: 'Capt. Whiskers 😼', avatar: 'assets/bot_captain.jpg', connected: true }
+      { id: 1, role: 'bkk', color: 'ruby', type: 'human', controller: 'HUMAN', difficulty: null, ready: true, occupiedBy: hostUid, name: hostName, avatar: hostAvatar, connected: true },
+      { id: 2, role: 'dxb', color: 'cyan', type: 'human', controller: 'HUMAN', difficulty: null, ready: false, occupiedBy: null, name: 'Open Slot', avatar: '', connected: false },
+      { id: 3, role: 'bot1', color: 'emerald', type: 'bot', controller: 'BOT_PERMANENT', difficulty: 'easy', ready: true, occupiedBy: null, name: 'Trainee Mochi 🐾', avatar: 'assets/bot_mochi.jpg', connected: true },
+      { id: 4, role: 'bot2', color: 'amber', type: 'bot', controller: 'BOT_PERMANENT', difficulty: 'hard', ready: true, occupiedBy: null, name: 'Capt. Whiskers 😼', avatar: 'assets/bot_captain.jpg', connected: true }
     ];
 
     const initialSlots = Array.isArray(slots) && slots.length === 4
       ? slots.map((s, idx) => ({
           ...s,
           id: idx + 1,
+          type: s.type || 'human',
+          controller: s.type === 'bot' ? 'BOT_PERMANENT' : 'HUMAN',
           occupiedBy: s.type === 'bot' ? null : (idx === 0 ? hostUid : (s.occupiedBy || null)),
           name: s.type === 'bot' ? (s.name || (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾')) : (idx === 0 ? hostName : (s.name || `Open Slot`)),
           avatar: s.type === 'bot' ? (s.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png') : (idx === 0 ? hostAvatar : (s.avatar || '')),
@@ -164,6 +166,7 @@ class RoomRegistry {
       status: 'lobby', // 'lobby' | 'in_flight' | 'finished'
       slots: initialSlots,
       clients: new Set(),
+      spectators: new Set(),
       clientData: new Map(), // ws -> { uid, name, avatar, role, slotId }
       messages: [
         {
@@ -350,6 +353,14 @@ class RoomRegistry {
         this.clientToRoomId.set(ws, room.id);
       }
 
+      existingSlot.connected = true;
+      existingSlot.controller = 'HUMAN';
+      existingSlot.disconnectedAt = null;
+      existingSlot.takeoverAt = null;
+      if (this.botTakeoverManager) {
+        this.botTakeoverManager.onPlayerReconnected(room, existingSlot, uid);
+      }
+
       this.db.updateMemberConnection(room.id, uid, true, null).catch(() => {});
       this.db.updateRoom(room.id, { slots: room.slots }).catch(() => {});
 
@@ -373,6 +384,8 @@ class RoomRegistry {
     // 3. Spectator support: if requested or flight is already underway and user has no slot
     if (playerInfo.spectator || room.status === 'in_flight') {
       if (ws) {
+        if (!room.spectators) room.spectators = new Set();
+        room.spectators.add(ws);
         room.clients.add(ws);
         room.clientData.set(ws, {
           uid,
@@ -399,6 +412,7 @@ class RoomRegistry {
     availableSlot.avatar = avatar;
     availableSlot.ready = true;
     availableSlot.connected = true;
+    availableSlot.controller = 'HUMAN';
     availableSlot.disconnectedAt = null;
 
     if (ws) {
@@ -459,10 +473,18 @@ class RoomRegistry {
     }
     this.disconnectedClients.delete(uid);
 
+    const wasBotTakeover = existingSlot.controller === 'BOT_TEMPORARY';
     existingSlot.connected = true;
     existingSlot.disconnectedAt = null;
+    existingSlot.takeoverAt = null;
     if (playerInfo.name) existingSlot.name = playerInfo.name;
     if (playerInfo.avatar) existingSlot.avatar = playerInfo.avatar;
+
+    if (this.botTakeoverManager) {
+      this.botTakeoverManager.onPlayerReconnected(room, existingSlot, uid);
+    } else {
+      existingSlot.controller = 'HUMAN';
+    }
 
     if (ws) {
       // Displace any old socket for this user
@@ -516,7 +538,12 @@ class RoomRegistry {
     const data = room.clientData.get(ws);
     room.clients.delete(ws);
     room.clientData.delete(ws);
+    if (room.spectators) room.spectators.delete(ws);
     this.clientToRoomId.delete(ws);
+
+    if (data && data.spectator) {
+      return { roomId, room, spectator: true, empty: room.clients.size === 0 };
+    }
 
     if (!data || !data.uid) {
       return { roomId, room, empty: room.clients.size === 0 };
@@ -532,6 +559,11 @@ class RoomRegistry {
     // Persist disconnected state in DB
     this.db.updateMemberConnection(roomId, uid, false, Date.now()).catch(() => {});
     this.db.updateRoom(roomId, { slots: room.slots }).catch(() => {});
+
+    // Trigger bot takeover manager
+    if (this.botTakeoverManager && slot) {
+      this.botTakeoverManager.onPlayerDisconnected(room, slot, uid);
+    }
 
     // Set grace period timer
     const graceMs = room.status === 'in_flight' ? DISCONNECT_MATCH_GRACE_MS : DISCONNECT_LOBBY_GRACE_MS;

@@ -786,7 +786,8 @@
         <div class="neora-screen-view neora-view-room" id="neoraViewRoom">
           <!-- Room Navigation Bar -->
           <div class="neora-room-nav">
-            <button class="neora-nav-back-btn" id="neoraRoomBackBtn" type="button" title="Back to Lobby">‹</button>
+            <button class="neora-nav-back-btn" id="neoraRoomBackBtn" type="button" title="Back / Minimize">‹</button>
+            <button class="neora-minimize-btn" id="neoraRoomMinimizeBtn" type="button" title="Minimize to Floating Widget">🗕</button>
             <div class="neora-brand-block mini">
               <img src="assets/ui/neora_ref/neora_logo_3d_clean.png" class="neora-mini-logo-img" alt="NEORA" />
               <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
@@ -1107,6 +1108,29 @@
             <span>Rejoin Game</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- NEORA Persistent Floating Waiting-Room Widget -->
+    <div class="neora-floating-room-widget hidden" id="neoraFloatingRoomWidget" role="region" aria-label="Active Waiting Room">
+      <div class="float-widget-icon-wrap" id="floatWidgetIconWrap">
+        <img src="assets/ui/neora_ref/dice_thumb_square.png" class="float-widget-icon" alt="Monopoly" />
+      </div>
+      <div class="float-widget-main" id="floatWidgetBody">
+        <div class="float-widget-top">
+          <span class="float-widget-title" id="floatWidgetTitle">Monopoly · Chill Game</span>
+          <button class="float-widget-code-btn" id="floatWidgetCodeBtn" type="button" title="Copy Flight Code">#472910 ⧉</button>
+        </div>
+        <div class="float-widget-bottom">
+          <span class="float-widget-occupancy" id="floatWidgetOccupancy">3/4</span>
+          <div class="float-widget-slots" id="floatWidgetSlots">
+            <!-- Dynamic 4 slot dots -->
+          </div>
+        </div>
+      </div>
+      <div class="float-widget-actions">
+        <button class="float-widget-reopen-btn" id="floatWidgetReopenBtn" type="button">⛶ Reopen</button>
+        <button class="float-widget-leave-btn" id="floatWidgetLeaveBtn" type="button" title="Leave Flight Room">✕</button>
       </div>
     </div>
 

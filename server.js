@@ -854,6 +854,10 @@ function broadcastDepartureBoard() {
   });
 }
 
+const BotTakeoverManager = require('./server_bot_takeover.js');
+const botTakeoverManager = new BotTakeoverManager(roomRegistry, broadcastToRoom, broadcastDepartureBoard);
+roomRegistry.botTakeoverManager = botTakeoverManager;
+
 function handleRoomMessage(ws, message) {
   if (message.type === 'room_check_session') {
     const uid = message.uid;
@@ -1092,6 +1096,44 @@ function handleRoomMessage(ws, message) {
   if (message.type === 'room_start') {
     const room = roomRegistry.getRoom(message.roomId) || roomRegistry.getClientRoom(ws);
     if (!room) return;
+
+    // 1. Authorization: Host only
+    const clientData = room.clientData ? room.clientData.get(ws) : null;
+    const isHost = !ws || (clientData && clientData.slotId === 1) || room.hostUid === message.hostUid;
+    if (!isHost) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'NOT_AUTHORIZED',
+        message: 'Only the flight Captain (Host) can start the match.'
+      }));
+      return;
+    }
+
+    // 2. Idempotency: Reject if already started or finished
+    if (room.status === 'in_flight') {
+      console.log(`[RoomRegistry] Duplicate room_start ignored for active flight ${room.id}`);
+      return;
+    }
+    if (room.status === 'finished') {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'ROOM_FINISHED',
+        message: 'This flight match has already finished.'
+      }));
+      return;
+    }
+
+    // 3. Minimum active participants check (>= 2 players or bots)
+    const activeSlots = (room.slots || []).filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
+    if (activeSlots.length < 2) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'NOT_ENOUGH_PLAYERS',
+        message: 'At least 2 active players or bots are required to take off.'
+      }));
+      return;
+    }
+
     room.status = 'in_flight';
     room.updatedAt = Date.now();
     if (message.state || message.initialState) {
@@ -1362,6 +1404,16 @@ wss.on('connection', (ws, req) => {
       if (currentRoom) {
         if (message.type === 'monopoly_action') {
           const clientData = currentRoom.clientData.get(ws);
+          if (clientData && clientData.spectator) {
+            ws.send(JSON.stringify({
+              type: 'monopoly_action_rejected',
+              error: 'ACTION_UNAUTHORIZED',
+              action: message.action,
+              message: 'Spectators cannot execute actions or mutate match state.'
+            }));
+            return;
+          }
+
           const myRole = clientData ? clientData.role : null;
           const currentTurn = currentRoom.gameState ? currentRoom.gameState.currentTurn : null;
           const isBotTurn = currentRoom.gameState && currentRoom.gameState.players && currentRoom.gameState.players[currentTurn]?.isBot;
@@ -1405,7 +1457,12 @@ wss.on('connection', (ws, req) => {
         }
 
         if (message.state) {
+          const oldTurn = currentRoom.gameState ? currentRoom.gameState.currentTurn : null;
           roomRegistry.updateGameState(currentRoom.id, message.state);
+          const newTurn = message.state.currentTurn;
+          if (newTurn && newTurn !== oldTurn && botTakeoverManager) {
+            botTakeoverManager.onTurnAdvance(currentRoom, newTurn);
+          }
           if (message.state.gameOver) {
             currentRoom.status = 'finished';
             currentRoom.rollLock = false;

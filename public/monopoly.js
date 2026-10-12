@@ -2235,9 +2235,12 @@ function initMonopoly() {
     });
   }
 
-  // Back from Room (Screen 2) -> leaves room
+  // Back from Room (Screen 2) -> minimizes room to floating widget
   const neoraRoomBackBtn = $m('neoraRoomBackBtn');
-  if (neoraRoomBackBtn) neoraRoomBackBtn.addEventListener('click', leaveFlightRoom);
+  if (neoraRoomBackBtn) neoraRoomBackBtn.addEventListener('click', minimizeFlightRoom);
+
+  const neoraRoomMinimizeBtn = $m('neoraRoomMinimizeBtn');
+  if (neoraRoomMinimizeBtn) neoraRoomMinimizeBtn.addEventListener('click', minimizeFlightRoom);
 
   const neoraLeaveRoomBtn = $m('neoraLeaveRoomBtn');
   if (neoraLeaveRoomBtn) neoraLeaveRoomBtn.addEventListener('click', leaveFlightRoom);
@@ -3990,10 +3993,118 @@ function leaveFlightRoom() {
       uid
     });
   }
+  hideFloatingRoomWidget();
   currentFlightRoom = null;
   pendingActiveSession = null;
   if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
   switchNeoraView('browser');
+}
+
+function minimizeFlightRoom() {
+  if (!currentFlightRoom) return;
+  const modal = $m('departureBoardModal');
+  if (modal) modal.classList.add('hidden');
+  sessionStorage.setItem('sky_room_minimized', 'true');
+  updateFloatingRoomWidget();
+  const widget = $m('neoraFloatingRoomWidget');
+  if (widget) {
+    widget.classList.remove('hidden');
+  }
+  if (typeof showToast === 'function') {
+    showToast('🗕 Flight room minimized. You remain reserved in line!');
+  }
+}
+
+function reopenFlightRoom() {
+  const widget = $m('neoraFloatingRoomWidget');
+  if (widget) widget.classList.add('hidden');
+  sessionStorage.removeItem('sky_room_minimized');
+
+  const modal = $m('departureBoardModal');
+  if (modal) modal.classList.remove('hidden');
+  switchNeoraView('room');
+  updateLobbyFlightRoomUI();
+  if (currentFlightRoom) {
+    renderNeoraWaitingRoom();
+  }
+}
+
+function hideFloatingRoomWidget() {
+  const widget = $m('neoraFloatingRoomWidget');
+  if (widget) widget.classList.add('hidden');
+  sessionStorage.removeItem('sky_room_minimized');
+}
+
+function updateFloatingRoomWidget() {
+  const widget = $m('neoraFloatingRoomWidget');
+  if (!widget || !currentFlightRoom) return;
+
+  const titleEl = $m('floatWidgetTitle');
+  if (titleEl) titleEl.textContent = currentFlightRoom.name || 'Monopoly Flight';
+
+  const codeBtn = $m('floatWidgetCodeBtn');
+  if (codeBtn) {
+    codeBtn.textContent = `#${currentFlightRoom.code || '------'} ⧉`;
+    codeBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (currentFlightRoom.code && navigator.clipboard) {
+        navigator.clipboard.writeText(currentFlightRoom.code);
+        if (typeof showToast === 'function') showToast(`📋 Flight code #${currentFlightRoom.code} copied!`);
+      }
+    };
+  }
+
+  const slots = Array.isArray(currentFlightRoom.slots) ? currentFlightRoom.slots : [];
+  const occupiedSlots = slots.filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
+  const totalSlots = slots.filter((s) => s.type !== 'closed');
+  const occEl = $m('floatWidgetOccupancy');
+  if (occEl) {
+    occEl.textContent = `${occupiedSlots.length}/${totalSlots.length || 4}`;
+    if (occupiedSlots.length >= (totalSlots.length || 4)) {
+      occEl.classList.add('full');
+    } else {
+      occEl.classList.remove('full');
+    }
+  }
+
+  const slotsContainer = $m('floatWidgetSlots');
+  if (slotsContainer) {
+    slotsContainer.innerHTML = '';
+    slots.forEach((s) => {
+      if (s.type === 'closed') return;
+      const dot = document.createElement('div');
+      dot.className = 'float-widget-slot-dot';
+      if (s.id === 1) {
+        dot.classList.add('host');
+        dot.textContent = '👑';
+      } else if (s.type === 'bot') {
+        dot.classList.add('bot');
+        dot.textContent = '🤖';
+      } else if (s.occupiedBy) {
+        dot.classList.add('occupied');
+        dot.textContent = '👤';
+      } else {
+        dot.textContent = '+';
+      }
+      slotsContainer.appendChild(dot);
+    });
+  }
+
+  const bodyEl = $m('floatWidgetBody');
+  if (bodyEl) {
+    bodyEl.onclick = reopenFlightRoom;
+  }
+  const reopenBtn = $m('floatWidgetReopenBtn');
+  if (reopenBtn) {
+    reopenBtn.onclick = reopenFlightRoom;
+  }
+  const leaveBtn = $m('floatWidgetLeaveBtn');
+  if (leaveBtn) {
+    leaveBtn.onclick = (e) => {
+      e.stopPropagation();
+      leaveFlightRoom();
+    };
+  }
 }
 
 function startNeoraRoomGame() {
@@ -9940,6 +10051,7 @@ function handleMonopolyMessage(message) {
     }
     if (message.spectator) {
       hideMonopolyLobby();
+      hideFloatingRoomWidget();
       if (message.state) {
         monopolyState = message.state;
       }
@@ -9963,6 +10075,36 @@ function handleMonopolyMessage(message) {
     return;
   }
 
+  if (message.type === 'player_bot_takeover') {
+    if (typeof showToast === 'function') {
+      showToast(`🤖 ${message.name || 'Player'} disconnected. Bot auto-pilot active!`);
+    }
+    if (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) {
+      const slot = currentFlightRoom.slots.find((s) => s.id === message.slotId);
+      if (slot) {
+        slot.controller = 'BOT_TEMPORARY';
+        slot.connected = false;
+      }
+      if (typeof renderAll === 'function') renderAll({ instant: true });
+    }
+    return;
+  }
+
+  if (message.type === 'player_human_restored') {
+    if (typeof showToast === 'function') {
+      showToast(`👤 ${message.name || 'Player'} reconnected! Human control restored.`);
+    }
+    if (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) {
+      const slot = currentFlightRoom.slots.find((s) => s.id === message.slotId);
+      if (slot) {
+        slot.controller = 'HUMAN';
+        slot.connected = true;
+      }
+      if (typeof renderAll === 'function') renderAll({ instant: true });
+    }
+    return;
+  }
+
   if (message.type === 'room_update') {
     currentFlightRoom = message.room;
     if (message.room && Array.isArray(message.room.slots)) {
@@ -9973,6 +10115,7 @@ function handleMonopolyMessage(message) {
       renderNeoraWaitingRoom();
     }
     updateLobbyFlightRoomUI();
+    updateFloatingRoomWidget();
     return;
   }
 
@@ -9990,6 +10133,7 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_start') {
+    hideFloatingRoomWidget();
     if (message.room) {
       currentFlightRoom = message.room;
       if (typeof localStorage !== 'undefined' && message.room.id) {
@@ -10021,6 +10165,7 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_left') {
+    hideFloatingRoomWidget();
     currentFlightRoom = null;
     pendingActiveSession = null;
     if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
@@ -10233,6 +10378,10 @@ window.toggleFlightPrivacy = toggleFlightPrivacy;
 window.copyFlightCode = copyFlightCode;
 window.switchNeoraView = switchNeoraView;
 window.getEquippedCostumeAvatar = getEquippedCostumeAvatar;
+window.minimizeFlightRoom = minimizeFlightRoom;
+window.reopenFlightRoom = reopenFlightRoom;
+window.hideFloatingRoomWidget = hideFloatingRoomWidget;
+window.updateFloatingRoomWidget = updateFloatingRoomWidget;
 
 Object.defineProperty(window, 'currentNeoraView', {
   get() { return currentNeoraView; },

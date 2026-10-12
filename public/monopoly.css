@@ -7636,6 +7636,236 @@ body.has-active-modal .vault-pill * {
   transform: translateY(-1.5px);
 }
 
+/* ============================================================== */
+/* NEORA PERSISTENT FLOATING WAITING-ROOM WIDGET                  */
+/* ============================================================== */
+.neora-floating-room-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(18, 14, 38, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(217, 70, 239, 0.45);
+  border-radius: 18px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(217, 70, 239, 0.25);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  max-width: 380px;
+  animation: floatWidgetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neora-floating-room-widget:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(217, 70, 239, 0.7);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75), 0 0 28px rgba(217, 70, 239, 0.4);
+}
+
+.neora-floating-room-widget.hidden {
+  display: none !important;
+}
+
+@keyframes floatWidgetIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.float-widget-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.float-widget-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.float-widget-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.float-widget-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.float-widget-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.float-widget-code-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  padding: 1px 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.float-widget-code-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #ffffff;
+}
+
+.float-widget-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.float-widget-occupancy {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.float-widget-occupancy.full {
+  background: rgba(244, 114, 182, 0.2);
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.4);
+}
+
+.float-widget-slots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.float-widget-slot-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  overflow: hidden;
+}
+
+.float-widget-slot-dot.occupied {
+  background: #38bdf8;
+  border-color: #60a5fa;
+}
+
+.float-widget-slot-dot.bot {
+  background: #a855f7;
+  border-color: #c084fc;
+}
+
+.float-widget-slot-dot.host {
+  background: #fbbf24;
+  border-color: #f59e0b;
+}
+
+.float-widget-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.float-widget-reopen-btn {
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #d946ef 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(217, 70, 239, 0.35);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.float-widget-reopen-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(217, 70, 239, 0.55);
+}
+
+.float-widget-leave-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.float-widget-leave-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* Minimize button inside waiting room header */
+.neora-minimize-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.neora-minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 
 
 
