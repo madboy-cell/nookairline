@@ -2987,6 +2987,13 @@ function startBotGame(level = 'hard') {
     }
   }
   saveLocalMonopolyState();
+  hideMonopolyLobby();
+  const modal = $m('monopolyModal');
+  if (modal) {
+    document.body.classList.add('has-active-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+  }
   hideModal();
   hideCardOverlay();
   hideVictory();
@@ -4792,6 +4799,13 @@ function startPartyGame(config = {}) {
   hideModal();
   hideCardOverlay();
   hideVictory();
+
+  const modal = $m('monopolyModal');
+  if (modal) {
+    document.body.classList.add('has-active-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+  }
 
   if (window.MonoFX) {
     MonoFX.clearDesat();
