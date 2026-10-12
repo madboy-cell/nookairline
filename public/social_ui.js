@@ -410,16 +410,26 @@
         const view = $(`onbStepView${i}`);
         const pill = $(`onbStepPill${i}`);
         const line = $(`onbStepLine${i}`);
+        const dash = $(`onbDash${i}`);
         if (view) view.classList.toggle('active', i === step);
         if (pill) pill.classList.toggle('active', i === step);
         if (line) line.classList.toggle('done', i < step);
+        if (dash) dash.classList.toggle('active', i <= step);
+      }
+
+      // Toggle top back button visibility (hide on step 1)
+      const topBackBtn = $('onbTopBackBtn');
+      if (topBackBtn) {
+        topBackBtn.style.visibility = step > 1 ? 'visible' : 'hidden';
       }
 
       if (step === 4) {
         const pName = $('ticketPassengerName');
         const pPersona = $('ticketPersonaName');
-        if (pName) pName.textContent = this.onbUsername || 'Captain Sky';
+        const pAvatar = $('ticketAvatarImg');
+        if (pName) pName.textContent = this.onbUsername || 'Nook';
         if (pPersona) pPersona.textContent = this.onbPersona === 'bkk' ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
+        if (pAvatar) pAvatar.src = this.onbPersona === 'bkk' ? 'assets/ui/avatar_wolf_boy.png' : 'assets/ui/avatar_dragon_girl.png';
         Sound.claim();
       }
     }
@@ -622,6 +632,37 @@
         });
       }
 
+      const onbContinueSoloBtn = $('onbContinueSoloBtn');
+      if (onbContinueSoloBtn) {
+        onbContinueSoloBtn.addEventListener('click', () => {
+          Sound.tap();
+          this.onbIsPair = false;
+          this.setOnbStep(4);
+        });
+      }
+
+      const onbTopBackBtn = $('onbTopBackBtn');
+      if (onbTopBackBtn) {
+        onbTopBackBtn.addEventListener('click', () => {
+          Sound.tap();
+          if (this.onbStep > 1) {
+            this.setOnbStep(this.onbStep - 1);
+          } else {
+            this.closeOnboarding();
+          }
+        });
+      }
+
+      const onbTogglePwBtn = $('onbTogglePwBtn');
+      if (onbTogglePwBtn) {
+        onbTogglePwBtn.addEventListener('click', () => {
+          const pw = $('onbPasswordInput');
+          if (pw) {
+            pw.type = pw.type === 'password' ? 'text' : 'password';
+          }
+        });
+      }
+
       if (onbBackBtn3) {
         onbBackBtn3.addEventListener('click', () => {
           Sound.tap();
@@ -714,7 +755,7 @@
       const couple = window.SkySupabase.coupleStatus;
       const friends = window.SkySupabase.friends || [];
       const isBoy = currentBase === 'bkk';
-      const myAvatarSrc = isBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen.png';
+      const myAvatarSrc = isBoy ? 'assets/ui/avatar_wolf_boy.png' : 'assets/ui/avatar_dragon_girl.png';
 
       // 1. Top Header Profile Chip
       const headerAvatarImg = $('headerProfileAvatarImg');
@@ -736,18 +777,32 @@
       if (this.passportAvatarImg) this.passportAvatarImg.src = myAvatarSrc;
       if (this.passportUsername) this.passportUsername.textContent = user ? (user.username || 'Passenger') : 'Passenger';
       if (this.passportIdBadge) {
-        const idShort = user && user.id ? user.id.slice(-4).toUpperCase() : '7789';
-        this.passportIdBadge.textContent = `ID: #SKY-${idShort} · VIP TIER 1`;
+        const idShort = user && user.id ? user.id.slice(-4).toUpperCase() : '6619';
+        this.passportIdBadge.textContent = `ID: #SKY-${idShort} • VIP TIER 1`;
       }
       if (this.passportDiamonds) this.passportDiamonds.textContent = (user?.diamonds || 5000).toLocaleString();
-      if (this.passportPersonaTag) this.passportPersonaTag.textContent = isBoy ? '🐺 Wolf Boy' : '🐉 Dragon Girl';
+      if (this.passportPersonaTag) this.passportPersonaTag.textContent = isBoy ? '🐾 Wolf Boy' : '🐉 Dragon Girl';
       if (this.passportCoupleTag) {
         this.passportCoupleTag.textContent = couple && couple.isCouple ? `💞 Linked (${couple.partner?.username || 'Partner'})` : 'Single Traveler';
       }
 
       // Persona Base Switcher Cards
-      if (this.personaCardBkk) this.personaCardBkk.classList.toggle('active', isBoy);
-      if (this.personaCardDxb) this.personaCardDxb.classList.toggle('active', !isBoy);
+      if (this.personaCardBkk) {
+        this.personaCardBkk.classList.toggle('active', isBoy);
+        const b = this.personaCardBkk.querySelector('.persona-badge-circle');
+        if (b) {
+          b.className = isBoy ? 'persona-badge-circle checkmark' : 'persona-badge-circle radio';
+          b.textContent = isBoy ? '✓' : '';
+        }
+      }
+      if (this.personaCardDxb) {
+        this.personaCardDxb.classList.toggle('active', !isBoy);
+        const b = this.personaCardDxb.querySelector('.persona-badge-circle');
+        if (b) {
+          b.className = !isBoy ? 'persona-badge-circle checkmark' : 'persona-badge-circle radio';
+          b.textContent = !isBoy ? '✓' : '';
+        }
+      }
       if (this.personaPillBkk) this.personaPillBkk.textContent = isBoy ? '✓ ACTIVE' : 'SELECT';
       if (this.personaPillDxb) this.personaPillDxb.textContent = !isBoy ? '✓ ACTIVE' : 'SELECT';
 

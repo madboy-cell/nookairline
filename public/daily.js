@@ -228,15 +228,28 @@
     el.setAttribute('aria-hidden', 'true');
     el.innerHTML = `
       <div class="dly-backdrop" data-d="close"></div>
-      <section class="dly-panel" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
+      <section class="dly-panel profile-panel" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
         <div class="dly-panel-embers">${embers(14)}</div>
-        <header class="dly-head">
-          <div class="dly-head-text">
-            <h2 id="dailyTitle">Daily Flight Log</h2>
-            <small id="dailyReset">New quests in —</small>
+
+        <!-- Luxury Sunset Window Backdrop Header with Aviator Bunny on Sill -->
+        <div class="modal-window-backdrop flightlog-window-bg" style="background-image: url('assets/ui/header_window_flightlog.png');">
+          <img src="assets/ui/aviator_bunny_fade.png" alt="Aviator Bunny" class="modal-aviator-bunny-sill" onerror="this.src='assets/ui/aviator_bunny.png'">
+        </div>
+
+        <!-- Top Navigation / Brand Bar -->
+        <header class="dly-head modal-brand-head">
+          <div class="modal-neora-brand-wrap">
+            <img src="assets/ui/neora_logo_transparent.png" alt="NEORA — PLAY TOGETHER, STAY CLOSE." class="modal-neora-logo" onerror="this.src='assets/ui/extracted_neora_logo.png'">
           </div>
-          <button class="dly-close" data-d="close" id="dailyCloseBtn" aria-label="Close">✕</button>
+          <button class="dly-close round-close-btn" data-d="close" id="dailyCloseBtn" aria-label="Close">✕</button>
         </header>
+
+        <!-- Title Banner -->
+        <div class="modal-title-banner">
+          <h2 id="dailyTitle">Daily <span class="accent-magenta">Flight Log</span></h2>
+          <small id="dailyReset">New quests in 41m</small>
+        </div>
+
         <div class="dly-body" id="dailyBody"></div>
       </section>`;
     document.body.appendChild(el);
@@ -263,9 +276,9 @@
       let inner = '';
       if (!sv.isPair) {
         if (isToday) {
-          inner = sv.meIn ? '<span style="font-size:13px;color:#fdba74;font-weight:900;">✓</span>' : '';
+          inner = sv.meIn ? '<span class="day-check-mark">✓</span>' : '<span class="day-gift-box">🎁</span>';
         } else if (done) {
-          inner = '<span style="font-size:13px;color:#fdba74;font-weight:900;">✓</span>';
+          inner = '<span class="day-check-mark">✓</span>';
         }
       } else {
         if (isToday && !done) {
@@ -276,9 +289,9 @@
       }
       const isDone = !sv.isPair ? (isToday ? sv.meIn : done) : done;
       h += `
-        <div class="dly-day ${isDone ? 'done' : ''} ${isToday ? 'today' : ''}" style="--i:${6 - i}">
-          <div class="dly-day-dot">${inner}</div>
-          <small>${isToday ? 'Today' : wd}</small>
+        <div class="dly-day ${isDone ? 'done' : ''} ${isToday ? 'today today-active' : ''}" style="--i:${6 - i}">
+          <div class="dly-day-dot ${isToday ? 'today-dot' : ''}">${inner}</div>
+          <small class="${isToday ? 'today-text-accent' : ''}">${isToday ? 'Today' : wd}</small>
         </div>`;
     }
     return h;
@@ -288,44 +301,48 @@
     const mine = myRole().toUpperCase();
     const status = sv.meIn
       ? `<b class="ok">✨ Checked in for today!</b> Daily flight attendance bonus active (+20💎).`
-      : `Board today to collect your daily flight attendance +20💎!`;
+      : `Board today to collect your daily flight attendance +20💎`;
 
     return `
-      <article class="dly-card dly-streak dly-solo-streak st-${sv.risk}" id="dailyStreakCard">
-        <div class="dly-streak-top">
-          <div class="dly-streak-fire">
-            ${fireHtml('lg', sv.meIn ? 'lit' : 'dim')}
-            <span class="dly-streak-num" id="dailyStreakNum">${sv.meIn ? 1 : 0}</span>
+      <!-- CARD 1: Solo Flight Attendance -->
+      <article class="dly-card dly-streak dly-solo-attendance-card st-${sv.risk}" id="dailyStreakCard">
+        <div class="dly-solo-attendance-top">
+          <div class="dly-plane-ring-icon">
+            <div class="dly-plane-ring-arc"></div>
+            <div class="dly-plane-glyph">✈️</div>
           </div>
           <div class="dly-streak-info">
-            <span class="dly-kicker">✈️ Solo Flight Attendance</span>
+            <span class="dly-kicker kicker-cyan">✈️ SOLO FLIGHT ATTENDANCE</span>
             <h3>${sv.meIn ? 'Checked in today! ✨' : 'Daily Flight Check-in'}</h3>
             <div class="dly-streak-meta">
               <span>Attendance: <b>${sv.meIn ? 'Day 1 (Active)' : 'Pending Check-in'}</b></span>
-              <span class="dly-solo-tag">Solo Passenger</span>
+              <span class="dly-solo-tag">👤 Solo Passenger</span>
             </div>
           </div>
         </div>
         <div class="dly-week">${weekTrack(sv)}</div>
-        <div class="dly-checkins">
-          <span class="dly-who ${sv.meIn ? 'in' : ''}"><i></i>${mine} ${sv.meIn ? 'checked in' : 'pending'}</span>
-          <span class="dly-who unlinked"><i></i>Co-pilot: Unlinked</span>
+        <div class="dly-checkins-pills">
+          <span class="dly-status-pill ${sv.meIn ? 'in' : 'pending'}"><i class="status-dot"></i>${mine} ${sv.meIn ? 'checked in' : 'pending'}</span>
+          <span class="dly-status-pill unlinked"><i class="status-dot unlinked"></i>🔗 Co-pilot: Unlinked</span>
         </div>
-        <p class="dly-status">${status}</p>
+        <p class="dly-status-sub">${status}</p>
+      </article>
 
-        <!-- Couple Streak Locked Banner -->
-        <div class="dly-couple-lock-banner">
-          <div class="dly-cl-head">
-            <span class="dly-cl-icon">🔥🔒</span>
-            <div class="dly-cl-text">
-              <b>Couple Streak & Shared Chests Locked</b>
-              <p>Link with a partner in Couple Sanctuary to unlock shared 2-player flames, weekly milestone chests (+150💎), and 30-day jackpot bonuses (+500💎)!</p>
-            </div>
+      <!-- CARD 2: Couple Streak Locked Banner with Graphic -->
+      <article class="dly-card dly-couple-locked-card" id="dailyCoupleLockCard">
+        <span class="dly-kicker kicker-magenta">🤍 Couple Streak & Shared Chests Locked</span>
+        <div class="dly-couple-locked-body">
+          <div class="dly-cl-text">
+            <h3>Link with a partner in Couple Sanctuary</h3>
+            <p>Unlock shared 2-player frames, weekly milestone chests (+150💎), and 30-day jackpot bonuses (+500💎)!</p>
           </div>
-          <button type="button" class="dly-open-sanctuary-btn" data-d="open-sanctuary" id="dlyOpenSanctuaryFromStreak">
-            <span>Link Partner in Couple Sanctuary 💞</span>
-          </button>
+          <div class="dly-cl-art">
+            <img src="assets/ui/couple_bunnies_fade.png" alt="Couple Bunnies" class="dly-couple-bunnies-art" onerror="this.src='assets/ui/couple_bunnies.png'">
+          </div>
         </div>
+        <button type="button" class="dly-open-sanctuary-btn pill-btn full-width" data-d="open-sanctuary" id="dlyOpenSanctuaryFromStreak">
+          <span>Link Partner in Couple Sanctuary</span> &gt;
+        </button>
       </article>`;
   }
 
@@ -382,21 +399,24 @@
 
   function soloCallCard() {
     return `
-      <article class="dly-card dly-call dly-call-locked" id="dailyCallCard">
-        <div class="dly-ring locked">
-          <svg viewBox="0 0 80 80" aria-hidden="true">
-            <circle class="trk" cx="40" cy="40" r="34"></circle>
-          </svg>
-          <div class="dly-ring-mid"><b style="font-size:22px;">🔒</b><small>Couple</small></div>
+      <!-- CARD 3: Together Time 1:1 Calls Gated Card -->
+      <article class="dly-card dly-call dly-call-gated-card" id="dailyCallCard">
+        <span class="dly-kicker kicker-amber">🔒 Together Time (Couple Only)</span>
+        <div class="dly-gated-call-row">
+          <div class="dly-gated-camera-circle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M23 7l-7 5 7 5V7z"></path>
+              <rect x="1" y="5" width="15" height="14" rx="3" ry="3"></rect>
+            </svg>
+          </div>
+          <div class="dly-gated-call-text">
+            <h3>1:1 Calls Gated for Couples</h3>
+            <p>Private encrypted voice & video calls and call-time diamond rewards are exclusive to linked partners in Couple Sanctuary.</p>
+          </div>
         </div>
-        <div class="dly-call-info">
-          <span class="dly-kicker" style="color:var(--dly-dim);">🔒 Together Time (Couple Only)</span>
-          <h3>1:1 Calls Gated for Couples</h3>
-          <p>Private encrypted voice & video calls and call-time diamond rewards are exclusive to linked partners in Couple Sanctuary.</p>
-          <button type="button" class="dly-open-sanctuary-btn-sm" data-d="open-sanctuary" id="dlyCallSanctuaryBtn">
-            <span>Link Partner to Unlock 💞</span>
-          </button>
-        </div>
+        <button type="button" class="dly-gated-unlock-btn pill-btn full-width" data-d="open-sanctuary" id="dlyCallSanctuaryBtn">
+          <span>Link Partner to Unlock 💓</span> &gt;
+        </button>
       </article>`;
   }
 

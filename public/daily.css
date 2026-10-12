@@ -924,3 +924,239 @@
   transform: scale(0.97);
 }
 
+/* =============================================================================
+   Daily Flight Log — Exact Mockup Design (Image 1 Right Screen)
+   ============================================================================= */
+.flightlog-window-bg {
+  width: 250px;
+  height: 200px;
+}
+
+.modal-aviator-bunny-sill {
+  position: absolute;
+  top: 55px;
+  right: 14px;
+  width: 78px;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  z-index: 2;
+}
+
+/* Card 1: Solo Flight Attendance */
+.dly-solo-attendance-card {
+  background: rgba(28, 18, 50, 0.75) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  padding: 16px !important;
+}
+
+.dly-solo-attendance-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dly-plane-ring-icon {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3b1d60 0%, #1a0e30 100%);
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.dly-plane-glyph {
+  font-size: 22px;
+  color: #fff;
+  transform: rotate(-10deg);
+}
+
+.dly-solo-tag {
+  font: 800 10px/1 'Outfit', sans-serif;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.dly-day.today-active .today-dot {
+  border-style: solid;
+  border-color: #ec4899;
+  background: rgba(236, 72, 153, 0.2);
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.6);
+}
+
+.day-gift-box {
+  font-size: 14px;
+  animation: dlyPulseGift 1.8s ease-in-out infinite;
+}
+
+@keyframes dlyPulseGift {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.day-check-mark {
+  font-size: 14px;
+  font-weight: 900;
+  color: #34d399;
+}
+
+.today-text-accent {
+  color: #f472b6 !important;
+  font-weight: 800 !important;
+}
+
+.dly-checkins-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dly-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.status-dot.unlinked {
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+.dly-status-sub {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: rgba(226, 218, 245, 0.7);
+  line-height: 1.4;
+}
+
+/* Card 2: Couple Streak Locked Banner with Graphic */
+.dly-couple-locked-card {
+  background: rgba(28, 18, 50, 0.75) !important;
+  border: 1px solid rgba(236, 72, 153, 0.3) !important;
+  border-radius: 22px !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.dly-couple-locked-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 0 12px;
+}
+
+.dly-cl-text h3 {
+  font: 800 15px 'Outfit', sans-serif;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.dly-cl-text p {
+  font-size: 11.5px;
+  color: rgba(226, 218, 245, 0.7);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dly-cl-art {
+  width: 80px;
+  height: auto;
+  flex: none;
+}
+
+.dly-couple-bunnies-art {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(236, 72, 153, 0.45));
+}
+
+/* Card 3: Together Time 1:1 Calls Gated Card */
+.dly-call-gated-card {
+  background: rgba(28, 18, 50, 0.75) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  border-radius: 22px !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.dly-gated-call-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 14px;
+}
+
+.dly-gated-camera-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex: none;
+}
+
+.dly-gated-call-text h3 {
+  font: 800 15px 'Outfit', sans-serif;
+  color: #fff;
+  margin: 0 0 3px;
+}
+
+.dly-gated-call-text p {
+  font-size: 11.5px;
+  color: rgba(226, 218, 245, 0.7);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dly-gated-unlock-btn {
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.12);
+  border: 1.5px solid rgba(236, 72, 153, 0.5);
+  color: #f472b6;
+  font: 800 13px 'Outfit', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.dly-gated-unlock-btn:hover {
+  background: rgba(236, 72, 153, 0.22);
+  border-color: #ec4899;
+  transform: translateY(-1px);
+}
+
