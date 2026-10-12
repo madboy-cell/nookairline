@@ -65,6 +65,20 @@
 
   function owns(role, id) {
     if (!C.BY_ID[id]) return true; // classic outfits are free
+
+    // 1. Cloud-First: Always check current Supabase authenticated user's inventory
+    if (window.SkySupabase && window.SkySupabase.currentUser) {
+      const cloudInv = window.SkySupabase.currentUser.inventory;
+      if (Array.isArray(cloudInv) && cloudInv.includes(id)) return true;
+    }
+
+    // 2. Local storage backup check
+    try {
+      const localProfile = JSON.parse(localStorage.getItem('sky_user_profile') || '{}');
+      if (Array.isArray(localProfile.inventory) && localProfile.inventory.includes(id)) return true;
+    } catch (_) {}
+
+    // 3. In-memory / server profiles check
     const p = S.profiles && S.profiles[role];
     if (p && p.owned && p.owned[id] > 0) return true;
     const term = window.myTerminal || 'bkk';
@@ -79,7 +93,9 @@
   }
   function copies(role, id) {
     const p = S.profiles && S.profiles[role];
-    return (p && p.owned && p.owned[id]) || 0;
+    let count = (p && p.owned && p.owned[id]) || 0;
+    if (count === 0 && owns(role, id)) count = 1;
+    return count;
   }
   function bestOf(results) {
     return results.reduce((a, b) => (RANK[b.rarity] > RANK[a.rarity] ? b : a), results[0]);
@@ -428,8 +444,17 @@
     S.open = true;
     const sheet = $('vaultSheet');
     sheet.classList.add('open');
-    sheet.setAttribute('aria-hidden', 'false');
-    send({ type: 'vault_hello' });
+    const cloudInv = (window.SkySupabase && window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
+      ? window.SkySupabase.currentUser.inventory
+      : [];
+    const cu = window.SkySupabase && window.SkySupabase.currentUser;
+    send({
+      type: 'vault_hello',
+      terminal: myRole(),
+      inventory: cloudInv,
+      diamonds: cu?.diamonds,
+      stardust: cu?.stardust
+    });
     warmImages();
     render();
   }
@@ -2399,6 +2424,26 @@
   function setProfiles(profiles) {
     if (!profiles || !profiles.bkk || !profiles.dxb) return;
     S.profiles = profiles;
+
+    // 🔥 CRITICAL: Cloud Hydration Guard
+    // Merge cloud Supabase inventory into local S.profiles[myRole()].owned so server restarts NEVER wipe player wardrobe!
+    try {
+      const role = myRole();
+      if (S.profiles[role]) {
+        if (!S.profiles[role].owned) S.profiles[role].owned = {};
+        const cloudInv = (window.SkySupabase && window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
+          ? window.SkySupabase.currentUser.inventory
+          : [];
+        cloudInv.forEach((costumeId) => {
+          if (!S.profiles[role].owned[costumeId] || S.profiles[role].owned[costumeId] < 1) {
+            S.profiles[role].owned[costumeId] = 1;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('[Vault] Cloud hydration error:', e);
+    }
+
     updatePills();
     syncEquipped();
     if (S.open && !S.pulling) render();
@@ -2424,7 +2469,17 @@
         if (typeof p.diamonds === 'number') updates.diamonds = p.diamonds;
         if (typeof p.stardust === 'number') updates.stardust = p.stardust;
         if (p.pityByBanner) updates.pity = p.pityByBanner;
-        if (p.owned) updates.inventory = Object.keys(p.owned);
+        
+        // 🔥 CRITICAL FIX: NEVER blind-overwrite inventory with an empty or diminished set!
+        // Always UNION existing Supabase inventory with newly owned costumes:
+        const currentCloud = (window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
+          ? window.SkySupabase.currentUser.inventory
+          : [];
+        const localOwned = p.owned ? Object.keys(p.owned) : [];
+        const mergedInventory = Array.from(new Set([...currentCloud, ...localOwned]));
+        if (mergedInventory.length > 0) {
+          updates.inventory = mergedInventory;
+        }
         window.SkySupabase.updateProfile(updates);
       }
     } catch (_) {}
@@ -2437,7 +2492,17 @@
         if (msg.award) onAward(msg.award);
         break;
       case 'vault_pull_result': {
-        if (msg.profiles) { S.profiles = msg.profiles; updatePills(); }
+        if (msg.profiles) { setProfiles(msg.profiles); }
+        if (msg.results && Array.isArray(msg.results)) {
+          const pulledIds = msg.results.map(r => r.id).filter(Boolean);
+          if (pulledIds.length > 0 && window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+            const currentCloud = (window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
+              ? window.SkySupabase.currentUser.inventory
+              : [];
+            const mergedInventory = Array.from(new Set([...currentCloud, ...pulledIds]));
+            window.SkySupabase.updateProfile({ inventory: mergedInventory });
+          }
+        }
         if (S.pending && msg.reqId === S.pending.reqId) {
           S.pending = null;
           clearTimeout(S.pendingTimer);
@@ -2587,6 +2652,27 @@
     window.addEventListener('sky:character_base_changed', () => {
       updateVaultBaseSwitcher();
       if (S.open) render();
+    });
+    window.addEventListener('sky:auth_state_changed', (e) => {
+      const u = e.detail?.user;
+      if (u && Array.isArray(u.inventory)) {
+        const r = myRole();
+        if (S.profiles && S.profiles[r]) {
+          if (!S.profiles[r].owned) S.profiles[r].owned = {};
+          u.inventory.forEach((id) => {
+            if (!S.profiles[r].owned[id]) S.profiles[r].owned[id] = 1;
+          });
+        }
+        send({
+          type: 'vault_sync_cloud',
+          terminal: r,
+          inventory: u.inventory,
+          diamonds: u.diamonds,
+          stardust: u.stardust
+        });
+        updatePills();
+        if (S.open) render();
+      }
     });
     window.addEventListener('sky:couple_status_changed', () => {
       updatePills();

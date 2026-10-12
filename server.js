@@ -603,10 +603,33 @@ function handleVaultMessage(ws, message) {
   }
   switch (message.type) {
     case 'vault_hello':
+    case 'vault_sync_cloud': {
       daily.checkIn(role);
       monoBot.checkSessionExpiry(role);
+      let changed = false;
+      if (Array.isArray(message.inventory)) {
+        if (!vault[role].owned) vault[role].owned = {};
+        message.inventory.forEach((id) => {
+          if (!vault[role].owned[id]) {
+            vault[role].owned[id] = 1;
+            changed = true;
+          }
+        });
+      }
+      if (typeof message.diamonds === 'number' && message.diamonds > vault[role].diamonds) {
+        vault[role].diamonds = message.diamonds;
+        changed = true;
+      }
+      if (typeof message.stardust === 'number' && message.stardust > vault[role].stardust) {
+        vault[role].stardust = message.stardust;
+        changed = true;
+      }
+      if (changed) {
+        persistVault();
+      }
       sendTo(ws, { type: 'vault_profiles', profiles: publicProfiles() });
       break;
+    }
     case 'vault_pull': {
       const useTicket = !!message.useTicket;
       const count = useTicket ? 1 : (message.count === 10 ? 10 : 1);
