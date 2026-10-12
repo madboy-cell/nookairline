@@ -743,24 +743,84 @@
       </div>
     </div>
 
-    <!-- Cabin Scenery & Atmosphere Modal -->
-    <div class="scenery-modal" id="sceneryModal">
-      <div class="scenery-card">
-        <div class="scenery-header">
-          <div class="scenery-title">
-            <span>🌄</span>
-            <span>Flight Scenery & Atmosphere</span>
+    <!-- Cabin Scenery & Atmosphere Modal (Exact Neora Mockup) -->
+    <div class="scenery-modal hidden" id="sceneryModal" aria-hidden="true">
+      <div class="scenery-card-backdrop" id="sceneryCardBackdrop"></div>
+      <div class="scenery-card" role="dialog" aria-modal="true" aria-labelledby="sceneryModalTitle">
+        <!-- Top Header: Iridescent Neora Logo + Close Button -->
+        <header class="scenery-header">
+          <div class="scenery-brand">
+            <img src="assets/ui/neora_logo_transparent.png" alt="NEORA" class="scenery-neora-logo" onerror="this.src='assets/ui/neora_logo.png'">
           </div>
           <button class="scenery-close-btn" id="closeSceneryBtn" aria-label="Close Scenery">✕</button>
-        </div>
-        
-        <p class="scenery-lead">Customize your cabin window view and ambient lighting. Any change is instantly synchronized for both passengers!</p>
+        </header>
 
-        <div class="scenery-grid" id="sceneryGrid"></div>
+        <!-- Segmented Filter Pills: Scenery vs From Season -->
+        <nav class="scenery-segmented-tabs" aria-label="Scenery Categories">
+          <button type="button" class="scenery-tab-pill active" id="sceneryTabPillScenery" data-tab="scenery">
+            <span class="pill-icon">🖼️</span> Scenery
+          </button>
+          <button type="button" class="scenery-tab-pill" id="sceneryTabPillSeason" data-tab="season">
+            <span class="pill-icon">👗</span> From Season
+          </button>
+        </nav>
 
-        <div class="scenery-footer">
-          <button class="scenery-save-btn" id="saveSceneryBtn">Apply Scenery ✨</button>
+        <!-- Large Feature Hero Preview Window in Luxury Cabin -->
+        <div class="scenery-hero-card" id="sceneryHeroCard">
+          <div class="scenery-hero-window-wrap">
+            <!-- Scenery image placed behind cabin frame window opening -->
+            <img class="scenery-hero-bg-img" id="sceneryHeroPreviewImg" src="assets/scenes/winterfell_thumb.jpg" alt="Cabin Scenery Preview">
+            <!-- Luxury Cabin foreground frame with sofa, lantern, and Aviator Bunny -->
+            <img class="scenery-hero-frame-img" src="assets/ui/scenery_cabin_hero_frame.png" alt="Cabin Interior Frame">
+            <!-- Preview in Cabin pill badge -->
+            <div class="cabin-preview-badge">
+              <span class="preview-eye-icon">👁️</span> Preview in Cabin
+            </div>
+          </div>
         </div>
+
+        <!-- Scrollable Content Body with Two Distinct Sections -->
+        <div class="scenery-scroll-body" id="sceneryScrollBody">
+          <!-- Section 1: Worldwide Flight Scenery -->
+          <section class="scenery-section" id="scenerySectionScenery">
+            <div class="scenery-section-header">
+              <div class="section-title-wrap">
+                <span class="section-icon">🖼️</span>
+                <span class="section-title">Scenery</span>
+              </div>
+              <div class="section-divider-line"></div>
+              <span class="section-count-badge" id="sceneryCountBadge">16</span>
+            </div>
+
+            <div class="scenery-grid" id="sceneryGrid">
+              <!-- Dynamically injected by renderSceneryGrid() -->
+            </div>
+          </section>
+
+          <!-- Section 2: Scenery From Season -->
+          <section class="scenery-section" id="scenerySectionSeason">
+            <div class="scenery-section-header">
+              <div class="section-title-wrap">
+                <span class="section-icon">👗</span>
+                <span class="section-title">From Season</span>
+              </div>
+              <div class="section-divider-line"></div>
+              <span class="section-count-badge" id="seasonCountBadge">11</span>
+            </div>
+
+            <div class="season-scenery-scroll-row" id="seasonSceneryRow">
+              <!-- Dynamically injected by renderSeasonSceneryRow() -->
+            </div>
+          </section>
+        </div>
+
+        <!-- Floating Sticky Bottom Apply CTA -->
+        <footer class="scenery-footer">
+          <button class="scenery-save-btn pill-btn full-width" id="saveSceneryBtn">
+            <span class="btn-icon">🖼️</span>
+            <span>Apply Scenery</span> ✨
+          </button>
+        </footer>
       </div>
     </div>
 

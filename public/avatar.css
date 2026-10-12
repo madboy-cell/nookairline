@@ -1015,22 +1015,22 @@
 }
 
 /* =========================================================
-   SCENERY & CABIN ATMOSPHERE MODAL
+   SCENERY & CABIN ATMOSPHERE MODAL (NEORA STYLE)
    ========================================================= */
 .scenery-modal {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 50;
-  background: rgba(7, 9, 14, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  z-index: 10000;
+  background: rgba(6, 4, 15, 0.78);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .scenery-modal.active {
@@ -1038,214 +1038,480 @@
   pointer-events: auto;
 }
 
+.scenery-card-backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
 .scenery-card {
-  width: min(100%, 560px);
-  max-height: 88vh;
-  overflow-y: auto;
-  background: #111728;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);
+  position: relative;
+  width: min(94vw, 580px);
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
+  background: radial-gradient(circle at 50% 0%, #1f143a 0%, #0e0a22 45%, #070514 100%);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), 0 0 40px rgba(147, 51, 234, 0.15);
+  overflow: hidden;
+  z-index: 2;
+  animation: sceneryCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sceneryCardPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .scenery-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 12px;
+  padding: 16px 20px 10px;
+  flex-shrink: 0;
 }
 
-.scenery-title {
-  font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
+.scenery-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+}
+
+.scenery-neora-logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .scenery-close-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: var(--text-muted);
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
+  background: rgba(30, 36, 68, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .scenery-close-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ff6b6b;
+  transform: scale(1.05);
 }
 
-.scenery-lead {
-  padding: 0 24px 14px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.45;
-  margin: 0;
+.scenery-segmented-tabs {
+  display: flex;
+  gap: 10px;
+  padding: 4px 20px 12px;
+  flex-shrink: 0;
+}
+
+.scenery-tab-pill {
+  flex: 1;
+  height: 38px;
+  border-radius: 999px;
+  font-family: var(--font-heading, inherit);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(23, 26, 52, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  color: #8b99bd;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scenery-tab-pill:hover:not(.active) {
+  background: rgba(38, 42, 80, 0.75);
+  color: #e2e8f0;
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.scenery-tab-pill.active {
+  background: linear-gradient(90deg, #4f78fa 0%, #7656eb 50%, #9036d6 100%);
+  border: 1px solid rgba(192, 132, 252, 0.5);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(118, 86, 235, 0.45);
+}
+
+.scenery-tab-pill .pill-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.scenery-hero-card {
+  padding: 0 20px 12px;
+  flex-shrink: 0;
+}
+
+.scenery-hero-window-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 642 / 240;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #06040b;
+  border: 1.5px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
+}
+
+.scenery-hero-bg-img {
+  position: absolute;
+  top: 6%;
+  left: 26%;
+  width: 48%;
+  height: 63%;
+  object-fit: cover;
+  border-radius: 40px;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.scenery-hero-frame-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cabin-preview-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  z-index: 3;
+  background: rgba(14, 10, 28, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.cabin-preview-badge .preview-eye-icon {
+  font-size: 12px;
+}
+
+.scenery-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
+}
+
+.scenery-scroll-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scenery-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.35);
+  border-radius: 999px;
+}
+
+.scenery-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scenery-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.section-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.section-title {
+  font-family: var(--font-heading, inherit);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.section-count-badge {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #7b88aa;
+  flex-shrink: 0;
 }
 
 .scenery-grid {
-  padding: 4px 24px 20px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  max-height: 480px;
-  overflow-y: auto;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0;
+  max-height: none;
+  overflow: visible;
 }
 
 .scenery-option-item {
   position: relative;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: #0d1224;
+  aspect-ratio: 16 / 10;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  text-align: left;
+  padding: 0;
 }
 
 .scenery-option-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(56, 189, 248, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(236, 72, 153, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 .scenery-option-item.selected {
-  background: rgba(56, 189, 248, 0.12);
-  border-color: #38bdf8;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.25);
+  border: 2px solid #ea52a8;
+  box-shadow: 0 0 16px rgba(234, 82, 168, 0.7), inset 0 0 10px rgba(234, 82, 168, 0.3);
 }
 
 .scenery-thumb-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 12px;
+  height: 100%;
+  border-radius: 10px;
   overflow: hidden;
-  background: #090d16;
 }
 
 .scenery-thumb-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: pixelated;
+  display: block;
   transition: transform 0.3s ease;
 }
 
 .scenery-option-item:hover .scenery-thumb-img {
-  transform: scale(1.04);
-}
-
-.scenery-badge-tag {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(14, 20, 36, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
+  transform: scale(1.05);
 }
 
 .scenery-check-badge {
   position: absolute;
   top: 6px;
   left: 6px;
-  width: 22px;
-  height: 22px;
-  background: #38bdf8;
-  color: #07090e;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
+  background: linear-gradient(135deg, #d946ef 0%, #ec4899 100%);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
 }
 
-.scenery-option-item.selected .scenery-check-badge {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.scenery-info {
+.scenery-item-scrim {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 6px 6px;
+  background: linear-gradient(to top, rgba(8, 12, 26, 0.95) 0%, rgba(8, 12, 26, 0.6) 60%, transparent 100%);
+  z-index: 2;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
 }
 
 .scenery-item-name {
-  font-family: var(--font-heading);
-  font-size: 13px;
+  font-family: var(--font-heading, inherit);
+  font-size: 11px;
   font-weight: 700;
-  color: #fff;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  max-width: 100%;
+  letter-spacing: 0.1px;
 }
 
-.scenery-item-sub {
-  font-size: 11px;
-  color: #94a3b8;
+.season-scenery-scroll-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(236, 72, 153, 0.4) transparent;
 }
 
-.scenery-item-mood {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.35;
-  margin-top: 2px;
+.season-scenery-scroll-row::-webkit-scrollbar {
+  height: 5px;
+}
+
+.season-scenery-scroll-row::-webkit-scrollbar-thumb {
+  background: rgba(236, 72, 153, 0.35);
+  border-radius: 999px;
+}
+
+.season-scenery-item {
+  flex: 0 0 110px;
+  aspect-ratio: 3 / 4.4;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: #0d1224;
+  scroll-snap-align: start;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.season-scenery-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(236, 72, 153, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.season-scenery-item.selected {
+  border: 2px solid #ea52a8;
+  box-shadow: 0 0 16px rgba(234, 82, 168, 0.7), inset 0 0 10px rgba(234, 82, 168, 0.3);
+}
+
+.season-thumb-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.season-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.season-scenery-item:hover .season-thumb-img {
+  transform: scale(1.05);
+}
+
+.season-item-scrim {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 6px 6px;
+  background: linear-gradient(to top, rgba(8, 12, 26, 0.95) 0%, rgba(8, 12, 26, 0.7) 65%, transparent 100%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.season-item-name {
+  font-family: var(--font-heading, inherit);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .scenery-footer {
-  padding: 16px 24px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 20px 18px;
+  background: linear-gradient(to top, rgba(7, 5, 20, 0.95) 0%, rgba(7, 5, 20, 0.75) 60%, transparent 100%);
   display: flex;
-  gap: 12px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .scenery-save-btn {
-  flex: 1;
-  padding: 14px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-  color: #07090e;
-  font-family: var(--font-heading);
-  font-size: 14px;
-  font-weight: 700;
+  width: 100%;
+  height: 48px;
+  border-radius: 999px;
   border: none;
+  font-family: var(--font-heading, inherit);
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #fc75af 0%, #f855e6 30%, #a855f7 65%, #6093fc 100%);
+  box-shadow: 0 4px 20px rgba(248, 85, 230, 0.45), 0 0 14px rgba(96, 147, 252, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .scenery-save-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 8px 28px rgba(248, 85, 230, 0.6), 0 0 18px rgba(96, 147, 252, 0.45);
+  filter: brightness(1.05);
 }
 
 .scenery-save-btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
+}
+
+.scenery-save-btn .btn-icon {
+  font-size: 16px;
 }
 
 /* Responsive Mobile Adjustments */
@@ -1269,19 +1535,36 @@
     gap: 10px;
     padding: 16px;
   }
-  .scenery-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 4px 16px 16px;
+  .scenery-card {
+    width: 96vw;
+    border-radius: 22px;
+    max-height: 94vh;
   }
   .scenery-header {
-    padding: 16px 16px 10px;
+    padding: 14px 16px 8px;
   }
-  .scenery-lead {
-    padding: 0 16px 12px;
-    font-size: 12px;
+  .scenery-neora-logo {
+    height: 38px;
+  }
+  .scenery-segmented-tabs {
+    padding: 2px 16px 10px;
+    gap: 8px;
+  }
+  .scenery-hero-card {
+    padding: 0 16px 10px;
+  }
+  .scenery-scroll-body {
+    padding: 2px 16px 8px;
+    gap: 14px;
+  }
+  .scenery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .season-scenery-item {
+    flex: 0 0 95px;
   }
   .scenery-footer {
-    padding: 12px 16px 18px;
+    padding: 10px 16px 16px;
   }
 }

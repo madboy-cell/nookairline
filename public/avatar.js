@@ -1627,6 +1627,20 @@ function applyCabinScenery(themeId, broadcast = true) {
   }
 }
 
+const SEASON_SCENERIES = [
+  { id: 's11', name: 'S11 · Olympus Thunder', themeId: 'olympus', portrait: 'assets/scenes/s11_olympus_portrait.jpg' },
+  { id: 's10', name: 'S10 · Phantom Masquerade', themeId: 'venice', portrait: 'assets/scenes/s10_venice_portrait.jpg' },
+  { id: 's9',  name: 'S9 · Luxor Terrace', themeId: 'luxor', portrait: 'assets/scenes/s9_luxor_portrait.jpg' },
+  { id: 's8',  name: 'S8 · Glacial Royalty', themeId: 'permafrost', portrait: 'assets/scenes/permafrost_portrait.jpg' },
+  { id: 's7',  name: 'S7 · Enchanted Fairytales', themeId: 'fairytale', portrait: 'assets/scenes/fairytale_portrait.jpg' },
+  { id: 's6',  name: 'S6 · Starlight Odyssey', themeId: 'starlight', portrait: 'assets/scenes/starlight_portrait.jpg' },
+  { id: 's5',  name: 'S5 · Atlantis Abyss', themeId: 'atlantis', portrait: 'assets/scenes/atlantis_portrait.jpg' },
+  { id: 's4',  name: 'S4 · Monte Carlo Casino', themeId: 'montecarlo', portrait: 'assets/scenes/montecarlo_portrait.jpg' },
+  { id: 's3',  name: 'S3 · Dubai Desert', themeId: 'dubai', portrait: 'assets/scenes/dubai_portrait.jpg' },
+  { id: 's2',  name: 'S2 · Tokyo Sakura', themeId: 'kyoto', portrait: 'assets/scenes/kyoto_portrait.jpg' },
+  { id: 's1',  name: 'S1 · Bangkok Nights', themeId: 'classic', portrait: 'assets/scenes/classic_portrait.jpg' }
+];
+
 function previewCabinScenery(themeId) {
   if (!CABIN_SCENERIES[themeId]) return;
   previewSceneryTheme = themeId;
@@ -1636,7 +1650,15 @@ function previewCabinScenery(themeId) {
     Object.keys(CABIN_SCENERIES).forEach(k => lounge.classList.remove(`theme-${k}`));
     lounge.classList.add(`theme-${themeId}`);
   }
+
+  // Update Hero Preview Window behind cabin frame
+  const heroImg = document.getElementById('sceneryHeroPreviewImg');
+  if (heroImg && CABIN_SCENERIES[themeId]) {
+    heroImg.src = CABIN_SCENERIES[themeId].thumb;
+  }
+
   renderSceneryGrid();
+  renderSeasonSceneryRow();
 }
 
 function setupSceneryModal() {
@@ -1644,6 +1666,7 @@ function setupSceneryModal() {
   const closeBtn = document.getElementById('closeSceneryBtn');
   const saveBtn = document.getElementById('saveSceneryBtn');
   const modal = document.getElementById('sceneryModal');
+  const backdrop = document.getElementById('sceneryCardBackdrop');
 
   if (openBtn) {
     openBtn.addEventListener('click', (e) => {
@@ -1654,6 +1677,13 @@ function setupSceneryModal() {
 
   if (closeBtn) {
     closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSceneryModal();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', (e) => {
       e.stopPropagation();
       closeSceneryModal();
     });
@@ -1674,11 +1704,69 @@ function setupSceneryModal() {
       }
     });
   }
+
+  // Segmented tabs: Scenery vs Season
+  const tabScenery = document.getElementById('sceneryTabPillScenery');
+  const tabSeason = document.getElementById('sceneryTabPillSeason');
+  const secScenery = document.getElementById('scenerySectionScenery');
+  const secSeason = document.getElementById('scenerySectionSeason');
+
+  const scrollBody = document.getElementById('sceneryScrollBody');
+
+  if (tabScenery && secScenery) {
+    tabScenery.addEventListener('click', () => {
+      tabScenery.classList.add('active');
+      if (tabSeason) tabSeason.classList.remove('active');
+      secScenery.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  if (tabSeason && secSeason) {
+    tabSeason.addEventListener('click', () => {
+      tabSeason.classList.add('active');
+      if (tabScenery) tabScenery.classList.remove('active');
+      secSeason.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  if (scrollBody && secScenery && secSeason) {
+    scrollBody.addEventListener('scroll', () => {
+      const seasonTop = secSeason.offsetTop - scrollBody.offsetTop;
+      if (scrollBody.scrollTop >= seasonTop - 50) {
+        if (tabSeason) tabSeason.classList.add('active');
+        if (tabScenery) tabScenery.classList.remove('active');
+      } else {
+        if (tabScenery) tabScenery.classList.add('active');
+        if (tabSeason) tabSeason.classList.remove('active');
+      }
+    }, { passive: true });
+  }
 }
 
 function openSceneryModal() {
   previewSceneryTheme = currentSceneryTheme;
+  const heroImg = document.getElementById('sceneryHeroPreviewImg');
+  if (heroImg && CABIN_SCENERIES[currentSceneryTheme]) {
+    heroImg.src = CABIN_SCENERIES[currentSceneryTheme].thumb;
+  }
+
+  const sCount = document.getElementById('sceneryCountBadge');
+  if (sCount) sCount.textContent = Object.keys(CABIN_SCENERIES).length;
+
+  const seaCount = document.getElementById('seasonCountBadge');
+  if (seaCount) seaCount.textContent = SEASON_SCENERIES.length;
+
+  const scrollBody = document.getElementById('sceneryScrollBody');
+  if (scrollBody) scrollBody.scrollTop = 0;
+
+  const tabScenery = document.getElementById('sceneryTabPillScenery');
+  const tabSeason = document.getElementById('sceneryTabPillSeason');
+  if (tabScenery) tabScenery.classList.add('active');
+  if (tabSeason) tabSeason.classList.remove('active');
+
   renderSceneryGrid();
+  renderSeasonSceneryRow();
+
   const modal = document.getElementById('sceneryModal');
   if (modal) {
     modal.classList.remove('hidden');
@@ -1709,17 +1797,15 @@ function renderSceneryGrid() {
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
     item.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    item.dataset.theme = scene.id;
 
     item.innerHTML = `
       <div class="scenery-thumb-wrap">
         <img class="scenery-thumb-img" src="${scene.thumb}" alt="${scene.name}" loading="lazy" />
-        <div class="scenery-badge-tag">${scene.badge}</div>
-        <div class="scenery-check-badge">✓</div>
-      </div>
-      <div class="scenery-info">
-        <div class="scenery-item-name">${scene.name}</div>
-        <div class="scenery-item-sub">${scene.subtitle}</div>
-        <div class="scenery-item-mood">${scene.mood}</div>
+        ${isSelected ? '<div class="scenery-check-badge">✓</div>' : ''}
+        <div class="scenery-item-scrim">
+          <span class="scenery-item-name">${scene.name}</span>
+        </div>
       </div>
     `;
 
@@ -1735,6 +1821,45 @@ function renderSceneryGrid() {
     });
 
     grid.appendChild(item);
+  });
+}
+
+function renderSeasonSceneryRow() {
+  const row = document.getElementById('seasonSceneryRow');
+  if (!row) return;
+
+  row.innerHTML = '';
+  SEASON_SCENERIES.forEach(s => {
+    const isSelected = (s.themeId === previewSceneryTheme);
+    const item = document.createElement('div');
+    item.className = `season-scenery-item ${isSelected ? 'selected' : ''}`;
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    item.dataset.theme = s.themeId;
+
+    item.innerHTML = `
+      <div class="season-thumb-wrap">
+        <img class="season-thumb-img" src="${s.portrait}" alt="${s.name}" loading="lazy" />
+        ${isSelected ? '<div class="scenery-check-badge">✓</div>' : ''}
+        <div class="season-item-scrim">
+          <span class="season-item-name">${s.name}</span>
+        </div>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      previewCabinScenery(s.themeId);
+    });
+
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        previewCabinScenery(s.themeId);
+      }
+    });
+
+    row.appendChild(item);
   });
 }
 
