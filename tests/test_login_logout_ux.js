@@ -50,12 +50,12 @@ function it(desc, fn) {
 async function runAsyncTests() {
   console.log('--- SUITE 1: Initial Guest Passenger State & UX Defaults ---');
 
-  await it('1.1 Fresh passenger starts in Guest Mode with 10,000 diamonds', async () => {
+  await it('1.1 Fresh passenger starts in Guest Mode with 15,000 diamonds', async () => {
     await SkySupabase.init();
     const user = SkySupabase.getCurrentUser();
     assert.strictEqual(SkySupabase.isGuest(), true, 'Should be guest');
     assert.strictEqual(SkySupabase.isLoggedIn(), false, 'Should not be logged in');
-    assert.strictEqual(user.diamonds, 10000, 'Starting diamonds must be 10,000');
+    assert.strictEqual(user.diamonds, 15000, 'Starting diamonds must be 15,000');
     assert.ok(String(user.id).startsWith('guest_'), 'Guest ID should have guest_ prefix');
   });
 
@@ -120,7 +120,7 @@ async function runAsyncTests() {
     // Verify guest state restored
     assert.strictEqual(SkySupabase.isLoggedIn(), false, 'isLoggedIn must be false');
     assert.strictEqual(SkySupabase.isGuest(), true, 'isGuest must be true');
-    assert.strictEqual(SkySupabase.getCurrentUser().diamonds, 10000, 'Guest must have 10,000 diamonds');
+    assert.strictEqual(SkySupabase.getCurrentUser().diamonds, 15000, 'Guest must have 15,000 diamonds');
 
     // Verify couple unlinked
     assert.strictEqual(SkySupabase.coupleStatus.isCouple, false, 'Couple must be reset');

@@ -19,6 +19,7 @@ scratch/
 backup/
 data_backups/
 neora_hud_patch_assets/
+neora_component_asset_breakdown/
 
 # Environment variables
 .env

@@ -1,6 +1,6 @@
 {
   "bkk": {
-    "diamonds": 10000,
+    "diamonds": 15000,
     "stardust": 0,
     "tickets": 0,
     "fish": 0,
@@ -30,7 +30,7 @@
     "envelopes": [],
     "envelopesSent": [],
     "daily": {
-      "day": "2026-10-12",
+      "day": "",
       "quests": [
         {
           "id": "scene1",
@@ -54,7 +54,7 @@
     }
   },
   "dxb": {
-    "diamonds": 10000,
+    "diamonds": 15000,
     "stardust": 0,
     "tickets": 0,
     "fish": 0,
@@ -91,7 +91,7 @@
     "lastDay": "",
     "freezes": 0,
     "checkins": {
-      "bkk": "2026-10-12",
+      "bkk": "",
       "dxb": ""
     },
     "history": []

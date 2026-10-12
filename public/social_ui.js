@@ -945,7 +945,7 @@
       // NEORA Profile Level & Progress
       const headerLevel = $('headerProfileLevel');
       const headerLevelFill = $('headerProfileLevelFill');
-      const diamonds = user?.diamonds || (window.NookVault?.getMyDiamonds ? window.NookVault.getMyDiamonds() : 10000);
+      const diamonds = user?.diamonds || (window.NookVault?.getMyDiamonds ? window.NookVault.getMyDiamonds() : 15000);
       const lvl = Math.max(1, Math.min(99, Math.floor(diamonds / 100) + 1));
       const pct = (diamonds % 100);
       if (headerLevel) headerLevel.textContent = `Lv. ${lvl}`;
@@ -966,7 +966,7 @@
         const idShort = user && user.id ? user.id.slice(-4).toUpperCase() : '6619';
         this.passportIdBadge.textContent = `ID: #SKY-${idShort} • VIP TIER 1`;
       }
-      if (this.passportDiamonds) this.passportDiamonds.textContent = (user?.diamonds || 10000).toLocaleString();
+      if (this.passportDiamonds) this.passportDiamonds.textContent = (user?.diamonds || 15000).toLocaleString();
       if (this.passportPersonaTag) this.passportPersonaTag.textContent = isBoy ? '🐾 Wolf Boy' : '🐉 Dragon Girl';
       if (this.passportCoupleTag) {
         this.passportCoupleTag.textContent = couple && couple.isCouple ? `💞 Linked (${couple.partner?.username || 'Partner'})` : 'Single Traveler';
@@ -1030,7 +1030,7 @@
 
       // 3. Social Drawer User Card
       if (this.usernameEl) this.usernameEl.textContent = user?.username || 'Passenger';
-      if (this.diamondsEl) this.diamondsEl.textContent = (user?.diamonds || 10000).toLocaleString();
+      if (this.diamondsEl) this.diamondsEl.textContent = (user?.diamonds || 15000).toLocaleString();
       if (this.seatChipEl) {
         this.seatChipEl.textContent = couple && couple.isCouple ? 'Flight Couple' : 'Solo Passenger';
       }

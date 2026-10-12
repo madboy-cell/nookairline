@@ -167,7 +167,7 @@
     async init(customConfig = null) {
       // Clean slate check: if client has old storage epoch, purge stale local records
       try {
-        const CURRENT_EPOCH = '2026_10_12_clean_slate';
+        const CURRENT_EPOCH = '2026_10_13_clean_slate_15k';
         const savedEpoch = localStorage.getItem(STORAGE_KEYS.RESET_EPOCH);
         if (savedEpoch !== CURRENT_EPOCH) {
           localStorage.removeItem(STORAGE_KEYS.PROFILE);
@@ -292,7 +292,7 @@
               username: extraMeta.username || user.user_metadata?.username || fallbackName,
               character_base: (personaChoice === 'dxb' ? 'dxb' : 'bkk'),
               equipped_costume: 'pilot',
-              diamonds: 10000,
+              diamonds: 15000,
               stardust: 0,
               inventory: [],
               pity: {}
@@ -445,7 +445,7 @@
       this.currentUser.email = simulatedEmail;
       this.currentUser.auth_provider = provider;
       this.currentUser.isGuest = false;
-      this.currentUser.diamonds = this.currentUser.diamonds || 10000;
+      this.currentUser.diamonds = this.currentUser.diamonds || 15000;
       this.currentUser.updated_at = new Date().toISOString();
       this.localProvider.saveProfile(this.currentUser);
 
@@ -578,7 +578,7 @@
           username: name,
           character_base: defaultBase,
           equipped_costume: 'pilot',
-          diamonds: 10000,
+          diamonds: 15000,
           stardust: 0,
           inventory: [],
           pity: {},
@@ -858,7 +858,7 @@
         success: true,
         diamondsPreserved: true,
         wardrobePreserved: true,
-        diamonds: this.currentUser ? this.currentUser.diamonds : 10000
+        diamonds: this.currentUser ? this.currentUser.diamonds : 15000
       };
     }
 

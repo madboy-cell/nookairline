@@ -16,7 +16,7 @@
   };
 
   const ECONOMY = {
-    WELCOME_GIFT: 10000,
+    WELCOME_GIFT: 15000,
     WIN: 500,
     LOSS: 200,
     PER_VIBE_MATCH: 35,   // Bumped from 10 to 35💎 for dopamine and couple chemistry

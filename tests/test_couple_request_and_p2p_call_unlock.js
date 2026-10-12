@@ -66,7 +66,7 @@ async function itAsync(desc, fn) {
 // Mock Multi-User Client Environment
 // ---------------------------------------------------------------------------
 class MockUserClient {
-  constructor(id, username, character_base, diamonds = 10000) {
+  constructor(id, username, character_base, diamonds = 15000) {
     this.currentUser = {
       id,
       username,
@@ -168,13 +168,13 @@ class SharedCoupleStorage {
 (async () => {
   // SUITE 1: Initialization & Baseline Gating
   console.log('--- SUITE 1: Baseline Unlinked Gating & P2P Call Protection ---');
-  const user1 = new MockUserClient('usr_wolf_001', 'Captain_Wolf', 'bkk', 10000);
-  const user2 = new MockUserClient('usr_dragon_002', 'Princess_Dragon', 'dxb', 10000);
+  const user1 = new MockUserClient('usr_wolf_001', 'Captain_Wolf', 'bkk', 15000);
+  const user2 = new MockUserClient('usr_dragon_002', 'Princess_Dragon', 'dxb', 15000);
   const allUsers = [user1, user2];
   const coupleDB = new SharedCoupleStorage();
 
-  it('1.1 User 1 (Wolf Boy) and User 2 (Dragon Girl) start with 10,000 Diamonds',
-    user1.currentUser.diamonds === 10000 && user2.currentUser.diamonds === 10000
+  it('1.1 User 1 (Wolf Boy) and User 2 (Dragon Girl) start with 15,000 Diamonds',
+    user1.currentUser.diamonds === 15000 && user2.currentUser.diamonds === 15000
   );
 
   it('1.2 User 1 and User 2 checkCoupleCallAllowed() is strictly FALSE before linking',
@@ -317,12 +317,12 @@ class SharedCoupleStorage {
     attemptStartCall(user1).allowed === false && attemptStartCall(user2).allowed === false
   );
 
-  it('6.3 ZERO REGRESSION: User 1 keeps 11,500 diamonds and all inventory intact',
-    user1.currentUser.diamonds === 11500 && user1.currentUser.inventory.length === 1
+  it('6.3 ZERO REGRESSION: User 1 keeps 16,500 diamonds and all inventory intact',
+    user1.currentUser.diamonds === 16500 && user1.currentUser.inventory.length === 1
   );
 
-  it('6.4 ZERO REGRESSION: User 2 keeps 10,000 diamonds and all inventory intact',
-    user2.currentUser.diamonds === 10000 && user2.currentUser.inventory.length === 1
+  it('6.4 ZERO REGRESSION: User 2 keeps 15,000 diamonds and all inventory intact',
+    user2.currentUser.diamonds === 15000 && user2.currentUser.inventory.length === 1
   );
 
   console.log('\n===========================================================================');
