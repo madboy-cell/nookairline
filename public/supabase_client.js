@@ -62,6 +62,8 @@
           } else if (msg && msg.type === 'presence_leave') {
             this.onlinePlayers.delete(msg.userId);
             this._notifyPresence();
+          } else if (msg && msg.type === 'couple_updated') {
+            if (window.SkySupabase) window.SkySupabase.getCoupleStatus();
           }
         };
       }
@@ -207,6 +209,20 @@
                 safeDispatch('sky:auth_state_changed', { user: this.currentUser });
               }
             });
+          }
+
+          // Realtime Couple Sync across devices / tabs
+          if (this.client && typeof this.client.channel === 'function') {
+            try {
+              this.client
+                .channel('public:couples_sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'couples' }, async () => {
+                  await this.getCoupleStatus();
+                })
+                .subscribe();
+            } catch (e) {
+              console.warn('[SkySupabase] Couple realtime subscription notice:', e);
+            }
           }
         } catch (err) {
           console.warn('[SkySupabase] Failed to initialize live client, falling back to Local Provider:', err);
@@ -679,18 +695,26 @@
       } else {
         // Local Provider Mode
         const couples = this.localProvider.getCouples();
-        const active = couples.find(
-          (c) => (c.user1_id === this.currentUser.id || c.user2_id === this.currentUser.id) && c.status === 'linked'
-        );
+        const myId = String(this.currentUser.id || '').toLowerCase();
+        const myName = String(this.currentUser.username || '').toLowerCase();
+        const active = couples.find((c) => {
+          if (c.status !== 'linked') return false;
+          const u1 = String(c.user1_id || '').toLowerCase();
+          const u2 = String(c.user2_id || '').toLowerCase();
+          return u1 === myId || u2 === myId || (myName && (u1 === myName || u2 === myName));
+        });
         if (active) {
-          const partnerId = active.user1_id === this.currentUser.id ? active.user2_id : active.user1_id;
+          const isU1 = (String(active.user1_id).toLowerCase() === myId) || (myName && String(active.user1_id).toLowerCase() === myName);
+          const partnerId = isU1 ? active.user2_id : active.user1_id;
+          const partnerName = isU1 ? (active.partnerName || 'Partner') : (active.user1_username || active.inviterData?.username || 'Partner');
+          const partnerBase = isU1 ? (active.partnerData?.character_base || (this.currentUser.character_base === 'bkk' ? 'dxb' : 'bkk')) : (active.inviterData?.character_base || (this.currentUser.character_base === 'bkk' ? 'dxb' : 'bkk'));
           this.coupleStatus = {
             isCouple: true,
             coupleId: active.id,
-            partner: active.partnerData || {
+            partner: {
               id: partnerId,
-              username: active.partnerName || 'Partner 🐉',
-              character_base: this.currentUser.character_base === 'bkk' ? 'dxb' : 'bkk'
+              username: partnerName,
+              character_base: partnerBase
             },
             status: 'linked',
             anniversaryDate: active.anniversary_date || active.created_at
@@ -718,11 +742,17 @@
       const invite = {
         id: coupleId,
         user1_id: this.currentUser.id,
+        user1_username: this.currentUser.username,
         user2_id: target,
         status: 'linked', // Auto-link for guest/local couple testing
         anniversary_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
         partnerName: target,
+        inviterData: {
+          id: this.currentUser.id,
+          username: this.currentUser.username,
+          character_base: this.currentUser.character_base
+        },
         partnerData: {
           id: target,
           username: target,
@@ -731,14 +761,24 @@
       };
 
       if (this.isLiveClient && !this.currentUser.isGuest) {
-        // Look up target profile
-        const { data: targetProfile, error: pErr } = await this.client
-          .from('profiles')
-          .select('id, username')
-          .or(`id.eq.${target},username.eq.${target}`)
-          .single();
+        // Look up target profile safely (handle UUID vs username callsign)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(target);
+        let query = this.client.from('profiles').select('id, username, character_base, equipped_costume');
+        if (isUuid) {
+          query = query.eq('id', target);
+        } else {
+          query = query.ilike('username', target);
+        }
+        const { data: targetProfile, error: pErr } = await query.maybeSingle();
 
-        if (pErr || !targetProfile) throw new Error(`Partner "${target}" not found.`);
+        if (pErr || !targetProfile) throw new Error(`Partner "${target}" not found in passenger registry.`);
+        if (targetProfile.id === this.currentUser.id) throw new Error('Cannot bind Couple Sanctuary with yourself.');
+
+        // Clean up any stale couple entry involving either user to avoid unique constraint conflict
+        await this.client
+          .from('couples')
+          .delete()
+          .or(`user1_id.eq.${this.currentUser.id},user2_id.eq.${this.currentUser.id},user1_id.eq.${targetProfile.id},user2_id.eq.${targetProfile.id}`);
 
         const { data, error } = await this.client
           .from('couples')
@@ -754,14 +794,25 @@
         if (error) throw error;
       } else {
         const couples = this.localProvider.getCouples().filter(
-          (c) => c.user1_id !== this.currentUser.id && c.user2_id !== this.currentUser.id
+          (c) => c.user1_id !== this.currentUser.id && c.user2_id !== this.currentUser.id && c.user1_id !== target && c.user2_id !== target
         );
         couples.push(invite);
         this.localProvider.saveCouples(couples);
       }
 
+      if (this.localProvider.channel) {
+        this.localProvider.channel.postMessage({ type: 'couple_updated' });
+      }
+
       await this.getCoupleStatus();
       return this.coupleStatus;
+    }
+
+    /**
+     * Alias for createCoupleInvite
+     */
+    async linkCouple(targetUsernameOrId) {
+      return this.createCoupleInvite(targetUsernameOrId);
     }
 
     /**
@@ -812,6 +863,13 @@
      * True strictly for linked couples!
      */
     checkCoupleCallAllowed() {
+      return !!(this.coupleStatus && this.coupleStatus.isCouple);
+    }
+
+    /**
+     * Helper to check if currently linked in Couple Sanctuary
+     */
+    isCouple() {
       return !!(this.coupleStatus && this.coupleStatus.isCouple);
     }
 
