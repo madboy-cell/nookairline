@@ -744,7 +744,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-// Specific terminal routes
+// Root and specific terminal routes (strictly no-cache for index.html)
+app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.get('/bkk', (req, res) => {
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
