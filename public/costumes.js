@@ -173,7 +173,7 @@
       name: 'Sky Classic: Grand All-Stars',
       tagline: 'Permanent collection of all legendary realms & future destinies ✈️✨💎',
       icon: '⭐',
-      banner: 'assets/ui/banner_main.jpg',
+      banner: 'assets/ui/banner_main.jpg?v=20261013v1',
       isMain: true,
       endsAt: null
     },
@@ -537,7 +537,7 @@
   // Couple Resonance: both wearing the same pair → tiny shared bonus.
   const RESONANCE = { desc: 'You both wear the same set: +25 miles each per lap 💞', effects: { monopoly: { lapBonus: 25 } } };
 
-  const SPRITE_VER = '20261012v3';
+  const SPRITE_VER = '20261013v1';
   const C = (season, id, pair, role, rarity, name, subtitle, perk) => ({
     id, season, pair, role, rarity, name, subtitle, perk,
     sprite: `assets/${season}/${id}.png?v=${SPRITE_VER}`

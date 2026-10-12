@@ -1260,6 +1260,106 @@
   background: #10b981;
   box-shadow: 0 0 8px #10b981;
 }
+
+/* All-Stars Permanent Gacha Presentation */
+.vg-banner.season-main .vg-art {
+  image-rendering: auto !important;
+}
+
+.rb-allstars {
+  color: #fff;
+  background: linear-gradient(90deg, #0284c7, #6366f1, #d946ef);
+  background-size: 200% 100%;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+  animation: vShimmerBg 3s linear infinite;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.vg-feature.vg-feature-allstars {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(99, 102, 241, 0.2));
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.vg-feature.vg-feature-allstars small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.allstars-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  border-top: 1px dashed rgba(56, 189, 248, 0.35);
+  padding-top: 5px;
+}
+
+.vg-stat-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.vg-stat-pill.mythic {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.vg-stat-pill.epic {
+  background: rgba(168, 85, 247, 0.25);
+  color: #f5d0fe;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.vg-stat-pill.total {
+  background: rgba(56, 189, 248, 0.25);
+  color: #bae6fd;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+.allstars-crest-wrap {
+  align-items: center;
+  justify-content: center;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+.allstars-crest-wrap .gold-halo {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.75), rgba(56, 189, 248, 0.25) 50%, transparent 70%);
+  width: 280px;
+  height: 280px;
+  right: auto;
+  bottom: auto;
+}
+
+.vg-hero.allstars-crest {
+  height: 82%;
+  max-height: 260px;
+  object-fit: contain;
+  align-self: center;
+  mix-blend-mode: screen;
+  border-radius: 50%;
+  -webkit-mask-image: radial-gradient(circle at center, black 54%, transparent 72%);
+  mask-image: radial-gradient(circle at center, black 54%, transparent 72%);
+  filter: drop-shadow(0 0 25px rgba(251, 191, 36, 0.85)) drop-shadow(0 15px 30px rgba(0, 0, 0, 0.7));
+  animation: vCrestPulse 4s ease-in-out infinite;
+}
+
+@keyframes vCrestPulse {
+  0%, 100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 25px rgba(251, 191, 36, 0.8)) drop-shadow(0 15px 30px rgba(0, 0, 0, 0.7)); }
+  50% { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 38px rgba(56, 189, 248, 0.95)) drop-shadow(0 18px 32px rgba(0, 0, 0, 0.8)); }
+}
+
+.vg-epics.allstars-epics {
+  display: none;
+}
+
 .vg-sky { position: absolute; inset: 0; z-index: -1; background: #0b0620; }
 .vg-art {
   position: absolute; inset: 0;

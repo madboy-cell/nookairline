@@ -1326,23 +1326,43 @@
                 <span class="vg-countdown-val perm">♾️ Permanent Standard Pool</span>
               </span>
             ` : '')}
-            ${mythics.length > 1 ? `<button class="vg-toggle-featured" data-action="toggle-featured-mythic" title="Toggle featured Mythic">⇄ Switch ${mythics[(S.featuredMythicIdx + 1) % mythics.length].name.split(' ')[0]}</button>` : ''}
+            ${!season.isMain && mythics.length > 1 ? `<button class="vg-toggle-featured" data-action="toggle-featured-mythic" title="Toggle featured Mythic">⇄ Switch ${mythics[(S.featuredMythicIdx + 1) % mythics.length].name.split(' ')[0]}</button>` : ''}
           </div>
           <h3 class="vg-title">${season.name.replace(' ', '<br><em>')}</em></h3>
           <p class="vg-tag">${season.tagline}</p>
-          <div class="vg-feature">
-            <span class="v-rarity-badge rb-mythic">⭐⭐⭐ ${mythics.length > 1 ? 'MYTHIC · DOUBLE FEATURE' : 'MYTHIC'}</span>
-            <b>${heroMythic.name}</b>
-            <small>${mPerk.icon} <b>${mPerk.name}</b>: ${mPerk.desc}</small>
-            ${mythics.length > 1 ? `<div class="vg-feature-sub">Also featuring: <b>${mythics.filter(m => m.id !== heroMythic.id).map(m => m.name).join(', ')}</b></div>` : ''}
+          ${season.isMain ? `
+            <div class="vg-feature vg-feature-allstars">
+              <span class="v-rarity-badge rb-allstars">⭐ PERMANENT ALL-STAR COLLECTION</span>
+              <b>All Legendary Realms & Costumes</b>
+              <small>✈️ <b>Unbounded Horizon</b>: All Mythic & Epic costumes from every destination. Pity never expires!</small>
+              <div class="vg-feature-sub allstars-stats">
+                <span class="vg-stat-pill mythic">👑 ${mythics.length} Mythics</span>
+                <span class="vg-stat-pill epic">💜 ${epics.length} Epics</span>
+                <span class="vg-stat-pill total">💎 ${pool.length} Total</span>
+              </div>
+            </div>
+          ` : `
+            <div class="vg-feature">
+              <span class="v-rarity-badge rb-mythic">⭐⭐⭐ ${mythics.length > 1 ? 'MYTHIC · DOUBLE FEATURE' : 'MYTHIC'}</span>
+              <b>${heroMythic.name}</b>
+              <small>${mPerk.icon} <b>${mPerk.name}</b>: ${mPerk.desc}</small>
+              ${mythics.length > 1 ? `<div class="vg-feature-sub">Also featuring: <b>${mythics.filter(m => m.id !== heroMythic.id).map(m => m.name).join(', ')}</b></div>` : ''}
+            </div>
+          `}
+        </div>
+        ${season.isMain ? `
+          <div class="vg-hero-wrap allstars-crest-wrap">
+            <div class="vg-hero-halo gold-halo"></div>
+            <img class="vg-hero allstars-crest" src="assets/ui/sky_party_crest.png" alt="Sky Party Grand All-Stars" draggable="false">
           </div>
-        </div>
-        <div class="vg-hero-wrap">
-          <div class="vg-hero-halo"></div>
-          <img class="vg-hero" ${heroImgAttrs(heroMythic.sprite)} alt="${heroMythic.name}" draggable="false">
-        </div>
-        <div class="vg-epics">
-          ${epics.map((c) => `<div class="vg-epic"><img ${heroImgAttrs(c.sprite)} alt="${c.name}" draggable="false"><span>${c.name}</span></div>`).join('')}
+        ` : `
+          <div class="vg-hero-wrap">
+            <div class="vg-hero-halo"></div>
+            <img class="vg-hero" ${heroImgAttrs(heroMythic.sprite)} alt="${heroMythic.name}" draggable="false">
+          </div>
+        `}
+        <div class="vg-epics ${season.isMain ? 'allstars-epics' : ''}">
+          ${(season.isMain ? epics.slice(0, 8) : epics).map((c) => `<div class="vg-epic"><img ${heroImgAttrs(c.sprite)} alt="${c.name}" draggable="false"><span>${c.name}</span></div>`).join('')}
         </div>
       </div>
 
