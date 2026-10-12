@@ -1360,8 +1360,64 @@ wss.on('connection', (ws, req) => {
       daily.observe(ws.terminal, message);
       const currentRoom = roomRegistry.getClientRoom(ws);
       if (currentRoom) {
+        if (message.type === 'monopoly_action') {
+          const clientData = currentRoom.clientData.get(ws);
+          const myRole = clientData ? clientData.role : null;
+          const currentTurn = currentRoom.gameState ? currentRoom.gameState.currentTurn : null;
+          const isBotTurn = currentRoom.gameState && currentRoom.gameState.players && currentRoom.gameState.players[currentTurn]?.isBot;
+          const isHost = clientData && clientData.slotId === 1;
+
+          if (message.action === 'roll') {
+            const isAuthorized = (myRole === currentTurn) || (isBotTurn && isHost);
+            if (!isAuthorized && currentTurn != null) {
+              ws.send(JSON.stringify({
+                type: 'monopoly_action_rejected',
+                error: 'OUT_OF_TURN',
+                action: 'roll',
+                message: `Not your turn to roll (active turn: ${currentTurn}).`
+              }));
+              return;
+            }
+            if (currentRoom.rollLock) {
+              ws.send(JSON.stringify({
+                type: 'monopoly_action_rejected',
+                error: 'ROLL_IN_PROGRESS',
+                action: 'roll',
+                message: 'A roll is already being processed.'
+              }));
+              return;
+            }
+            currentRoom.rollLock = true;
+            setTimeout(() => { currentRoom.rollLock = false; }, 800);
+          } else if (message.action === 'buy') {
+            const tileId = message.tileId;
+            const prop = currentRoom.gameState && currentRoom.gameState.properties ? currentRoom.gameState.properties[tileId] : null;
+            if (prop && prop.owner && prop.owner !== myRole) {
+              ws.send(JSON.stringify({
+                type: 'monopoly_action_rejected',
+                error: 'ILLEGAL_ACTION',
+                action: 'buy',
+                message: 'Cannot directly purchase an already owned property without takeover.'
+              }));
+              return;
+            }
+          }
+        }
+
         if (message.state) {
           roomRegistry.updateGameState(currentRoom.id, message.state);
+          if (message.state.gameOver) {
+            currentRoom.status = 'finished';
+            currentRoom.rollLock = false;
+            broadcastToRoom(currentRoom, {
+              type: 'room_finished',
+              roomId: currentRoom.id,
+              winner: message.state.gameOver.winner,
+              reason: message.state.gameOver.reason,
+              state: message.state
+            });
+            broadcastDepartureBoard();
+          }
         }
         currentRoom.clients.forEach((client) => {
           if (client !== ws && client.readyState === WebSocket.OPEN) {

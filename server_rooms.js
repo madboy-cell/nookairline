@@ -120,11 +120,11 @@ class RoomRegistry {
       ? slots.map((s, idx) => ({
           ...s,
           id: idx + 1,
-          occupiedBy: idx === 0 ? hostUid : (s.occupiedBy || null),
-          name: idx === 0 ? hostName : (s.name || `Open Slot`),
-          avatar: idx === 0 ? hostAvatar : (s.avatar || ''),
-          ready: idx === 0 ? true : (s.ready !== undefined ? s.ready : (s.type === 'bot')),
-          connected: idx === 0 ? true : (s.type === 'bot')
+          occupiedBy: s.type === 'bot' ? null : (idx === 0 ? hostUid : (s.occupiedBy || null)),
+          name: s.type === 'bot' ? (s.name || (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾')) : (idx === 0 ? hostName : (s.name || `Open Slot`)),
+          avatar: s.type === 'bot' ? (s.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png') : (idx === 0 ? hostAvatar : (s.avatar || '')),
+          ready: s.type === 'bot' ? true : (idx === 0 ? true : (s.ready !== undefined ? s.ready : false)),
+          connected: s.type === 'bot' || (idx === 0)
         }))
       : defaultSlots;
 
@@ -832,7 +832,12 @@ class RoomRegistry {
     if (!room) return null;
     room.gameState = state;
     room.updatedAt = Date.now();
-    this.db.updateRoom(roomId, { game_state: state }).catch(() => {});
+    if (state && state.gameOver) {
+      room.status = 'finished';
+      this.db.updateRoom(roomId, { game_state: state, status: 'finished' }).catch(() => {});
+    } else {
+      this.db.updateRoom(roomId, { game_state: state }).catch(() => {});
+    }
     return room;
   }
 
