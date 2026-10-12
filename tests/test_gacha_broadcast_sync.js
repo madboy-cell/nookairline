@@ -144,7 +144,11 @@ async function runTest() {
   server.close();
 }
 
-runTest().catch((err) => {
-  console.error('❌ Test failed:', err);
-  process.exit(1);
-});
+runTest()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('❌ Test failed:', err);
+    process.exit(1);
+  });

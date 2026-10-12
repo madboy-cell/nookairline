@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     username TEXT UNIQUE,
     character_base TEXT NOT NULL DEFAULT 'bkk' CHECK (character_base IN ('bkk', 'dxb')),
     equipped_costume TEXT NOT NULL DEFAULT 'pilot',
-    diamonds BIGINT NOT NULL DEFAULT 5000 CHECK (diamonds >= 0),
+    diamonds BIGINT NOT NULL DEFAULT 10000 CHECK (diamonds >= 0),
     stardust BIGINT NOT NULL DEFAULT 0 CHECK (stardust >= 0),
     inventory JSONB NOT NULL DEFAULT '[]'::jsonb,
     pity JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -117,9 +117,14 @@ BEGIN
     INSERT INTO public.profiles (id, username, character_base, diamonds, stardust)
     VALUES (
         NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'username', 'Flyer_' || substring(NEW.id::text from 1 for 6)),
+        COALESCE(
+            NEW.raw_user_meta_data->>'full_name',
+            NEW.raw_user_meta_data->>'name',
+            NEW.raw_user_meta_data->>'username',
+            'Captain_' || substring(NEW.id::text from 1 for 6)
+        ),
         COALESCE(NEW.raw_user_meta_data->>'character_base', 'bkk'),
-        5000,
+        10000,
         0
     )
     ON CONFLICT (id) DO NOTHING;

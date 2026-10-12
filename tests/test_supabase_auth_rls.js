@@ -137,11 +137,11 @@ async function itAsync(desc, fn) {
     assert.strictEqual(typeof client.updateCharacterBase, 'function');
   });
 
-  await itAsync('2.2 Client initializes guest mode cleanly with 5,000 diamonds', async () => {
+  await itAsync('2.2 Client initializes guest mode cleanly with 10,000 diamonds', async () => {
     const user = await client.loginGuest('TestCaptain', 'bkk');
     assert.strictEqual(user.username, 'TestCaptain');
     assert.strictEqual(user.character_base, 'bkk');
-    assert.strictEqual(user.diamonds, 5000);
+    assert.strictEqual(user.diamonds, 10000);
     assert.strictEqual(user.isGuest, true);
   });
 

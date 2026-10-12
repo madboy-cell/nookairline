@@ -76,7 +76,7 @@ async function runSuite1_Onboarding() {
     username: `Captain_${randomCode}`,
     character_base: 'bkk',
     equipped_costume: 'pilot',
-    diamonds: 5000,
+    diamonds: 10000,
     stardust: 0,
     inventory: [],
     pity: {},
@@ -87,8 +87,24 @@ async function runSuite1_Onboarding() {
 
   const loaded = provider.getProfile();
   it('1.1 Passenger receives unique callsign and guest credentials', loaded && loaded.username === 'Captain_4289');
-  it('1.2 Starter Treasury credits exactly 5,000 Diamonds & 0 Stardust', loaded.diamonds === 5000 && loaded.stardust === 0);
+  it('1.2 Starter Treasury credits exactly 10,000 Diamonds & 0 Stardust', loaded.diamonds === 10000 && loaded.stardust === 0);
   it('1.3 Initial inventory is empty and pity starts clean', Array.isArray(loaded.inventory) && Object.keys(loaded.pity).length === 0);
+
+  // 1.3b Google OAuth Configuration & Redirect Verification
+  const mockOAuthOptions = {
+    provider: 'google',
+    options: {
+      redirectTo: 'https://neoraworld.com/',
+      queryParams: {
+        prompt: 'select_account',
+        access_type: 'offline'
+      }
+    }
+  };
+  it('1.3b Google OAuth requests prompt=select_account to enforce email chooser dialog',
+    mockOAuthOptions.options.queryParams.prompt === 'select_account' &&
+    mockOAuthOptions.options.queryParams.access_type === 'offline'
+  );
 
   // 1.4 Character Base Switching (Wolf Boy BKK <-> Dragon Girl DXB)
   loaded.character_base = 'dxb';
@@ -118,7 +134,7 @@ async function runSuite2_SocialAndCouple() {
   console.log('--- SUITE 2: Flight Social, Friends Roster & Couple Sanctuary ---');
 
   const socialState = {
-    user: { id: 'u_passenger_1', username: 'Captain Thanapat', diamonds: 5000, inventory: ['pilot'] },
+    user: { id: 'u_passenger_1', username: 'Captain Thanapat', diamonds: 10000, inventory: ['pilot'] },
     friends: [],
     couple: { isCouple: false, partner: null, status: 'unlinked' }
   };

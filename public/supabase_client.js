@@ -260,6 +260,7 @@
             this.currentUser = {
               ...data,
               email: user.email,
+              user_metadata: user.user_metadata,
               isGuest: false
             };
           } else {
@@ -275,7 +276,7 @@
               username: extraMeta.username || user.user_metadata?.username || fallbackName,
               character_base: (personaChoice === 'dxb' ? 'dxb' : 'bkk'),
               equipped_costume: 'pilot',
-              diamonds: 5000,
+              diamonds: 10000,
               stardust: 0,
               inventory: [],
               pity: {}
@@ -289,6 +290,7 @@
             this.currentUser = {
               ...(created || initial),
               email: user.email,
+              user_metadata: user.user_metadata,
               isGuest: false
             };
           }
@@ -391,18 +393,34 @@
     async signInWithOAuth(provider = 'google') {
       if (this.isLiveClient && this.client && this.client.auth) {
         try {
+          const redirectTo = (typeof window !== 'undefined' && window.location) ?
+            (window.location.origin + window.location.pathname) :
+            'https://neoraworld.com/';
           const { data, error } = await this.client.auth.signInWithOAuth({
             provider,
-            options: { redirectTo: window.location.origin }
+            options: {
+              redirectTo,
+              queryParams: {
+                prompt: 'select_account',
+                access_type: 'offline'
+              }
+            }
           });
           if (error) throw error;
-          return { success: true, data };
+          if (data && data.url) {
+            if (typeof window !== 'undefined' && window.location) {
+              window.location.href = data.url;
+            }
+            return { success: true, redirected: true, data };
+          }
+          return { success: true, redirected: false, data };
         } catch (err) {
-          console.warn('[SkySupabase] Live OAuth error, using local auth flow:', err);
+          console.error('[SkySupabase] Live OAuth error:', err);
+          throw err;
         }
       }
 
-      // Guest / Local fallback flow for Google/OAuth
+      // Guest / Local fallback flow for Google/OAuth (only used in offline mock testing)
       const simulatedEmail = `${(this.currentUser && this.currentUser.username ? this.currentUser.username.toLowerCase().replace(/[^a-z0-9]/g, '') : 'pilot')}@gmail.com`;
       if (!this.currentUser) await this.loginGuest();
       if (String(this.currentUser.id).startsWith('guest_')) {
@@ -411,12 +429,13 @@
       this.currentUser.email = simulatedEmail;
       this.currentUser.auth_provider = provider;
       this.currentUser.isGuest = false;
+      this.currentUser.diamonds = this.currentUser.diamonds || 10000;
       this.currentUser.updated_at = new Date().toISOString();
       this.localProvider.saveProfile(this.currentUser);
 
       safeDispatch('sky:auth_state_changed', { user: this.currentUser });
       console.log(`[SkySupabase] Signed in with ${provider} (${simulatedEmail})`);
-      return { success: true, user: this.currentUser };
+      return { success: true, user: this.currentUser, redirected: false };
     }
 
     /**
@@ -539,7 +558,7 @@
           username: name,
           character_base: defaultBase,
           equipped_costume: 'pilot',
-          diamonds: 5000,
+          diamonds: 10000,
           stardust: 0,
           inventory: [],
           pity: {},
@@ -784,7 +803,7 @@
         success: true,
         diamondsPreserved: true,
         wardrobePreserved: true,
-        diamonds: this.currentUser ? this.currentUser.diamonds : 5000
+        diamonds: this.currentUser ? this.currentUser.diamonds : 10000
       };
     }
 
@@ -940,6 +959,7 @@
               this.currentUser = {
                 ...profile,
                 email: session.user.email,
+                user_metadata: session.user.user_metadata,
                 isGuest: false
               };
               this.localProvider.saveProfile(this.currentUser);

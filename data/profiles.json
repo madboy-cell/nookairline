@@ -1,6 +1,6 @@
 {
   "bkk": {
-    "diamonds": 5000,
+    "diamonds": 10000,
     "stardust": 0,
     "tickets": 0,
     "fish": 0,
@@ -54,7 +54,7 @@
     }
   },
   "dxb": {
-    "diamonds": 5000,
+    "diamonds": 10000,
     "stardust": 0,
     "tickets": 0,
     "fish": 0,
