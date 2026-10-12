@@ -178,7 +178,9 @@ try {
   console.error('[Vault] Failed to load profiles:', e.message);
 }
 
-function persistVault() {
+const serverDb = require('./server_db.js');
+
+function persistVault(syncCloud = true) {
   try {
     const tmp = PROFILES_FILE + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(vault, null, 2));
@@ -186,8 +188,59 @@ function persistVault() {
   } catch (e) {
     console.error('[Vault] Failed to save profiles:', e.message);
   }
+  if (syncCloud && serverDb && typeof serverDb.saveProfile === 'function') {
+    ['bkk', 'dxb'].forEach((role) => {
+      const p = vault[role];
+      if (p) {
+        serverDb.saveProfile(role, {
+          diamonds: p.diamonds,
+          stardust: p.stardust,
+          inventory: p.owned ? Object.keys(p.owned) : []
+        }).catch(() => {});
+      }
+    });
+  }
 }
-persistVault();
+persistVault(false);
+
+async function hydrateVaultFromCloud() {
+  try {
+    const cloudProfiles = await serverDb.fetchProfiles();
+    if (Array.isArray(cloudProfiles) && cloudProfiles.length > 0) {
+      let changed = false;
+      cloudProfiles.forEach((row) => {
+        const role = row.character_base;
+        if ((role === 'bkk' || role === 'dxb') && vault[role]) {
+          if (typeof row.diamonds === 'number' && row.diamonds > vault[role].diamonds) {
+            vault[role].diamonds = row.diamonds;
+            changed = true;
+          }
+          if (typeof row.stardust === 'number' && row.stardust > vault[role].stardust) {
+            vault[role].stardust = row.stardust;
+            changed = true;
+          }
+          if (Array.isArray(row.inventory)) {
+            if (!vault[role].owned) vault[role].owned = {};
+            row.inventory.forEach((costumeId) => {
+              if (!vault[role].owned[costumeId]) {
+                vault[role].owned[costumeId] = 1;
+                changed = true;
+              }
+            });
+          }
+        }
+      });
+      if (changed) {
+        persistVault(false);
+        console.log(`[Vault] ☁️ Hydrated from Supabase cloud: BKK ${vault.bkk.diamonds}💎/${vault.bkk.stardust}✨ · DXB ${vault.dxb.diamonds}💎/${vault.dxb.stardust}✨`);
+        if (typeof broadcastVault === 'function') broadcastVault();
+      }
+    }
+  } catch (err) {
+    console.warn('[Vault] Cloud hydration warning:', err.message);
+  }
+}
+hydrateVaultFromCloud();
 
 const BANNER_SCHEDULES_FILE = path.join(DATA_DIR, 'banner_schedules.json');
 let bannerSchedules = {};

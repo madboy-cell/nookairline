@@ -1692,6 +1692,10 @@
     const price = C.RARITY[c.rarity].shop;
     if (p.stardust < price) { toast('✨ Not enough stardust'); return; }
     if (!window.confirm(`Trade ✨ ${price} stardust for ${c.name}?`)) return;
+    p.stardust -= price;
+    if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+      window.SkySupabase.updateProfile({ stardust: p.stardust, allowDecrease: true });
+    }
     S.pulling = true;
     const reqId = `x${++S.reqSeq}_${Date.now()}`;
     S.pending = { reqId, count: 1 };
@@ -2564,19 +2568,40 @@
     S.profiles = profiles;
 
     // 🔥 CRITICAL: Cloud Hydration Guard
-    // Merge cloud Supabase inventory into local S.profiles[myRole()].owned so server restarts NEVER wipe player wardrobe!
+    // Merge cloud Supabase inventory, stardust, and diamonds into local S.profiles[role] so server restarts NEVER wipe player data!
     try {
       const role = myRole();
-      if (S.profiles[role]) {
+      const cu = window.SkySupabase && window.SkySupabase.currentUser;
+      if (S.profiles && S.profiles[role] && cu) {
         if (!S.profiles[role].owned) S.profiles[role].owned = {};
-        const cloudInv = (window.SkySupabase && window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
-          ? window.SkySupabase.currentUser.inventory
-          : [];
+        const cloudInv = Array.isArray(cu.inventory) ? cu.inventory : [];
         cloudInv.forEach((costumeId) => {
           if (!S.profiles[role].owned[costumeId] || S.profiles[role].owned[costumeId] < 1) {
             S.profiles[role].owned[costumeId] = 1;
           }
         });
+        // Stardust Cloud Shield: hydrate higher balance from Supabase if server restarted with stale data
+        if (typeof cu.stardust === 'number' && cu.stardust > (S.profiles[role].stardust || 0)) {
+          S.profiles[role].stardust = cu.stardust;
+          send({
+            type: 'vault_sync_cloud',
+            terminal: role,
+            inventory: Object.keys(S.profiles[role].owned),
+            diamonds: S.profiles[role].diamonds,
+            stardust: cu.stardust
+          });
+        }
+        // Diamonds Cloud Shield: hydrate higher balance from Supabase
+        if (typeof cu.diamonds === 'number' && cu.diamonds > (S.profiles[role].diamonds || 0)) {
+          S.profiles[role].diamonds = cu.diamonds;
+          send({
+            type: 'vault_sync_cloud',
+            terminal: role,
+            inventory: Object.keys(S.profiles[role].owned),
+            diamonds: cu.diamonds,
+            stardust: S.profiles[role].stardust
+          });
+        }
       }
     } catch (e) {
       console.warn('[Vault] Cloud hydration error:', e);
@@ -2599,20 +2624,19 @@
       updateLobbySeats();
     }
 
-    // Synchronize diamonds, inventory, and isolated per-banner pity to Supabase user profile
+    // Synchronize diamonds, stardust, inventory, and isolated per-banner pity to Supabase user profile
     try {
       const p = me();
       if (p && window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+        const cu = window.SkySupabase.currentUser || {};
         const updates = {};
-        if (typeof p.diamonds === 'number') updates.diamonds = p.diamonds;
-        if (typeof p.stardust === 'number') updates.stardust = p.stardust;
+        if (typeof p.diamonds === 'number') updates.diamonds = Math.max(p.diamonds, (cu.diamonds || 0));
+        if (typeof p.stardust === 'number') updates.stardust = Math.max(p.stardust, (cu.stardust || 0));
         if (p.pityByBanner) updates.pity = p.pityByBanner;
         
         // 🔥 CRITICAL FIX: NEVER blind-overwrite inventory with an empty or diminished set!
         // Always UNION existing Supabase inventory with newly owned costumes:
-        const currentCloud = (window.SkySupabase.currentUser && Array.isArray(window.SkySupabase.currentUser.inventory))
-          ? window.SkySupabase.currentUser.inventory
-          : [];
+        const currentCloud = Array.isArray(cu.inventory) ? cu.inventory : [];
         const localOwned = p.owned ? Object.keys(p.owned) : [];
         const mergedInventory = Array.from(new Set([...currentCloud, ...localOwned]));
         if (mergedInventory.length > 0) {

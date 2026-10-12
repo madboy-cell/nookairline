@@ -137,7 +137,34 @@ test('3.3 server.js vaultSendEnvelope supports synthetic friend recipient', () =
   assert.ok(serverCode.includes("if (targetType === 'friend' && receiverUid)"), 'server.js must credit friend profile by receiverUid');
 });
 
+// -------------------------------------------------------------
+// Test 4: Stardust Cloud Hydration & Zero Regression Shield
+// -------------------------------------------------------------
+test('4.1 server_db.js exposes fetchProfiles and saveProfile for persistent cloud hydration', () => {
+  const serverDbCode = fs.readFileSync(path.join(__dirname, '../server_db.js'), 'utf8');
+  assert.ok(serverDbCode.includes('async fetchProfiles()'), 'server_db.js must expose fetchProfiles');
+  assert.ok(serverDbCode.includes('async saveProfile('), 'server_db.js must expose saveProfile');
+});
+
+test('4.2 server.js boots with hydrateVaultFromCloud to restore stardust across container redeploys', () => {
+  const serverCode = fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8');
+  assert.ok(serverCode.includes('hydrateVaultFromCloud()'), 'server.js must call hydrateVaultFromCloud on startup');
+  assert.ok(serverCode.includes('row.stardust > vault[role].stardust'), 'server.js must restore higher stardust from cloud');
+});
+
+test('4.3 supabase_client.js updateProfile enforces Zero Regression Stardust Shield', () => {
+  const sbClientCode = fs.readFileSync(path.join(__dirname, '../public/supabase_client.js'), 'utf8');
+  assert.ok(sbClientCode.includes('ZERO REGRESSION STARDUST SHIELD'), 'supabase_client.js must include stardust regression shield');
+  assert.ok(sbClientCode.includes('!updates.allowDecrease'), 'stardust must only decrease when allowDecrease is explicitly passed');
+});
+
+test('4.4 vault.js setProfiles hydrates stardust from cloud and prevents stale server overwrite', () => {
+  const vaultCode = fs.readFileSync(path.join(__dirname, '../public/vault.js'), 'utf8');
+  assert.ok(vaultCode.includes('Stardust Cloud Shield'), 'vault.js must have Stardust Cloud Shield in setProfiles');
+  assert.ok(vaultCode.includes('updates.stardust = Math.max(p.stardust, (cu.stardust || 0))'), 'vault.js must never decrease cloud stardust on profile sync');
+});
+
 console.log('\n============================================================');
-console.log(`TEST SUMMARY: ${passed}/6 Passed (0 Failed)`);
+console.log(`TEST SUMMARY: ${passed}/10 Passed (0 Failed)`);
 console.log('============================================================\n');
-console.log('🎉 ALL GIFTING, DIAMOND CONSERVATION & FRIEND TESTS PASSED 100%!');
+console.log('🎉 ALL GIFTING, DIAMOND CONSERVATION, STARDUST & FRIEND TESTS PASSED 100%!');

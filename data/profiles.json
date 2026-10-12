@@ -44,7 +44,7 @@
     "envelopes": [],
     "envelopesSent": [],
     "daily": {
-      "day": "",
+      "day": "2026-10-12",
       "quests": [
         {
           "id": "scene1",
@@ -68,8 +68,8 @@
     }
   },
   "dxb": {
-    "diamonds": 16690,
-    "stardust": 90,
+    "diamonds": 16710,
+    "stardust": 650,
     "tickets": 0,
     "fish": 0,
     "owned": {
@@ -79,7 +79,19 @@
       "s10_phantom_f": 1,
       "s10_gondolier_f": 1,
       "s10_bauta_f": 1,
-      "s11_oracle_f": 1
+      "s11_oracle_f": 1,
+      "s9_explorer_f": 1,
+      "s8_aviator_f": 1,
+      "s11_forge_f": 1,
+      "s11_persephone_f": 1,
+      "s11_pegasus_f": 1,
+      "s8_crystal_f": 1,
+      "s7_forest_f": 1,
+      "s7_carpet_f": 1,
+      "s7_palace_f": 1,
+      "s9_anubis_f": 1,
+      "s8_aurora_f": 1,
+      "s8_empress_f": 1
     },
     "equipped": "s10_phantom_f",
     "pity": {
@@ -122,7 +134,7 @@
     "lastDay": "",
     "freezes": 0,
     "checkins": {
-      "bkk": "",
+      "bkk": "2026-10-12",
       "dxb": ""
     },
     "history": []

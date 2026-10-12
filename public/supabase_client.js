@@ -617,6 +617,15 @@
         delete updates.inventory;
       }
 
+      // 🔥 ZERO REGRESSION STARDUST SHIELD
+      // Stardust must NEVER be shrunk or wiped by a stale server reboot!
+      if (typeof updates.stardust === 'number' && typeof this.currentUser.stardust === 'number') {
+        if (updates.stardust < this.currentUser.stardust && !updates.allowDecrease) {
+          updates.stardust = this.currentUser.stardust;
+        }
+      }
+      delete updates.allowDecrease;
+
       Object.assign(this.currentUser, updates, { updated_at: new Date().toISOString() });
       if (this.isLiveClient && !this.currentUser.isGuest) {
         try {

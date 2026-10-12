@@ -281,6 +281,47 @@ class ServerDB {
     }
     return active;
   }
+
+  /**
+   * Fetches user profiles from Supabase for vault hydration across container restarts.
+   */
+  async fetchProfiles() {
+    try {
+      const res = await fetch(`${this.url}/rest/v1/profiles?select=id,username,character_base,diamonds,stardust,inventory`, {
+        headers: {
+          'apikey': this.key,
+          'Authorization': `Bearer ${this.key}`
+        }
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('[ServerDB] Supabase fetchProfiles error:', err.message);
+    }
+    return [];
+  }
+
+  /**
+   * Persists partial profile updates to Supabase cloud.
+   */
+  async saveProfile(characterBase, profileUpdates) {
+    if (!characterBase || !profileUpdates) return false;
+    try {
+      const res = await fetch(`${this.url}/rest/v1/profiles?character_base=eq.${encodeURIComponent(characterBase)}`, {
+        method: 'PATCH',
+        headers: this.headers,
+        body: JSON.stringify({
+          ...profileUpdates,
+          updated_at: new Date().toISOString()
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('[ServerDB] Supabase saveProfile error:', err.message);
+      return false;
+    }
+  }
 }
 
 module.exports = new ServerDB();
