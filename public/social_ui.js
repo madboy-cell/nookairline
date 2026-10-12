@@ -316,6 +316,24 @@
         });
       }
 
+      const editCallsignBtn = $('socialEditCallsignBtn');
+      if (editCallsignBtn) {
+        editCallsignBtn.addEventListener('click', () => {
+          Sound.tap();
+          const user = window.SkySupabase.getCurrentUser();
+          const current = user ? (user.username || 'Nook') : 'Nook';
+          const next = prompt('Enter your pilot callsign:', current);
+          if (next && next.trim().length >= 2) {
+            const trimmed = next.trim().slice(0, 16);
+            if (user) {
+              user.username = trimmed;
+              window.SkySupabase.localProvider.saveProfile(user);
+              this.render();
+            }
+          }
+        });
+      }
+
       if (this.coupleDecoupleBtn) {
         this.coupleDecoupleBtn.addEventListener('click', async () => {
           if (!confirm('Are you sure you want to decouple? (Your wardrobe items & diamonds will remain 100% safe and untouched)')) {
@@ -885,13 +903,33 @@
       if (this.friendsCountEl) this.friendsCountEl.textContent = friends.length;
       if (this.friendsListContainer) {
         if (friends.length === 0) {
-          this.friendsListContainer.innerHTML =
-            '<div class="friends-empty-state">No flight companions added yet.<br>Add friends above to fly together! ✈️</div>';
+          this.friendsListContainer.innerHTML = `
+            <div class="friends-empty-card">
+              <div class="friends-empty-art">
+                <img src="assets/ui/social_aviator_luggage_fade.png" alt="Aviator Bunny on Luggage" class="friends-empty-bunny-img" onerror="this.src='assets/ui/aviator_bunny.png'">
+              </div>
+              <h3 class="friends-empty-title">No Flight Companions Yet</h3>
+              <p class="friends-empty-subtitle">Add friends to fly together, share adventures, and appear in each other's cabin roster.</p>
+              <button type="button" class="social-find-friends-btn pill-btn full-width" id="socialFindFriendsBtn">
+                <span>Find Friends</span> ✈️
+              </button>
+            </div>`;
+
+          const findBtn = $('socialFindFriendsBtn');
+          if (findBtn) {
+            findBtn.addEventListener('click', () => {
+              Sound.tap();
+              if (this.addFriendInput) {
+                this.addFriendInput.focus();
+                this.addFriendInput.scrollIntoView({ behavior: 'smooth' });
+              }
+            });
+          }
         } else {
           this.friendsListContainer.innerHTML = friends
             .map((f) => {
               const friendBoy = f.character_base === 'bkk';
-              const friendSprite = friendBoy ? 'assets/bkk_warrior_idle.png' : 'assets/got_queen.png';
+              const friendSprite = friendBoy ? 'assets/ui/avatar_wolf_boy.png' : 'assets/ui/avatar_dragon_girl.png';
               const statusDot = f.isOnline ? '🟢' : '⚪';
               const statusText = f.isOnline ? 'In Cabin Lounge' : 'Offline';
               return `
