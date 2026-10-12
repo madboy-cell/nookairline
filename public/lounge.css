@@ -136,8 +136,8 @@
   width: var(--dock-w);
   max-width: none;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
   padding: 0;
   overflow: visible;
   background: none;
@@ -146,6 +146,8 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-radius: 0;
+  z-index: 35 !important;
+  pointer-events: auto !important;
 }
 .emotion-deck .emote-btn,
 .emotion-deck .emote-btn.hug-hero-btn,
@@ -268,7 +270,8 @@
   bottom: calc(var(--dock-bottom) + var(--ctrl-h) + var(--deck-gap) + 82px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 28;
+  z-index: 36 !important;
+  pointer-events: auto !important;
   display: flex;
   align-items: center;
   gap: 5px;

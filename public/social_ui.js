@@ -174,10 +174,15 @@
     _bindEvents() {
       // 1. Top Header Profile Chip -> Opens Passport Modal
       if (this.profileHeaderBtn) {
-        this.profileHeaderBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+        const handleProfileTap = (e) => {
+          if (e) {
+            e.stopPropagation();
+            if (e.cancelable && e.type === 'touchend') e.preventDefault();
+          }
           this.openProfileModal();
-        });
+        };
+        this.profileHeaderBtn.addEventListener('click', handleProfileTap);
+        this.profileHeaderBtn.addEventListener('touchend', handleProfileTap, { passive: false });
       }
       if (this.profileCloseBtn) {
         this.profileCloseBtn.addEventListener('click', () => this.closeProfileModal());
@@ -380,10 +385,15 @@
       // Bottom Action Deck Couple Button
       const coupleDeckBtn = $('openCoupleDeckBtn');
       if (coupleDeckBtn) {
-        coupleDeckBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+        const handleCoupleTap = (e) => {
+          if (e) {
+            e.stopPropagation();
+            if (e.cancelable && e.type === 'touchend') e.preventDefault();
+          }
           this.openDrawer('couple');
-        });
+        };
+        coupleDeckBtn.addEventListener('click', handleCoupleTap);
+        coupleDeckBtn.addEventListener('touchend', handleCoupleTap, { passive: false });
       }
 
       // Base Switcher Buttons inside Drawer & Wardrobe
@@ -539,13 +549,20 @@
     openOnboarding(step = 1) {
       if (!this.onboardingModal) this.onboardingModal = $('skyOnboardingModal');
       // If user is already logged in and onboarding is completed, prevent reopening Step 1/2 unless explicitly requested for ticket (step 4)
-      if (window.SkySupabase && window.SkySupabase.isOnboardingCompleted() && step <= 2) {
+      const hasOnb = (window.SkySupabase && window.SkySupabase.isOnboardingCompleted()) || (typeof localStorage !== 'undefined' && localStorage.getItem('sky_onboarding_completed') === 'true');
+      if (hasOnb && step <= 2) {
         this.closeOnboarding(true);
         return;
       }
       if (this.onboardingModal) {
-        this.onboardingModal.classList.remove('hidden');
-        this.onboardingModal.setAttribute('aria-hidden', 'false');
+        if (this.onboardingModal.classList) this.onboardingModal.classList.remove('hidden');
+        if (typeof this.onboardingModal.setAttribute === 'function') {
+          this.onboardingModal.setAttribute('aria-hidden', 'false');
+        }
+        if (this.onboardingModal.style) {
+          this.onboardingModal.style.display = 'flex';
+          this.onboardingModal.style.pointerEvents = 'auto';
+        }
         this.setOnbStep(step);
       }
     }
@@ -556,8 +573,14 @@
       }
       if (!this.onboardingModal) this.onboardingModal = $('skyOnboardingModal');
       if (this.onboardingModal) {
-        this.onboardingModal.classList.add('hidden');
-        this.onboardingModal.setAttribute('aria-hidden', 'true');
+        if (this.onboardingModal.classList) this.onboardingModal.classList.add('hidden');
+        if (typeof this.onboardingModal.setAttribute === 'function') {
+          this.onboardingModal.setAttribute('aria-hidden', 'true');
+        }
+        if (this.onboardingModal.style) {
+          this.onboardingModal.style.display = 'none';
+          this.onboardingModal.style.pointerEvents = 'none';
+        }
       }
     }
 
@@ -772,15 +795,22 @@
           this.onbUsername = onbCallsignInput.value.trim();
         }
         Sound.claim();
+        try { localStorage.setItem('sky_onboarding_completed', 'true'); } catch (e) {}
+        this.closeOnboarding(true);
+        this.render();
+
         const partnerName = (this.onbIsPair && onbPartnerInput) ? onbPartnerInput.value.trim() : null;
         if (window.SkySupabase) {
-          await window.SkySupabase.completeOnboarding({
-            persona: this.onbPersona,
-            username: this.onbUsername,
-            partnerInvite: partnerName
-          });
+          try {
+            await window.SkySupabase.completeOnboarding({
+              persona: this.onbPersona,
+              username: this.onbUsername,
+              partnerInvite: partnerName
+            });
+          } catch (e) {
+            console.warn('[SkySocialUI] Supabase onboarding sync background notice:', e);
+          }
         }
-        this.closeOnboarding(true);
         this.render();
         
         if (window.NookCats && typeof window.NookCats.renderAll === 'function') {

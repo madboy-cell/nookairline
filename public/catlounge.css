@@ -1506,9 +1506,9 @@ body.cl-lock { overflow: hidden; }
 /* =============================================================================
    Dock tile (6 tiles: Hug, Monopoly, Sky Dash, Wardrobe, Cats, Scenery)
    ============================================================================= */
-.emotion-deck.has-cats { grid-template-columns: repeat(6, 1fr); gap: 5px; }
-.emotion-deck.has-cats .emote-icon { width: 38px; height: 38px; }
-.emotion-deck.has-cats .emote-label { font-size: 9.5px; }
+.emotion-deck.has-cats { grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.emotion-deck.has-cats .emote-icon { width: 34px; height: 34px; }
+.emotion-deck.has-cats .emote-label { font-size: 8.5px; letter-spacing: -0.2px; }
 .emotion-deck .emote-btn.cats-btn {
   --tint: 255, 143, 177;
   position: relative;
@@ -1558,10 +1558,10 @@ body.cl-lock { overflow: hidden; }
 .cats-dot.gift { background: linear-gradient(135deg, #ffc94a, #ff8fb1); }
 .cats-dot.new { font-size: 8.5px; letter-spacing: 0.4px; }
 @media (max-width: 420px) {
-  .emotion-deck.has-cats { gap: 4px; }
-  .emotion-deck.has-cats .emote-icon { width: 34px; height: 34px; }
-  .emotion-deck.has-cats .emote-btn { padding: 6px 1px 7px; border-radius: 15px; }
-  .emotion-deck.has-cats .emote-label { font-size: 8.5px; letter-spacing: -0.2px; }
+  .emotion-deck.has-cats { grid-template-columns: repeat(7, 1fr) !important; gap: 3px; }
+  .emotion-deck.has-cats .emote-icon { width: 32px; height: 32px; }
+  .emotion-deck.has-cats .emote-btn { padding: 5px 1px 6px; border-radius: 14px; }
+  .emotion-deck.has-cats .emote-label { font-size: 8px; letter-spacing: -0.3px; }
 }
 
 /* Small phones */

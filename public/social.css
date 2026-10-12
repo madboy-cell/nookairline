@@ -2142,6 +2142,7 @@
   opacity: 0 !important;
   pointer-events: none !important;
   visibility: hidden !important;
+  z-index: -99999 !important;
 }
 
 .onboarding-modal-backdrop.hidden * {

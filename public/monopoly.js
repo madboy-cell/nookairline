@@ -2126,7 +2126,17 @@ function initMonopoly() {
   const diceBox = $m('monopolyDiceBox');
   const btnRejoinActiveFlight = $m('btnRejoinActiveFlight');
 
-  if (openBtn) openBtn.addEventListener('click', handleMonopolyHomeClick);
+  if (openBtn) {
+    const handleMonoTap = (e) => {
+      if (e) {
+        e.stopPropagation();
+        if (e.cancelable && e.type === 'touchend') e.preventDefault();
+      }
+      handleMonopolyHomeClick(e);
+    };
+    openBtn.addEventListener('click', handleMonoTap);
+    openBtn.addEventListener('touchend', handleMonoTap, { passive: false });
+  }
   if (closeBtn) closeBtn.addEventListener('click', handleMonopolyExitGame);
   if (exitGameBtn) exitGameBtn.addEventListener('click', handleMonopolyExitGame);
   if (resetBtn) {
@@ -3468,8 +3478,17 @@ function handleMonopolyHomeClick() {
     return;
   }
 
-  // Check with backend
-  if (typeof sendSignaling === 'function' && (cachedRoomId || uid)) {
+  // If no previous room exists, show departure board immediately for zero mobile lag
+  if (!cachedRoomId) {
+    showDepartureBoard();
+    if (typeof sendSignaling === 'function') {
+      sendSignaling({ type: 'room_browse_start' });
+    }
+    return;
+  }
+
+  // Check with backend if returning to an active room
+  if (typeof sendSignaling === 'function' && uid) {
     monopolyEntryRequested = true;
     sendSignaling({
       type: 'room_check_session',
