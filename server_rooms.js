@@ -144,10 +144,10 @@ class RoomRegistry {
           const isClosed = type === 'closed';
 
           const defaultBotName = (idx === 2)
-            ? (s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣')
+            ? (s.difficulty === 'insane' ? 'Astral Sovereign 🌌' : s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣')
             : (idx === 3)
-              ? (s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱')
-              : (s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+              ? (s.difficulty === 'insane' ? 'Chrono Sovereign ⏳' : s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱')
+              : (s.difficulty === 'insane' ? 'Apex Sovereign ⚡' : s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
 
           return {
             ...s,
@@ -272,6 +272,19 @@ class RoomRegistry {
       const role = s.role || (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2');
       const isBot = s.type === 'bot' || s.controller === 'BOT_TEMPORARY' || s.controller === 'BOT_PERMANENT';
       const isEasy = (s.difficulty || 'easy') === 'easy';
+      const isInsane = (s.difficulty || 'easy') === 'insane';
+      let botCostume = null;
+      if (isBot && isInsane) {
+        const mythics = [
+          's1_naga_m', 's1_kinnaree_f', 's2_inari_m', 's2_inari_f', 's2_celestial_m', 's2_celestial_f',
+          's3_djinn_m', 's3_djinn_f', 's3_phoenix_m', 's3_phoenix_f', 's4_royale_m', 's4_royale_f',
+          's4_roulette_m', 's4_roulette_f', 's5_emperor_m', 's5_siren_f', 's5_leviathan_m', 's5_jellyfish_f',
+          's6_supernova_m', 's6_supernova_f', 's6_aegis_m', 's6_aegis_f', 's7_sundrop_m', 's7_sundrop_f',
+          's7_cinderella_m', 's7_cinderella_f', 's7_belle_m', 's7_belle_f', 's8_glacier_m', 's8_glacier_f',
+          's9_olympus_m', 's9_olympus_f', 's10_frost_m', 's10_scarab_f', 's11_anubis_m', 's11_cleo_f'
+        ];
+        botCostume = mythics[Math.floor(Math.random() * mythics.length)];
+      }
       players[role] = {
         id: role,
         pos: 0,
@@ -283,12 +296,14 @@ class RoomRegistry {
         ashPot: 0,
         carpetCharges: 0,
         ult: 0,
-        name: s.name || (isBot ? (idx === 2 ? (isEasy ? 'Cadet Mochi 🐣' : 'Major Whiskers 🐯') : (idx === 3 ? (isEasy ? 'Pilot Pip 🐱' : 'Admiral Claw 🦁') : (isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼'))) : `Player ${role.toUpperCase()}`),
+        name: s.name || (isBot ? (idx === 2 ? (isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯') : (idx === 3 ? (isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁') : (isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼'))) : `Player ${role.toUpperCase()}`),
         sprite: s.avatar || (isBot ? (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg') : 'assets/bkk_warrior_idle.png'),
-        badge: isBot ? `BOT${idx > 1 ? idx - 1 : ''}` : `P${idx + 1}`,
-        color: s.id === 1 ? '#ef4444' : (s.id === 2 ? '#06b6d4' : (s.id === 3 ? '#10b981' : '#f59e0b')),
+        badge: isBot ? (isInsane ? 'SOV' : `BOT${idx > 1 ? idx - 1 : ''}`) : `P${idx + 1}`,
+        color: isInsane ? '#a855f7' : (s.id === 1 ? '#ef4444' : (s.id === 2 ? '#06b6d4' : (s.id === 3 ? '#10b981' : '#f59e0b'))),
         isBot,
-        botLevel: isBot ? (s.difficulty || 'easy') : null
+        botLevel: isBot ? (s.difficulty || 'easy') : null,
+        costume: botCostume,
+        activeCostume: botCostume
       };
     });
 
@@ -938,7 +953,7 @@ class RoomRegistry {
         slot.ready = true;
         slot.connected = true;
         slot.difficulty = update.difficulty || slot.difficulty || 'easy';
-        slot.name = update.name || (slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+        slot.name = update.name || (slot.difficulty === 'insane' ? 'Apex Sovereign ⚡' : slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
         slot.avatar = update.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png';
       } else if (update.type === 'closed') {
         slot.controller = 'NONE';

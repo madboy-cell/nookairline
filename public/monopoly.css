@@ -4276,6 +4276,13 @@ body.has-active-modal .vault-pill * {
   color: #f87171;
 }
 
+.seat-role-pill.bot-pill-insane {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.2));
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+}
+
 .seat-avatar-wrap {
   width: 48px;
   height: 48px;
@@ -4479,6 +4486,11 @@ body.has-active-modal .vault-pill * {
   background: rgba(245, 158, 11, 0.16);
   border-color: rgba(245, 158, 11, 0.45);
   color: #fbbf24;
+}
+.seat-cycle-btn.cycle-bot-insane {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #c084fc;
 }
 .seat-cycle-btn.cycle-closed {
   background: rgba(239, 68, 68, 0.14);

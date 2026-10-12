@@ -1,6 +1,13 @@
 /**
- * 🐱✈️ Nook Airline — Sky Monopoly Solo Bot Brain ("Captain Whiskers")
- * Provides decision heuristics for Easy and Hard bot modes.
+ * 🐱✈️ Nook Airline — Sky Monopoly Solo Bot Brain ("Captain Whiskers & Apex Sovereign")
+ * Provides decision heuristics for Easy, Hard, and Insane bot modes.
+ *
+ * Difficulty Rules:
+ *  - Easy ("Trainee Mochi 🐾"): Carefree, casual, cute mistakes, zero skills & zero ultimates.
+ *  - Hard ("Capt. Whiskers 😼"): Calculative, strategic zone builder, defensive shields, zero skills & zero ultimates.
+ *  - Insane ("Apex Sovereign ⚡"): God-tier AI, maximum mathematical decision-making, randomly assigned
+ *                                 a Mythic costume identity with full signature skills and ultimate ability!
+ *
  * Shared between the browser client and the headless simulator.
  * UMD pattern: window.NookMonoBot or module.exports
  */
@@ -33,9 +40,44 @@
   } = Rules;
 
   // =========================================================
-  // 1. CASH RESERVE HEURISTIC (Used in Hard mode)
+  // 1. ALL 32 MYTHIC COSTUME IDENTITIES (Seasons 1 - 11)
   // =========================================================
-  function calculateReserve(state, botRole) {
+  const ALL_MYTHIC_IDS = [
+    // Season 1: Bangkok River Royalty
+    's1_naga_m', 's1_kinnaree_f',
+    // Season 2: Tokyo Sakura & Kitsune
+    's2_inari_m', 's2_inari_f', 's2_celestial_m', 's2_celestial_f',
+    // Season 3: Dubai Desert Mirage
+    's3_djinn_m', 's3_djinn_f', 's3_phoenix_m', 's3_phoenix_f',
+    // Season 4: Monte Carlo Casino Royale
+    's4_royale_m', 's4_royale_f', 's4_roulette_m', 's4_roulette_f',
+    // Season 5: Atlantis Bioluminescent Abyss
+    's5_emperor_m', 's5_siren_f', 's5_leviathan_m', 's5_jellyfish_f',
+    // Season 6: Starlight Odyssey
+    's6_supernova_m', 's6_supernova_f', 's6_aegis_m', 's6_aegis_f',
+    // Season 7: Enchanted Fairytales & Royal Crowns
+    's7_sundrop_m', 's7_sundrop_f', 's7_cinderella_m', 's7_cinderella_f', 's7_belle_m', 's7_belle_f',
+    // Season 8: Nordic Permafrost & Glacial Royalty
+    's8_warden_m', 's8_empress_f',
+    // Season 9: Egyptian Gilded Nile & Solar Divinity
+    's9_pharaoh_m', 's9_cleopatra_f', 's9_ra_m', 's9_sekhmet_f',
+    // Season 10: Venetian Phantom Masquerade
+    's10_phantom_m', 's10_phantom_f',
+    // Season 11: Mount Olympus Divinity
+    's11_zeus_m', 's11_athena_f'
+  ];
+
+  function getRandomMythicId(rng = Math.random) {
+    return ALL_MYTHIC_IDS[Math.floor(rng() * ALL_MYTHIC_IDS.length)];
+  }
+
+  // =========================================================
+  // 2. CASH RESERVE HEURISTIC
+  // =========================================================
+  function calculateReserve(state, botRole, level = 'hard') {
+    if (level === 'easy') {
+      return 25; // Carefree, playful, minimal reserve
+    }
     const p = state.players[botRole];
     const pos = p ? p.pos : 0;
     let maxRentAhead = 0;
@@ -51,15 +93,66 @@
     }
 
     const hasShield = (p && p.inventory ? p.inventory : []).includes('shield');
-    // If bot has a shield, it has a guaranteed escape card for 1 big hit
-    const shieldDiscount = hasShield ? 0.35 : 0.85;
+    const shieldDiscount = hasShield ? 0.35 : (level === 'insane' ? 0.95 : 0.85);
     const round = state.round || 1;
-    const baseMin = round <= 10 ? 50 : 90;
+    const baseMin = level === 'insane' ? (round <= 8 ? 70 : 120) : (round <= 10 ? 50 : 90);
     return Math.max(baseMin, Math.round(maxRentAhead * shieldDiscount));
   }
 
   // =========================================================
-  // 2. PRE-ROLL ITEM USAGE
+  // 3. TACTICAL ULTIMATE ACTIVATION (Strictly Insane Mode Only)
+  // =========================================================
+  function shouldUseUltimate(state, botRole, rng = Math.random) {
+    const p = state.players && state.players[botRole];
+    if (!p) return false;
+    // CRITICAL REQUIREMENT: Easy and Hard bots MUST NOT be able to use skill and ultimate!
+    if (p.botLevel !== 'insane') return false;
+    if ((p.ult || 0) < 100) return false;
+
+    // Insane Bot Maximum Decision on Ultimate Timing:
+    const costumeId = String(p.costume || p.activeCostume || '').toLowerCase();
+    const oppRoles = Object.keys(state.players || {}).filter((r) => r !== botRole && !state.players[r]?.bankrupt);
+    const richestOpp = oppRoles.reduce((best, r) => (!best || (state.players[r]?.miles || 0) > (state.players[best]?.miles || 0)) ? r : best, oppRoles[0]);
+    const maxOppMiles = richestOpp && state.players[richestOpp] ? state.players[richestOpp].miles : 0;
+    const myMiles = p.miles || 0;
+
+    // A. Siphon & Extort Ultimates (Absolute Zero, Nile Seduction, Olympus Wrath, Supernova Tithe):
+    const isSiphon = costumeId.includes('warden') || costumeId.includes('empress') ||
+                     costumeId.includes('cleopatra') || costumeId.includes('pharaoh') ||
+                     costumeId.includes('zeus') || costumeId.includes('athena') ||
+                     costumeId.includes('aegis') || costumeId.includes('astral') ||
+                     costumeId.includes('supernova');
+    if (isSiphon) {
+      if (maxOppMiles >= 220 || myMiles < 350) return true;
+    }
+
+    // B. Demolition & Disruption Ultimates (Beast, Cinderella, Solar Wrath, Phoenix):
+    const isDestruction = costumeId.includes('belle') || costumeId.includes('beast') ||
+                          costumeId.includes('cinderella') || costumeId.includes('clockwork') ||
+                          costumeId.includes('ra') || costumeId.includes('sekhmet');
+    if (isDestruction) {
+      const oppHasHotels = Object.keys(state.properties || {}).some((id) => {
+        const prop = state.properties[id];
+        return prop && prop.owner !== botRole && prop.level >= 2 && !state.players[prop.owner]?.bankrupt;
+      });
+      if (oppHasHotels || myMiles < 250) return true;
+    }
+
+    // C. Cash Surge / Monopoly Rent Buff (Monaco, Naga, Djinn, Sundrop Lantern):
+    const isBuff = costumeId.includes('monaco') || costumeId.includes('roulette') ||
+                   costumeId.includes('naga') || costumeId.includes('djinn') ||
+                   costumeId.includes('sundrop') || costumeId.includes('rapunzel');
+    if (isBuff) {
+      const myPropCount = ownedTileIds(state, botRole).length;
+      if (myPropCount >= 2 || myMiles < 300) return true;
+    }
+
+    // Fallback: Unleash to apply relentless momentum
+    return true;
+  }
+
+  // =========================================================
+  // 4. PRE-ROLL ITEM USAGE
   // =========================================================
   function preRoll(state, botRole, level = 'hard', rng = Math.random) {
     const p = state.players[botRole];
@@ -71,7 +164,7 @@
     const oppPlayer = state.players[richestOppRole];
     const pos = p.pos;
 
-    // --- EASY MODE ---
+    // --- EASY MODE: Casual, playful, cute mistakes ---
     if (level === 'easy') {
       // 50% of the time, easy bot keeps it simple and doesn't use items
       if (rng() < 0.5) return null;
@@ -106,112 +199,217 @@
       return null;
     }
 
-    // --- HARD MODE ---
-    // Priority 1: 💣 C4 — demolish opponent hotels or level-2 houses across all rivals
-    if (inv.includes('c4')) {
-      const oppProps = Object.keys(state.properties || {})
-        .filter((id) => {
-          const prop = state.properties[id];
-          return prop && prop.owner !== botRole && !state.players[prop.owner]?.bankrupt && prop.level >= 2;
-        })
-        .map(Number)
-        .sort((a, b) => getTileRent(state, b) - getTileRent(state, a));
+    // --- HARD MODE: Calculative & strategic, STRICTLY NO SKILLS OR ULTIMATES ---
+    if (level === 'hard') {
+      // Priority 1: 💣 C4 — demolish opponent hotels or level-2 houses
+      if (inv.includes('c4')) {
+        const oppProps = Object.keys(state.properties || {})
+          .filter((id) => {
+            const prop = state.properties[id];
+            return prop && prop.owner !== botRole && !state.players[prop.owner]?.bankrupt && prop.level >= 2;
+          })
+          .map(Number)
+          .sort((a, b) => getTileRent(state, b) - getTileRent(state, a));
 
-      if (oppProps.length > 0) {
-        return { useItem: 'c4', tileId: oppProps[0] };
-      }
-    }
-
-    // Priority 2: 🧲 Magnet — steal when richest rival has a thick wallet
-    if (inv.includes('magnet') && oppPlayer) {
-      if (oppPlayer.miles >= 400 || (oppPlayer.miles >= 250 && oppPlayer.miles > p.miles)) {
-        return { useItem: 'magnet' };
-      }
-    }
-
-    // Priority 3: 🌀 Swap Portal — escape imminent hotel death or send opponent into ours
-    if (inv.includes('swap') && oppPlayer) {
-      let botDanger = 0;
-      let oppDanger = 0;
-      for (let s = 1; s <= 6; s++) {
-        const bTarget = (pos + s) % 20;
-        const oTarget = (oppPlayer.pos + s) % 20;
-        if (state.properties[bTarget] && state.properties[bTarget].owner !== botRole && !state.players[state.properties[bTarget].owner]?.bankrupt) {
-          botDanger = Math.max(botDanger, getTileRent(state, bTarget));
-        }
-        if (state.properties[oTarget] && state.properties[oTarget].owner === botRole) {
-          oppDanger = Math.max(oppDanger, getTileRent(state, oTarget));
+        if (oppProps.length > 0) {
+          return { useItem: 'c4', tileId: oppProps[0] };
         }
       }
 
-      // If bot faces significant danger or opponent is approaching bot's big rent
-      if (botDanger >= 180 || (oppDanger >= 250 && botDanger < oppDanger)) {
-        return { useItem: 'swap' };
+      // Priority 2: 🧲 Magnet — steal when richest rival has a thick wallet
+      if (inv.includes('magnet') && oppPlayer) {
+        if (oppPlayer.miles >= 400 || (oppPlayer.miles >= 250 && oppPlayer.miles > p.miles)) {
+          return { useItem: 'magnet' };
+        }
       }
-    }
 
-    // Priority 4: 🎲 Golden Dice — precision strike
-    if (inv.includes('golden_dice')) {
-      let bestV = null;
-      let bestScore = -Infinity;
-
-      for (let v = 1; v <= 6; v++) {
-        const tId = (pos + v) % 20;
-        const t = MONOPOLY_TILES[tId];
-        let score = 0;
-
-        if (tId === 0) {
-          score += 350; // Collect lap bonus!
-          if ((state.mekongHoard || 0) >= 50) {
-            score += Math.min(800, state.mekongHoard * 2.5); // Snipe Mekong Hoard!
+      // Priority 3: 🌀 Swap Portal — escape imminent hotel death or send opponent into ours
+      if (inv.includes('swap') && oppPlayer) {
+        let botDanger = 0;
+        let oppDanger = 0;
+        for (let s = 1; s <= 6; s++) {
+          const bTarget = (pos + s) % 20;
+          const oTarget = (oppPlayer.pos + s) % 20;
+          if (state.properties[bTarget] && state.properties[bTarget].owner !== botRole && !state.players[state.properties[bTarget].owner]?.bankrupt) {
+            botDanger = Math.max(botDanger, getTileRent(state, bTarget));
           }
-        } else if (t.type === 'property') {
-          const prop = state.properties && state.properties[tId];
-          if (!prop) {
-            // Unowned tile: check if it completes or progresses a zone
-            const zt = zoneTiles(t.zone);
-            const botOwnedInZone = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner === botRole).length;
-            if (botOwnedInZone === zt.length - 1) score += 950; // Completes zone!
-            else if (botOwnedInZone > 0) score += 500;
-            else score += 280;
-            if (p.miles < t.price) score -= 300; // Can't afford
-          } else if (prop.owner === botRole) {
-            if (prop.level < 3 && p.miles >= upgradeCost(t)) {
-              if (ownsZone(state, botRole, t.zone)) score += 550;
-              else score += 320;
+          if (state.properties[oTarget] && state.properties[oTarget].owner === botRole) {
+            oppDanger = Math.max(oppDanger, getTileRent(state, oTarget));
+          }
+        }
+        if (botDanger >= 180 || (oppDanger >= 250 && botDanger < oppDanger)) {
+          return { useItem: 'swap' };
+        }
+      }
+
+      // Priority 4: 🎲 Golden Dice — precision strike
+      if (inv.includes('golden_dice')) {
+        let bestV = null;
+        let bestScore = -Infinity;
+
+        for (let v = 1; v <= 6; v++) {
+          const tId = (pos + v) % 20;
+          const t = MONOPOLY_TILES[tId];
+          let score = 0;
+
+          if (tId === 0) {
+            score += 350; // Lap bonus
+            if ((state.mekongHoard || 0) >= 50) {
+              score += Math.min(800, state.mekongHoard * 2.5);
             }
-          } else {
-            // Opponent tile: danger!
-            const rent = getTileRent(state, tId);
-            score -= (rent * 3.5);
+          } else if (t.type === 'property') {
+            const prop = state.properties && state.properties[tId];
+            if (!prop) {
+              const zt = zoneTiles(t.zone);
+              const botOwnedInZone = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner === botRole).length;
+              if (botOwnedInZone === zt.length - 1) score += 950; // Completes zone!
+              else if (botOwnedInZone > 0) score += 500;
+              else score += 280;
+              if (p.miles < t.price) score -= 300;
+            } else if (prop.owner === botRole) {
+              if (prop.level < 3 && p.miles >= upgradeCost(t)) {
+                if (ownsZone(state, botRole, t.zone)) score += 550;
+                else score += 320;
+              }
+            } else {
+              const rent = getTileRent(state, tId);
+              score -= (rent * 3.5);
+            }
+          } else if (t.type === 'airdrop') {
+            score += 260;
+          } else if (t.type === 'market' || t.type === 'arena') {
+            score += 90;
           }
-        } else if (t.type === 'airdrop') {
-          score += 260;
-        } else if (t.type === 'casino') {
-          score += 20;
-        } else if (t.type === 'market' || t.type === 'arena') {
-          score += 90;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestV = v;
+          }
         }
 
-        if (score > bestScore) {
-          bestScore = score;
-          bestV = v;
+        if (bestV && bestScore >= 120) {
+          return { useItem: 'golden_dice', value: bestV };
         }
       }
 
-      if (bestV && bestScore >= 120) {
-        return { useItem: 'golden_dice', value: bestV };
+      // Priority 5: 🍌 Banana Peel — plant behind if rival is trailing
+      if (inv.includes('banana')) {
+        const someoneBehind = oppRoles.some((r) => {
+          const dist = (pos - (state.players[r]?.pos || 0) + 20) % 20;
+          return dist >= 1 && dist <= 6;
+        });
+        if (someoneBehind || rng() < 0.35) {
+          return { useItem: 'banana' };
+        }
       }
+      return null;
     }
 
-    // Priority 5: 🍌 Banana Peel — plant behind if rival is trailing within 6 tiles
-    if (inv.includes('banana')) {
-      const someoneBehind = oppRoles.some((r) => {
-        const dist = (pos - (state.players[r]?.pos || 0) + 20) % 20;
-        return dist >= 1 && dist <= 6;
-      });
-      if (someoneBehind || rng() < 0.35) {
-        return { useItem: 'banana' };
+    // --- INSANE MODE: Peak Mathematical Optimization & Lethal Tactical Combos ---
+    if (level === 'insane') {
+      // 1. C4 Demolition: Destroy opponent's biggest rent engine or monopoly
+      if (inv.includes('c4')) {
+        const oppProps = Object.keys(state.properties || {})
+          .filter((id) => {
+            const prop = state.properties[id];
+            return prop && prop.owner !== botRole && !state.players[prop.owner]?.bankrupt && prop.level >= 2;
+          })
+          .map(Number)
+          .sort((a, b) => getTileRent(state, b) - getTileRent(state, a));
+
+        if (oppProps.length > 0) {
+          return { useItem: 'c4', tileId: oppProps[0] };
+        }
+      }
+
+      // 2. Swap Portal: Mathematical safety & trap analysis
+      if (inv.includes('swap') && oppPlayer) {
+        let botDanger = 0;
+        let oppDanger = 0;
+        for (let s = 1; s <= 6; s++) {
+          const bTarget = (pos + s) % 20;
+          const oTarget = (oppPlayer.pos + s) % 20;
+          if (state.properties[bTarget] && state.properties[bTarget].owner !== botRole && !state.players[state.properties[bTarget].owner]?.bankrupt) {
+            botDanger = Math.max(botDanger, getTileRent(state, bTarget));
+          }
+          if (state.properties[oTarget] && state.properties[oTarget].owner === botRole) {
+            oppDanger = Math.max(oppDanger, getTileRent(state, oTarget));
+          }
+        }
+        if (botDanger >= 150 || (oppDanger >= 200 && botDanger < oppDanger)) {
+          return { useItem: 'swap' };
+        }
+      }
+
+      // 3. Magnet: Optimal siphon threshold
+      if (inv.includes('magnet') && oppPlayer) {
+        if (oppPlayer.miles >= 320 || (oppPlayer.miles >= 200 && oppPlayer.miles > p.miles)) {
+          return { useItem: 'magnet' };
+        }
+      }
+
+      // 4. Golden Dice: Deep 6-tile forward trajectory optimization
+      if (inv.includes('golden_dice')) {
+        let bestV = null;
+        let bestScore = -Infinity;
+
+        for (let v = 1; v <= 6; v++) {
+          const tId = (pos + v) % 20;
+          const t = MONOPOLY_TILES[tId];
+          let score = 0;
+
+          if (tId === 0) {
+            score += 450;
+            if ((state.mekongHoard || 0) >= 40) {
+              score += Math.min(1000, state.mekongHoard * 3);
+            }
+          } else if (t.type === 'property') {
+            const prop = state.properties && state.properties[tId];
+            if (!prop) {
+              const zt = zoneTiles(t.zone);
+              const botCount = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner === botRole).length;
+              if (botCount === zt.length - 1) score += 1200; // Complete zone monopoly!
+              else if (botCount > 0) score += 650;
+              else score += 400;
+              if (p.miles < t.price) score -= 400;
+            } else if (prop.owner === botRole) {
+              if (prop.level < 3 && p.miles >= upgradeCost(t)) {
+                if (ownsZone(state, botRole, t.zone)) score += 750;
+                else score += 450;
+              }
+            } else {
+              const rent = getTileRent(state, tId);
+              score -= (rent * 4.5);
+            }
+          } else if (t.type === 'airdrop') {
+            score += 280;
+          } else if (t.type === 'market') {
+            score += 200;
+          } else if (t.type === 'arena') {
+            score += 180;
+          }
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestV = v;
+          }
+        }
+
+        if (bestV && bestScore >= 150) {
+          return { useItem: 'golden_dice', value: bestV };
+        }
+      }
+
+      // 5. Banana Peel: Plant trap right before bot's hotels
+      if (inv.includes('banana')) {
+        const someoneApproachingHotel = oppRoles.some((r) => {
+          const oppPos = state.players[r]?.pos || 0;
+          const dist = (pos - oppPos + 20) % 20;
+          return dist >= 1 && dist <= 6;
+        });
+        if (someoneApproachingHotel || rng() < 0.45) {
+          return { useItem: 'banana' };
+        }
       }
     }
 
@@ -219,7 +417,7 @@
   }
 
   // =========================================================
-  // 3. DECISION ENGINE (Buy, Upgrade, Rent, Casino, Market, Arena)
+  // 5. DECISION ENGINE (Buy, Upgrade, Rent, Casino, Market, Arena)
   // =========================================================
   function decide(state, botRole, decision, level = 'hard', rng = Math.random) {
     if (!decision || !decision.type) return { act: 'pass' };
@@ -243,8 +441,6 @@
           return { act: 'buy' };
         }
 
-        // HARD: strategic, assertive acquisition
-        const reserve = calculateReserve(state, botRole);
         const zt = zoneTiles(tile.zone);
         const botCount = zt.filter((t) => state.properties[t.id] && state.properties[t.id].owner === botRole).length;
         const oppRoles = Object.keys(state.players || {}).filter((r) => r !== botRole);
@@ -257,32 +453,32 @@
         });
         const completesBotZone = botCount === zt.length - 1;
 
-        // Completing our own zone is absolute top priority
-        if (completesBotZone) {
-          if (p.miles >= cost + 15) return { act: 'buy' };
-        }
-
-        // Blocking opponent zone is very high priority
-        if (blocksOppZone) {
+        // INSANE: Ruthless Monopoly Mastery & Territory Denial
+        if (level === 'insane') {
+          if (completesBotZone) return { act: 'buy' }; // Always complete own monopoly
+          if (blocksOppZone) return { act: 'buy' }; // Always block rival monopoly
+          if (botCount > 0 && p.miles >= cost + 15) return { act: 'buy' };
+          if ((state.round || 1) <= 16 && p.miles >= cost + 20) return { act: 'buy' };
           if (p.miles >= cost + 25) return { act: 'buy' };
-        }
-
-        // Second tile in a zone where we have a presence
-        if (botCount > 0) {
-          if (p.miles >= cost + 30) return { act: 'buy' };
-        }
-
-        // Early and mid game (rounds 1..16): land grab is crucial
-        if ((state.round || 1) <= 16) {
-          if (p.miles >= cost + 35) return { act: 'buy' };
-        }
-
-        // Late game (round >= 18): avoid buying cheap isolated properties that waste cash
-        if ((state.round || 1) >= 18 && tile.price <= 160 && botCount === 0 && oppCount === 0) {
           return { act: 'pass' };
         }
 
-        // Standard buy: keep safe cash reserve
+        // HARD: Strategic, assertive acquisition
+        if (completesBotZone) {
+          if (p.miles >= cost + 15) return { act: 'buy' };
+        }
+        if (blocksOppZone) {
+          if (p.miles >= cost + 25) return { act: 'buy' };
+        }
+        if (botCount > 0) {
+          if (p.miles >= cost + 30) return { act: 'buy' };
+        }
+        if ((state.round || 1) <= 16) {
+          if (p.miles >= cost + 35) return { act: 'buy' };
+        }
+        if ((state.round || 1) >= 18 && tile.price <= 160 && botCount === 0 && oppCount === 0) {
+          return { act: 'pass' };
+        }
         if (p.miles >= cost + 30) {
           return { act: 'buy' };
         }
@@ -304,23 +500,25 @@
           return { act: 'build' };
         }
 
-        // HARD: build up strong revenue bases
-        const reserve = calculateReserve(state, botRole);
-        const prop = state.properties[tile.id];
         const isCompletedZone = ownsZone(state, botRole, tile.zone);
-        const nextIsHotel = prop && prop.level === 2;
+        const prop = state.properties[tile.id];
 
-        // Upgrades in completed zones are priority #1
+        // INSANE: Aggressive Hotel Rush
+        if (level === 'insane') {
+          if (isCompletedZone) return { act: 'build' }; // Hotels in monopoly = lethal rent!
+          if (prop && prop.level === 1 && p.miles >= cost + 20) return { act: 'build' };
+          if (p.miles - cost >= 30) return { act: 'build' };
+          return { act: 'skip' };
+        }
+
+        // HARD: build up strong revenue bases
+        const reserve = calculateReserve(state, botRole, level);
         if (isCompletedZone) {
           return { act: 'build' };
         }
-
-        // Level 1 -> Level 2 doubles rent, very high ROI even in uncompleted zone
         if (prop && prop.level === 1) {
           if (p.miles >= cost + 30) return { act: 'build' };
         }
-
-        // Hotel in partial zone
         if (p.miles - cost >= Math.round(reserve * 0.4)) {
           return { act: 'build' };
         }
@@ -351,38 +549,51 @@
           return { act: 'pay' };
         }
 
+        // INSANE: Optimum Expected Value & Ruthless Takeover
+        if (level === 'insane') {
+          if (hasShield && (isHotel || rent >= 160 || rent >= p.miles * 0.25)) {
+            return { act: 'shield' };
+          }
+          if (canClash && (rent >= 65 || rent >= p.miles * 0.15)) {
+            return { act: 'clash' };
+          }
+          if (canTakeover) {
+            const zt = zoneTiles(tile.zone);
+            const botInZone = zt.filter((t) => state.properties[t.id] && state.properties[t.id].owner === botRole).length;
+            const ownerInZone = zt.filter((t) => state.properties[t.id] && state.properties[t.id].owner === prop.owner).length;
+            const completesBot = botInZone === zt.length - 1;
+            const breaksOppZone = ownerInZone === zt.length;
+            const safeToLose = p.miles >= value + loseCost + 30;
+            if (safeToLose && (completesBot || breaksOppZone || prop.level >= 2)) {
+              return { act: 'takeover' };
+            }
+          }
+          return { act: 'pay' };
+        }
+
         // HARD
-        // 1. Rent Shield priority: use on hotels, high rents (>= 180), or when rent > 30% of cash
         if (hasShield) {
           if (isHotel || rent >= 180 || rent >= p.miles * 0.30) {
             return { act: 'shield' };
           }
         }
-
-        // 2. Cocktail Clash priority: if rent >= 80 or >= 20% of cash, take the Double-or-Nothing showdown!
         if (canClash && (rent >= 80 || rent >= p.miles * 0.20)) {
           return { act: 'clash' };
         }
-
-        // 3. Hostile takeover: check if strategically valuable and affordable
         if (canTakeover) {
           const zt = zoneTiles(tile.zone);
           const botInZone = zt.filter((t) => state.properties[t.id] && state.properties[t.id].owner === botRole).length;
           const ownerInZone = zt.filter((t) => state.properties[t.id] && state.properties[t.id].owner === prop.owner).length;
           const completesBot = botInZone === zt.length - 1;
           const breaksOppZone = ownerInZone === zt.length;
-
-          // Safe to lose check (accounting for Monaco loaded dice danger)
           const ownerPerks = (state.perks && state.perks[prop.owner]) || {};
           const isMonacoOwner = !!(ownerPerks.duelMinRoll || ownerPerks.loadedDice);
           const buffer = isMonacoOwner ? 160 : 50;
-
           const safeToLose = p.miles >= value + loseCost + buffer;
           if (safeToLose && (completesBot || breaksOppZone || prop.level >= 2)) {
             return { act: 'takeover' };
           }
         }
-
         return { act: 'pay' };
       }
 
@@ -399,8 +610,15 @@
           return rng() < 0.75 ? { act: 'spin' } : { act: 'leave' };
         }
 
+        // INSANE: Only gambles if wealth is dominant
+        if (level === 'insane') {
+          const reserve = calculateReserve(state, botRole, level);
+          if (p.miles >= reserve + 350) return { act: 'spin' };
+          return { act: 'leave' };
+        }
+
         // HARD: only gamble with disposable surplus cash
-        const reserve = calculateReserve(state, botRole);
+        const reserve = calculateReserve(state, botRole, level);
         if (p.miles >= reserve + 300) {
           return { act: 'spin' };
         }
@@ -415,8 +633,7 @@
         const full = (p.inventory || []).length >= MONO_CFG.MAX_ITEMS;
         if (full || !offers.length) return { act: 'leave' };
 
-        // Item priority preference
-        const priority = ['shield', 'golden_dice', 'c4', 'magnet', 'swap'];
+        const priority = ['golden_dice', 'shield', 'c4', 'magnet', 'swap'];
 
         // EASY
         if (level === 'easy') {
@@ -425,6 +642,18 @@
           if (!affordable.length) return { act: 'leave' };
           const pick = affordable[Math.floor(rng() * affordable.length)];
           return { act: 'buyItem', itemId: pick };
+        }
+
+        // INSANE: Deny critical items to the human player
+        if (level === 'insane') {
+          const candidates = offers
+            .filter((id) => p.miles >= marketPrice(state, botRole, id) + 20)
+            .sort((a, b) => priority.indexOf(a) - priority.indexOf(b));
+
+          if (candidates.length > 0) {
+            return { act: 'buyItem', itemId: candidates[0] };
+          }
+          return { act: 'leave' };
         }
 
         // HARD
@@ -456,13 +685,13 @@
         });
         if (!targets.length) return { act: 'leave' };
 
-        // EASY: pick random target (hotels or properties)
+        // EASY: pick random target
         if (level === 'easy') {
           const chosen = targets[Math.floor(rng() * targets.length)];
           return { act: 'challenge', targetTileId: chosen };
         }
 
-        // HARD: strategic target ranking (Hotel raids first for free loot, then completes bot zone > breaks opp zone > highest rent)
+        // HARD & INSANE: strategic target ranking
         targets.sort((a, b) => {
           const propA = state.properties[a];
           const propB = state.properties[b];
@@ -490,15 +719,76 @@
   }
 
   // =========================================================
-  // 4. PERSONALITY & QUOTES
+  // 6. PERSONALITY & QUOTES
   // =========================================================
   function personality(level = 'hard') {
+    if (level === 'insane') {
+      return {
+        name: 'Apex Sovereign ⚡',
+        sprite: 'assets/bot_captain.jpg',
+        badge: 'INSANE',
+        color: '#a855f7',
+        quotes: {
+          buy: [
+            'Domain secured. The celestial ledger expands ⚡🏛️',
+            'A divine conquest. Your airspace diminishes 🌌',
+            'Mortals build houses; sovereigns build empires 👑'
+          ],
+          upgrade: [
+            'Celestial Citadel constructed! Tremble before the invoice ⚡🏨',
+            'Maximum prestige unlocked. First class belongs to the heavens ✨',
+            'Upgraded to god-tier luxury. Rent is non-negotiable 💸'
+          ],
+          pass: [
+            'A tactical pause. Your temporary solace will be brief ⚡',
+            'Conserving treasury for the decisive strike 🪐'
+          ],
+          rent_pay: [
+            'A token tithe from my vast treasury. Savor it while you can ⚡🪙',
+            'Paid. But the universe balances all debts soon enough 🔥'
+          ],
+          rent_shield: [
+            'DIVINE AEGIS! Your petty toll is obliterated 🛡️⚡',
+            'Celestial Shield deployed! Not a single coin for you 🛡️✨'
+          ],
+          takeover: [
+            'SOVEREIGN ANNEXATION! Step aside, the throne is mine! ⚔️⚡',
+            'Yield your territory to the higher order! ⚔️👑'
+          ],
+          c4: [
+            'Orbital strike initiated! Your luxury collapses into rubble! 💣💥',
+            'Demolition decree enforced! Back to ruins! 💣⚡'
+          ],
+          magnet: [
+            'Cosmic gravity well! Siphoning your treasury into my vault! 🧲🌌',
+            'Gravitational pull: your wealth now belongs to the heavens! 🧲🪙'
+          ],
+          swap: [
+            'Dimensional rift! Witness your complete displacement! 🌀🪐',
+            'Seat swap protocol executed. Welcome to your doom! 🌀⚡'
+          ],
+          golden_dice: [
+            'Precision celestial vectors! Landing exactly as destined! 🎲✨',
+            'Fate is not random; it is calculated! 🎲⚡'
+          ],
+          win: [
+            'FLAWLESS CELESTIAL VICTORY! The airline domain is eternally mine! 👑⚡🏛️',
+            'Mortals play games; sovereigns dictate the skies! 🏆🌌'
+          ],
+          lose: [
+            'Impossible anomaly! A disturbance in the celestial matrix! ⚡🌪️',
+            'A commendable resistance… you have earned my respect! 👑'
+          ]
+        }
+      };
+    }
+
     const isHard = level === 'hard';
     return {
       name: isHard ? 'Captain Whiskers 😈✈️' : 'Captain Whiskers 🐱✈️',
-      sprite: 'assets/cats/m_captain.png',
-      badge: 'BOT',
-      color: isHard ? '#f59e0b' : '#38bdf8',
+      sprite: isHard ? 'assets/bot_captain.jpg' : 'assets/bot_mochi.jpg',
+      badge: isHard ? 'WHISKERS' : 'MOCHI',
+      color: isHard ? '#f59e0b' : '#10b981',
       quotes: {
         buy: isHard
           ? ['Prime real estate secured! 😼💼', 'Dubai Marina is mine! Luxury flights coming up ✈️💎', 'Building my airline empire! 🏰']
@@ -539,7 +829,10 @@
   }
 
   return {
+    ALL_MYTHIC_IDS,
+    getRandomMythicId,
     calculateReserve,
+    shouldUseUltimate,
     preRoll,
     decide,
     personality,

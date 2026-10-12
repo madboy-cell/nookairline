@@ -715,6 +715,8 @@ function makePlayer(id) {
 
 /** Costume perk effects locked in for the current game (see costumes.js / vault.js). */
 function perkOf(role) {
+  const pl = monopolyState?.players && monopolyState.players[role];
+  if (pl && pl.isBot && pl.botLevel !== 'insane') return {};
   const ps = monopolyState && monopolyState.perks;
   return (ps && ps[role]) || {};
 }
@@ -740,14 +742,17 @@ function activeCostumeId(role) {
   const myRole = getMonopolyMyRole();
   const pl = monopolyState?.players && monopolyState.players[role];
 
-  // 1. Check explicit player costume or activeCostume override
-  if (pl && (pl.costume || pl.activeCostume)) {
-    return pl.costume || pl.activeCostume;
+  // 1. If player is a bot, only insane bot has a mythic costume identity (easy and hard have none)
+  if (pl?.isBot) {
+    if (pl.botLevel === 'insane') {
+      return pl.costume || pl.activeCostume || '';
+    }
+    return '';
   }
 
-  // 2. If player is a bot, use their assigned costume or sprite (never inherit human partner avatar)
-  if (pl?.isBot) {
-    return pl.costume || pl.sprite || '';
+  // 2. Check explicit player costume or activeCostume override
+  if (pl && (pl.costume || pl.activeCostume)) {
+    return pl.costume || pl.activeCostume;
   }
 
   // 3. Check Vault equipped costume
@@ -2851,21 +2856,22 @@ function startBotGame(level = 'hard') {
   const myRole = getMonopolyMyRole();
   const botRole = otherRole(myRole);
   const isEasy = (level === 'easy');
-  const botName = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
+  const isInsane = (level === 'insane');
+  const botName = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
   const botSprite = isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg';
-  const botColor = isEasy ? '#10b981' : '#f59e0b';
-  const botBadge = isEasy ? 'MOCHI' : 'WHISKERS';
+  const botColor = isEasy ? '#10b981' : isInsane ? '#a855f7' : '#f59e0b';
+  const botBadge = isEasy ? 'MOCHI' : isInsane ? 'SOVEREIGN' : 'WHISKERS';
 
-  if (level === 'hard') {
+  if (level === 'hard' || level === 'insane') {
     const myProfile = window.NookVault && window.NookVault.getMyProfile ? window.NookVault.getMyProfile() : null;
     const diamonds = myProfile?.diamonds || 0;
     const stats = myProfile?.botStats;
-    const stake = (stats?.hardLossStreak >= 2) ? 50 : 100;
+    const stake = level === 'insane' ? 150 : ((stats?.hardLossStreak >= 2) ? 50 : 100);
     if (diamonds < stake) {
       if (window.NookVault && window.NookVault.toast) {
-        window.NookVault.toast(`⚠️ Need ${stake}💎 to enter Hard mode (you have ${diamonds}💎)`);
+        window.NookVault.toast(`⚠️ Need ${stake}💎 to enter ${level.toUpperCase()} mode (you have ${diamonds}💎)`);
       } else {
-        alert(`Need ${stake}💎 to enter Hard mode (you have ${diamonds}💎)`);
+        alert(`Need ${stake}💎 to enter ${level.toUpperCase()} mode (you have ${diamonds}💎)`);
       }
       return;
     }
@@ -2898,11 +2904,28 @@ function startBotGame(level = 'hard') {
   fresh.players[botRole].isBot = true;
   fresh.players[botRole].botLevel = level;
 
-  // Perks: only human receives perks, bot gets NONE
+  // Perks: easy and hard get NONE. Insane bot gets a random Mythic identity + perks!
   fresh.gameId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const perks = (window.NookVault && window.NookVault.monopolyPerks) ? window.NookVault.monopolyPerks() : null;
-  fresh.perks = perks ? { [myRole]: perks[myRole] || {} } : null;
+  fresh.perks = perks ? { [myRole]: perks[myRole] || {} } : {};
   fresh.perkUsed = {};
+
+  if (isInsane) {
+    const mythicId = (window.NookMonoBot && typeof window.NookMonoBot.getRandomMythicId === 'function')
+      ? window.NookMonoBot.getRandomMythicId()
+      : 's6_supernova_m';
+    fresh.players[botRole].costume = mythicId;
+    fresh.players[botRole].activeCostume = mythicId;
+
+    const C = window.NookCostumes;
+    if (C && C.BY_ID && C.BY_ID[mythicId]) {
+      const c = C.BY_ID[mythicId];
+      const perkKey = c.perk;
+      const perkData = (C.PERKS && C.PERKS[perkKey]) || {};
+      fresh.perks[botRole] = { costume: mythicId, [perkKey]: true, ...perkData };
+      if (c.sprite) fresh.players[botRole].sprite = c.sprite;
+    }
+  }
 
   if (fresh.perks && fresh.perks[myRole]) {
     const pk = fresh.perks[myRole];
@@ -2910,6 +2933,13 @@ function startBotGame(level = 'hard') {
     if (pk.startMiles) pl.miles += pk.startMiles;
     if (pk.startItem && ITEMS[pk.startItem] && pl.inventory.length < MONO_CFG.MAX_ITEMS) pl.inventory.push(pk.startItem);
     if (pk.reverseRentHex || isPhantomRoyalty(myRole)) pl.phantomRentReversals = 2;
+  }
+  if (isInsane && fresh.perks && fresh.perks[botRole]) {
+    const bpk = fresh.perks[botRole];
+    const bpl = fresh.players[botRole];
+    if (bpk.startMiles) bpl.miles += bpk.startMiles;
+    if (bpk.startItem && ITEMS[bpk.startItem] && bpl.inventory.length < MONO_CFG.MAX_ITEMS) bpl.inventory.push(bpk.startItem);
+    if (bpk.reverseRentHex || isPhantomRoyalty(botRole)) bpl.phantomRentReversals = 2;
   }
 
   monopolyState = fresh;
@@ -2992,7 +3022,7 @@ function cycleLobbySlot(slotId) {
   const slot = lobbyState.slots.find((s) => s.id === slotId);
   if (!slot) return;
 
-  // Universal cycle sequence: human (open) -> bot (easy) -> bot (hard) -> closed -> human (open)
+  // Universal cycle sequence: human (open) -> bot (easy) -> bot (hard) -> bot (insane) -> closed -> human (open)
   if (slot.type === 'human') {
     slot.type = 'bot';
     slot.difficulty = 'easy';
@@ -3000,6 +3030,9 @@ function cycleLobbySlot(slotId) {
     slot.type = 'bot';
     slot.difficulty = 'hard';
   } else if (slot.type === 'bot' && slot.difficulty === 'hard') {
+    slot.type = 'bot';
+    slot.difficulty = 'insane';
+  } else if (slot.type === 'bot' && slot.difficulty === 'insane') {
     slot.type = 'closed';
     slot.difficulty = null;
   } else {
@@ -3133,20 +3166,21 @@ function updateLobbyUI() {
     } else if (s2.type === 'bot') {
       if (seatDxb) seatDxb.classList.remove('seat-closed-mode');
       const isEasy = s2.difficulty === 'easy';
+      const isInsane = s2.difficulty === 'insane';
       if (dxbImg) dxbImg.src = isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg';
-      if (dxbName) dxbName.textContent = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
-      if (dxbCostume) dxbCostume.textContent = isEasy ? 'Playful AI Co-Pilot' : 'Plays to win · Uses C4';
+      if (dxbName) dxbName.textContent = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
+      if (dxbCostume) dxbCostume.textContent = isEasy ? 'Playful AI · Zero Skills' : isInsane ? 'Mythic Power · Ultimate Ability' : 'Zone Strategist · Uses Items';
       if (dxbPill) {
-        dxbPill.className = isEasy ? 'seat-role-pill bot-pill-easy' : 'seat-role-pill bot-pill-hard';
-        dxbPill.textContent = isEasy ? '🐣 Bot: Easy' : '😈 Bot: Hard';
+        dxbPill.className = isEasy ? 'seat-role-pill bot-pill-easy' : isInsane ? 'seat-role-pill bot-pill-insane' : 'seat-role-pill bot-pill-hard';
+        dxbPill.textContent = isEasy ? '🐣 Bot: Easy' : isInsane ? '⚡ Bot: Insane' : '😈 Bot: Hard';
       }
       if (dxbStatus) {
         dxbStatus.className = 'seat-status-pill ready';
-        dxbStatus.innerHTML = isEasy ? '<span>🟢 Bot Ready</span>' : '<span>🔴 Bot Ready</span>';
+        dxbStatus.innerHTML = isEasy ? '<span>🟢 Bot Ready</span>' : isInsane ? '<span>⚡ Bot Ready</span>' : '<span>🔴 Bot Ready</span>';
       }
       if (cycleBtn2) {
-        cycleBtn2.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : 'seat-cycle-btn cycle-bot-hard';
-        cycleBtn2.innerHTML = '<span>🔁 Cycle: Closed</span>';
+        cycleBtn2.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : isInsane ? 'seat-cycle-btn cycle-bot-insane' : 'seat-cycle-btn cycle-bot-hard';
+        cycleBtn2.innerHTML = isEasy ? '<span>🔁 Cycle: Hard Bot</span>' : isInsane ? '<span>🔁 Cycle: Closed</span>' : '<span>🔁 Cycle: Insane Bot</span>';
       }
     } else {
       // Human slot
@@ -3186,16 +3220,17 @@ function updateLobbyUI() {
     } else if (s3.type === 'bot') {
       if (seatBot1) seatBot1.classList.remove('seat-closed-mode');
       const isEasy = s3.difficulty === 'easy';
+      const isInsane = s3.difficulty === 'insane';
       if (bot1Img) bot1Img.src = isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg';
-      if (bot1Name) bot1Name.textContent = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
-      if (bot1Desc) bot1Desc.textContent = isEasy ? 'Friendly & playful' : 'Plays to win · Uses C4';
+      if (bot1Name) bot1Name.textContent = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
+      if (bot1Desc) bot1Desc.textContent = isEasy ? 'Playful AI · Zero Skills' : isInsane ? 'Mythic Power · Ultimate Ability' : 'Zone Strategist · Uses Items';
       if (bot1Pill) {
-        bot1Pill.className = isEasy ? 'seat-role-pill bot-pill-easy' : 'seat-role-pill bot-pill-hard';
-        bot1Pill.textContent = isEasy ? '🐣 Co-Pilot (Easy)' : '😈 Rival (Hard)';
+        bot1Pill.className = isEasy ? 'seat-role-pill bot-pill-easy' : isInsane ? 'seat-role-pill bot-pill-insane' : 'seat-role-pill bot-pill-hard';
+        bot1Pill.textContent = isEasy ? '🐣 Co-Pilot (Easy)' : isInsane ? '⚡ Sovereign (Insane)' : '😈 Rival (Hard)';
       }
       if (cycleBtn3) {
-        cycleBtn3.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : 'seat-cycle-btn cycle-bot-hard';
-        cycleBtn3.innerHTML = isEasy ? '<span>🔁 Cycle: Hard Bot</span>' : '<span>🔁 Cycle: Closed</span>';
+        cycleBtn3.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : isInsane ? 'seat-cycle-btn cycle-bot-insane' : 'seat-cycle-btn cycle-bot-hard';
+        cycleBtn3.innerHTML = isEasy ? '<span>🔁 Cycle: Hard Bot</span>' : isInsane ? '<span>🔁 Cycle: Closed</span>' : '<span>🔁 Cycle: Insane Bot</span>';
       }
     } else {
       // Human open
@@ -3225,16 +3260,17 @@ function updateLobbyUI() {
     } else if (s4.type === 'bot') {
       if (seatBot2) seatBot2.classList.remove('seat-closed-mode');
       const isEasy = s4.difficulty === 'easy';
+      const isInsane = s4.difficulty === 'insane';
       if (bot2Img) bot2Img.src = isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg';
-      if (bot2Name) bot2Name.textContent = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
-      if (bot2Desc) bot2Desc.textContent = isEasy ? 'Friendly & playful' : 'Plays to win · Uses C4';
+      if (bot2Name) bot2Name.textContent = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
+      if (bot2Desc) bot2Desc.textContent = isEasy ? 'Playful AI · Zero Skills' : isInsane ? 'Mythic Power · Ultimate Ability' : 'Zone Strategist · Uses Items';
       if (bot2Pill) {
-        bot2Pill.className = isEasy ? 'seat-role-pill bot-pill-easy' : 'seat-role-pill bot-pill-hard';
-        bot2Pill.textContent = isEasy ? '🐣 Co-Pilot (Easy)' : '😈 Rival (Hard)';
+        bot2Pill.className = isEasy ? 'seat-role-pill bot-pill-easy' : isInsane ? 'seat-role-pill bot-pill-insane' : 'seat-role-pill bot-pill-hard';
+        bot2Pill.textContent = isEasy ? '🐣 Co-Pilot (Easy)' : isInsane ? '⚡ Sovereign (Insane)' : '😈 Rival (Hard)';
       }
       if (cycleBtn4) {
-        cycleBtn4.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : 'seat-cycle-btn cycle-bot-hard';
-        cycleBtn4.innerHTML = isEasy ? '<span>🔁 Cycle: Hard Bot</span>' : '<span>🔁 Cycle: Closed</span>';
+        cycleBtn4.className = isEasy ? 'seat-cycle-btn cycle-bot-easy' : isInsane ? 'seat-cycle-btn cycle-bot-insane' : 'seat-cycle-btn cycle-bot-hard';
+        cycleBtn4.innerHTML = isEasy ? '<span>🔁 Cycle: Hard Bot</span>' : isInsane ? '<span>🔁 Cycle: Closed</span>' : '<span>🔁 Cycle: Insane Bot</span>';
       }
     } else {
       // Human open
@@ -4630,13 +4666,31 @@ function startPartyGame(config = {}) {
     if (p.isBot) {
       p.botLevel = slot.difficulty || 'easy';
       const isEasy = p.botLevel === 'easy';
-      let defaultBotName = isEasy ? 'Trainee Mochi 🐾' : 'Capt. Whiskers 😼';
-      if (idx === 2) defaultBotName = isEasy ? 'Cadet Mochi 🐣' : 'Major Whiskers 🐯';
-      if (idx === 3) defaultBotName = isEasy ? 'Pilot Pip 🐱' : 'Admiral Claw 🦁';
+      const isInsane = p.botLevel === 'insane';
+      let defaultBotName = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
+      if (idx === 2) defaultBotName = isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯';
+      if (idx === 3) defaultBotName = isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁';
       p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : defaultBotName;
       p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg');
-      p.badge = `BOT${idx > 1 ? idx - 1 : ''}`;
-      p.color = slot.id === 3 ? '#10b981' : (slot.id === 4 ? '#f59e0b' : '#06b6d4');
+      p.badge = isInsane ? 'SOV' : `BOT${idx > 1 ? idx - 1 : ''}`;
+      p.color = isInsane ? '#a855f7' : (slot.id === 3 ? '#10b981' : (slot.id === 4 ? '#f59e0b' : '#06b6d4'));
+
+      if (isInsane) {
+        const mythicId = (window.NookMonoBot && typeof window.NookMonoBot.getRandomMythicId === 'function')
+          ? window.NookMonoBot.getRandomMythicId()
+          : 's6_supernova_m';
+        p.costume = mythicId;
+        p.activeCostume = mythicId;
+        const C = window.NookCostumes;
+        if (C && C.BY_ID && C.BY_ID[mythicId]) {
+          const c = C.BY_ID[mythicId];
+          const perkKey = c.perk;
+          const perkData = (C.PERKS && C.PERKS[perkKey]) || {};
+          if (!fresh.perks) fresh.perks = {};
+          fresh.perks[role] = { costume: mythicId, [perkKey]: true, ...perkData };
+          if (c.sprite) p.sprite = c.sprite;
+        }
+      }
     } else {
       const isMe = (slot.occupiedBy === `user_${myRole}`) || (slot.id === 1 && !slot.occupiedBy) || (slot.id === 1 && isCurrentUserHost());
       p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : (isMe ? myName : (slot.id === 2 ? partnerName : `Guest ${slot.id} ✈️`));
@@ -4665,12 +4719,13 @@ function startPartyGame(config = {}) {
   }
 
   fresh.gameId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  fresh.perks = (window.NookVault && window.NookVault.monopolyPerks) ? window.NookVault.monopolyPerks() : null;
+  fresh.perks = (window.NookVault && window.NookVault.monopolyPerks) ? window.NookVault.monopolyPerks() : {};
   fresh.perkUsed = {};
   if (fresh.perks) {
-    ['bkk', 'dxb'].forEach((r) => {
-      const pk = fresh.perks[r] || {};
+    Object.keys(fresh.players).forEach((r) => {
       const pl = fresh.players[r];
+      if (pl.isBot && pl.botLevel !== 'insane') return; // Easy and Hard bots get zero perks
+      const pk = fresh.perks[r] || {};
       if (pk.startMiles) pl.miles += pk.startMiles;
       if (pk.extraVibePass) pl.vibePasses += pk.extraVibePass;
       if (pk.startItem && ITEMS[pk.startItem] && pl.inventory.length < MONO_CFG.MAX_ITEMS) pl.inventory.push(pk.startItem);
@@ -5147,6 +5202,7 @@ function inspectTile(tile) {
 function chargeUlt(role, amount, reason) {
   if (!role || !monopolyState || !monopolyState.players || !monopolyState.players[role]) return;
   const p = monopolyState.players[role];
+  if (p.isBot && p.botLevel !== 'insane') return; // Easy and hard bots NEVER charge ultimate
   const oldUlt = p.ult || 0;
   p.ult = Math.min(100, Math.max(0, oldUlt + amount));
   const me = getMonopolyMyRole();
@@ -5376,6 +5432,7 @@ function executeUltimate(role) {
   const st = monopolyState;
   const p = st.players && st.players[role];
   if (!p) return;
+  if (p.isBot && p.botLevel !== 'insane') return; // Easy and hard bots NEVER use ultimates
   p.ult = 0;
   const ultData = getRoleUltimate(role);
   AudioFX.init();
@@ -8520,12 +8577,17 @@ function scheduleBotRoll() {
       return;
     }
 
-    if ((botP.ult || 0) >= 100) {
-      executeUltimate(botRole);
-      setTimeout(() => {
-        scheduleBotRoll();
-      }, 2400);
-      return;
+    if (botP.botLevel === 'insane' && (botP.ult || 0) >= 100) {
+      const shouldUse = (window.NookMonoBot && typeof window.NookMonoBot.shouldUseUltimate === 'function')
+        ? window.NookMonoBot.shouldUseUltimate(st, botRole)
+        : true;
+      if (shouldUse) {
+        executeUltimate(botRole);
+        setTimeout(() => {
+          scheduleBotRoll();
+        }, 2400);
+        return;
+      }
     }
 
     if (window.NookMonoBot && typeof window.NookMonoBot.preRoll === 'function') {
