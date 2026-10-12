@@ -2,8 +2,10 @@ node_modules/
 .git/
 .DS_Store
 *.log
+logs/
 backup/
 data_backups/
 neora_hud_patch_assets/
 neora_component_asset_breakdown/
+neora_lobby_asset_pack*
 scratch/
