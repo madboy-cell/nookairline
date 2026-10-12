@@ -775,6 +775,41 @@ class RoomRegistry {
   }
 
   /**
+   * Finds an active in-flight room where the user is an active player.
+   */
+  getActiveInFlightRoomForUser(uid) {
+    if (!uid) return null;
+    for (const room of this.rooms.values()) {
+      if (room.status === 'in_flight') {
+        const slot = room.slots.find((s) => s.occupiedBy === uid);
+        if (slot) return room;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Puts an in-flight player on temporary bot auto-pilot when they exit to lobby.
+   */
+  setPlayerAway(roomId, ws) {
+    const room = this.getRoom(roomId);
+    if (!room || room.status !== 'in_flight') return null;
+    const clientData = room.clientData.get(ws);
+    if (!clientData) return null;
+    const slot = room.slots.find((s) => s.id === clientData.slotId);
+    if (!slot || slot.occupiedBy !== clientData.uid) return null;
+
+    slot.controller = 'BOT_TEMPORARY';
+    slot.takeoverAt = Date.now();
+    if (this.botTakeoverManager) {
+      if (room.gameState && room.gameState.currentTurn === slot.role) {
+        this.botTakeoverManager.scheduleBotAction(room, slot.role, 800);
+      }
+    }
+    return { success: true, room, slot };
+  }
+
+  /**
    * Updates flight privacy (public vs private code-only).
    */
   setPrivacy(roomId, isPublic, requesterWs = null) {

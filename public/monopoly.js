@@ -2112,22 +2112,31 @@ function initMonopoly() {
   if (window.MonoFX) MonoFX.init();
   const openBtn = $m('openMonopolyBtn');
   const closeBtn = $m('closeMonopolyBtn');
+  const exitGameBtn = $m('monopolyExitGameBtn');
   const resetBtn = $m('resetMonopolyBtn');
   const rulesBtn = $m('monopolyRulesBtn');
   const lobbyBtn = $m('monopolyLobbyBtn');
   const lobbyClose = $m('lobbyCloseBtn');
   const rollBtn = $m('btnRollDice');
   const diceBox = $m('monopolyDiceBox');
+  const btnRejoinActiveFlight = $m('btnRejoinActiveFlight');
 
   if (openBtn) openBtn.addEventListener('click', handleMonopolyHomeClick);
-  if (closeBtn) closeBtn.addEventListener('click', () => closeMonopolyGame(true));
+  if (closeBtn) closeBtn.addEventListener('click', handleMonopolyExitGame);
+  if (exitGameBtn) exitGameBtn.addEventListener('click', handleMonopolyExitGame);
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       promptResetOrMode();
     });
   }
   if (rulesBtn) rulesBtn.addEventListener('click', showRulesModal);
-  if (lobbyBtn) lobbyBtn.addEventListener('click', showMonopolyLobby);
+  if (lobbyBtn) lobbyBtn.addEventListener('click', handleMonopolyExitGame);
+  if (btnRejoinActiveFlight) {
+    btnRejoinActiveFlight.addEventListener('click', () => {
+      const active = getActiveInFlightMatch();
+      handleRejoinActiveFlight(active);
+    });
+  }
   if (lobbyClose) {
     lobbyClose.addEventListener('click', () => {
       hideMonopolyLobby();
@@ -2266,6 +2275,14 @@ function initMonopoly() {
   const boardHostFlightBtn = $m('boardHostFlightBtn');
   if (boardHostFlightBtn) {
     boardHostFlightBtn.addEventListener('click', () => {
+      const activeFlight = getActiveInFlightMatch();
+      if (activeFlight) {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+        }
+        highlightActiveMatchBanner();
+        return;
+      }
       switchNeoraView('create');
     });
   }
@@ -2274,6 +2291,14 @@ function initMonopoly() {
   const neoraQuickJoinBtn = $m('neoraQuickJoinBtn');
   if (neoraQuickJoinBtn) {
     neoraQuickJoinBtn.addEventListener('click', () => {
+      const activeFlight = getActiveInFlightMatch();
+      if (activeFlight) {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ You have a match in progress! Rejoining your original room...');
+        }
+        handleRejoinActiveFlight(activeFlight);
+        return;
+      }
       if (typeof showToast === 'function') showToast('⚡ Searching for available flights...');
       quickJoinFlightRoom();
     });
@@ -2302,6 +2327,14 @@ function initMonopoly() {
       if (window.AudioFX && typeof window.AudioFX.playClick === 'function') {
         window.AudioFX.playClick();
       }
+      const activeFlight = getActiveInFlightMatch();
+      if (activeFlight) {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+        }
+        highlightActiveMatchBanner();
+        return;
+      }
       const nameInp = $m('createRoomNameInput');
       const descInp = $m('createRoomDescInput');
       const roomName = (nameInp?.value || 'Monopoly · Chill Game').trim();
@@ -2310,7 +2343,7 @@ function initMonopoly() {
 
       const myAvatar = getEquippedCostumeAvatar();
       const myRole = getMonopolyMyRole();
-      const hostUid = `user_${myRole}_${Date.now().toString(36)}`;
+      const hostUid = getPersistentPlayerUid();
 
       // Read custom slot configurations from Screen 3 (slots 2, 3, 4)
       const customSlots = [
@@ -2791,6 +2824,11 @@ function openMonopolyGame(broadcast = true) {
 }
 
 function closeMonopolyGame(broadcast = true) {
+  const activeMatch = getActiveInFlightMatch();
+  if (activeMatch) {
+    handleMonopolyExitGame();
+    return;
+  }
   const modal = $m('monopolyModal');
   if (!modal) return;
   document.body.classList.remove('has-active-modal');
@@ -3392,6 +3430,106 @@ function handleMonopolyHomeClick() {
   showDepartureBoard();
 }
 
+function getActiveInFlightMatch() {
+  const myUid = getPersistentPlayerUid();
+  if (currentFlightRoom && currentFlightRoom.status === 'in_flight') {
+    const isMember = (currentFlightRoom.slots || []).some((s) => s.occupiedBy === myUid || s.occupiedBy === `user_${myUid}`);
+    if (isMember) return currentFlightRoom;
+  }
+  if (pendingActiveSession && pendingActiveSession.hasActiveRoom && pendingActiveSession.inFlight && pendingActiveSession.room) {
+    return pendingActiveSession.room;
+  }
+  if (Array.isArray(departureBoardFlights)) {
+    const found = departureBoardFlights.find((f) => f.status === 'in_flight' && Array.isArray(f.slots) && f.slots.some((s) => s.occupiedBy === myUid || s.occupiedBy === `user_${myUid}`));
+    if (found) return found;
+  }
+  return null;
+}
+
+function highlightActiveMatchBanner() {
+  const banner = $m('neoraActiveMatchBanner');
+  if (banner) {
+    banner.classList.remove('hidden');
+    banner.classList.add('banner-pulse-highlight');
+    setTimeout(() => banner.classList.remove('banner-pulse-highlight'), 1200);
+    try {
+      banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {}
+  }
+}
+
+function handleRejoinActiveFlight(targetFlight = null) {
+  const flight = targetFlight || getActiveInFlightMatch();
+  if (!flight) {
+    if (typeof showToast === 'function') showToast('⚠️ No active flight found to rejoin.');
+    return;
+  }
+
+  window.isMonopolyPlayerAway = false;
+  const myUid = getPersistentPlayerUid();
+  const mySlot = (flight.slots || []).find((s) => s.occupiedBy === myUid || s.occupiedBy === `user_${myUid}`);
+  const myRole = mySlot?.role || getMonopolyMyRole();
+  const myAvatar = getEquippedCostumeAvatar(myRole);
+  const myName = (window.getMyAvatar && window.getMyAvatar())?.name || (myRole === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺');
+
+  if (typeof sendSignaling === 'function') {
+    sendSignaling({
+      type: 'room_rejoin',
+      roomId: flight.id,
+      uid: myUid,
+      name: myName,
+      avatar: myAvatar?.sprite || (myRole === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png')
+    });
+  }
+
+  hideDepartureBoard();
+  const modal = $m('monopolyModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+    document.body.classList.add('has-active-modal');
+  }
+  if (typeof showToast === 'function') {
+    showToast('🚀 Welcome back! Manual control restored.');
+  }
+}
+
+function handleMonopolyExitGame() {
+  const modal = $m('monopolyModal');
+  if (modal) {
+    document.body.classList.remove('has-active-modal');
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.add('hidden'), 250);
+  }
+  if (AudioFX && AudioFX.suspend) AudioFX.suspend();
+
+  const activeFlight = getActiveInFlightMatch();
+  const isMatchInFlight = !!activeFlight || (monopolyState && monopolyState.active && !monopolyState.gameOver);
+
+  if (isMatchInFlight) {
+    window.isMonopolyPlayerAway = true;
+    const roomId = activeFlight?.id || currentFlightRoom?.id;
+    if (roomId && typeof sendSignaling === 'function') {
+      sendSignaling({
+        type: 'room_player_away',
+        roomId,
+        uid: getPersistentPlayerUid()
+      });
+    }
+    if (typeof showToast === 'function') {
+      showToast('🤖 Seat set to auto-pilot. You can rejoin anytime from Departures!');
+    }
+    if (monopolyState && monopolyState.active && !monopolyState.gameOver) {
+      checkBotTurn();
+    }
+  } else {
+    if (monopolyState) monopolyState.active = false;
+    saveLocalMonopolyState();
+  }
+
+  showDepartureBoard();
+}
+
 function showDepartureBoard() {
   showMonopolyLobby();
 }
@@ -3403,7 +3541,7 @@ function showMonopolyLobby() {
   if (!modal) return;
   modal.classList.remove('hidden');
 
-  if (currentFlightRoom && currentFlightRoom.status !== 'finished') {
+  if (currentFlightRoom && currentFlightRoom.status === 'lobby') {
     switchNeoraView('room');
   } else {
     switchNeoraView('browser');
@@ -3427,6 +3565,33 @@ function hideMonopolyLobby() {
 function renderDepartureBoard() {
   const listEl = $m('departureFlightsList');
   if (!listEl) return;
+
+  // Active Flight In-Progress Banner
+  const myUid = getPersistentPlayerUid();
+  const activeFlight = getActiveInFlightMatch();
+  const activeBanner = $m('neoraActiveMatchBanner');
+  if (activeBanner) {
+    if (activeFlight) {
+      activeBanner.classList.remove('hidden');
+      const titleEl = $m('activeMatchBannerTitle');
+      const subEl = $m('activeMatchBannerSub');
+      if (titleEl) {
+        titleEl.textContent = `🎮 Flight in Progress: ${activeFlight.flightNumber || activeFlight.name || 'Active Match'}`;
+      }
+      if (subEl) {
+        subEl.textContent = `Your seat is running on auto-pilot. Tap Rejoin to return!`;
+      }
+      const rejoinBtn = $m('btnRejoinActiveFlight');
+      if (rejoinBtn) {
+        rejoinBtn.onclick = (e) => {
+          e.stopPropagation();
+          handleRejoinActiveFlight(activeFlight);
+        };
+      }
+    } else {
+      activeBanner.classList.add('hidden');
+    }
+  }
 
   const countAll = $m('countAllFlights');
   const countBoarding = $m('countBoardingFlights');
@@ -3477,7 +3642,18 @@ function renderDepartureBoard() {
         <button class="neora-btn-primary btn-create-room" id="emptyHostFlightBtn" type="button" style="margin-top: 8px;">➕ Create Room</button>
       </div>`;
     const btn = $m('emptyHostFlightBtn');
-    if (btn) btn.onclick = () => switchNeoraView('create');
+    if (btn) {
+      btn.onclick = () => {
+        if (activeFlight) {
+          if (typeof showToast === 'function') {
+            showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+          }
+          highlightActiveMatchBanner();
+          return;
+        }
+        switchNeoraView('create');
+      };
+    }
     return;
   }
 
@@ -3533,8 +3709,11 @@ function renderDepartureBoard() {
     }
 
     // Action button
+    const isMyActiveFlight = activeFlight && (activeFlight.id === flight.id || activeFlight.code === flight.id);
     let actionBtnHtml = '';
-    if (isPlaying) {
+    if (isMyActiveFlight) {
+      actionBtnHtml = `<button class="btn-neora-join btn-rejoin-flight" data-room-id="${flight.id}" type="button">Rejoin 🚀</button>`;
+    } else if (isPlaying) {
       actionBtnHtml = `<button class="btn-neora-watching" data-room-id="${flight.id}" type="button">👁 Watching</button>`;
     } else if (isFull) {
       actionBtnHtml = `<button class="btn-neora-full" disabled type="button">Full</button>`;
@@ -3568,11 +3747,35 @@ function renderDepartureBoard() {
 
     const joinBtn = card.querySelector('.btn-neora-join');
     if (joinBtn) {
-      joinBtn.onclick = () => joinFlightRoom(flight.id, false);
+      joinBtn.onclick = () => {
+        if (isMyActiveFlight) {
+          handleRejoinActiveFlight(flight);
+          return;
+        }
+        if (activeFlight) {
+          if (typeof showToast === 'function') {
+            showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+          }
+          highlightActiveMatchBanner();
+          return;
+        }
+        joinFlightRoom(flight.id, false);
+      };
     }
     const watchBtn = card.querySelector('.btn-neora-watching');
     if (watchBtn) {
       watchBtn.onclick = () => {
+        if (isMyActiveFlight) {
+          handleRejoinActiveFlight(flight);
+          return;
+        }
+        if (activeFlight) {
+          if (typeof showToast === 'function') {
+            showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+          }
+          highlightActiveMatchBanner();
+          return;
+        }
         if (typeof showToast === 'function') showToast('Spectator mode connecting...');
         joinFlightRoom(flight.id, true);
       };
@@ -4018,9 +4221,17 @@ function renderNeoraCreateRoom() {
 }
 
 function createFlightRoom(isPublic = true, flightName = null, desc = null, tags = null, customSlots = null) {
+  const activeMatch = getActiveInFlightMatch();
+  if (activeMatch) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+    }
+    highlightActiveMatchBanner();
+    return;
+  }
   const myAvatar = getEquippedCostumeAvatar();
   const myRole = getMonopolyMyRole();
-  const hostUid = `user_${myRole}_${Date.now().toString(36)}`;
+  const hostUid = getPersistentPlayerUid();
   const hostName = myAvatar.name;
   const hostAvatar = myAvatar.sprite;
 
@@ -4091,9 +4302,17 @@ function createFlightRoom(isPublic = true, flightName = null, desc = null, tags 
 }
 
 function quickJoinFlightRoom() {
+  const activeMatch = getActiveInFlightMatch();
+  if (activeMatch) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ You have a match in progress! Rejoining your original room...');
+    }
+    handleRejoinActiveFlight(activeMatch);
+    return;
+  }
   const myAvatar = getEquippedCostumeAvatar();
   const myRole = getMonopolyMyRole();
-  const uid = `user_${myRole}_${Date.now().toString(36)}`;
+  const uid = getPersistentPlayerUid();
 
   if (typeof sendSignaling === 'function') {
     sendSignaling({
@@ -4106,9 +4325,17 @@ function quickJoinFlightRoom() {
 }
 
 function joinFlightRoom(roomId, isSpectator = false) {
+  const activeMatch = getActiveInFlightMatch();
+  if (activeMatch && activeMatch.id !== roomId && activeMatch.code !== roomId) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+    }
+    highlightActiveMatchBanner();
+    return;
+  }
   const myAvatar = getEquippedCostumeAvatar();
   const myRole = getMonopolyMyRole();
-  const uid = `user_${myRole}_${Date.now().toString(36)}`;
+  const uid = getPersistentPlayerUid();
 
   if (typeof sendSignaling === 'function') {
     sendSignaling({
@@ -4124,6 +4351,14 @@ function joinFlightRoom(roomId, isSpectator = false) {
 
 function joinFlightByCode(rawCode) {
   const code = String(rawCode || '').trim();
+  const activeMatch = getActiveInFlightMatch();
+  if (activeMatch && activeMatch.code !== code && activeMatch.id !== code) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+    }
+    highlightActiveMatchBanner();
+    return;
+  }
   const errEl = $m('flightCodeError');
   if (!/^\d{6}$/.test(code)) {
     if (errEl) {
@@ -4136,7 +4371,7 @@ function joinFlightByCode(rawCode) {
 
   const myAvatar = getEquippedCostumeAvatar();
   const myRole = getMonopolyMyRole();
-  const uid = `user_${myRole}_${Date.now().toString(36)}`;
+  const uid = getPersistentPlayerUid();
 
   if (typeof sendSignaling === 'function') {
     sendSignaling({
@@ -7608,7 +7843,7 @@ function finishTurn() {
     emitFx({ kind: 'sound', name: 'fanfare' });
     pushState();
     renderAll();
-    if (monopolyState.players[bonusPlayer]?.isBot) {
+    if (monopolyState.players[bonusPlayer]?.isBot || (window.isMonopolyPlayerAway && bonusPlayer === getMonopolyMyRole())) {
       checkBotTurn();
     }
     return;
@@ -7664,7 +7899,7 @@ function endTurn() {
   }
   pushState();
   renderAll();
-  if (!st.gameOver && st.players[st.currentTurn]?.isBot) {
+  if (!st.gameOver && (st.players[st.currentTurn]?.isBot || (window.isMonopolyPlayerAway && st.currentTurn === getMonopolyMyRole()))) {
     checkBotTurn();
   }
 }
@@ -8238,7 +8473,8 @@ function checkBotTurn() {
   if (!st || !st.active || st.gameOver) return;
   const botRole = st.currentTurn;
   const botP = st.players && st.players[botRole];
-  if (!botP || !botP.isBot) return;
+  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  if (!botP || (!botP.isBot && !isAutoPilot)) return;
   if (st.isRolling || isAnimating) return;
 
   armBotWatchdog();
@@ -8263,7 +8499,8 @@ function scheduleBotRoll() {
   const st = monopolyState;
   const botRole = st.currentTurn;
   const botP = st.players && st.players[botRole];
-  if (!botP || !botP.isBot) return;
+  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  if (!botP || (!botP.isBot && !isAutoPilot)) return;
   const level = botP.botLevel || 'hard';
 
   setMonopolyTicker(`✈️ <strong>${botP.name}</strong> is planning their move… 🐱💭`);
@@ -8427,7 +8664,8 @@ function scheduleBotDecision(d) {
   const st = monopolyState;
   const botRole = st.currentTurn;
   const botP = st.players && st.players[botRole];
-  if (!botP || !botP.isBot) return;
+  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  if (!botP || (!botP.isBot && !isAutoPilot)) return;
   const level = botP.botLevel || 'hard';
 
   setMonopolyTicker(`🤔 <strong>${botP.name}</strong> is deciding what to do…`);
@@ -10374,6 +10612,14 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_error') {
+    if (message.error === 'ACTIVE_MATCH_IN_PROGRESS') {
+      if (typeof showToast === 'function') {
+        showToast('⚠️ You have a match in progress! You must rejoin your original room.');
+      }
+      highlightActiveMatchBanner();
+      switchNeoraView('browser');
+      return;
+    }
     const errEl = $m('flightCodeError');
     if (errEl) {
       errEl.textContent = `⚠️ ${message.message || message.error || 'Failed to join flight.'}`;

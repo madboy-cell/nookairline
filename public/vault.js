@@ -318,22 +318,12 @@
       b.addEventListener('click', (e) => { e.stopPropagation(); open('gacha'); });
       header.appendChild(b);
     }
-    const monoCtrls = document.querySelector('.monopoly-header > div:last-child');
-    if (monoCtrls && !$('vaultMonoPill')) {
-      const b = document.createElement('button');
-      b.id = 'vaultMonoPill';
-      b.className = 'vault-pill mono';
-      b.title = 'Your diamonds';
-      b.innerHTML = '<span class="vault-pill-gem">💎</span><b>—</b>';
-      b.addEventListener('click', (e) => { e.stopPropagation(); open('gacha'); });
-      monoCtrls.insertBefore(b, monoCtrls.firstChild);
-    }
   }
 
   function updatePills() {
     const p = me();
     const d = p ? fmt(p.diamonds) : '—';
-    ['vaultHeaderPill', 'vaultMonoPill'].forEach((id) => {
+    ['vaultHeaderPill'].forEach((id) => {
       const el = $(id); if (!el) return;
       const b = el.querySelector('b');
       if (b && b.textContent !== d) {

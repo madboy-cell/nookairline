@@ -206,11 +206,9 @@
             <span>SKY MONOPOLY</span>
           </div>
           <div class="monopoly-header-actions">
-            <button class="monopoly-reset-btn" id="monopolyDepartureBoardBtn" title="Flight Departure Board">🛫 Departures</button>
-            <button class="monopoly-reset-btn" id="monopolyLobbyBtn" title="Boarding Gate Lobby">🚪 Lobby</button>
+            <button class="monopoly-reset-btn" id="monopolyExitGameBtn" title="Exit to Departures Lounge">🚪 Exit Game</button>
             <button class="monopoly-reset-btn" id="monopolyRulesBtn" title="How to play">❔ Rules</button>
-            <button class="monopoly-reset-btn" id="resetMonopolyBtn" title="Reset Board & Start Fresh Game">🔄 Reset</button>
-            <button class="monopoly-close-btn" id="closeMonopolyBtn" title="Close Game">✕</button>
+            <button class="monopoly-close-btn" id="closeMonopolyBtn" title="Exit Game">✕</button>
           </div>
         </div>
 
@@ -756,6 +754,20 @@
           <div class="neora-search-bar" id="neoraSearchBar" style="display: none;">
             <span class="search-icon">🔍</span>
             <input type="text" id="departureSearchInput" class="departure-search-input" placeholder="Search room or host..." />
+          </div>
+
+          <!-- Active Flight In-Progress Banner (Shown when player has an active match in progress) -->
+          <div class="active-match-banner hidden" id="neoraActiveMatchBanner">
+            <div class="active-match-info">
+              <span class="active-pulse-dot">●</span>
+              <div class="active-match-text">
+                <strong id="activeMatchBannerTitle">🎮 Match In Progress</strong>
+                <span id="activeMatchBannerSub">Your seat is on auto-pilot. Tap to return!</span>
+              </div>
+            </div>
+            <button class="btn-rejoin-active-flight" id="btnRejoinActiveFlight" type="button">
+              Rejoin Match 🚀
+            </button>
           </div>
 
           <!-- Room Cards List (Scrollable Feed) -->

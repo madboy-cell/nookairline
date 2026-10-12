@@ -941,8 +941,21 @@ function handleRoomMessage(ws, message) {
   }
 
   if (message.type === 'room_create') {
+    const hostUid = message.hostUid || `user_${ws.terminal}_${Date.now().toString(36)}`;
+    const activeFlight = roomRegistry.getActiveInFlightRoomForUser(hostUid);
+    if (activeFlight) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'ACTIVE_MATCH_IN_PROGRESS',
+        message: 'You have a match in progress. You must rejoin your original room.',
+        activeRoomId: activeFlight.id,
+        activeRoomCode: activeFlight.code
+      }));
+      return;
+    }
+
     const room = roomRegistry.createRoom({
-      hostUid: message.hostUid || `user_${ws.terminal}_${Date.now().toString(36)}`,
+      hostUid,
       hostName: message.hostName || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
       hostAvatar: message.hostAvatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png'),
       hostRole: ws.terminal || 'bkk',
@@ -971,6 +984,18 @@ function handleRoomMessage(ws, message) {
       name: message.name || (ws.terminal === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺'),
       avatar: message.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png')
     };
+
+    const activeFlight = roomRegistry.getActiveInFlightRoomForUser(playerInfo.uid);
+    if (activeFlight) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'ACTIVE_MATCH_IN_PROGRESS',
+        message: 'You have a match in progress. You must rejoin your original room.',
+        activeRoomId: activeFlight.id,
+        activeRoomCode: activeFlight.code
+      }));
+      return;
+    }
 
     let targetRoom = roomRegistry.findQuickJoinRoom();
     if (targetRoom) {
@@ -1021,6 +1046,19 @@ function handleRoomMessage(ws, message) {
       avatar: message.avatar || (ws.terminal === 'dxb' ? 'assets/got_queen_idle.png' : 'assets/bkk_warrior_idle.png'),
       spectator: !!message.spectator
     };
+
+    const activeFlight = roomRegistry.getActiveInFlightRoomForUser(playerInfo.uid);
+    if (activeFlight && activeFlight.id !== key && activeFlight.code !== key) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: 'ACTIVE_MATCH_IN_PROGRESS',
+        message: 'You have an active match in progress. You must rejoin your original flight.',
+        activeRoomId: activeFlight.id,
+        activeRoomCode: activeFlight.code
+      }));
+      return;
+    }
+
     const res = roomRegistry.joinRoom(key, playerInfo, ws);
     if (!res.success) {
       ws.send(JSON.stringify({
@@ -1045,6 +1083,21 @@ function handleRoomMessage(ws, message) {
     });
 
     broadcastDepartureBoard();
+    return;
+  }
+
+  if (message.type === 'room_player_away') {
+    const roomId = message.roomId || roomRegistry.clientToRoomId.get(ws);
+    if (roomId) {
+      const res = roomRegistry.setPlayerAway(roomId, ws);
+      if (res && res.success) {
+        broadcastToRoom(res.room, {
+          type: 'room_update',
+          room: sanitizeRoom(res.room)
+        });
+        broadcastDepartureBoard();
+      }
+    }
     return;
   }
 
