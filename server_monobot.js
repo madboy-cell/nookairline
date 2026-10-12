@@ -7,12 +7,16 @@
 const Costumes = require('./public/costumes.js');
 
 const ECON = Costumes.ECONOMY.BOT || {
-  EASY_WIN: 80,
-  EASY_LOSS: 30,
+  EASY_WIN: 50,
+  EASY_LOSS: 10,
   HARD_STAKE: 100,
   HARD_COMEBACK_STAKE: 50,
-  HARD_WIN: 450,
+  HARD_WIN: 400,
   HARD_LOSS: 0,
+  INSANE_STAKE: 150,
+  INSANE_COMEBACK_STAKE: 75,
+  INSANE_WIN: 950,
+  INSANE_LOSS: 50,
   STREAK_BONUS_PER_WIN: 50,
   MAX_STREAK_BONUS: 200,
   MIN_ROUNDS_PLAUSIBLE: 6
@@ -171,7 +175,7 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
             stats.wins = (stats.wins || 0) + 1;
             stats.hardStreak = (stats.hardStreak || 0) + 1;
             stats.hardLossStreak = 0;
-            const baseWin = ECON.INSANE_WIN || 750;
+            const baseWin = ECON.INSANE_WIN || 950;
             const streakBonus = Math.min((stats.hardStreak - 1) * ECON.STREAK_BONUS_PER_WIN, ECON.MAX_STREAK_BONUS);
             payout = baseWin + streakBonus;
             stats.net = (stats.net || 0) + (payout - session.stake);
@@ -181,9 +185,9 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
           } else {
             stats.hardStreak = 0;
             stats.hardLossStreak = (stats.hardLossStreak || 0) + 1;
-            payout = ECON.INSANE_LOSS || 0;
-            stats.net = (stats.net || 0) - session.stake;
-            breakdown = `Defeat vs Apex Sovereign (-${session.stake}💎 stake)`;
+            payout = ECON.INSANE_LOSS != null ? ECON.INSANE_LOSS : 50;
+            stats.net = (stats.net || 0) + (payout - session.stake);
+            breakdown = `Defeat vs Apex Sovereign (+${payout}💎 rebate, -${session.stake - payout}💎 net)`;
           }
         } else {
           // Hard mode

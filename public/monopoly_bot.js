@@ -201,6 +201,26 @@
 
     // --- HARD MODE: Calculative & strategic, STRICTLY NO SKILLS OR ULTIMATES ---
     if (level === 'hard') {
+      // High-Impact Golden Dice check: monopoly completion, hotel rush, or crossing start into safety
+      if (inv.includes('golden_dice')) {
+        for (let v = 1; v <= 6; v++) {
+          const tId = (pos + v) % 20;
+          const t = MONOPOLY_TILES[tId];
+          if (t.type === 'property') {
+            const prop = state.properties && state.properties[tId];
+            if (!prop && p.miles >= t.price) {
+              const zt = zoneTiles(t.zone);
+              const botOwnedInZone = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner === botRole).length;
+              if (botOwnedInZone === zt.length - 1) {
+                return { useItem: 'golden_dice', value: v }; // Complete monopoly immediately!
+              }
+            } else if (prop && prop.owner === botRole && prop.level === 2 && p.miles >= upgradeCost(t)) {
+              return { useItem: 'golden_dice', value: v }; // Rush Level 3 Hotel immediately!
+            }
+          }
+        }
+      }
+
       // Priority 1: 💣 C4 — demolish opponent hotels or level-2 houses
       if (inv.includes('c4')) {
         const oppProps = Object.keys(state.properties || {})
@@ -242,43 +262,67 @@
         }
       }
 
-      // Priority 4: 🎲 Golden Dice — precision strike
+      // Priority 4: 🎲 Golden Dice — precision strike & lethal hotel completion
       if (inv.includes('golden_dice')) {
         let bestV = null;
         let bestScore = -Infinity;
+
+        // Check if default rolling poses immediate danger of landing on an opponent hotel
+        let imminentHotelDanger = false;
+        for (let d = 2; d <= 5; d++) {
+          const checkId = (pos + d) % 20;
+          const prop = state.properties && state.properties[checkId];
+          if (prop && prop.owner !== botRole && prop.level >= 2 && !state.players[prop.owner]?.bankrupt) {
+            imminentHotelDanger = true;
+            break;
+          }
+        }
 
         for (let v = 1; v <= 6; v++) {
           const tId = (pos + v) % 20;
           const t = MONOPOLY_TILES[tId];
           let score = 0;
 
-          if (tId === 0) {
-            score += 350; // Lap bonus
+          if (pos + v >= 20 || tId === 0) {
+            score += 380; // Lap bonus (crossing or landing on START)
             if ((state.mekongHoard || 0) >= 50) {
               score += Math.min(800, state.mekongHoard * 2.5);
             }
-          } else if (t.type === 'property') {
+          }
+          if (t.type === 'property') {
             const prop = state.properties && state.properties[tId];
             if (!prop) {
               const zt = zoneTiles(t.zone);
               const botOwnedInZone = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner === botRole).length;
-              if (botOwnedInZone === zt.length - 1) score += 950; // Completes zone!
-              else if (botOwnedInZone > 0) score += 500;
-              else score += 280;
-              if (p.miles < t.price) score -= 300;
+              const oppOwnedInZone = zt.filter((z) => state.properties[z.id] && state.properties[z.id].owner && state.properties[z.id].owner !== botRole).length;
+              if (botOwnedInZone === zt.length - 1 && p.miles >= t.price) score += 1200; // Completes zone monopoly!
+              else if (oppOwnedInZone === zt.length - 1 && p.miles >= t.price) score += 850; // Blocks rival zone monopoly!
+              else if (botOwnedInZone > 0 && p.miles >= t.price) score += 520;
+              else if (p.miles >= t.price) score += 300;
+              else score -= 200;
             } else if (prop.owner === botRole) {
-              if (prop.level < 3 && p.miles >= upgradeCost(t)) {
-                if (ownsZone(state, botRole, t.zone)) score += 550;
-                else score += 320;
+              // Upgrade landing
+              if (prop.level === 2 && p.miles >= upgradeCost(t)) {
+                score += 900; // Rush Level 3 Hotel!
+              } else if (prop.level < 3 && p.miles >= upgradeCost(t)) {
+                if (ownsZone(state, botRole, t.zone)) score += 650;
+                else score += 400;
               }
             } else {
               const rent = getTileRent(state, tId);
-              score -= (rent * 3.5);
+              score -= (rent * 4.0); // Heavily penalize landing on opponent property
             }
           } else if (t.type === 'airdrop') {
-            score += 260;
-          } else if (t.type === 'market' || t.type === 'arena') {
-            score += 90;
+            score += 280;
+          } else if (t.type === 'market') {
+            score += (p.inventory.length < MONO_CFG.MAX_ITEMS) ? 220 : 60;
+          } else if (t.type === 'arena') {
+            score += 150;
+          }
+
+          // If imminent danger ahead, bonus score to safe landings (START, Airdrop, Market, own property)
+          if (imminentHotelDanger && score > 0) {
+            score += 250;
           }
 
           if (score > bestScore) {
@@ -287,7 +331,7 @@
           }
         }
 
-        if (bestV && bestScore >= 120) {
+        if (bestV && (bestScore >= 200 || (imminentHotelDanger && bestScore > 0))) {
           return { useItem: 'golden_dice', value: bestV };
         }
       }
@@ -463,25 +507,13 @@
           return { act: 'pass' };
         }
 
-        // HARD: Strategic, assertive acquisition
-        if (completesBotZone) {
-          if (p.miles >= cost + 15) return { act: 'buy' };
-        }
-        if (blocksOppZone) {
-          if (p.miles >= cost + 25) return { act: 'buy' };
-        }
-        if (botCount > 0) {
-          if (p.miles >= cost + 30) return { act: 'buy' };
-        }
-        if ((state.round || 1) <= 16) {
-          if (p.miles >= cost + 35) return { act: 'buy' };
-        }
-        if ((state.round || 1) >= 18 && tile.price <= 160 && botCount === 0 && oppCount === 0) {
-          return { act: 'pass' };
-        }
-        if (p.miles >= cost + 30) {
-          return { act: 'buy' };
-        }
+        // HARD: Strategic, assertive acquisition & ruthless zone blocking
+        if (completesBotZone && p.miles >= cost) return { act: 'buy' }; // ALWAYS complete own monopoly!
+        if (blocksOppZone && p.miles >= cost) return { act: 'buy' }; // ALWAYS block rival monopoly!
+        if (botCount > 0 && p.miles >= cost) return { act: 'buy' };
+        if ((state.round || 1) <= 12 && p.miles >= cost) return { act: 'buy' };
+        if ((state.round || 1) <= 18 && p.miles >= cost + 15) return { act: 'buy' };
+        if (p.miles >= cost + 20) return { act: 'buy' };
         return { act: 'pass' };
       }
 
@@ -511,15 +543,17 @@
           return { act: 'skip' };
         }
 
-        // HARD: build up strong revenue bases
-        const reserve = calculateReserve(state, botRole, level);
-        if (isCompletedZone) {
+        // HARD: Hotel rush & concentrated kill-zones
+        if (isCompletedZone && p.miles >= cost) {
+          return { act: 'build' }; // Always upgrade completed zones
+        }
+        if (prop && prop.level === 2 && p.miles >= cost) {
+          return { act: 'build' }; // Rush to Level 3 Hotel!
+        }
+        if (prop && prop.level === 1 && p.miles >= cost + 15) {
           return { act: 'build' };
         }
-        if (prop && prop.level === 1) {
-          if (p.miles >= cost + 30) return { act: 'build' };
-        }
-        if (p.miles - cost >= Math.round(reserve * 0.4)) {
+        if (p.miles - cost >= 20) {
           return { act: 'build' };
         }
         return { act: 'skip' };
@@ -571,13 +605,13 @@
           return { act: 'pay' };
         }
 
-        // HARD
+        // HARD: Smart shield discipline & strategic takeover calculation
         if (hasShield) {
-          if (isHotel || rent >= 180 || rent >= p.miles * 0.30) {
+          if (isHotel || rent >= 160 || rent >= p.miles * 0.22) {
             return { act: 'shield' };
           }
         }
-        if (canClash && (rent >= 80 || rent >= p.miles * 0.20)) {
+        if (canClash && (rent >= 70 || rent >= p.miles * 0.18)) {
           return { act: 'clash' };
         }
         if (canTakeover) {
@@ -588,9 +622,9 @@
           const breaksOppZone = ownerInZone === zt.length;
           const ownerPerks = (state.perks && state.perks[prop.owner]) || {};
           const isMonacoOwner = !!(ownerPerks.duelMinRoll || ownerPerks.loadedDice);
-          const buffer = isMonacoOwner ? 160 : 50;
+          const buffer = isMonacoOwner ? 160 : 40;
           const safeToLose = p.miles >= value + loseCost + buffer;
-          if (safeToLose && (completesBot || breaksOppZone || prop.level >= 2)) {
+          if (safeToLose && (completesBot || breaksOppZone)) {
             return { act: 'takeover' };
           }
         }
@@ -649,19 +683,17 @@
           const candidates = offers
             .filter((id) => p.miles >= marketPrice(state, botRole, id) + 20)
             .sort((a, b) => priority.indexOf(a) - priority.indexOf(b));
-
-          if (candidates.length > 0) {
+          if (candidates.length) {
             return { act: 'buyItem', itemId: candidates[0] };
           }
           return { act: 'leave' };
         }
 
-        // HARD
+        // HARD: Aggressively purchase game changers
         const candidates = offers
-          .filter((id) => p.miles >= marketPrice(state, botRole, id) + 40)
+          .filter((id) => p.miles >= marketPrice(state, botRole, id) + 15)
           .sort((a, b) => priority.indexOf(a) - priority.indexOf(b));
-
-        if (candidates.length > 0) {
+        if (candidates.length) {
           return { act: 'buyItem', itemId: candidates[0] };
         }
         return { act: 'leave' };

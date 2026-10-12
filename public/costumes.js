@@ -29,78 +29,112 @@
     MYTHIC_SOFT_STEP: 0.06,
     MYTHIC_HARD_PITY: 60, // ...and is guaranteed here
     BOT: {
-      EASY_WIN: 80,
-      EASY_LOSS: 30,
+      EASY_WIN: 50,
+      EASY_LOSS: 10,
       HARD_STAKE: 100,
       HARD_COMEBACK_STAKE: 50,
-      HARD_WIN: 450,
+      HARD_WIN: 400,
       HARD_LOSS: 0,
       INSANE_STAKE: 150,
       INSANE_COMEBACK_STAKE: 75,
-      INSANE_WIN: 750,
-      INSANE_LOSS: 0,
+      INSANE_WIN: 950,
+      INSANE_LOSS: 50,
       STREAK_BONUS_PER_WIN: 50,
       MAX_STREAK_BONUS: 200,
       MIN_ROUNDS_PLAUSIBLE: 6
     },
     BOT_DEMOLITION_BOUNTY: 100, // +100💎 when a human demolishes or seizes a bot property
-    // 🏆 First-Class 3P/4P Party Economy (Bumped VIP High-Roller Scale)
+    // 🏆 First-Class 3P/4P Party Economy (Option 1 High-Roller Prestige Scale)
     PARTY_REWARDS: {
+      // 2 Humans + 2 Insane Bots (Apex Extreme Threat)
+      apex_extreme: {
+        id: 'apex_extreme',
+        name: 'Apex Sovereign Clash (2 Insane Bots)',
+        first:  { diamonds: 1350, tickets: 1, fish: 10, stardust: 60 },
+        second: { diamonds: 750,  tickets: 0, fish: 6,  stardust: 35 },
+        third:  { diamonds: 350,  tickets: 0, fish: 3,  stardust: 20 },
+        fourth: { diamonds: 200,  tickets: 0, fish: 2,  stardust: 10 },
+        syndicateDividend: 250,
+        syndicateRescue3rd: 150,
+        syndicateRescue4th: 100
+      },
+      // 2 Humans + 1 Insane + 1 Hard Bot (High Insane Threat)
+      high_insane: {
+        id: 'high_insane',
+        name: 'Sovereign Threat (1 Insane + 1 Hard Bot)',
+        first:  { diamonds: 1100, tickets: 1, fish: 8, stardust: 50 },
+        second: { diamonds: 600,  tickets: 0, fish: 5, stardust: 30 },
+        third:  { diamonds: 300,  tickets: 0, fish: 3, stardust: 15 },
+        fourth: { diamonds: 180,  tickets: 0, fish: 2, stardust: 10 },
+        syndicateDividend: 220,
+        syndicateRescue3rd: 140,
+        syndicateRescue4th: 90
+      },
       // 2 Humans + 2 Hard Bots (Extreme Threat)
       extreme: {
         id: 'extreme',
         name: 'Extreme Threat (2 Hard Bots)',
-        first:  { diamonds: 1150, tickets: 1, fish: 8, stardust: 50 },
-        second: { diamonds: 650,  tickets: 0, fish: 5, stardust: 30 },
-        third:  { diamonds: 300,  tickets: 0, fish: 3, stardust: 15 },
-        fourth: { diamonds: 200,  tickets: 0, fish: 2, stardust: 10 },
-        syndicateDividend: 250,   // Partner gets +250💎 if human takes 1st! (650+250 = 900💎 full 10-pull!)
-        syndicateRescue3rd: 150,  // Partner gets +150💎 if 3rd and human takes 1st (300+150 = 450💎)
-        syndicateRescue4th: 100   // Partner gets +100💎 if 4th and human takes 1st (200+100 = 300💎)
+        first:  { diamonds: 950, tickets: 1, fish: 8, stardust: 45 },
+        second: { diamonds: 550, tickets: 0, fish: 5, stardust: 25 },
+        third:  { diamonds: 250, tickets: 0, fish: 3, stardust: 15 },
+        fourth: { diamonds: 150, tickets: 0, fish: 2, stardust: 10 },
+        syndicateDividend: 200,
+        syndicateRescue3rd: 120,
+        syndicateRescue4th: 80
       },
       // 2 Humans + 1 Hard + 1 Easy Bot (High Threat)
       high: {
         id: 'high',
         name: 'High Threat (1 Hard + 1 Easy Bot)',
-        first:  { diamonds: 800, tickets: 1, fish: 6, stardust: 40 },
-        second: { diamonds: 450, tickets: 0, fish: 4, stardust: 25 },
-        third:  { diamonds: 220, tickets: 0, fish: 2, stardust: 12 },
-        fourth: { diamonds: 150, tickets: 0, fish: 2, stardust: 8 },
-        syndicateDividend: 180,   // 450 + 180 = 630💎
-        syndicateRescue3rd: 100,  // 220 + 100 = 320💎
-        syndicateRescue4th: 80    // 150 + 80 = 230💎
+        first:  { diamonds: 700, tickets: 0, fish: 6, stardust: 35 },
+        second: { diamonds: 400, tickets: 0, fish: 4, stardust: 20 },
+        third:  { diamonds: 200, tickets: 0, fish: 2, stardust: 10 },
+        fourth: { diamonds: 120, tickets: 0, fish: 1, stardust: 5 },
+        syndicateDividend: 150,
+        syndicateRescue3rd: 100,
+        syndicateRescue4th: 70
       },
       // 2 Humans + 2 Easy Bots (Standard Party)
       standard: {
         id: 'standard',
         name: 'Standard Party (2 Easy Bots)',
-        first:  { diamonds: 550, tickets: 0, fish: 5, stardust: 30 },
-        second: { diamonds: 320, tickets: 0, fish: 3, stardust: 20 },
-        third:  { diamonds: 180, tickets: 0, fish: 2, stardust: 10 },
-        fourth: { diamonds: 100, tickets: 0, fish: 1, stardust: 5 },
-        syndicateDividend: 120,   // 320 + 120 = 440💎
-        syndicateRescue3rd: 80,   // 180 + 80 = 260💎
-        syndicateRescue4th: 50    // 100 + 50 = 150💎
+        first:  { diamonds: 450, tickets: 0, fish: 5, stardust: 25 },
+        second: { diamonds: 250, tickets: 0, fish: 3, stardust: 15 },
+        third:  { diamonds: 150, tickets: 0, fish: 2, stardust: 10 },
+        fourth: { diamonds: 80,  tickets: 0, fish: 1, stardust: 5 },
+        syndicateDividend: 100,
+        syndicateRescue3rd: 60,
+        syndicateRescue4th: 40
+      },
+      // 2 Humans + 1 Insane Bot (3P Insane)
+      insane_3p: {
+        id: 'insane_3p',
+        name: 'Apex Flight (1 Insane Bot)',
+        first:  { diamonds: 950, tickets: 1, fish: 7, stardust: 45 },
+        second: { diamonds: 520, tickets: 0, fish: 5, stardust: 25 },
+        third:  { diamonds: 260, tickets: 0, fish: 3, stardust: 15 },
+        syndicateDividend: 200,
+        syndicateRescue3rd: 120
       },
       // 2 Humans + 1 Hard Bot (3P Hard)
       hard_3p: {
         id: 'hard_3p',
         name: 'High Threat (1 Hard Bot)',
         first:  { diamonds: 750, tickets: 1, fish: 6, stardust: 35 },
-        second: { diamonds: 420, tickets: 0, fish: 4, stardust: 25 },
+        second: { diamonds: 420, tickets: 0, fish: 4, stardust: 20 },
         third:  { diamonds: 220, tickets: 0, fish: 2, stardust: 12 },
-        syndicateDividend: 160,   // 420 + 160 = 580💎
-        syndicateRescue3rd: 100   // 220 + 100 = 320💎
+        syndicateDividend: 160,
+        syndicateRescue3rd: 100
       },
       // 2 Humans + 1 Easy Bot (3P Easy)
       easy_3p: {
         id: 'easy_3p',
         name: 'Relaxed Flight (1 Easy Bot)',
-        first:  { diamonds: 520, tickets: 0, fish: 4, stardust: 25 },
-        second: { diamonds: 300, tickets: 0, fish: 3, stardust: 15 },
-        third:  { diamonds: 160, tickets: 0, fish: 2, stardust: 10 },
-        syndicateDividend: 100,   // 300 + 100 = 400💎
-        syndicateRescue3rd: 60    // 160 + 60 = 220💎
+        first:  { diamonds: 450, tickets: 0, fish: 4, stardust: 20 },
+        second: { diamonds: 260, tickets: 0, fish: 3, stardust: 12 },
+        third:  { diamonds: 140, tickets: 0, fish: 2, stardust: 8 },
+        syndicateDividend: 100,
+        syndicateRescue3rd: 60
       },
       // 2P Couple Duel (Classic BKK vs DXB)
       couple: {
@@ -109,12 +143,26 @@
         first:  { diamonds: 500, tickets: 0, fish: 3, stardust: 20 },
         second: { diamonds: 200, tickets: 0, fish: 2, stardust: 10 }
       },
-      // Solo Gauntlet (1 Human vs 3 Hard Bots)
+      // Solo Gauntlet: 1 Human vs 3 Insane Bots
+      gauntlet_insane: {
+        id: 'gauntlet_insane',
+        name: 'Apex Gauntlet (vs 3 Insane Bots)',
+        first:  { diamonds: 1800, tickets: 2, fish: 12, stardust: 80 },
+        consolation: { diamonds: 150, tickets: 0, fish: 2, stardust: 10 }
+      },
+      // Solo Gauntlet: 1 Human vs 3 Hard Bots
       gauntlet_hard: {
         id: 'gauntlet_hard',
         name: 'Solo Gauntlet (vs 3 Hard Bots)',
-        first:  { diamonds: 1500, tickets: 2, fish: 10, stardust: 80 },
-        consolation: { diamonds: 120, tickets: 0, fish: 1, stardust: 5 }
+        first:  { diamonds: 1200, tickets: 1, fish: 8, stardust: 50 },
+        consolation: { diamonds: 80, tickets: 0, fish: 1, stardust: 5 }
+      },
+      // Solo Gauntlet: 1 Human vs 3 Easy Bots
+      gauntlet_easy: {
+        id: 'gauntlet_easy',
+        name: 'Training Gauntlet (vs 3 Easy Bots)',
+        first:  { diamonds: 400, tickets: 0, fish: 4, stardust: 20 },
+        consolation: { diamonds: 30, tickets: 0, fish: 1, stardust: 5 }
       }
     }
   };
@@ -810,20 +858,32 @@
     const bots = pList.filter((p) => p && (p.isBot || String(p.role || p.id).startsWith('bot')));
     const humans = pList.filter((p) => p && !p.isBot && !String(p.role || p.id).startsWith('bot'));
 
+    // Solo Gauntlet (1 Human vs 3 Bots)
     if (humans.length === 1 && bots.length >= 2) {
-      const highThreatBots = bots.filter((b) => b.botLevel === 'hard' || b.botLevel === 'insane').length;
-      if (highThreatBots >= 2) return 'gauntlet_hard';
+      const insaneCount = bots.filter((b) => b.botLevel === 'insane').length;
+      const hardCount = bots.filter((b) => b.botLevel === 'hard').length;
+      if (insaneCount >= 2) return 'gauntlet_insane';
+      if (hardCount + insaneCount >= 2) return 'gauntlet_hard';
+      return 'gauntlet_easy';
     }
 
     if (bots.length === 0) return 'couple';
 
+    // 3P Flight (2 Humans + 1 Bot)
     if (bots.length === 1) {
-      return (bots[0].botLevel === 'hard' || bots[0].botLevel === 'insane') ? 'hard_3p' : 'easy_3p';
+      if (bots[0].botLevel === 'insane') return 'insane_3p';
+      if (bots[0].botLevel === 'hard') return 'hard_3p';
+      return 'easy_3p';
     }
 
-    const highThreatBots = bots.filter((b) => b.botLevel === 'hard' || b.botLevel === 'insane').length;
-    if (highThreatBots >= 2) return 'extreme';
-    if (highThreatBots === 1) return 'high';
+    // 4P Flight (2 Humans + 2 Bots)
+    const insaneCount = bots.filter((b) => b.botLevel === 'insane').length;
+    const hardCount = bots.filter((b) => b.botLevel === 'hard').length;
+
+    if (insaneCount >= 2) return 'apex_extreme';
+    if (insaneCount >= 1 && hardCount >= 1) return 'high_insane';
+    if (hardCount >= 2 || insaneCount === 1) return 'extreme';
+    if (hardCount === 1) return 'high';
     return 'standard';
   }
 
@@ -855,16 +915,17 @@
           fish = table.second.fish;
           stardust = table.second.stardust;
         }
-      } else if (tierKey === 'gauntlet_hard') {
+      } else if (tierKey.startsWith('gauntlet_')) {
         if (won) {
           base = table.first.diamonds;
-          tickets = table.first.tickets;
-          fish = table.first.fish;
-          stardust = table.first.stardust;
+          tickets = table.first.tickets || 0;
+          fish = table.first.fish || 0;
+          stardust = table.first.stardust || 0;
         } else {
-          base = table.consolation.diamonds;
-          fish = table.consolation.fish;
-          stardust = table.consolation.stardust;
+          base = (table.consolation && table.consolation.diamonds) || 50;
+          tickets = (table.consolation && table.consolation.tickets) || 0;
+          fish = (table.consolation && table.consolation.fish) || 1;
+          stardust = (table.consolation && table.consolation.stardust) || 5;
         }
       } else {
         // 3P or 4P Party modes
