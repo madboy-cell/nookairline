@@ -120,12 +120,35 @@
       // Pre-generate procedural textures (coins, sparks, stardust, shockwave rings)
       generateProceduralTextures();
 
-      // Start the 120 FPS high-refresh ticker loop
+      let idleTickerFrames = 0;
+      let tickerRunning = true;
+
+      function wakeTicker() {
+        idleTickerFrames = 0;
+        if (!tickerRunning && SkyPixi.app && SkyPixi.app.ticker) {
+          tickerRunning = true;
+          try { SkyPixi.app.ticker.start(); } catch (e) {}
+        }
+      }
+      SkyPixi.wakeTicker = wakeTicker;
+
+      // Start high-refresh ticker loop with demand-driven power saving
       app.ticker.add((time) => {
         const delta = (time && time.deltaTime) ? time.deltaTime : 1;
         updateParticles(delta);
         updateMeshes(delta);
         updateAmbient(delta);
+
+        // Demand-driven sleeper: if no active particles and no active meshes, sleep after 35 frames (~0.5s)
+        if (SkyPixi.activeParticles.length === 0 && SkyPixi.activeMeshes.length === 0) {
+          idleTickerFrames++;
+          if (idleTickerFrames > 35) {
+            tickerRunning = false;
+            try { SkyPixi.app.ticker.stop(); } catch (e) {}
+          }
+        } else {
+          idleTickerFrames = 0;
+        }
       });
 
       // Mobile Efficiency & Zero-CPU background hibernation
@@ -133,9 +156,10 @@
         document.addEventListener('visibilitychange', () => {
           if (!SkyPixi.app || !SkyPixi.app.ticker) return;
           if (document.hidden) {
+            tickerRunning = false;
             SkyPixi.app.ticker.stop();
           } else {
-            SkyPixi.app.ticker.start();
+            wakeTicker();
             resize();
           }
         });
@@ -165,10 +189,12 @@
   let ambientTimer = 0;
   function updateAmbient(delta) {
     if (!SkyPixi.isReady || !SkyPixi.canvas) return;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    if (isMobile && !tickerRunning) return;
     ambientTimer += delta;
-    if (ambientTimer >= 55) {
+    if (ambientTimer >= (isMobile ? 180 : 70)) {
       ambientTimer = 0;
-      if (SkyPixi.activeParticles.length < 24) {
+      if (SkyPixi.activeParticles.length < (isMobile ? 12 : 24)) {
         const dpr = window.devicePixelRatio || 1;
         const cX = (SkyPixi.canvas.width / dpr) / 2;
         const cY = (SkyPixi.canvas.height / dpr) / 2;
@@ -186,6 +212,7 @@
 
   function spawnTileLanding(x, y) {
     if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
     spawnShockwaveRing(x, y, 0xfde047, 36, 260);
     spawnRadialBurst(x, y, 'spark', 7, { minSpeed: 1, maxSpeed: 4, additive: true });
     return true;
@@ -193,6 +220,7 @@
 
   function spawnDiceImpact(x, y) {
     if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
     const dpr = window.devicePixelRatio || 1;
     const targetX = x != null ? x : ((SkyPixi.canvas ? SkyPixi.canvas.width / dpr : 380) / 2);
     const targetY = y != null ? y : ((SkyPixi.canvas ? SkyPixi.canvas.height / dpr : 532) / 2);
@@ -334,6 +362,7 @@
    */
   function spawnCoinBurst(from, to, count = 28, opts = {}) {
     if (!SkyPixi.isReady || !SkyPixi.textures.coin) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
 
     const container = SkyPixi.layers.particles;
     const startX = from.x || from.left || 150;
@@ -371,6 +400,7 @@
    */
   function spawnRadialBurst(x, y, kind = 'spark', count = 24, opts = {}) {
     if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
 
     const texture = SkyPixi.textures[kind] || SkyPixi.textures.spark;
     if (!texture) return false;
@@ -407,6 +437,7 @@
    */
   function spawnShockwaveRing(x, y, color = 0x38bdf8, maxRadius = 120, durationMs = 450) {
     if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
 
     const g = new PIXI.Graphics();
     SkyPixi.layers.beams.addChild(g);
@@ -432,6 +463,7 @@
    */
   function spawnLightning(x1, y1, x2, y2, opts = {}) {
     if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
 
     const color = opts.color !== undefined ? opts.color : 0x38bdf8;
     const coreColor = opts.coreColor !== undefined ? opts.coreColor : 0xffffff;

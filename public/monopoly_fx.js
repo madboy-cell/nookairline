@@ -278,6 +278,7 @@
         ? parseInt(color.slice(1), 16)
         : 0xfde047;
       window.SkyPixi.spawnShockwaveRing(x, y, numColor, size * 1.5, ms);
+      return;
     }
     if (!refs()) return;
     const el = document.createElement('div');
@@ -285,7 +286,7 @@
     el.style.width = `${size}px`;
     el.style.height = `${size}px`;
     el.style.borderColor = color;
-    el.style.boxShadow = `0 0 24px ${color}, inset 0 0 12px ${color}`;
+    el.style.boxShadow = `0 0 16px ${color}, inset 0 0 8px ${color}`;
     L.moment.appendChild(el);
     done(el.animate([
       { transform: at(x, y, 'scale(0.2)'), opacity: 1 },
@@ -297,14 +298,15 @@
   function burst({ x, y, name = 'sparkle', count = 8, spread = 120, up = 0, gravity = 300, life = 900, size = 18, filter = '', rotate = true }) {
     if (window.SkyPixi && window.SkyPixi.isReady) {
       const pixiKind = (name === 'fire' || name === 'flame') ? 'ember' :
-                       (name === 'ice' || name === 'frost' || name === 'crystal') ? 'frost' :
+                       (name === 'ice' || name === 'frost' || name === 'crystal' || name === 'cryo_shatter_crystal') ? 'frost' :
                        (name === 'star' || name === 'stardust' || name === 'starfall') ? 'stardust' :
                        (name === 'chip' || name === 'monaco_chip') ? 'chip' : 'spark';
       window.SkyPixi.spawnRadialBurst(x, y, pixiKind, count * 2, { additive: true });
+      return Promise.resolve();
     }
     if (!refs()) return Promise.resolve();
     const isMobile = typeof window !== 'undefined' && (window.innerWidth < 640 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    const maxCount = isMobile ? (api.reducedMotion ? 4 : 16) : (api.reducedMotion ? 6 : count);
+    const maxCount = isMobile ? (api.reducedMotion ? 4 : 12) : (api.reducedMotion ? 6 : count);
     const n = Math.min(count, maxCount);
     const jobs = [];
     for (let i = 0; i < n; i++) {
@@ -436,13 +438,26 @@
     });
   }
 
+  let tileBoxCache = null;
+  function clearTileBoxCache() {
+    tileBoxCache = null;
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', clearTileBoxCache, { passive: true });
+    window.addEventListener('orientationchange', clearTileBoxCache, { passive: true });
+  }
+
   function tileBox(tileId) {
+    if (!tileBoxCache) tileBoxCache = {};
+    if (tileBoxCache[tileId]) return tileBoxCache[tileId];
     const t = $(`boardTile_${tileId}`);
     if (!t || !L.tokens) return null;
     const r = t.getBoundingClientRect();
     if (!r.width) return null;
     const b = L.tokens.getBoundingClientRect();
-    return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height };
+    const box = { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height };
+    tileBoxCache[tileId] = box;
+    return box;
   }
 
   function anchor(role, tileId, positions) {
@@ -545,25 +560,44 @@
         burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 12, spread: 85, up: 60, gravity: 0, life: 650, size: 14 });
       }
       if (opts.frostWake) {
-        ring(mid.x, mid.y, 65, '#38bdf8', 350);
-        burst({ x: mid.x, y: mid.y, name: 'cryo_shatter_crystal', count: 6, spread: 80, up: 45, gravity: -10, life: 550, size: 14 });
-        burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 12, spread: 90, up: 55, gravity: -20, life: 650, size: 16 });
+        if (opts.first || opts.final) {
+          ring(mid.x, mid.y, 65, '#38bdf8', 350);
+          burst({ x: mid.x, y: mid.y, name: 'cryo_shatter_crystal', count: 6, spread: 80, up: 45, gravity: -10, life: 550, size: 14 });
+        } else {
+          burst({ x: mid.x, y: mid.y, name: 'frost', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
+        }
       }
       if (opts.gildedWake) {
-        ring(mid.x, mid.y, 65, '#fbbf24', 350);
-        burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 14, spread: 90, up: 60, gravity: -20, life: 650, size: 16 });
+        if (opts.first || opts.final) {
+          ring(mid.x, mid.y, 65, '#fbbf24', 350);
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 90, up: 60, gravity: -20, life: 650, size: 16 });
+        } else {
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
+        }
       }
       if (opts.solarWake) {
-        ring(mid.x, mid.y, 70, '#ff4500', 350);
-        burst({ x: mid.x, y: mid.y, name: 'fire', count: 10, spread: 85, up: 55, gravity: -30, life: 600, size: 16 });
+        if (opts.first || opts.final) {
+          ring(mid.x, mid.y, 70, '#ff4500', 350);
+          burst({ x: mid.x, y: mid.y, name: 'fire', count: 8, spread: 85, up: 55, gravity: -30, life: 600, size: 16 });
+        } else {
+          burst({ x: mid.x, y: mid.y, name: 'fire', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
+        }
       }
       if (opts.phantomWake) {
-        ring(mid.x, mid.y, 70, '#a855f7', 350);
-        burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 12, spread: 85, up: 55, gravity: -20, life: 600, size: 16 });
+        if (opts.first || opts.final) {
+          ring(mid.x, mid.y, 70, '#a855f7', 350);
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 85, up: 55, gravity: -20, life: 600, size: 16 });
+        } else {
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
+        }
       }
       if (opts.olympusWake) {
-        ring(mid.x, mid.y, 75, '#38bdf8', 350);
-        burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 14, spread: 90, up: 60, gravity: -20, life: 650, size: 18 });
+        if (opts.first || opts.final) {
+          ring(mid.x, mid.y, 75, '#38bdf8', 350);
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 90, up: 60, gravity: -20, life: 650, size: 18 });
+        } else {
+          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
+        }
       }
       setTimeout(() => {
         sfx('playHop', opts.stepIndex || 0);
@@ -745,16 +779,25 @@
         const n = api.reducedMotion ? 3 : clamp(Math.round(Math.abs(amount) / 40), 4, 14);
         const P2 = point(to);
         const b = point(from);
+        const targetEl = endpointEl(to);
+        const bumpEl = to && to.role && targetEl ? (targetEl.closest('.monopoly-player-card') || {}).querySelector?.('.player-thumb-mini') : null;
+
         if (window.SkyPixi && window.SkyPixi.isReady) {
           window.SkyPixi.spawnCoinBurst(b, P2, n * 2);
+          sfx('playCoinTick');
+          setTimeout(() => {
+            if (bumpEl) restartClass(bumpEl, 'coin-bump', 220);
+            sfx('playCoinTick');
+            resolve();
+          }, T(420));
+          return;
         }
-        const targetEl = endpointEl(to);
+
+        // DOM Fallback only when WebGL is inactive
         const intoTarget = !(to && to.role);
-        const bumpEl = to && to.role && targetEl ? (targetEl.closest('.monopoly-player-card') || {}).querySelector?.('.player-thumb-mini') : null;
         let landed = 0;
         let lastTick = 0;
         for (let i = 0; i < n; i++) {
-          const b = point(from);
           const P0 = { x: b.x + rand(-10, 10), y: b.y + rand(-10, 10) };
           const node = spawn('coin', P0.x, P0.y, 22, 'fx-coin');
           const scaleFn = (t) => {

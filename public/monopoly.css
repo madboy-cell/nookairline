@@ -362,15 +362,22 @@ body.has-active-modal .vault-pill * {
   flex-direction: column;
   position: relative;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s ease, border-color 0.22s ease;
   overflow: visible;
   box-sizing: border-box;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout paint;
 }
 
-.board-tile:hover {
-  background: rgba(255, 255, 255, 0.14);
-  transform: translateY(-2px);
-  z-index: 15;
+@media (hover: hover) {
+  .board-tile:hover {
+    background: rgba(255, 255, 255, 0.14);
+    transform: translateY(-2px) translateZ(0);
+    z-index: 15;
+  }
 }
 
 /* Step Flash highlight when avatar hops across */
@@ -1542,20 +1549,21 @@ body.has-active-modal .vault-pill * {
 /* S10 Phantom Domain on Phantom / Black Swan Owned Properties */
 .board-tile.tile-phantom-domain {
   position: relative;
-  outline: 2.5px solid #f43f5e !important;
   border-color: #f43f5e !important;
   box-shadow: 
-    0 0 20px rgba(244, 63, 94, 0.8),
-    inset 0 0 16px rgba(136, 19, 55, 0.65),
-    inset 0 0 25px rgba(251, 191, 36, 0.4) !important;
+    0 0 14px rgba(244, 63, 94, 0.75),
+    inset 0 0 10px rgba(136, 19, 55, 0.6) !important;
   background: radial-gradient(circle at 50% 40%, rgba(244, 63, 94, 0.32) 0%, rgba(88, 28, 135, 0.45) 55%, rgba(15, 23, 42, 0.95) 100%) !important;
-  animation: phantomDomainPulse 2.2s ease-in-out infinite alternate !important;
+  animation: phantomDomainPulse 2.4s ease-in-out infinite alternate !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 @keyframes phantomDomainPulse {
-  0% { outline-color: #f43f5e; opacity: 0.92; }
-  50% { outline-color: #fbbf24; opacity: 1; }
-  100% { outline-color: #f43f5e; opacity: 0.92; }
+  0% { border-color: #f43f5e; opacity: 0.94; }
+  50% { border-color: #fbbf24; opacity: 1; }
+  100% { border-color: #f43f5e; opacity: 0.94; }
 }
 
 .board-tile.tile-phantom-domain::before {
@@ -1563,18 +1571,21 @@ body.has-active-modal .vault-pill * {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  -webkit-transform: translate3d(-50%, -50%, 0);
   font-size: 26px;
-  color: rgba(255, 255, 255, 0.22);
-  filter: drop-shadow(0 0 10px #f43f5e) drop-shadow(0 0 20px #fbbf24);
+  color: rgba(255, 255, 255, 0.25);
+  text-shadow: 0 0 12px rgba(244, 63, 94, 0.8), 0 0 20px rgba(251, 191, 36, 0.5);
+  filter: drop-shadow(0 0 8px #f43f5e);
   pointer-events: none;
   z-index: 6;
-  animation: phantomMaskHover 2s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  animation: phantomMaskHover 2.2s ease-in-out infinite alternate;
 }
 
 @keyframes phantomMaskHover {
-  0% { transform: translate3d(-50%, -50%, 0) scale(0.92) rotate(-3deg); opacity: 0.25; }
-  100% { transform: translate3d(-50%, -50%, 0) scale(1.12) rotate(3deg); opacity: 0.55; }
+  0% { transform: translate3d(-50%, -50%, 0) scale(0.94) rotate(-3deg); opacity: 0.3; }
+  100% { transform: translate3d(-50%, -50%, 0) scale(1.08) rotate(3deg); opacity: 0.6; }
 }
 
 .board-tile.tile-phantom-domain::after {
@@ -1590,7 +1601,7 @@ body.has-active-modal .vault-pill * {
   border-radius: 5px;
   padding: 1px 3px;
   color: #fff;
-  filter: drop-shadow(0 0 8px #f43f5e);
+  filter: drop-shadow(0 0 6px #f43f5e);
   pointer-events: none;
   z-index: 14;
 }
@@ -1598,13 +1609,15 @@ body.has-active-modal .vault-pill * {
 /* S10 Reverse Rent Hexed Tile */
 .board-tile.tile-reverse-hex {
   position: relative;
-  outline: 3px dashed #fb7185 !important;
-  box-shadow: 0 0 24px rgba(244, 63, 94, 0.95), inset 0 0 18px rgba(168, 85, 247, 0.65) !important;
-  animation: reverseHexPulse 1.4s ease-in-out infinite alternate !important;
+  outline: 2px dashed #fb7185 !important;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.85), inset 0 0 12px rgba(168, 85, 247, 0.55) !important;
+  animation: reverseHexPulse 1.6s ease-in-out infinite alternate !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 @keyframes reverseHexPulse {
-  0% { outline-color: #fb7185; opacity: 0.92; }
-  100% { outline-color: #fde047; opacity: 1; }
+  0% { border-color: #fb7185; opacity: 0.92; }
+  100% { border-color: #fde047; opacity: 1; }
 }
 .board-tile.tile-reverse-hex::after {
   content: '🪞 100% REVERSE';
@@ -1620,7 +1633,7 @@ body.has-active-modal .vault-pill * {
   padding: 1px 4px;
   pointer-events: none;
   z-index: 15;
-  box-shadow: 0 0 10px #f43f5e;
+  box-shadow: 0 0 8px #f43f5e;
   animation: reverseHexBadgeFlicker 1.8s ease-in-out infinite alternate;
 }
 @keyframes reverseHexBadgeFlicker {
@@ -1632,36 +1645,40 @@ body.has-active-modal .vault-pill * {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  -webkit-transform: translate3d(-50%, -50%, 0);
   font-size: 26px;
   color: rgba(251, 113, 133, 0.35);
-  filter: drop-shadow(0 0 10px #f43f5e) drop-shadow(0 0 20px #fbbf24);
+  text-shadow: 0 0 12px rgba(244, 63, 94, 0.8);
+  filter: drop-shadow(0 0 8px #f43f5e);
   pointer-events: none;
   z-index: 6;
-  animation: reverseMirrorHover 2s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  animation: reverseMirrorHover 2.2s ease-in-out infinite alternate;
 }
 @keyframes reverseMirrorHover {
-  0% { transform: translate3d(-50%, -50%, 0) scale(0.92) rotate(-4deg); opacity: 0.3; }
-  100% { transform: translate3d(-50%, -50%, 0) scale(1.12) rotate(4deg); opacity: 0.6; }
+  0% { transform: translate3d(-50%, -50%, 0) scale(0.94) rotate(-3deg); opacity: 0.35; }
+  100% { transform: translate3d(-50%, -50%, 0) scale(1.08) rotate(3deg); opacity: 0.65; }
 }
 
 /* S11 Olympus Domain on Zeus / Athena Owned Properties */
 .board-tile.tile-olympus-domain {
   position: relative;
-  outline: 2.5px solid #38bdf8 !important;
   border-color: #38bdf8 !important;
   box-shadow: 
-    0 0 20px rgba(56, 189, 248, 0.85),
-    inset 0 0 16px rgba(14, 165, 233, 0.6),
-    inset 0 0 25px rgba(251, 191, 36, 0.45) !important;
+    0 0 14px rgba(56, 189, 248, 0.75),
+    inset 0 0 10px rgba(14, 165, 233, 0.55) !important;
   background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.28) 0%, rgba(14, 116, 144, 0.35) 60%, rgba(15, 23, 42, 0.95) 100%) !important;
-  animation: olympusDomainPulse 2s ease-in-out infinite alternate !important;
+  animation: olympusDomainPulse 2.4s ease-in-out infinite alternate !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 @keyframes olympusDomainPulse {
-  0% { outline-color: #38bdf8; opacity: 0.92; }
-  50% { outline-color: #fde047; opacity: 1; }
-  100% { outline-color: #38bdf8; opacity: 0.92; }
+  0% { border-color: #38bdf8; opacity: 0.94; }
+  50% { border-color: #fde047; opacity: 1; }
+  100% { border-color: #38bdf8; opacity: 0.94; }
 }
 
 .board-tile.tile-olympus-domain::before {
@@ -1669,18 +1686,21 @@ body.has-active-modal .vault-pill * {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  -webkit-transform: translate3d(-50%, -50%, 0);
   font-size: 28px;
-  color: rgba(255, 255, 255, 0.22);
-  filter: drop-shadow(0 0 10px #38bdf8) drop-shadow(0 0 20px #0284c7);
+  color: rgba(255, 255, 255, 0.25);
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.8), 0 0 20px rgba(2, 132, 199, 0.6);
+  filter: drop-shadow(0 0 8px #38bdf8);
   pointer-events: none;
   z-index: 6;
-  animation: olympusRuneGlow 1.6s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  animation: olympusRuneGlow 2s ease-in-out infinite alternate;
 }
 
 @keyframes olympusRuneGlow {
-  0% { transform: translate3d(-50%, -50%, 0) scale(0.92); opacity: 0.25; }
-  100% { transform: translate3d(-50%, -50%, 0) scale(1.15); opacity: 0.55; }
+  0% { transform: translate3d(-50%, -50%, 0) scale(0.94); opacity: 0.3; }
+  100% { transform: translate3d(-50%, -50%, 0) scale(1.1); opacity: 0.6; }
 }
 
 .board-tile.tile-olympus-domain::after {
@@ -1696,7 +1716,7 @@ body.has-active-modal .vault-pill * {
   border-radius: 5px;
   padding: 1px 3px;
   color: #fff;
-  filter: drop-shadow(0 0 8px #38bdf8);
+  filter: drop-shadow(0 0 6px #38bdf8);
   pointer-events: none;
   z-index: 14;
 }

@@ -7513,9 +7513,11 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
           emitFx({ kind: 'moment', id: 'lightning_rod_zap', fromTile: p.pos, toRole: playerKey, ownerRole, amount: arcTax });
           floatText(p.pos, `⚡ ARC STATIC! -${arcTax}🪙`, 'neg');
           announce(`⚡💨 <strong>LIGHTNING ROD STATIC!</strong> ${p.name} sped past Mount Olympus and was shocked by the spire for <strong>-${arcTax}🪙</strong> tribute to ${monopolyState.players[ownerRole]?.name || 'Zeus'}!`);
+          updateMonopolyHUD();
         }
+      } else if (passedStart) {
+        updateMonopolyHUD();
       }
-      updateMonopolyHUD();
       const isDriftStep = wasDrifted && (driftPerk > 0) && (i === steps - 1);
       if (isDriftStep) {
         floatText(p.pos, '🌊 ABYSSAL DRIFT +1', 'pos');
@@ -8605,6 +8607,7 @@ function armBotWatchdog(phase = 'turn') {
     if (s.currentTurn !== botRole) return;
     const p = s.players && s.players[botRole];
     if (!p || !p.isBot) return;
+    if (!isResolver()) return;
 
     console.warn(`[Monopoly] Bot ${botRole} watchdog triggered (${phase})! Auto-progressing move...`);
     if (s.pendingDecision) {
