@@ -538,8 +538,14 @@
 
     openOnboarding(step = 1) {
       if (!this.onboardingModal) this.onboardingModal = $('skyOnboardingModal');
+      // If user is already logged in and onboarding is completed, prevent reopening Step 1/2 unless explicitly requested for ticket (step 4)
+      if (window.SkySupabase && window.SkySupabase.isOnboardingCompleted() && step <= 2) {
+        this.closeOnboarding(true);
+        return;
+      }
       if (this.onboardingModal) {
         this.onboardingModal.classList.remove('hidden');
+        this.onboardingModal.setAttribute('aria-hidden', 'false');
         this.setOnbStep(step);
       }
     }
@@ -548,8 +554,10 @@
       if (!force && window.SkySupabase && !window.SkySupabase.isLoggedIn()) {
         return; // Gatekeeper is locked until logged in
       }
+      if (!this.onboardingModal) this.onboardingModal = $('skyOnboardingModal');
       if (this.onboardingModal) {
         this.onboardingModal.classList.add('hidden');
+        this.onboardingModal.setAttribute('aria-hidden', 'true');
       }
     }
 
@@ -613,7 +621,9 @@
       const onbCallsignInput = $('onbCallsignInput');
       const onbRandomNameBtn = $('onbRandomNameBtn');
       const onbBackBtn2 = $('onbBackBtn2');
+      const onbBoardNowBtn2 = $('onbBoardNowBtn2');
       const onbNextBtn2 = $('onbNextBtn2') || $('onbNextBtn1');
+      const onbCloseBtn = $('onbCloseBtn');
 
       // Step 3: Couple Sanctuary
       const onbChoicePair = $('onbChoicePair');
@@ -757,12 +767,70 @@
         });
       }
 
+      const completeAndEnterCabin = async () => {
+        if (onbCallsignInput && onbCallsignInput.value.trim()) {
+          this.onbUsername = onbCallsignInput.value.trim();
+        }
+        Sound.claim();
+        const partnerName = (this.onbIsPair && onbPartnerInput) ? onbPartnerInput.value.trim() : null;
+        if (window.SkySupabase) {
+          await window.SkySupabase.completeOnboarding({
+            persona: this.onbPersona,
+            username: this.onbUsername,
+            partnerInvite: partnerName
+          });
+        }
+        this.closeOnboarding(true);
+        this.render();
+        
+        if (window.NookCats && typeof window.NookCats.renderAll === 'function') {
+          window.NookCats.renderAll();
+        }
+      };
+
       if (onbRandomNameBtn && onbCallsignInput) {
         onbRandomNameBtn.addEventListener('click', () => {
           Sound.tap();
           const pick = randomCallsigns[Math.floor(Math.random() * randomCallsigns.length)];
           onbCallsignInput.value = pick;
           this.onbUsername = pick;
+        });
+      }
+
+      if (onbCallsignInput) {
+        onbCallsignInput.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            await completeAndEnterCabin();
+          }
+        });
+      }
+
+      if (onbBoardNowBtn2) {
+        onbBoardNowBtn2.addEventListener('click', async () => {
+          await completeAndEnterCabin();
+        });
+      }
+
+      if (onbCloseBtn) {
+        onbCloseBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          if (window.SkySupabase && window.SkySupabase.isLoggedIn()) {
+            await completeAndEnterCabin();
+          } else {
+            this.closeOnboarding(true);
+          }
+        });
+      }
+
+      if (this.onboardingModal) {
+        this.onboardingModal.addEventListener('click', async (e) => {
+          if (e.target === this.onboardingModal) {
+            if (window.SkySupabase && window.SkySupabase.isLoggedIn()) {
+              await completeAndEnterCabin();
+            }
+          }
         });
       }
 
@@ -774,10 +842,16 @@
       }
 
       if (onbNextBtn2) {
-        onbNextBtn2.addEventListener('click', () => {
+        onbNextBtn2.addEventListener('click', async () => {
           Sound.tap();
           if (onbCallsignInput && onbCallsignInput.value.trim()) {
             this.onbUsername = onbCallsignInput.value.trim();
+          }
+          if (window.SkySupabase) {
+            await window.SkySupabase.completeOnboarding({
+              persona: this.onbPersona,
+              username: this.onbUsername
+            });
           }
           this.setOnbStep(3);
         });
@@ -849,19 +923,7 @@
       // --- STEP 4 HANDLERS: Complete Boarding ---
       if (onbCompleteBtn) {
         onbCompleteBtn.addEventListener('click', async () => {
-          Sound.claim();
-          const partnerName = (this.onbIsPair && onbPartnerInput) ? onbPartnerInput.value.trim() : null;
-          await window.SkySupabase.completeOnboarding({
-            persona: this.onbPersona,
-            username: this.onbUsername,
-            partnerInvite: partnerName
-          });
-          this.closeOnboarding(true);
-          this.render();
-          
-          if (window.NookCats && typeof window.NookCats.renderAll === 'function') {
-            window.NookCats.renderAll();
-          }
+          await completeAndEnterCabin();
         });
       }
     }

@@ -279,6 +279,9 @@
               user_metadata: user.user_metadata,
               isGuest: false
             };
+            if (this.currentUser.character_base && this.currentUser.username) {
+              try { localStorage.setItem(STORAGE_KEYS.ONBOARDING, 'true'); } catch (e) {}
+            }
           } else {
             const fallbackName = user.user_metadata?.full_name || 
                                  user.user_metadata?.name || 
@@ -621,8 +624,16 @@
       if (!this.isLoggedIn()) return false;
       const u = this.currentUser;
       const hasBase = u && (u.character_base === 'bkk' || u.character_base === 'dxb');
+      const hasName = u && typeof u.username === 'string' && u.username.trim().length > 0 && !u.username.startsWith('Captain_');
       const hasOnbFlag = localStorage.getItem(STORAGE_KEYS.ONBOARDING) === 'true';
-      return !!(hasBase && hasOnbFlag);
+
+      if (hasBase && (hasOnbFlag || hasName)) {
+        if (!hasOnbFlag) {
+          try { localStorage.setItem(STORAGE_KEYS.ONBOARDING, 'true'); } catch (e) {}
+        }
+        return true;
+      }
+      return false;
     }
 
     /**
@@ -1024,6 +1035,9 @@
                 user_metadata: session.user.user_metadata,
                 isGuest: false
               };
+              if (this.currentUser.character_base && this.currentUser.username) {
+                try { localStorage.setItem(STORAGE_KEYS.ONBOARDING, 'true'); } catch (e) {}
+              }
               this.localProvider.saveProfile(this.currentUser);
               await this.getCoupleStatus();
               await this.getFriends();

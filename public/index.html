@@ -2096,7 +2096,7 @@
           <div class="onb-neora-brand">
             <img src="assets/ui/neora_logo_transparent.png" alt="NEORA" class="onb-neora-logo" onerror="this.src='assets/ui/extracted_neora_logo.png'">
           </div>
-          <div class="onb-nav-spacer"></div>
+          <button type="button" class="onb-close-btn" id="onbCloseBtn" aria-label="Close Onboarding" title="Enter Cabin">✕</button>
         </div>
 
         <!-- 4-Pill Segment Progress Bar -->
@@ -2250,8 +2250,13 @@
 
           <div class="onb-actions-row">
             <button type="button" class="onb-btn-secondary pill-btn" id="onbBackBtn2">← Back</button>
-            <button type="button" class="onb-btn-primary pill-btn full-width" id="onbNextBtn2">
-              <span>Continue</span> →
+            <button type="button" class="onb-btn-primary pill-btn full-width launch-flight-btn" id="onbBoardNowBtn2">
+              <span>Board Flight</span> ✈️
+            </button>
+          </div>
+          <div class="onb-sub-actions-row" style="text-align: center; margin-top: 10px;">
+            <button type="button" class="onb-link-btn" id="onbNextBtn2" style="background: none; border: none; color: #f472b6; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 6px 12px;">
+              Optional: Link Partner in Couple Sanctuary →
             </button>
           </div>
         </section>

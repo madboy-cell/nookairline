@@ -118,15 +118,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-  visibility: hidden;
+  pointer-events: none !important;
+  visibility: hidden !important;
   font-family: var(--font-main, 'Plus Jakarta Sans', sans-serif);
   color: #fff;
 }
 
+.sky-profile-sheet.hidden {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.sky-profile-sheet:not(.open) * {
+  pointer-events: none !important;
+}
+
 .sky-profile-sheet.open {
-  pointer-events: auto;
-  visibility: visible;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  display: flex !important;
 }
 
 .sky-profile-sheet .dly-backdrop {
@@ -890,8 +901,14 @@
 }
 
 .social-drawer-backdrop.hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.social-drawer-backdrop.hidden * {
+  pointer-events: none !important;
 }
 
 .social-drawer {
@@ -2122,6 +2139,13 @@
 
 .onboarding-modal-backdrop.hidden {
   display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.onboarding-modal-backdrop.hidden * {
+  pointer-events: none !important;
 }
 
 @keyframes onbFadeIn {
@@ -2203,6 +2227,29 @@
 
 .onb-back-arrow-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+}
+
+.onb-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.onb-close-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.6);
   transform: scale(1.08);
 }
 
