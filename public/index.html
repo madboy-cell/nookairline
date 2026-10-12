@@ -1072,6 +1072,44 @@
       </div>
     </div>
 
+    <!-- NEORA Active Flight Reconnect / Rejoin Modal -->
+    <div class="neora-rejoin-modal hidden" id="neoraRejoinModal">
+      <div class="neora-rejoin-backdrop" id="neoraRejoinBackdrop"></div>
+      <div class="neora-rejoin-card">
+        <div class="rejoin-header">
+          <div class="rejoin-radar-icon">📡</div>
+          <div class="rejoin-title-group">
+            <h3 class="rejoin-title">ACTIVE MATCH IN PROGRESS</h3>
+            <p class="rejoin-subtitle">An ongoing flight was found for your account. Would you like to resume?</p>
+          </div>
+          <button class="rejoin-close-btn" id="neoraRejoinCloseBtn" type="button" aria-label="Dismiss">✕</button>
+        </div>
+
+        <div class="rejoin-flight-card">
+          <div class="rejoin-flight-badge" id="rejoinStatusBadge">In Flight</div>
+          <div class="rejoin-flight-main">
+            <div class="rejoin-flight-name" id="rejoinFlightName">Monopoly · Chill Game</div>
+            <div class="rejoin-flight-meta">
+              <span class="rejoin-flight-num" id="rejoinFlightNum">SKY-472</span>
+              <span class="rejoin-dot">•</span>
+              <span class="rejoin-seat-label" id="rejoinSeatLabel">Seat 2 (DXB)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rejoin-actions">
+          <button class="rejoin-btn-secondary" id="neoraRejoinBackLobbyBtn" type="button">
+            <span>🚪</span>
+            <span>Back to Lobby</span>
+          </button>
+          <button class="rejoin-btn-primary" id="neoraRejoinGameBtn" type="button">
+            <span>🎲</span>
+            <span>Rejoin Game</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Wardrobe / Fitting Room Modal -->
     <div class="wardrobe-modal" id="wardrobeModal">
       <div class="wardrobe-card">

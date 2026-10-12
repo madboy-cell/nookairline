@@ -796,6 +796,13 @@ const RoomRegistry = require('./server_rooms.js');
 const roomRegistry = new RoomRegistry();
 const departureBoardSubscribers = new Set();
 
+// Initialize RoomRegistry from persistent database/storage
+roomRegistry.initFromDatabase().then(() => {
+  console.log(`[RoomRegistry] Persistent room registry ready. Active rooms: ${roomRegistry.rooms.size}`);
+}).catch((err) => {
+  console.warn('[RoomRegistry] Database init warning:', err.message);
+});
+
 function sanitizeRoom(room) {
   if (!room) return null;
   return {
@@ -836,7 +843,7 @@ function broadcastDepartureBoard() {
   if (departureBoardSubscribers.size === 0) return;
   const msg = JSON.stringify({
     type: 'room_list_update',
-    rooms: typeof roomRegistry.listDisplayRooms === 'function' ? roomRegistry.listDisplayRooms() : roomRegistry.listPublicRooms()
+    rooms: roomRegistry.listPublicRooms()
   });
   departureBoardSubscribers.forEach((ws) => {
     if (ws.readyState === WebSocket.OPEN) {
@@ -848,11 +855,78 @@ function broadcastDepartureBoard() {
 }
 
 function handleRoomMessage(ws, message) {
+  if (message.type === 'room_check_session') {
+    const uid = message.uid;
+    const cachedRoomId = message.roomId;
+    let active = uid ? roomRegistry.findActiveRoomForUser(uid) : null;
+    if (!active && cachedRoomId) {
+      const r = roomRegistry.getRoom(cachedRoomId);
+      if (r && r.status !== 'finished' && uid) {
+        const slot = r.slots.find((s) => s.occupiedBy === uid);
+        if (slot) {
+          active = { room: r, slot, inFlight: r.status === 'in_flight', gameState: r.gameState };
+        }
+      }
+    }
+
+    if (active && active.room && active.room.status !== 'finished') {
+      ws.send(JSON.stringify({
+        type: 'room_session_status',
+        hasActiveRoom: true,
+        room: sanitizeRoom(active.room),
+        slot: active.slot,
+        inFlight: active.inFlight,
+        gameState: active.gameState || serverMonopolyState
+      }));
+    } else {
+      ws.send(JSON.stringify({
+        type: 'room_session_status',
+        hasActiveRoom: false,
+        expired: !!cachedRoomId
+      }));
+    }
+    return;
+  }
+
+  if (message.type === 'room_rejoin') {
+    const playerInfo = {
+      uid: message.uid,
+      name: message.name,
+      avatar: message.avatar
+    };
+    const res = roomRegistry.rejoinRoom(message.roomId, playerInfo, ws);
+    if (!res.success) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: res.error,
+        message: res.message
+      }));
+      return;
+    }
+
+    ws.send(JSON.stringify({
+      type: 'room_rejoined',
+      room: sanitizeRoom(res.room),
+      slot: res.slot,
+      inFlight: res.inFlight,
+      gameState: res.gameState || serverMonopolyState
+    }));
+
+    broadcastToRoom(res.room, {
+      type: 'room_update',
+      room: sanitizeRoom(res.room),
+      reconnectedUser: message.uid
+    });
+
+    broadcastDepartureBoard();
+    return;
+  }
+
   if (message.type === 'room_browse_start') {
     departureBoardSubscribers.add(ws);
     ws.send(JSON.stringify({
       type: 'room_list_update',
-      rooms: typeof roomRegistry.listDisplayRooms === 'function' ? roomRegistry.listDisplayRooms() : roomRegistry.listPublicRooms()
+      rooms: roomRegistry.listPublicRooms()
     }));
     return;
   }
@@ -1020,18 +1094,23 @@ function handleRoomMessage(ws, message) {
     if (!room) return;
     room.status = 'in_flight';
     room.updatedAt = Date.now();
+    if (message.state || message.initialState) {
+      room.gameState = message.state || message.initialState;
+    }
+    roomRegistry.db.updateRoom(room.id, { status: 'in_flight', game_state: room.gameState }).catch(() => {});
     broadcastToRoom(room, {
       type: 'room_start',
       roomId: room.id,
       game: room.game || 'monopoly',
-      room: sanitizeRoom(room)
+      room: sanitizeRoom(room),
+      state: room.gameState || serverMonopolyState
     });
     broadcastDepartureBoard();
     return;
   }
 
   if (message.type === 'room_leave') {
-    const res = roomRegistry.leaveRoom(ws);
+    const res = roomRegistry.leaveRoom(ws, { explicit: true, uid: message.uid });
     if (res && res.room) {
       broadcastToRoom(res.room, {
         type: 'room_update',
@@ -1281,6 +1360,9 @@ wss.on('connection', (ws, req) => {
       daily.observe(ws.terminal, message);
       const currentRoom = roomRegistry.getClientRoom(ws);
       if (currentRoom) {
+        if (message.state) {
+          roomRegistry.updateGameState(currentRoom.id, message.state);
+        }
         currentRoom.clients.forEach((client) => {
           if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(message));
@@ -1308,16 +1390,13 @@ wss.on('connection', (ws, req) => {
     serverEvent('ws_close', ws.terminal, { code, reason: reasonBuf ? reasonBuf.toString() : '' });
 
     departureBoardSubscribers.delete(ws);
-    const leaveRes = roomRegistry.leaveRoom(ws);
-    if (leaveRes) {
-      if (leaveRes.room) {
-        broadcastToRoom(leaveRes.room, {
-          type: 'room_update',
-          room: sanitizeRoom(leaveRes.room),
-          hostMigrated: leaveRes.wasHost,
-          newHost: leaveRes.newHost
-        });
-      }
+    const leaveRes = roomRegistry.leaveRoom(ws, { explicit: false });
+    if (leaveRes && leaveRes.room) {
+      broadcastToRoom(leaveRes.room, {
+        type: 'room_update',
+        room: sanitizeRoom(leaveRes.room),
+        disconnectedUser: leaveRes.disconnectedUser
+      });
       broadcastDepartureBoard();
     }
     if (ws.terminal === 'bkk' && bkkSocket === ws) {

@@ -1393,6 +1393,23 @@ function getMonopolyMyRole() {
   return 'bkk';
 }
 
+function getPersistentPlayerUid() {
+  if (typeof window !== 'undefined' && window.SkySupabase && typeof window.SkySupabase.getUser === 'function') {
+    const u = window.SkySupabase.getUser();
+    if (u && u.id) return u.id;
+  }
+  if (typeof localStorage !== 'undefined') {
+    let uid = localStorage.getItem('sky_player_uid');
+    if (!uid) {
+      const role = getMonopolyMyRole();
+      uid = `user_${role}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      localStorage.setItem('sky_player_uid', uid);
+    }
+    return uid;
+  }
+  return `user_${getMonopolyMyRole()}`;
+}
+
 // --- Turn authority & partner presence ---
 let lastActivityAt = Date.now();
 function markActivity() { lastActivityAt = Date.now(); }
@@ -2058,7 +2075,7 @@ function initMonopoly() {
   const rollBtn = $m('btnRollDice');
   const diceBox = $m('monopolyDiceBox');
 
-  if (openBtn) openBtn.addEventListener('click', () => openMonopolyGame(true));
+  if (openBtn) openBtn.addEventListener('click', handleMonopolyHomeClick);
   if (closeBtn) closeBtn.addEventListener('click', () => closeMonopolyGame(true));
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
@@ -2074,6 +2091,81 @@ function initMonopoly() {
         closeMonopolyGame(false);
       }
     });
+  }
+
+  // NEORA Active Flight Rejoin Modal Event Listeners
+  const rejoinGameBtn = $m('neoraRejoinGameBtn');
+  const rejoinBackLobbyBtn = $m('neoraRejoinBackLobbyBtn');
+  const rejoinCloseBtn = $m('neoraRejoinCloseBtn');
+  const rejoinBackdrop = $m('neoraRejoinBackdrop');
+
+  if (rejoinGameBtn) {
+    rejoinGameBtn.addEventListener('click', () => {
+      const active = pendingActiveSession?.room || currentFlightRoom;
+      if (!active) {
+        hideNeoraRejoinModal();
+        showDepartureBoard();
+        return;
+      }
+      if (typeof sendSignaling === 'function') {
+        const myUid = getPersistentPlayerUid();
+        const mySlot = (active.slots || []).find((s) => s.occupiedBy === myUid);
+        const myRole = mySlot?.role || getMonopolyMyRole();
+        const myAvatar = getEquippedCostumeAvatar(myRole);
+        const myName = (window.getMyAvatar && window.getMyAvatar())?.name || (myRole === 'dxb' ? 'Khaleesi 🐉' : 'Lord of BKK 🐺');
+        sendSignaling({
+          type: 'room_rejoin',
+          roomId: active.id,
+          uid: myUid,
+          name: myName,
+          avatar: myAvatar
+        });
+      }
+    });
+  }
+
+  if (rejoinBackLobbyBtn) {
+    rejoinBackLobbyBtn.addEventListener('click', () => {
+      const active = pendingActiveSession?.room || currentFlightRoom;
+      if (active && typeof sendSignaling === 'function') {
+        sendSignaling({
+          type: 'room_leave',
+          roomId: active.id,
+          uid: getPersistentPlayerUid()
+        });
+      }
+      currentFlightRoom = null;
+      pendingActiveSession = null;
+      if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
+      hideNeoraRejoinModal();
+      showDepartureBoard();
+    });
+  }
+
+  if (rejoinCloseBtn) {
+    rejoinCloseBtn.addEventListener('click', () => {
+      hideNeoraRejoinModal();
+      showDepartureBoard();
+    });
+  }
+
+  if (rejoinBackdrop) {
+    rejoinBackdrop.addEventListener('click', () => {
+      hideNeoraRejoinModal();
+    });
+  }
+
+  // Check for active reconnectable session on startup
+  if (typeof localStorage !== 'undefined') {
+    const cachedRoomId = localStorage.getItem('sky_active_room_id');
+    const uid = getPersistentPlayerUid();
+    if (cachedRoomId && typeof sendSignaling === 'function') {
+      sendSignaling({
+        type: 'room_check_session',
+        uid,
+        roomId: cachedRoomId
+      });
+    }
   }
 
   // NEORA Flight Departure Board & Lobby Event Listeners
@@ -3151,6 +3243,82 @@ function switchNeoraView(viewName) {
   }
 }
 
+let pendingActiveSession = null;
+let monopolyEntryRequested = false;
+
+function showNeoraRejoinModal(room, slot = null) {
+  const modal = $m('neoraRejoinModal');
+  if (!modal || !room) return;
+
+  const nameEl = $m('rejoinFlightName');
+  const numEl = $m('rejoinFlightNum');
+  const seatEl = $m('rejoinSeatLabel');
+  const badgeEl = $m('rejoinStatusBadge');
+
+  if (nameEl) nameEl.textContent = room.name || 'Monopoly Flight';
+  if (numEl) numEl.textContent = `${room.flightNumber || 'SKY-001'} • CODE ${room.code || '------'}`;
+
+  const myUid = getPersistentPlayerUid();
+  const mySlot = slot || (room.slots || []).find((s) => s.occupiedBy === myUid) || room.slots?.[0];
+  if (seatEl) {
+    const seatName = mySlot ? `Seat ${mySlot.id} (${(mySlot.role || 'Player').toUpperCase()})` : 'Assigned Seat';
+    seatEl.textContent = seatName;
+  }
+
+  if (badgeEl) {
+    const isInFlight = room.status === 'in_flight';
+    badgeEl.textContent = isInFlight ? 'In Flight' : 'Boarding Lounge';
+    badgeEl.className = `rejoin-flight-badge ${isInFlight ? 'in-flight' : 'lobby'}`;
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function hideNeoraRejoinModal() {
+  const modal = $m('neoraRejoinModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleMonopolyHomeClick() {
+  const uid = getPersistentPlayerUid();
+  const cachedRoomId = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_room_id') : null;
+
+  // If there's an active in-flight or lobby room we are a member of
+  if (currentFlightRoom && currentFlightRoom.status !== 'finished') {
+    const isMember = (currentFlightRoom.slots || []).some((s) => s.occupiedBy === uid);
+    if (isMember) {
+      showNeoraRejoinModal(currentFlightRoom);
+      return;
+    }
+  }
+
+  // If we already received active session status from server
+  if (pendingActiveSession && pendingActiveSession.hasActiveRoom && pendingActiveSession.room && pendingActiveSession.room.status !== 'finished') {
+    showNeoraRejoinModal(pendingActiveSession.room, pendingActiveSession.slot);
+    return;
+  }
+
+  // Check with backend
+  if (typeof sendSignaling === 'function' && (cachedRoomId || uid)) {
+    monopolyEntryRequested = true;
+    sendSignaling({
+      type: 'room_check_session',
+      uid,
+      roomId: cachedRoomId
+    });
+    // Fallback: If server does not reply within 400ms, open departure board directly
+    setTimeout(() => {
+      if (monopolyEntryRequested) {
+        monopolyEntryRequested = false;
+        showDepartureBoard();
+      }
+    }, 450);
+    return;
+  }
+
+  showDepartureBoard();
+}
+
 function showDepartureBoard() {
   showMonopolyLobby();
 }
@@ -3814,10 +3982,17 @@ function joinFlightByCode(rawCode) {
 }
 
 function leaveFlightRoom() {
+  const uid = getPersistentPlayerUid();
   if (typeof sendSignaling === 'function') {
-    sendSignaling({ type: 'room_leave' });
+    sendSignaling({
+      type: 'room_leave',
+      roomId: currentFlightRoom?.id,
+      uid
+    });
   }
   currentFlightRoom = null;
+  pendingActiveSession = null;
+  if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
   switchNeoraView('browser');
 }
 
@@ -9688,8 +9863,78 @@ function handleMonopolyMessage(message) {
     return;
   }
 
+  if (message.type === 'room_session_status') {
+    if (message.hasActiveRoom && message.room) {
+      pendingActiveSession = message;
+      if (monopolyEntryRequested) {
+        monopolyEntryRequested = false;
+        showNeoraRejoinModal(message.room, message.slot);
+      }
+    } else {
+      pendingActiveSession = null;
+      if (message.expired) {
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
+        if (monopolyEntryRequested) {
+          monopolyEntryRequested = false;
+          if (typeof showToast === 'function') showToast('Your previous flight has concluded.');
+          showDepartureBoard();
+        }
+      } else if (monopolyEntryRequested) {
+        monopolyEntryRequested = false;
+        showDepartureBoard();
+      }
+    }
+    return;
+  }
+
+  if (message.type === 'room_rejoined') {
+    currentFlightRoom = message.room;
+    if (message.room && Array.isArray(message.room.slots)) {
+      lobbyState.slots = message.room.slots;
+    }
+    if (typeof localStorage !== 'undefined' && message.room?.id) {
+      localStorage.setItem('sky_active_room_id', message.room.id);
+    }
+    hideNeoraRejoinModal();
+
+    if (message.inFlight) {
+      hideMonopolyLobby();
+      if (message.gameState) {
+        monopolyState = { ...message.gameState, active: true };
+      } else if (!monopolyState || !monopolyState.active) {
+        startPartyGame(lobbyState);
+      }
+      const modal = $m('monopolyModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+      }
+      if (typeof renderAll === 'function') {
+        renderAll({ instant: true });
+      }
+      if (typeof showToast === 'function') {
+        showToast('✈️ Reconnected to active flight! Seat restored.');
+      }
+      if (!monopolyState.gameOver && monopolyState.players[monopolyState.currentTurn]?.isBot) {
+        checkBotTurn();
+      }
+    } else {
+      const modal = $m('departureBoardModal');
+      if (modal) modal.classList.remove('hidden');
+      switchNeoraView('room');
+      updateLobbyFlightRoomUI();
+      if (typeof showToast === 'function') {
+        showToast('✈️ Reconnected to boarding lounge!');
+      }
+    }
+    return;
+  }
+
   if (message.type === 'room_created' || message.type === 'room_joined') {
     currentFlightRoom = message.room;
+    if (message.room && message.room.id && typeof localStorage !== 'undefined') {
+      localStorage.setItem('sky_active_room_id', message.room.id);
+    }
     if (message.room && Array.isArray(message.room.slots)) {
       lobbyState.slots = message.room.slots;
     }
@@ -9747,21 +9992,39 @@ function handleMonopolyMessage(message) {
   if (message.type === 'room_start') {
     if (message.room) {
       currentFlightRoom = message.room;
+      if (typeof localStorage !== 'undefined' && message.room.id) {
+        localStorage.setItem('sky_active_room_id', message.room.id);
+      }
     }
     hideMonopolyLobby();
+    hideNeoraRejoinModal();
+    if (message.state) {
+      monopolyState = { ...message.state, active: true };
+    } else if (!monopolyState || !monopolyState.active) {
+      startPartyGame(lobbyState);
+    }
     const modal = $m('monopolyModal');
     if (modal) {
       modal.classList.remove('hidden');
       modal.classList.add('active');
     }
+    if (typeof renderAll === 'function') {
+      renderAll({ instant: true });
+    }
     if (typeof showToast === 'function') {
       showToast('🚀 Flight departing! Monopoly game starting...');
+    }
+    if (!monopolyState.gameOver && monopolyState.players[monopolyState.currentTurn]?.isBot) {
+      checkBotTurn();
     }
     return;
   }
 
   if (message.type === 'room_left') {
     currentFlightRoom = null;
+    pendingActiveSession = null;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
+    hideNeoraRejoinModal();
     switchNeoraView('browser');
     return;
   }

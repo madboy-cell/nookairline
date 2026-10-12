@@ -152,3 +152,68 @@ CREATE OR REPLACE TRIGGER profiles_updated_at
 CREATE OR REPLACE TRIGGER couples_updated_at
     BEFORE UPDATE ON public.couples
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- 7. MONOPOLY ROOMS & MATCHMAKING TABLE
+CREATE TABLE IF NOT EXISTS public.monopoly_rooms (
+    id TEXT PRIMARY KEY,
+    code VARCHAR(6) NOT NULL UNIQUE,
+    flight_number VARCHAR(20) NOT NULL,
+    name TEXT NOT NULL,
+    host_uid TEXT NOT NULL,
+    host_name TEXT NOT NULL,
+    host_avatar TEXT,
+    is_public BOOLEAN NOT NULL DEFAULT true,
+    status VARCHAR(20) NOT NULL DEFAULT 'lobby' CHECK (status IN ('lobby', 'in_flight', 'finished')),
+    description TEXT,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    game VARCHAR(50) NOT NULL DEFAULT 'monopoly',
+    auto_fill BOOLEAN NOT NULL DEFAULT false,
+    slots JSONB NOT NULL DEFAULT '[]'::jsonb,
+    game_state JSONB,
+    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_monopoly_rooms_code ON public.monopoly_rooms(code);
+CREATE INDEX IF NOT EXISTS idx_monopoly_rooms_status ON public.monopoly_rooms(status);
+CREATE INDEX IF NOT EXISTS idx_monopoly_rooms_public ON public.monopoly_rooms(is_public, status);
+
+CREATE OR REPLACE TRIGGER monopoly_rooms_updated_at
+    BEFORE UPDATE ON public.monopoly_rooms
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- 8. MONOPOLY ROOM MEMBERS TABLE (Tracks player slots, disconnect grace, and reconnection)
+CREATE TABLE IF NOT EXISTS public.monopoly_room_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    room_id TEXT NOT NULL REFERENCES public.monopoly_rooms(id) ON DELETE CASCADE,
+    user_uid TEXT NOT NULL,
+    slot_id INT NOT NULL CHECK (slot_id BETWEEN 1 AND 4),
+    role TEXT,
+    name TEXT NOT NULL,
+    avatar TEXT,
+    ready BOOLEAN NOT NULL DEFAULT false,
+    spectator BOOLEAN NOT NULL DEFAULT false,
+    connected BOOLEAN NOT NULL DEFAULT true,
+    disconnected_at TIMESTAMPTZ,
+    last_active TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT unique_room_slot UNIQUE (room_id, slot_id),
+    CONSTRAINT unique_room_member UNIQUE (room_id, user_uid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_monopoly_members_uid ON public.monopoly_room_members(user_uid);
+CREATE INDEX IF NOT EXISTS idx_monopoly_members_room ON public.monopoly_room_members(room_id);
+
+ALTER TABLE public.monopoly_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monopoly_room_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read monopoly_rooms" ON public.monopoly_rooms FOR SELECT USING (true);
+CREATE POLICY "Allow public insert monopoly_rooms" ON public.monopoly_rooms FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update monopoly_rooms" ON public.monopoly_rooms FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete monopoly_rooms" ON public.monopoly_rooms FOR DELETE USING (true);
+
+CREATE POLICY "Allow public read monopoly_room_members" ON public.monopoly_room_members FOR SELECT USING (true);
+CREATE POLICY "Allow public insert monopoly_room_members" ON public.monopoly_room_members FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update monopoly_room_members" ON public.monopoly_room_members FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete monopoly_room_members" ON public.monopoly_room_members FOR DELETE USING (true);
+

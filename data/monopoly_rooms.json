@@ -1,0 +1,4994 @@
+{
+  "flight_mv51rmvo_gvlz": {
+    "id": "flight_mv51rmvo_gvlz",
+    "code": "716789",
+    "flight_number": "SKY-716",
+    "name": "Bangkok Express",
+    "host_uid": "user_cmaw3",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_cmaw3",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797162391
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_cmaw3",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797102388
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:02.392Z"
+  },
+  "flight_mv51rmvp_jlqw": {
+    "id": "flight_mv51rmvp_jlqw",
+    "code": "830846",
+    "flight_number": "SKY-830",
+    "name": "Secret Dubai Cabin",
+    "host_uid": "user_s0f4u",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_s0f4u",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797162392
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_s0f4u",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797102389
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:02.392Z"
+  },
+  "flight_mv51s52d_1bwd": {
+    "id": "flight_mv51s52d_1bwd",
+    "code": "898693",
+    "flight_number": "SKY-898",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_bkk_test1",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "ready": true,
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_bkk_test1",
+        "name": "Nook",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797125958
+      },
+      {
+        "id": "msg_1791797185971_c8zn",
+        "uid": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "4:26 PM",
+        "timestamp": 1791797185971
+      },
+      {
+        "id": "msg_1791797185971_qrmr",
+        "uid": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready!",
+        "time": "4:26 PM",
+        "timestamp": 1791797185971
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:25.973Z"
+  },
+  "flight_mv51s539_nmo7": {
+    "id": "flight_mv51s539_nmo7",
+    "code": "737825",
+    "flight_number": "SKY-737",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "host_nook",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/ui/neora_ref/avatar_nook.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_nook",
+        "name": "Nook ✈️",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Closed Seat",
+        "avatar": "",
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_nook",
+        "name": "Nook",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797125989
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:25.991Z"
+  },
+  "flight_mv51s53z_9t51": {
+    "id": "flight_mv51s53z_9t51",
+    "code": "862735",
+    "flight_number": "SKY-862",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_p1",
+    "host_name": "Lord of BKK 🐺",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p3",
+        "name": "Monaco Ace 🎲",
+        "avatar": "assets/s4_monaco_highroller_m.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p4",
+        "name": "Atlantis Pearl 🌊",
+        "avatar": "assets/s5_atlantis_drift_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_p1",
+        "name": "Lord of BKK",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797126015
+      },
+      {
+        "id": "msg_1791797186028_nk7j",
+        "uid": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome aboard passengers! Fasten seatbelts! 🛫",
+        "time": "4:26 PM",
+        "timestamp": 1791797186028
+      },
+      {
+        "id": "msg_1791797186030_ckjt",
+        "uid": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready for takeoff! Let's roll! 🎲",
+        "time": "4:26 PM",
+        "timestamp": 1791797186030
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:26.030Z"
+  },
+  "flight_mv51s7fm_d16n": {
+    "id": "flight_mv51s7fm_d16n",
+    "code": "489221",
+    "flight_number": "SKY-489",
+    "name": "Public Express #1",
+    "host_uid": "pub_host_1",
+    "host_name": "Captain Public 1",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_1",
+        "name": "Captain Public 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_1",
+        "name": "Captain Public 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129027
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.027Z"
+  },
+  "flight_mv51s7fx_9rzi": {
+    "id": "flight_mv51s7fx_9rzi",
+    "code": "700837",
+    "flight_number": "SKY-700",
+    "name": "Public Express #2",
+    "host_uid": "pub_host_2",
+    "host_name": "Captain Public 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_2",
+        "name": "Captain Public 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_2",
+        "name": "Captain Public 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129037
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.037Z"
+  },
+  "flight_mv51s7fy_bnud": {
+    "id": "flight_mv51s7fy_bnud",
+    "code": "620487",
+    "flight_number": "SKY-620",
+    "name": "Public Express #3",
+    "host_uid": "pub_host_3",
+    "host_name": "Captain Public 3",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_3",
+        "name": "Captain Public 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_3",
+        "name": "Captain Public 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129038
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.038Z"
+  },
+  "flight_mv51s7fy_eqck": {
+    "id": "flight_mv51s7fy_eqck",
+    "code": "722380",
+    "flight_number": "SKY-722",
+    "name": "Public Express #4",
+    "host_uid": "pub_host_4",
+    "host_name": "Captain Public 4",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_4",
+        "name": "Captain Public 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_4",
+        "name": "Captain Public 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129038
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.039Z"
+  },
+  "flight_mv51s7fz_1jy0": {
+    "id": "flight_mv51s7fz_1jy0",
+    "code": "618915",
+    "flight_number": "SKY-618",
+    "name": "Public Express #5",
+    "host_uid": "pub_host_5",
+    "host_name": "Captain Public 5",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_5",
+        "name": "Captain Public 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_5",
+        "name": "Captain Public 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129039
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.039Z"
+  },
+  "flight_mv51s7g0_16kp": {
+    "id": "flight_mv51s7g0_16kp",
+    "code": "729626",
+    "flight_number": "SKY-729",
+    "name": "VIP Charter #1",
+    "host_uid": "priv_host_1",
+    "host_name": "Captain Secret 1",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_1",
+        "name": "Captain Secret 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_1",
+        "name": "Captain Secret 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129040
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.040Z"
+  },
+  "flight_mv51s7g0_gfpn": {
+    "id": "flight_mv51s7g0_gfpn",
+    "code": "560044",
+    "flight_number": "SKY-560",
+    "name": "VIP Charter #2",
+    "host_uid": "priv_host_2",
+    "host_name": "Captain Secret 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_2",
+        "name": "Captain Secret 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_2",
+        "name": "Captain Secret 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129040
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.040Z"
+  },
+  "flight_mv51s7g1_7jen": {
+    "id": "flight_mv51s7g1_7jen",
+    "code": "674147",
+    "flight_number": "SKY-674",
+    "name": "VIP Charter #3",
+    "host_uid": "priv_host_3",
+    "host_name": "Captain Secret 3",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_3",
+        "name": "Captain Secret 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_3",
+        "name": "Captain Secret 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129041
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.041Z"
+  },
+  "flight_mv51s7g1_r9oh": {
+    "id": "flight_mv51s7g1_r9oh",
+    "code": "905482",
+    "flight_number": "SKY-905",
+    "name": "VIP Charter #4",
+    "host_uid": "priv_host_4",
+    "host_name": "Captain Secret 4",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_4",
+        "name": "Captain Secret 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_4",
+        "name": "Captain Secret 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129041
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.041Z"
+  },
+  "flight_mv51s7g2_u7xl": {
+    "id": "flight_mv51s7g2_u7xl",
+    "code": "697329",
+    "flight_number": "SKY-697",
+    "name": "VIP Charter #5",
+    "host_uid": "priv_host_5",
+    "host_name": "Captain Secret 5",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_5",
+        "name": "Captain Secret 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_5",
+        "name": "Captain Secret 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129042
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.042Z"
+  },
+  "flight_mv51s7g2_v3gi": {
+    "id": "flight_mv51s7g2_v3gi",
+    "code": "588538",
+    "flight_number": "SKY-588",
+    "name": "SKY-588 Express",
+    "host_uid": "host_ruby",
+    "host_name": "Ruby Pilot",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_ruby",
+        "name": "Ruby Pilot",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_cyan",
+        "name": "Cyan Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_ruby",
+        "name": "Ruby Pilot",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129042
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.043Z"
+  },
+  "flight_mv51s7g9_z0e4": {
+    "id": "flight_mv51s7g9_z0e4",
+    "code": "744413",
+    "flight_number": "SKY-744",
+    "name": "Bangkok-Dubai Direct #888",
+    "host_uid": "host_bkk",
+    "host_name": "Captain Thanapat",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_bkk",
+        "name": "Captain Thanapat",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pass_dxb",
+        "name": "First Officer Sarah",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_bkk",
+        "name": "Captain Thanapat",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129049
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.050Z"
+  },
+  "flight_mv51s7ga_dbur": {
+    "id": "flight_mv51s7ga_dbur",
+    "code": "574123",
+    "flight_number": "SKY-574",
+    "name": "SKY-574 Express",
+    "host_uid": "user_vl628",
+    "host_name": "Host 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_vl628",
+        "name": "Host 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_vl628",
+        "name": "Host 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129050
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.050Z"
+  },
+  "flight_mv51s7gc_hpgi": {
+    "id": "flight_mv51s7gc_hpgi",
+    "code": "720591",
+    "flight_number": "SKY-720",
+    "name": "SKY-720 Express",
+    "host_uid": "captain_jack",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "captain_jack",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_bob",
+        "name": "Passenger ✈️",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "captain_jack",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797129052
+      }
+    ],
+    "updated_at": "2026-10-12T09:26:29.054Z"
+  },
+  "flight_mv51v2gf_l1rh": {
+    "id": "flight_mv51v2gf_l1rh",
+    "code": "342109",
+    "flight_number": "SKY-342",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_bkk_test1",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "ready": true,
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_bkk_test1",
+        "name": "Nook",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797262543
+      },
+      {
+        "id": "msg_1791797322556_i85a",
+        "uid": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "4:28 PM",
+        "timestamp": 1791797322556
+      },
+      {
+        "id": "msg_1791797322557_9imx",
+        "uid": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready!",
+        "time": "4:28 PM",
+        "timestamp": 1791797322557
+      }
+    ],
+    "updated_at": "2026-10-12T09:28:42.560Z"
+  },
+  "flight_mv51v2hc_fw2w": {
+    "id": "flight_mv51v2hc_fw2w",
+    "code": "507817",
+    "flight_number": "SKY-507",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "host_nook",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/ui/neora_ref/avatar_nook.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_nook",
+        "name": "Nook ✈️",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Closed Seat",
+        "avatar": "",
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_nook",
+        "name": "Nook",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797262576
+      }
+    ],
+    "updated_at": "2026-10-12T09:28:42.578Z"
+  },
+  "flight_mv51v2i3_nmns": {
+    "id": "flight_mv51v2i3_nmns",
+    "code": "558776",
+    "flight_number": "SKY-558",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_p1",
+    "host_name": "Lord of BKK 🐺",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p3",
+        "name": "Monaco Ace 🎲",
+        "avatar": "assets/s4_monaco_highroller_m.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p4",
+        "name": "Atlantis Pearl 🌊",
+        "avatar": "assets/s5_atlantis_drift_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_p1",
+        "name": "Lord of BKK",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797262603
+      },
+      {
+        "id": "msg_1791797322618_tips",
+        "uid": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome aboard passengers! Fasten seatbelts! 🛫",
+        "time": "4:28 PM",
+        "timestamp": 1791797322618
+      },
+      {
+        "id": "msg_1791797322619_u9xe",
+        "uid": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready for takeoff! Let's roll! 🎲",
+        "time": "4:28 PM",
+        "timestamp": 1791797322619
+      }
+    ],
+    "updated_at": "2026-10-12T09:28:42.620Z"
+  },
+  "flight_mv51voeq_vrnj": {
+    "id": "flight_mv51voeq_vrnj",
+    "code": "681286",
+    "flight_number": "SKY-681",
+    "name": "Bangkok-Dubai Night Flight",
+    "host_uid": "player_alpha",
+    "host_name": "Captain Nook 🐺",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797360108
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_beta",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": false,
+        "disconnectedAt": 1791797360068
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "player_alpha",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797290994
+      },
+      {
+        "id": "msg_1791797354033_frdh",
+        "uid": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Fasten your seatbelts! 🎲",
+        "time": "4:29 PM",
+        "timestamp": 1791797354033
+      }
+    ],
+    "updated_at": "2026-10-12T09:29:20.108Z"
+  },
+  "flight_mv51vqqw_fklk": {
+    "id": "flight_mv51vqqw_fklk",
+    "code": "785469",
+    "flight_number": "SKY-785",
+    "name": "Secret Penthouse Flight",
+    "host_uid": "host_secret",
+    "host_name": "VIP Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797354037
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_vip_guest",
+        "name": "VIP Guest",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797354039
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797294024
+      }
+    ],
+    "updated_at": "2026-10-12T09:29:14.039Z"
+  },
+  "flight_mv51vveu_k01y": {
+    "id": "flight_mv51vveu_k01y",
+    "code": "702000",
+    "flight_number": "SKY-702",
+    "name": "Waiting Room Flight",
+    "host_uid": "host_lobby_test",
+    "host_name": "Lobby Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797360086
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_lobby_test",
+        "name": "Lobby Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797360084
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797300070
+      }
+    ],
+    "updated_at": "2026-10-12T09:29:20.086Z"
+  },
+  "flight_mv51vvf5_ld35": {
+    "id": "flight_mv51vvf5_ld35",
+    "code": "425856",
+    "flight_number": "SKY-425",
+    "name": "Duplicate Test Flight",
+    "host_uid": "dup_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "dup_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_duplicate_tester",
+        "name": "Dupe Tester (Tab 2)",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797360091
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "dup_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797300081
+      }
+    ],
+    "updated_at": "2026-10-12T09:29:20.091Z"
+  },
+  "flight_mv51vvfh_yis0": {
+    "id": "flight_mv51vvfh_yis0",
+    "code": "413891",
+    "flight_number": "SKY-413",
+    "name": "Leave Test Flight",
+    "host_uid": "leave_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "leave_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "newcomer_player",
+        "name": "Newcomer",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797360109
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "leave_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797300093
+      }
+    ],
+    "updated_at": "2026-10-12T09:29:20.109Z"
+  },
+  "flight_mv51wrdh_izi9": {
+    "id": "flight_mv51wrdh_izi9",
+    "code": "376989",
+    "flight_number": "SKY-376",
+    "name": "Bangkok-Dubai Night Flight",
+    "host_uid": "player_alpha",
+    "host_name": "Captain Nook 🐺",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "ready": true,
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401595
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "player_beta",
+        "name": "Luna ⭐",
+        "ready": true,
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": false,
+        "disconnectedAt": 1791797401553
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": "player_gamma",
+        "name": "Kai ✈️",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401599
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": "player_delta",
+        "name": "Momo 🌸",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401598
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "player_alpha",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797341493
+      },
+      {
+        "id": "msg_1791797401534_m3rg",
+        "uid": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Fasten your seatbelts! 🎲",
+        "time": "4:30 PM",
+        "timestamp": 1791797401534
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:01.599Z"
+  },
+  "flight_mv51wreh_nvye": {
+    "id": "flight_mv51wreh_nvye",
+    "code": "286655",
+    "flight_number": "SKY-286",
+    "name": "Secret Penthouse Flight",
+    "host_uid": "host_secret",
+    "host_name": "VIP Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401538
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_vip_guest",
+        "name": "VIP Guest",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401536
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797341529
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:01.538Z"
+  },
+  "flight_mv51wrfb_56bw": {
+    "id": "flight_mv51wrfb_56bw",
+    "code": "430590",
+    "flight_number": "SKY-430",
+    "name": "Waiting Room Flight",
+    "host_uid": "host_lobby_test",
+    "host_name": "Lobby Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401575
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_lobby_test",
+        "name": "Lobby Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401576
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797341559
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:01.577Z"
+  },
+  "flight_mv51wrfi_hw4t": {
+    "id": "flight_mv51wrfi_hw4t",
+    "code": "529114",
+    "flight_number": "SKY-529",
+    "name": "Duplicate Test Flight",
+    "host_uid": "dup_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "dup_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_duplicate_tester",
+        "name": "Dupe Tester (Tab 2)",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401582
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "dup_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797341566
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:01.582Z"
+  },
+  "flight_mv51wrg0_9w5s": {
+    "id": "flight_mv51wrg0_9w5s",
+    "code": "903505",
+    "flight_number": "SKY-903",
+    "name": "Leave Test Flight",
+    "host_uid": "leave_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "leave_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "newcomer_player",
+        "name": "Newcomer",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797401595
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "leave_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797341584
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:01.596Z"
+  },
+  "flight_mv51xisv_m0nr": {
+    "id": "flight_mv51xisv_m0nr",
+    "code": "918427",
+    "flight_number": "SKY-918",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_bkk_test1",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "ready": true,
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "ready": true,
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "ready": false,
+        "connected": false,
+        "difficulty": null,
+        "isAutoFilled": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_bkk_test1",
+        "name": "Nook",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377039
+      },
+      {
+        "id": "msg_1791797437052_yry6",
+        "uid": "user_bkk_test1",
+        "name": "Nook ✈️",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "4:30 PM",
+        "timestamp": 1791797437052
+      },
+      {
+        "id": "msg_1791797437053_xk4l",
+        "uid": "user_dxb_test2",
+        "name": "Luna ⭐",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready!",
+        "time": "4:30 PM",
+        "timestamp": 1791797437053
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.057Z"
+  },
+  "flight_mv51xitt_5720": {
+    "id": "flight_mv51xitt_5720",
+    "code": "874914",
+    "flight_number": "SKY-874",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "host_nook",
+    "host_name": "Nook ✈️",
+    "host_avatar": "assets/ui/neora_ref/avatar_nook.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_nook",
+        "name": "Nook ✈️",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/ui/neora_ref/avatar_bot_blue.png",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Closed Seat",
+        "avatar": "",
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_nook",
+        "name": "Nook",
+        "avatar": "assets/ui/neora_ref/avatar_nook.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377073
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.076Z"
+  },
+  "flight_mv51xiuk_74qu": {
+    "id": "flight_mv51xiuk_74qu",
+    "code": "268678",
+    "flight_number": "SKY-268",
+    "name": "Monopoly · Chill Game",
+    "host_uid": "user_p1",
+    "host_name": "Lord of BKK 🐺",
+    "host_avatar": "assets/s6_astral_sovereign_m.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p3",
+        "name": "Monaco Ace 🎲",
+        "avatar": "assets/s4_monaco_highroller_m.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "human",
+        "ready": true,
+        "occupiedBy": "user_p4",
+        "name": "Atlantis Pearl 🌊",
+        "avatar": "assets/s5_atlantis_drift_f.png",
+        "connected": true,
+        "disconnectedAt": null
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_p1",
+        "name": "Lord of BKK",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377100
+      },
+      {
+        "id": "msg_1791797437115_a9qa",
+        "uid": "user_p1",
+        "name": "Lord of BKK 🐺",
+        "avatar": "assets/s6_astral_sovereign_m.png",
+        "text": "Welcome aboard passengers! Fasten seatbelts! 🛫",
+        "time": "4:30 PM",
+        "timestamp": 1791797437115
+      },
+      {
+        "id": "msg_1791797437117_v7bp",
+        "uid": "user_p2",
+        "name": "Khaleesi 🐉",
+        "avatar": "assets/s6_astral_empress_f.png",
+        "text": "Ready for takeoff! Let's roll! 🎲",
+        "time": "4:30 PM",
+        "timestamp": 1791797437117
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.117Z"
+  },
+  "flight_mv51xiwk_bonf": {
+    "id": "flight_mv51xiwk_bonf",
+    "code": "327323",
+    "flight_number": "SKY-327",
+    "name": "Bangkok-Dubai Night Flight",
+    "host_uid": "player_alpha",
+    "host_name": "Captain Nook 🐺",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "ready": true,
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437274
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "player_beta",
+        "name": "Luna ⭐",
+        "ready": true,
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": false,
+        "disconnectedAt": 1791797437224
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": "player_gamma",
+        "name": "Kai ✈️",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437273
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": "player_delta",
+        "name": "Momo 🌸",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437272
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "player_alpha",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377172
+      },
+      {
+        "id": "msg_1791797437201_y8s3",
+        "uid": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Fasten your seatbelts! 🎲",
+        "time": "4:30 PM",
+        "timestamp": 1791797437201
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.274Z"
+  },
+  "flight_mv51xix7_pggs": {
+    "id": "flight_mv51xix7_pggs",
+    "code": "459656",
+    "flight_number": "SKY-459",
+    "name": "Secret Penthouse Flight",
+    "host_uid": "host_secret",
+    "host_name": "VIP Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437204
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_vip_guest",
+        "name": "VIP Guest",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437205
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377195
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.205Z"
+  },
+  "flight_mv51xiy5_mjb6": {
+    "id": "flight_mv51xiy5_mjb6",
+    "code": "898367",
+    "flight_number": "SKY-898",
+    "name": "Waiting Room Flight",
+    "host_uid": "host_lobby_test",
+    "host_name": "Lobby Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437248
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_lobby_test",
+        "name": "Lobby Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437249
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377229
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.249Z"
+  },
+  "flight_mv51xiym_k1g0": {
+    "id": "flight_mv51xiym_k1g0",
+    "code": "104102",
+    "flight_number": "SKY-104",
+    "name": "Duplicate Test Flight",
+    "host_uid": "dup_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "dup_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_duplicate_tester",
+        "name": "Dupe Tester (Tab 2)",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437255
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "dup_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377246
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.255Z"
+  },
+  "flight_mv51xiyz_k6fu": {
+    "id": "flight_mv51xiyz_k6fu",
+    "code": "599314",
+    "flight_number": "SKY-599",
+    "name": "Leave Test Flight",
+    "host_uid": "leave_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "leave_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "newcomer_player",
+        "name": "Newcomer",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797437271
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "leave_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797377259
+      }
+    ],
+    "updated_at": "2026-10-12T09:30:37.271Z"
+  },
+  "flight_mv51ygyd_uisk": {
+    "id": "flight_mv51ygyd_uisk",
+    "code": "527810",
+    "flight_number": "SKY-527",
+    "name": "Public Express #1",
+    "host_uid": "pub_host_1",
+    "host_name": "Captain Public 1",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_1",
+        "name": "Captain Public 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_1",
+        "name": "Captain Public 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421301
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.302Z"
+  },
+  "flight_mv51ygyo_zomj": {
+    "id": "flight_mv51ygyo_zomj",
+    "code": "246898",
+    "flight_number": "SKY-246",
+    "name": "Public Express #2",
+    "host_uid": "pub_host_2",
+    "host_name": "Captain Public 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_2",
+        "name": "Captain Public 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_2",
+        "name": "Captain Public 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421312
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.313Z"
+  },
+  "flight_mv51ygyp_i3j1": {
+    "id": "flight_mv51ygyp_i3j1",
+    "code": "544772",
+    "flight_number": "SKY-544",
+    "name": "Public Express #3",
+    "host_uid": "pub_host_3",
+    "host_name": "Captain Public 3",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_3",
+        "name": "Captain Public 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_3",
+        "name": "Captain Public 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421313
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.314Z"
+  },
+  "flight_mv51ygyr_3521": {
+    "id": "flight_mv51ygyr_3521",
+    "code": "571803",
+    "flight_number": "SKY-571",
+    "name": "Public Express #4",
+    "host_uid": "pub_host_4",
+    "host_name": "Captain Public 4",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_4",
+        "name": "Captain Public 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_4",
+        "name": "Captain Public 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421315
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.315Z"
+  },
+  "flight_mv51ygys_79sh": {
+    "id": "flight_mv51ygys_79sh",
+    "code": "363123",
+    "flight_number": "SKY-363",
+    "name": "Public Express #5",
+    "host_uid": "pub_host_5",
+    "host_name": "Captain Public 5",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pub_host_5",
+        "name": "Captain Public 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "pub_host_5",
+        "name": "Captain Public 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421316
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.316Z"
+  },
+  "flight_mv51ygyt_dy7w": {
+    "id": "flight_mv51ygyt_dy7w",
+    "code": "221321",
+    "flight_number": "SKY-221",
+    "name": "VIP Charter #1",
+    "host_uid": "priv_host_1",
+    "host_name": "Captain Secret 1",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_1",
+        "name": "Captain Secret 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_1",
+        "name": "Captain Secret 1",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421317
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.317Z"
+  },
+  "flight_mv51ygyt_scwm": {
+    "id": "flight_mv51ygyt_scwm",
+    "code": "779930",
+    "flight_number": "SKY-779",
+    "name": "VIP Charter #2",
+    "host_uid": "priv_host_2",
+    "host_name": "Captain Secret 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_2",
+        "name": "Captain Secret 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_2",
+        "name": "Captain Secret 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421317
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.318Z"
+  },
+  "flight_mv51ygyv_fzxg": {
+    "id": "flight_mv51ygyv_fzxg",
+    "code": "843587",
+    "flight_number": "SKY-843",
+    "name": "VIP Charter #3",
+    "host_uid": "priv_host_3",
+    "host_name": "Captain Secret 3",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_3",
+        "name": "Captain Secret 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_3",
+        "name": "Captain Secret 3",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421319
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.319Z"
+  },
+  "flight_mv51ygyv_pej8": {
+    "id": "flight_mv51ygyv_pej8",
+    "code": "940342",
+    "flight_number": "SKY-940",
+    "name": "VIP Charter #4",
+    "host_uid": "priv_host_4",
+    "host_name": "Captain Secret 4",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_4",
+        "name": "Captain Secret 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_4",
+        "name": "Captain Secret 4",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421319
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.319Z"
+  },
+  "flight_mv51ygyw_y24v": {
+    "id": "flight_mv51ygyw_y24v",
+    "code": "589618",
+    "flight_number": "SKY-589",
+    "name": "VIP Charter #5",
+    "host_uid": "priv_host_5",
+    "host_name": "Captain Secret 5",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "priv_host_5",
+        "name": "Captain Secret 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "priv_host_5",
+        "name": "Captain Secret 5",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421320
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.320Z"
+  },
+  "flight_mv51ygyx_i5s7": {
+    "id": "flight_mv51ygyx_i5s7",
+    "code": "174448",
+    "flight_number": "SKY-174",
+    "name": "SKY-174 Express",
+    "host_uid": "host_ruby",
+    "host_name": "Ruby Pilot",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_ruby",
+        "name": "Ruby Pilot",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_cyan",
+        "name": "Cyan Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "closed",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_ruby",
+        "name": "Ruby Pilot",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421321
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.322Z"
+  },
+  "flight_mv51ygz6_kaan": {
+    "id": "flight_mv51ygz6_kaan",
+    "code": "196291",
+    "flight_number": "SKY-196",
+    "name": "Bangkok-Dubai Direct #888",
+    "host_uid": "host_bkk",
+    "host_name": "Captain Thanapat",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_bkk",
+        "name": "Captain Thanapat",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "pass_dxb",
+        "name": "First Officer Sarah",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_bkk",
+        "name": "Captain Thanapat",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421330
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.331Z"
+  },
+  "flight_mv51ygz8_lzxk": {
+    "id": "flight_mv51ygz8_lzxk",
+    "code": "788582",
+    "flight_number": "SKY-788",
+    "name": "SKY-788 Express",
+    "host_uid": "user_r8lk0",
+    "host_name": "Host 2",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_r8lk0",
+        "name": "Host 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_r8lk0",
+        "name": "Host 2",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421332
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.332Z"
+  },
+  "flight_mv51ygza_nycw": {
+    "id": "flight_mv51ygza_nycw",
+    "code": "444041",
+    "flight_number": "SKY-444",
+    "name": "SKY-444 Express",
+    "host_uid": "captain_jack",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "captain_jack",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_bob",
+        "name": "Passenger ✈️",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": true,
+        "disconnectedAt": null
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "captain_jack",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797421334
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:21.336Z"
+  },
+  "flight_mv51yhnv_chyd": {
+    "id": "flight_mv51yhnv_chyd",
+    "code": "569560",
+    "flight_number": "SKY-569",
+    "name": "Bangkok-Dubai Night Flight",
+    "host_uid": "player_alpha",
+    "host_name": "Captain Nook 🐺",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "type": "human",
+        "occupiedBy": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "ready": true,
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482325
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "type": "human",
+        "occupiedBy": "player_beta",
+        "name": "Luna ⭐",
+        "ready": true,
+        "avatar": "assets/s6_astral_empress_f.png",
+        "connected": false,
+        "disconnectedAt": 1791797482270
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "type": "human",
+        "occupiedBy": "player_gamma",
+        "name": "Kai ✈️",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482324
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "type": "human",
+        "occupiedBy": "player_delta",
+        "name": "Momo 🌸",
+        "ready": true,
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482323
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "player_alpha",
+        "name": "Captain Nook",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797422219
+      },
+      {
+        "id": "msg_1791797482250_f3d5",
+        "uid": "player_alpha",
+        "name": "Captain Nook 🐺",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Fasten your seatbelts! 🎲",
+        "time": "4:31 PM",
+        "timestamp": 1791797482250
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:22.326Z"
+  },
+  "flight_mv51yhoj_h7nm": {
+    "id": "flight_mv51yhoj_h7nm",
+    "code": "447711",
+    "flight_number": "SKY-447",
+    "name": "Secret Penthouse Flight",
+    "host_uid": "host_secret",
+    "host_name": "VIP Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": false,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482253
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_vip_guest",
+        "name": "VIP Guest",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482252
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_secret",
+        "name": "VIP Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797422243
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:22.254Z"
+  },
+  "flight_mv51yhpc_5bqb": {
+    "id": "flight_mv51yhpc_5bqb",
+    "code": "822077",
+    "flight_number": "SKY-822",
+    "name": "Waiting Room Flight",
+    "host_uid": "host_lobby_test",
+    "host_name": "Lobby Captain",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482295
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "guest_lobby_test",
+        "name": "Lobby Passenger",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482294
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "host_lobby_test",
+        "name": "Lobby Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797422272
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:22.295Z"
+  },
+  "flight_mv51yhpw_mtk8": {
+    "id": "flight_mv51yhpw_mtk8",
+    "code": "570609",
+    "flight_number": "SKY-570",
+    "name": "Duplicate Test Flight",
+    "host_uid": "dup_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "dup_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "player_duplicate_tester",
+        "name": "Dupe Tester (Tab 2)",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482308
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "dup_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797422292
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:22.309Z"
+  },
+  "flight_mv51yhqe_t8dc": {
+    "id": "flight_mv51yhqe_t8dc",
+    "code": "407090",
+    "flight_number": "SKY-407",
+    "name": "Leave Test Flight",
+    "host_uid": "leave_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "leave_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "newcomer_player",
+        "name": "Newcomer",
+        "avatar": "assets/got_queen_idle.png",
+        "connected": false,
+        "disconnectedAt": 1791797482321
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi 🐾",
+        "avatar": "assets/bot_mochi.jpg",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers 😼",
+        "avatar": "assets/bot_captain.jpg",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "leave_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791797422310
+      }
+    ],
+    "updated_at": "2026-10-12T09:31:22.321Z"
+  }
+}
