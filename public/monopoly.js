@@ -2085,6 +2085,8 @@ function initMonopoly() {
 
   const boardCloseBtn = $m('boardCloseBtn');
   if (boardCloseBtn) boardCloseBtn.addEventListener('click', hideDepartureBoard);
+  const neoraBackdrop = (typeof document !== 'undefined' && typeof document.querySelector === 'function') ? document.querySelector('.neora-lobby-backdrop') : null;
+  if (neoraBackdrop && typeof neoraBackdrop.addEventListener === 'function') neoraBackdrop.addEventListener('click', hideDepartureBoard);
 
   const neoraHelpBtn = $m('neoraHelpBtn');
   if (neoraHelpBtn) neoraHelpBtn.addEventListener('click', showRulesModal);

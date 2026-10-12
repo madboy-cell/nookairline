@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=20261011v1">
   <link rel="stylesheet" href="avatar.css?v=20261012v3">
-  <link rel="stylesheet" href="monopoly.css?v=20261012v11">
+  <link rel="stylesheet" href="monopoly.css?v=20261012v12">
   <link rel="stylesheet" href="monopoly_fx.css?v=20261012v4">
   <link rel="stylesheet" href="vault.css?v=20261012v4">
   <link rel="stylesheet" href="lounge.css?v=20261012v3">
@@ -662,16 +662,9 @@
         <!-- SCREEN 1: LOBBY BROWSER (ROOM DISCOVERY & QUICK JOIN)          -->
         <!-- ============================================================== -->
         <div class="neora-screen-view neora-view-browser active" id="neoraViewBrowser">
-          <!-- Top Bar: Logo & Utility Controls -->
-          <div class="neora-top-nav">
-            <div class="neora-brand-block">
-              <div class="neora-logo-wrap">
-                <span class="neora-logo-text">NEORA</span>
-                <span class="neora-orbit-ring"></span>
-                <span class="neora-orbit-rocket">🚀</span>
-              </div>
-              <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
-            </div>
+          <!-- Screen 1 Panoramic Header Banner (Brand Logo + Sunset Sky) -->
+          <div class="neora-browser-header">
+            <img src="assets/ui/neora_ref/s1_sky_nobuttons.png" class="neora-browser-header-art" alt="NEORA - PLAY TOGETHER, STAY CLOSE." />
             <div class="neora-top-actions">
               <button class="neora-icon-btn" id="neoraHelpBtn" title="How to Play & Room Guide" type="button">?</button>
               <button class="neora-icon-btn neora-notif-btn" id="neoraNotifBtn" title="Notifications" type="button">
@@ -684,37 +677,37 @@
 
           <!-- Select Game Tabs Row -->
           <div class="neora-game-tabs-scroll" id="neoraGameTabsScroll">
-            <div class="neora-game-tab active" data-game="monopoly">
-              <div class="game-tab-icon-wrap icon-dice-glow">
-                <img src="assets/ui/neora_ref/dice_thumb_square.png" class="game-tab-img" alt="Monopoly" />
+            <div class="neora-game-tab active" data-game="monopoly" title="Monopoly">
+              <div class="game-tab-icon-wrap">
+                <img src="assets/ui/neora_ref/tab_icon_monopoly_dice.png" class="game-tab-img" alt="Monopoly" />
               </div>
               <span class="game-tab-label">Monopoly</span>
             </div>
-            <div class="neora-game-tab is-coming-soon" data-game="sky_run" title="Coming Soon">
+            <div class="neora-game-tab is-coming-soon" data-game="sky_run" title="Sky Run (Coming Soon)">
               <span class="tab-soon-badge">SOON</span>
-              <div class="game-tab-icon-wrap icon-cat">
-                <img src="assets/ui/neora_ref/icon_skyrun.png" class="game-tab-img" alt="Sky Run" />
+              <div class="game-tab-icon-wrap">
+                <img src="assets/ui/neora_ref/tab_icon_skyrun.png" class="game-tab-img" alt="Sky Run" />
               </div>
               <span class="game-tab-label">Sky Run</span>
             </div>
-            <div class="neora-game-tab is-coming-soon" data-game="card_party" title="Coming Soon">
+            <div class="neora-game-tab is-coming-soon" data-game="card_party" title="Card Party (Coming Soon)">
               <span class="tab-soon-badge">SOON</span>
-              <div class="game-tab-icon-wrap icon-cards">
-                <img src="assets/ui/neora_ref/icon_cardparty.png" class="game-tab-img" alt="Card Party" />
+              <div class="game-tab-icon-wrap">
+                <img src="assets/ui/neora_ref/tab_icon_cardparty.png" class="game-tab-img" alt="Card Party" />
               </div>
               <span class="game-tab-label">Card Party</span>
             </div>
-            <div class="neora-game-tab is-coming-soon" data-game="couple_quiz" title="Coming Soon">
+            <div class="neora-game-tab is-coming-soon" data-game="couple_quiz" title="Couple Quiz (Coming Soon)">
               <span class="tab-soon-badge">SOON</span>
-              <div class="game-tab-icon-wrap icon-heart">
-                <img src="assets/ui/neora_ref/icon_couplequiz.png" class="game-tab-img" alt="Couple Quiz" />
+              <div class="game-tab-icon-wrap">
+                <img src="assets/ui/neora_ref/tab_icon_couplequiz.png" class="game-tab-img" alt="Couple Quiz" />
               </div>
               <span class="game-tab-label">Couple Quiz</span>
             </div>
-            <div class="neora-game-tab is-coming-soon" data-game="more" title="Coming Soon">
+            <div class="neora-game-tab is-coming-soon" data-game="more" title="More Games (Coming Soon)">
               <span class="tab-soon-badge">SOON</span>
-              <div class="game-tab-icon-wrap icon-more">
-                <div class="icon-more-grid"><span></span><span></span><span></span><span></span></div>
+              <div class="game-tab-icon-wrap">
+                <img src="assets/ui/neora_ref/tab_icon_more.png" class="game-tab-img" alt="More" />
               </div>
               <span class="game-tab-label">More</span>
             </div>
@@ -795,10 +788,7 @@
           <div class="neora-room-nav">
             <button class="neora-nav-back-btn" id="neoraRoomBackBtn" type="button" title="Back to Lobby">‹</button>
             <div class="neora-brand-block mini">
-              <div class="neora-logo-wrap">
-                <span class="neora-logo-text">NEORA</span>
-                <span class="neora-orbit-ring"></span>
-              </div>
+              <img src="assets/ui/neora_ref/neora_logo_3d_clean.png" class="neora-mini-logo-img" alt="NEORA" />
               <span class="neora-tagline">PLAY TOGETHER, STAY CLOSE.</span>
             </div>
             <div class="neora-room-nav-actions">
@@ -2174,7 +2164,7 @@
   <script src="monopoly_rules.js?v=20261010a"></script>
   <script src="monopoly_bot.js?v=20261009m"></script>
   <script src="monopoly_fx.js?v=20261012v6"></script>
-  <script src="monopoly.js?v=20261012v11"></script>
+  <script src="monopoly.js?v=20261012v12"></script>
   <script src="skydash_audio.js?v=20261009a"></script>
   <script src="skydash.js?v=20261009e"></script>
   <!-- Phase 5 Supabase & Social SDK -->

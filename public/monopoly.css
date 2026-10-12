@@ -5685,18 +5685,15 @@ body.has-active-modal .vault-pill * {
   box-sizing: border-box;
 }
 
-/* Sunset Airport Window Header Overlay across all 3 screens */
+/* Ambient soft aura overlay across all 3 screens (Clean: No text/button watermarks) */
 .neora-lobby-shell::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 140px;
-  background: url("assets/ui/neora_ref/header_sky_sunset.png") top center / cover no-repeat;
-  opacity: 0.58;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 55%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 55%, rgba(0, 0, 0, 0) 100%);
+  height: 120px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(217, 70, 239, 0.12) 0%, rgba(14, 16, 36, 0) 70%);
   pointer-events: none;
   z-index: 1;
 }
@@ -5737,6 +5734,39 @@ body.has-active-modal .vault-pill * {
 /* =========================================================
    TOP NAVIGATION & BRANDING (EXACT TO REFERENCE)
    ========================================================= */
+/* Screen 1 Panoramic Header Banner */
+.neora-browser-header {
+  position: relative;
+  width: calc(100% + 28px);
+  margin: -14px -14px 12px -14px;
+  border-radius: 28px 28px 0 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 0;
+  z-index: 3;
+}
+
+.neora-browser-header-art {
+  width: 100%;
+  height: auto;
+  max-height: 135px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.neora-browser-header .neora-top-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 5;
+}
+
 .neora-top-nav {
   display: flex;
   align-items: center;
@@ -5754,6 +5784,15 @@ body.has-active-modal .vault-pill * {
 .neora-brand-block.mini {
   align-items: center;
   text-align: center;
+}
+
+.neora-mini-logo-img {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.45));
+  display: block;
+  margin: 0 auto 2px;
 }
 
 .neora-logo-wrap {
@@ -5897,10 +5936,15 @@ body.has-active-modal .vault-pill * {
   box-shadow: 0 4px 18px rgba(217, 70, 239, 0.35), inset 0 0 12px rgba(217, 70, 239, 0.2);
 }
 
-.neora-game-tab.is-coming-soon,
+.neora-game-tab.is-coming-soon {
+  position: relative;
+  opacity: 0.85;
+  user-select: none;
+}
+
 .create-game-card.is-coming-soon {
   position: relative;
-  opacity: 0.65;
+  opacity: 0.7;
   cursor: not-allowed !important;
   user-select: none;
 }
@@ -5933,10 +5977,12 @@ body.has-active-modal .vault-pill * {
   overflow: hidden;
 }
 .game-tab-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
+  max-width: 28px;
+  max-height: 28px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 /* 4-dots grid icon for 'More' */
