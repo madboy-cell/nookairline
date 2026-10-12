@@ -59,6 +59,7 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
       // -----------------------------------------------------------------------
       // 1. START BOT MATCH
       // -----------------------------------------------------------------------
+      case 'vault_bot_start': {
         const level = (msg.level === 'easy' || msg.level === 'insane') ? msg.level : 'hard';
         const stats = ensureBotStats(role);
         let stake = 0;
