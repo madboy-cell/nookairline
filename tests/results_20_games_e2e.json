@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-12T09:47:03.795Z",
+  "timestamp": "2026-10-12T09:47:44.142Z",
   "totalGamesRun": 21,
   "totalCompleted": 21,
   "totalFailed": 0,
@@ -13,7 +13,7 @@
       "seed": 1001,
       "turns": 90,
       "rounds": 22,
-      "durationMs": 496,
+      "durationMs": 494,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "dxb",
@@ -58,7 +58,7 @@
       "seed": 1002,
       "turns": 86,
       "rounds": 23,
-      "durationMs": 403,
+      "durationMs": 401,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bkk",
@@ -103,7 +103,7 @@
       "seed": 1003,
       "turns": 75,
       "rounds": 22,
-      "durationMs": 364,
+      "durationMs": 359,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bot1",
@@ -148,7 +148,7 @@
       "seed": 1004,
       "turns": 90,
       "rounds": 25,
-      "durationMs": 418,
+      "durationMs": 423,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "dxb",
@@ -193,7 +193,7 @@
       "seed": 1005,
       "turns": 84,
       "rounds": 25,
-      "durationMs": 383,
+      "durationMs": 401,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "bkk",
@@ -238,7 +238,7 @@
       "seed": 2001,
       "turns": 80,
       "rounds": 16,
-      "durationMs": 373,
+      "durationMs": 375,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bot1",
@@ -261,8 +261,8 @@
         {
           "role": "bot1",
           "name": "Capt. Whiskers 😼",
-          "miles": 2067,
-          "netWorth": 4403,
+          "miles": 2147,
+          "netWorth": 4483,
           "bankrupt": false
         },
         {
@@ -283,7 +283,7 @@
       "seed": 2002,
       "turns": 110,
       "rounds": 22,
-      "durationMs": 491,
+      "durationMs": 496,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bot1",
@@ -306,8 +306,8 @@
         {
           "role": "bot1",
           "name": "Capt. Whiskers 😼",
-          "miles": 3206,
-          "netWorth": 6133,
+          "miles": 3146,
+          "netWorth": 6073,
           "bankrupt": false
         },
         {
@@ -328,7 +328,7 @@
       "seed": 2003,
       "turns": 92,
       "rounds": 25,
-      "durationMs": 416,
+      "durationMs": 420,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "bot1",
@@ -337,8 +337,8 @@
         {
           "role": "bkk",
           "name": "Nook Host ✈️",
-          "miles": 515,
-          "netWorth": 2229,
+          "miles": 620,
+          "netWorth": 1914,
           "bankrupt": false
         },
         {
@@ -351,8 +351,8 @@
         {
           "role": "bot1",
           "name": "Capt. Whiskers 😼",
-          "miles": 1785,
-          "netWorth": 3318,
+          "miles": 1667,
+          "netWorth": 3608,
           "bankrupt": false
         },
         {
@@ -363,7 +363,7 @@
           "bankrupt": true
         }
       ],
-      "propertiesOwned": 10,
+      "propertiesOwned": 9,
       "syncAssertionsPassed": 92
     },
     {
@@ -373,7 +373,7 @@
       "seed": 2004,
       "turns": 98,
       "rounds": 23,
-      "durationMs": 437,
+      "durationMs": 453,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bot1",
@@ -396,8 +396,8 @@
         {
           "role": "bot1",
           "name": "Capt. Whiskers 😼",
-          "miles": 3382,
-          "netWorth": 6011,
+          "miles": 3244,
+          "netWorth": 5873,
           "bankrupt": false
         },
         {
@@ -416,9 +416,9 @@
       "config": "2H2B",
       "configName": "2 Humans + 2 Bots",
       "seed": 2005,
-      "turns": 95,
-      "rounds": 23,
-      "durationMs": 427,
+      "turns": 92,
+      "rounds": 22,
+      "durationMs": 420,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "dxb",
@@ -434,7 +434,7 @@
         {
           "role": "dxb",
           "name": "Luna 🌸",
-          "miles": 3297,
+          "miles": 3621,
           "netWorth": 6124,
           "bankrupt": false
         },
@@ -453,8 +453,8 @@
           "bankrupt": true
         }
       ],
-      "propertiesOwned": 8,
-      "syncAssertionsPassed": 95
+      "propertiesOwned": 7,
+      "syncAssertionsPassed": 92
     },
     {
       "gameNumber": 11,
@@ -463,7 +463,7 @@
       "seed": 3001,
       "turns": 81,
       "rounds": 22,
-      "durationMs": 364,
+      "durationMs": 370,
       "status": "COMPLETED",
       "reason": "target",
       "winner": "bot2",
@@ -479,8 +479,8 @@
         {
           "role": "dxb",
           "name": "Capt. Whiskers 😼",
-          "miles": 1175,
-          "netWorth": 2665,
+          "miles": 947,
+          "netWorth": 2057,
           "bankrupt": false
         },
         {
@@ -493,12 +493,12 @@
         {
           "role": "bot2",
           "name": "Admiral Paws 🐾",
-          "miles": 4481,
-          "netWorth": 6147,
+          "miles": 4664,
+          "netWorth": 6330,
           "bankrupt": false
         }
       ],
-      "propertiesOwned": 8,
+      "propertiesOwned": 7,
       "syncAssertionsPassed": 81
     },
     {
@@ -506,9 +506,9 @@
       "config": "1H3B",
       "configName": "1 Human + 3 Bots",
       "seed": 3002,
-      "turns": 94,
+      "turns": 117,
       "rounds": 16,
-      "durationMs": 415,
+      "durationMs": 529,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bot2",
@@ -538,22 +538,22 @@
         {
           "role": "bot2",
           "name": "Admiral Paws 🐾",
-          "miles": 2317,
-          "netWorth": 5295,
+          "miles": 2086,
+          "netWorth": 4951,
           "bankrupt": false
         }
       ],
-      "propertiesOwned": 6,
-      "syncAssertionsPassed": 94
+      "propertiesOwned": 8,
+      "syncAssertionsPassed": 117
     },
     {
       "gameNumber": 13,
       "config": "1H3B",
       "configName": "1 Human + 3 Bots",
       "seed": 3003,
-      "turns": 86,
-      "rounds": 23,
-      "durationMs": 384,
+      "turns": 82,
+      "rounds": 22,
+      "durationMs": 370,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "bkk",
@@ -562,8 +562,8 @@
         {
           "role": "bkk",
           "name": "Solo Pilot ✈️",
-          "miles": 1912,
-          "netWorth": 4889,
+          "miles": 2945,
+          "netWorth": 5359,
           "bankrupt": false
         },
         {
@@ -572,51 +572,6 @@
           "miles": 0,
           "netWorth": 0,
           "bankrupt": true
-        },
-        {
-          "role": "bot1",
-          "name": "Trainee Mochi 🐾",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
-        },
-        {
-          "role": "bot2",
-          "name": "Admiral Paws 🐾",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
-        }
-      ],
-      "propertiesOwned": 8,
-      "syncAssertionsPassed": 86
-    },
-    {
-      "gameNumber": 14,
-      "config": "1H3B",
-      "configName": "1 Human + 3 Bots",
-      "seed": 3004,
-      "turns": 104,
-      "rounds": 21,
-      "durationMs": 455,
-      "status": "COMPLETED",
-      "reason": "bankrupt",
-      "winner": "dxb",
-      "winnerName": "Capt. Whiskers 😼",
-      "finalBalances": [
-        {
-          "role": "bkk",
-          "name": "Solo Pilot ✈️",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
-        },
-        {
-          "role": "dxb",
-          "name": "Capt. Whiskers 😼",
-          "miles": 2013,
-          "netWorth": 5064,
-          "bankrupt": false
         },
         {
           "role": "bot1",
@@ -634,16 +589,16 @@
         }
       ],
       "propertiesOwned": 7,
-      "syncAssertionsPassed": 104
+      "syncAssertionsPassed": 82
     },
     {
-      "gameNumber": 15,
+      "gameNumber": 14,
       "config": "1H3B",
       "configName": "1 Human + 3 Bots",
-      "seed": 3005,
-      "turns": 70,
-      "rounds": 17,
-      "durationMs": 310,
+      "seed": 3004,
+      "turns": 99,
+      "rounds": 23,
+      "durationMs": 438,
       "status": "COMPLETED",
       "reason": "bankrupt",
       "winner": "dxb",
@@ -659,8 +614,8 @@
         {
           "role": "dxb",
           "name": "Capt. Whiskers 😼",
-          "miles": 2354,
-          "netWorth": 4512,
+          "miles": 3304,
+          "netWorth": 5278,
           "bankrupt": false
         },
         {
@@ -678,42 +633,87 @@
           "bankrupt": true
         }
       ],
-      "propertiesOwned": 5,
-      "syncAssertionsPassed": 70
+      "propertiesOwned": 4,
+      "syncAssertionsPassed": 99
+    },
+    {
+      "gameNumber": 15,
+      "config": "1H3B",
+      "configName": "1 Human + 3 Bots",
+      "seed": 3005,
+      "turns": 71,
+      "rounds": 18,
+      "durationMs": 329,
+      "status": "COMPLETED",
+      "reason": "bankrupt",
+      "winner": "dxb",
+      "winnerName": "Capt. Whiskers 😼",
+      "finalBalances": [
+        {
+          "role": "bkk",
+          "name": "Solo Pilot ✈️",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "dxb",
+          "name": "Capt. Whiskers 😼",
+          "miles": 1982,
+          "netWorth": 4682,
+          "bankrupt": false
+        },
+        {
+          "role": "bot1",
+          "name": "Trainee Mochi 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "bot2",
+          "name": "Admiral Paws 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        }
+      ],
+      "propertiesOwned": 6,
+      "syncAssertionsPassed": 71
     },
     {
       "gameNumber": 16,
       "config": "4B",
       "configName": "4 Bots (Stress Test)",
       "seed": 4001,
-      "turns": 93,
-      "rounds": 25,
-      "durationMs": 421,
+      "turns": 73,
+      "rounds": 20,
+      "durationMs": 326,
       "status": "COMPLETED",
-      "reason": "cap",
+      "reason": "bankrupt",
       "winner": "dxb",
       "winnerName": "Admiral Paws 🐾",
       "finalBalances": [
         {
           "role": "bkk",
           "name": "Capt. Whiskers 😼",
-          "miles": 864,
-          "netWorth": 1788,
-          "bankrupt": false
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
         },
         {
           "role": "dxb",
           "name": "Admiral Paws 🐾",
-          "miles": 1620,
-          "netWorth": 3124,
+          "miles": 2385,
+          "netWorth": 4473,
           "bankrupt": false
         },
         {
           "role": "bot1",
           "name": "Trainee Mochi 🐾",
-          "miles": 151,
-          "netWorth": 961,
-          "bankrupt": false
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
         },
         {
           "role": "bot2",
@@ -723,62 +723,17 @@
           "bankrupt": true
         }
       ],
-      "propertiesOwned": 8,
-      "syncAssertionsPassed": 93
+      "propertiesOwned": 6,
+      "syncAssertionsPassed": 73
     },
     {
       "gameNumber": 17,
       "config": "4B",
       "configName": "4 Bots (Stress Test)",
       "seed": 4002,
-      "turns": 92,
+      "turns": 88,
       "rounds": 25,
-      "durationMs": 408,
-      "status": "COMPLETED",
-      "reason": "cap",
-      "winner": "bot2",
-      "winnerName": "Cadet Fluff 🐾",
-      "finalBalances": [
-        {
-          "role": "bkk",
-          "name": "Capt. Whiskers 😼",
-          "miles": 630,
-          "netWorth": 2138,
-          "bankrupt": false
-        },
-        {
-          "role": "dxb",
-          "name": "Admiral Paws 🐾",
-          "miles": 79,
-          "netWorth": 799,
-          "bankrupt": false
-        },
-        {
-          "role": "bot1",
-          "name": "Trainee Mochi 🐾",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
-        },
-        {
-          "role": "bot2",
-          "name": "Cadet Fluff 🐾",
-          "miles": 2001,
-          "netWorth": 3035,
-          "bankrupt": false
-        }
-      ],
-      "propertiesOwned": 11,
-      "syncAssertionsPassed": 92
-    },
-    {
-      "gameNumber": 18,
-      "config": "4B",
-      "configName": "4 Bots (Stress Test)",
-      "seed": 4003,
-      "turns": 79,
-      "rounds": 25,
-      "durationMs": 342,
+      "durationMs": 385,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "bkk",
@@ -787,15 +742,60 @@
         {
           "role": "bkk",
           "name": "Capt. Whiskers 😼",
-          "miles": 1672,
-          "netWorth": 3567,
+          "miles": 1962,
+          "netWorth": 3989,
           "bankrupt": false
         },
         {
           "role": "dxb",
           "name": "Admiral Paws 🐾",
-          "miles": 333,
-          "netWorth": 3463,
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "bot1",
+          "name": "Trainee Mochi 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "bot2",
+          "name": "Cadet Fluff 🐾",
+          "miles": 560,
+          "netWorth": 1600,
+          "bankrupt": false
+        }
+      ],
+      "propertiesOwned": 10,
+      "syncAssertionsPassed": 88
+    },
+    {
+      "gameNumber": 18,
+      "config": "4B",
+      "configName": "4 Bots (Stress Test)",
+      "seed": 4003,
+      "turns": 79,
+      "rounds": 25,
+      "durationMs": 352,
+      "status": "COMPLETED",
+      "reason": "cap",
+      "winner": "bkk",
+      "winnerName": "Capt. Whiskers 😼",
+      "finalBalances": [
+        {
+          "role": "bkk",
+          "name": "Capt. Whiskers 😼",
+          "miles": 1652,
+          "netWorth": 3447,
+          "bankrupt": false
+        },
+        {
+          "role": "dxb",
+          "name": "Admiral Paws 🐾",
+          "miles": 166,
+          "netWorth": 3123,
           "bankrupt": false
         },
         {
@@ -821,9 +821,54 @@
       "config": "4B",
       "configName": "4 Bots (Stress Test)",
       "seed": 4004,
+      "turns": 86,
+      "rounds": 23,
+      "durationMs": 381,
+      "status": "COMPLETED",
+      "reason": "bankrupt",
+      "winner": "bkk",
+      "winnerName": "Capt. Whiskers 😼",
+      "finalBalances": [
+        {
+          "role": "bkk",
+          "name": "Capt. Whiskers 😼",
+          "miles": 1904,
+          "netWorth": 5236,
+          "bankrupt": false
+        },
+        {
+          "role": "dxb",
+          "name": "Admiral Paws 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "bot1",
+          "name": "Trainee Mochi 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        },
+        {
+          "role": "bot2",
+          "name": "Cadet Fluff 🐾",
+          "miles": 0,
+          "netWorth": 0,
+          "bankrupt": true
+        }
+      ],
+      "propertiesOwned": 9,
+      "syncAssertionsPassed": 86
+    },
+    {
+      "gameNumber": 20,
+      "config": "4B",
+      "configName": "4 Bots (Stress Test)",
+      "seed": 4005,
       "turns": 96,
       "rounds": 25,
-      "durationMs": 418,
+      "durationMs": 430,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "bkk",
@@ -832,79 +877,34 @@
         {
           "role": "bkk",
           "name": "Capt. Whiskers 😼",
-          "miles": 1272,
-          "netWorth": 3757,
+          "miles": 1056,
+          "netWorth": 3045,
           "bankrupt": false
         },
         {
           "role": "dxb",
           "name": "Admiral Paws 🐾",
-          "miles": 131,
-          "netWorth": 131,
+          "miles": 211,
+          "netWorth": 1041,
           "bankrupt": false
         },
         {
           "role": "bot1",
           "name": "Trainee Mochi 🐾",
-          "miles": 570,
-          "netWorth": 1530,
+          "miles": 57,
+          "netWorth": 57,
           "bankrupt": false
         },
         {
           "role": "bot2",
           "name": "Cadet Fluff 🐾",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
+          "miles": 1215,
+          "netWorth": 1895,
+          "bankrupt": false
         }
       ],
-      "propertiesOwned": 11,
+      "propertiesOwned": 10,
       "syncAssertionsPassed": 96
-    },
-    {
-      "gameNumber": 20,
-      "config": "4B",
-      "configName": "4 Bots (Stress Test)",
-      "seed": 4005,
-      "turns": 93,
-      "rounds": 25,
-      "durationMs": 403,
-      "status": "COMPLETED",
-      "reason": "cap",
-      "winner": "bot1",
-      "winnerName": "Trainee Mochi 🐾",
-      "finalBalances": [
-        {
-          "role": "bkk",
-          "name": "Capt. Whiskers 😼",
-          "miles": 244,
-          "netWorth": 1813,
-          "bankrupt": false
-        },
-        {
-          "role": "dxb",
-          "name": "Admiral Paws 🐾",
-          "miles": 317,
-          "netWorth": 967,
-          "bankrupt": false
-        },
-        {
-          "role": "bot1",
-          "name": "Trainee Mochi 🐾",
-          "miles": 2677,
-          "netWorth": 4140,
-          "bankrupt": false
-        },
-        {
-          "role": "bot2",
-          "name": "Cadet Fluff 🐾",
-          "miles": 0,
-          "netWorth": 0,
-          "bankrupt": true
-        }
-      ],
-      "propertiesOwned": 11,
-      "syncAssertionsPassed": 93
     },
     {
       "gameNumber": 21,
@@ -913,7 +913,7 @@
       "seed": 5001,
       "turns": 96,
       "rounds": 25,
-      "durationMs": 446,
+      "durationMs": 454,
       "status": "COMPLETED",
       "reason": "cap",
       "winner": "bkk",
