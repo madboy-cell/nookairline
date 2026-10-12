@@ -180,6 +180,41 @@
         this.profileBackdrop.addEventListener('click', () => this.closeProfileModal());
       }
 
+      // Header Utility Buttons (Mail & Settings)
+      const mailBtn = $('flightHeaderMailBtn');
+      if (mailBtn) {
+        mailBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          if (window.NookVault && typeof window.NookVault.openEnvelopeModal === 'function') {
+            window.NookVault.openEnvelopeModal();
+          } else {
+            this.openDrawer('friends');
+          }
+        });
+      }
+      const settingsBtn = $('flightHeaderSettingsBtn');
+      if (settingsBtn) {
+        settingsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          this.openProfileModal();
+        });
+      }
+
+      // Passport Diamonds Plus Button -> Opens Gacha / Vault
+      const passportDiamondsPlus = $('passportDiamondsPlusBtn');
+      if (passportDiamondsPlus) {
+        passportDiamondsPlus.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          this.closeProfileModal();
+          if (window.NookVault && typeof window.NookVault.open === 'function') {
+            window.NookVault.open('gacha');
+          }
+        });
+      }
+
       // Persona Base Switcher Cards inside Passport Modal
       if (this.personaCardBkk) {
         this.personaCardBkk.addEventListener('click', () => {
@@ -813,6 +848,23 @@
         } else {
           headerSub.textContent = 'Sky Passport';
         }
+      }
+
+      // NEORA Profile Level & Progress
+      const headerLevel = $('headerProfileLevel');
+      const headerLevelFill = $('headerProfileLevelFill');
+      const diamonds = user?.diamonds || (window.NookVault?.getMyDiamonds ? window.NookVault.getMyDiamonds() : 5000);
+      const lvl = Math.max(1, Math.min(99, Math.floor(diamonds / 100) + 1));
+      const pct = (diamonds % 100);
+      if (headerLevel) headerLevel.textContent = `Lv. ${lvl}`;
+      if (headerLevelFill) headerLevelFill.style.width = `${Math.max(15, pct)}%`;
+
+      // NEORA Mail Notification Dot (Unclaimed Red Envelopes)
+      const mailDot = $('headerMailDot');
+      if (mailDot) {
+        const vp = window.NookVault?.getMyProfile?.();
+        const hasUnclaimed = vp && Array.isArray(vp.envelopes) ? vp.envelopes.some(e => !e.claimed) : false;
+        mailDot.style.display = hasUnclaimed ? 'block' : 'none';
       }
 
       // 2. Passenger Passport Sheet

@@ -150,25 +150,43 @@
     let group = header.querySelector('.hdr-right');
     if (!group) {
       group = document.createElement('div');
-      group.className = 'hdr-right';
+      group.className = 'hdr-right neora-hdr-right';
       header.appendChild(group);
     }
     const chip = document.createElement('button');
     chip.id = 'dailyChip';
-    chip.className = 'dly-chip';
+    chip.className = 'dly-chip neora-activity-counter';
     chip.title = 'Daily Flight Log — streak, quests & rewards';
+    chip.setAttribute('type', 'button');
     chip.setAttribute('aria-label', 'Open Daily Flight Log');
-    chip.innerHTML = `${fireHtml('xs')}<b id="dailyChipNum">0</b><i class="dly-chip-dot" id="dailyChipDot"></i>`;
+    chip.innerHTML = `${fireHtml('xs')}<b id="dailyChipNum">1</b><span class="dly-plus-btn" title="Daily Quests">+</span><i class="dly-chip-dot" id="dailyChipDot"></i>`;
     chip.addEventListener('click', (e) => { e.stopPropagation(); open(); });
-    group.appendChild(chip);
+    
+    // Position after photo button if present
+    const photoBtn = document.getElementById('flightHeaderPhotoBtn');
+    if (photoBtn && photoBtn.nextSibling) {
+      group.insertBefore(chip, photoBtn.nextSibling);
+    } else {
+      group.appendChild(chip);
+    }
+
     const pill = $('vaultHeaderPill');
-    if (pill) group.appendChild(pill);
+    if (pill && pill.parentElement === group) {
+      group.insertBefore(pill, chip.nextSibling);
+    }
   }
 
   function ensurePillInGroup() {
     const group = document.querySelector('#flightHeader .hdr-right');
     const pill = $('vaultHeaderPill');
-    if (group && pill && pill.parentElement !== group) group.appendChild(pill);
+    const mailBtn = document.getElementById('flightHeaderMailBtn');
+    if (group && pill) {
+      if (mailBtn && mailBtn.parentElement === group) {
+        if (pill.nextSibling !== mailBtn) group.insertBefore(pill, mailBtn);
+      } else if (pill.parentElement !== group) {
+        group.appendChild(pill);
+      }
+    }
   }
 
   function updateChip() {

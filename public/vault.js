@@ -261,7 +261,24 @@
             <span class="vault-season-chip" id="vaultSeasonChip">${(C.SEASONS[S.gachaSeason || 's3'] || C.SEASONS.s3).icon} ${(S.gachaSeason || 's3').toUpperCase()} · ${(C.SEASONS[S.gachaSeason || 's3'] || C.SEASONS.s3).name}</span>
           </div>
           <div class="vault-wallet">
-            <button class="vault-coin diamonds" id="vaultDiamonds" data-action="tab" data-tab="gacha" title="Diamonds — Tap to pull Gacha">💎 <b>—</b></button>
+            <button class="vault-coin diamonds neora-gem-counter" id="vaultDiamonds" data-action="tab" data-tab="gacha" title="Diamonds — Tap to pull Gacha">
+              <span class="neora-diamond-wrap">
+                <svg class="neora-diamond-svg" width="16" height="14" viewBox="0 0 24 22" fill="none">
+                  <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_vd)" stroke="#a5f3fc" stroke-width="0.8"/>
+                  <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                  <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                  <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                  <defs>
+                    <linearGradient id="gem_body_vd" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#38bdf8"/>
+                      <stop offset="0.5" stop-color="#818cf8"/>
+                      <stop offset="1" stop-color="#c084fc"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </span>
+              <b>—</b>
+            </button>
             <button class="vault-coin stardust" id="vaultStardust" data-action="tab" data-tab="wardrobe" title="Stardust — Tap to craft in Wardrobe">✨ <b>—</b></button>
             <button class="vault-coin tickets" id="vaultTickets" data-action="tab" data-tab="gacha" style="display:none;" title="Lucky Flight Tickets — VIP Gacha Pulls">🎟️ <b>—</b></button>
             <button class="vault-coin red-envelope-btn" id="vaultRedEnvelopeBtn" data-action="open-envelope-sender" title="Send Chinese Red Envelope (Ang Pao) to Partner">🧧 <b>Gift</b><span class="gift-gem"> 💎</span></button>
@@ -308,15 +325,40 @@
   }
 
   function mountPills() {
-    const header = $('flightHeader');
-    if (header && !$('vaultHeaderPill')) {
+    const group = document.querySelector('#flightHeader .hdr-right') || $('flightHeader');
+    if (group && !$('vaultHeaderPill')) {
       const b = document.createElement('button');
       b.id = 'vaultHeaderPill';
-      b.className = 'vault-pill';
+      b.className = 'vault-pill neora-gem-counter';
       b.title = 'Your diamonds — open the Vault';
-      b.innerHTML = '<span class="vault-pill-gem">💎</span><b>—</b>';
+      b.setAttribute('type', 'button');
+      b.setAttribute('aria-label', 'Diamond Balance. Open Vault');
+      b.innerHTML = `
+        <span class="neora-diamond-wrap">
+          <svg class="neora-diamond-svg" width="18" height="16" viewBox="0 0 24 22" fill="none">
+            <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_hdr)" stroke="#a5f3fc" stroke-width="0.8"/>
+            <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+            <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+            <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+            <defs>
+              <linearGradient id="gem_body_hdr" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/>
+                <stop offset="0.5" stop-color="#818cf8"/>
+                <stop offset="1" stop-color="#c084fc"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <b>5,000</b>
+        <span class="vault-plus-btn" title="Open Gacha Vault">+</span>`;
       b.addEventListener('click', (e) => { e.stopPropagation(); open('gacha'); });
-      header.appendChild(b);
+      
+      const mailBtn = document.getElementById('flightHeaderMailBtn');
+      if (mailBtn && mailBtn.parentElement === group) {
+        group.insertBefore(b, mailBtn);
+      } else {
+        group.appendChild(b);
+      }
     }
   }
 

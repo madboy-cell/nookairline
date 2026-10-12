@@ -19,23 +19,34 @@
   <link rel="stylesheet" href="catlounge.css?v=20261012v1">
   <link rel="stylesheet" href="skydash.css?v=20261009d">
   <link rel="stylesheet" href="social.css?v=20261012v5">
+  <link rel="stylesheet" href="neora_hud.css?v=20261012">
   <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
 </head>
 <body>
   <div id="app" class="airline-container">
-    <!-- Top Flight Status Bar -->
-    <header class="flight-header" id="flightHeader">
-      <!-- Upgraded Passenger Passport & Profile Chip -->
-      <button class="flight-header-profile-btn" id="flightHeaderProfileBtn" title="Passenger Passport & Account Settings" type="button">
+    <!-- Top Flight Status Bar (NEORA HUD) -->
+    <header class="flight-header neora-hud-header" id="flightHeader">
+      <!-- Upgraded Passenger Passport & Profile Panel (Left) -->
+      <button class="flight-header-profile-btn neora-profile-panel" id="flightHeaderProfileBtn" title="Passenger Passport & Account Settings" type="button" aria-label="Open Passenger Passport">
         <div class="profile-chip-avatar-wrap">
+          <span class="profile-crown-icon" aria-hidden="true">👑</span>
           <img id="headerProfileAvatarImg" src="assets/bkk_warrior_idle.png" alt="Avatar" draggable="false">
           <span class="profile-chip-badge" id="headerProfileBadge">🐺</span>
+          <span class="profile-avatar-sparkle" aria-hidden="true">✨</span>
         </div>
-        <div class="profile-chip-text">
-          <span class="profile-chip-title" id="headerProfileName">Passenger</span>
-          <span class="profile-chip-sub" id="headerProfileSub">Sky Passport</span>
+        <div class="profile-chip-content">
+          <div class="profile-chip-top">
+            <span class="profile-chip-title" id="headerProfileName">Passenger</span>
+            <span class="profile-chip-arrow" aria-hidden="true">›</span>
+          </div>
+          <span class="profile-chip-sub" id="headerProfileSub">SKY PASSPORT</span>
+          <div class="profile-level-row">
+            <span class="profile-level-badge" id="headerProfileLevel">Lv. 1</span>
+            <div class="profile-level-track">
+              <div class="profile-level-fill" id="headerProfileLevelFill" style="width: 50%;"></div>
+            </div>
+          </div>
         </div>
-        <span class="profile-chip-arrow">▾</span>
       </button>
 
       <!-- Backwards compatibility hooks (hidden from display so they take 0 space) -->
@@ -60,11 +71,34 @@
         <span id="callDuration">00:00</span>
       </div>
 
-      <!-- Right Utility Cluster (Contains Photo Mode, Streak Fire Chip, Diamonds Pill) -->
-      <div class="hdr-right" id="flightHeaderRight">
-        <button class="flight-header-photo-btn" id="flightHeaderPhotoBtn" title="Photo Mode (Hide UI for Screenshots)" type="button">
-          <span class="photo-icon">📸</span>
-          <span class="photo-label">Photo</span>
+      <!-- Right Utility Cluster (Camera, Activity Flame Counter, Diamond Currency Counter, Mail, Settings) -->
+      <div class="hdr-right neora-hdr-right" id="flightHeaderRight">
+        <!-- 1. Camera / Photo Mode Button -->
+        <button class="flight-header-photo-btn neora-circle-btn" id="flightHeaderPhotoBtn" title="Photo Mode (Hide UI for Screenshots)" type="button" aria-label="Photo Mode">
+          <svg class="neora-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </button>
+
+        <!-- 2. Activity / Streak Counter: #dailyChip (mounted by daily.js or dynamically) -->
+        <!-- 3. Diamond Counter: #vaultHeaderPill (mounted by vault.js) -->
+
+        <!-- 4. Mail / Envelopes Button -->
+        <button class="flight-header-mail-btn neora-circle-btn" id="flightHeaderMailBtn" title="Flight Mail & Red Envelopes" type="button" aria-label="Flight Mail">
+          <svg class="neora-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <span class="neora-notif-dot" id="headerMailDot" style="display:none;"></span>
+        </button>
+
+        <!-- 5. Settings / Passport Button -->
+        <button class="flight-header-settings-btn neora-circle-btn" id="flightHeaderSettingsBtn" title="Passport & Cabin Settings" type="button" aria-label="Cabin Settings">
+          <svg class="neora-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
         </button>
       </div>
     </header>
@@ -77,13 +111,19 @@
         <!-- Dedicated Audio Tag: Solves iOS Safari / Chrome mobile audio muting -->
         <audio id="remoteAudio" autoplay playsinline></audio>
         
-        <!-- Elegant Flight Status Capsule (Keeps 2D plane cabin & avatars 100% visible) -->
-        <div class="flight-status-capsule" id="flightStatusCapsule">
+        <!-- Elegant Flight Status Capsule (WorldModeBanner) -->
+        <div class="flight-status-capsule neora-world-banner" id="flightStatusCapsule">
+          <div class="neora-banner-moon-wrap" aria-hidden="true">
+            <span class="neora-banner-moon">🌙</span>
+            <span class="neora-banner-sparkle">✨</span>
+          </div>
           <div class="capsule-dot" id="capsuleDot"></div>
-          <span class="capsule-text" id="capsuleText">Connecting to Flight Network...</span>
-          <button class="capsule-copy-btn" id="capsuleCopyBtn" title="Pair Partner in Couple Sanctuary" type="button">
-            <span class="capsule-btn-icon" id="capsuleBtnIcon">💞</span>
+          <span class="capsule-text" id="capsuleText">Solo Flight • Couple Sanctuary 💫</span>
+          <button class="capsule-copy-btn neora-pair-btn" id="capsuleCopyBtn" title="Pair Partner in Couple Sanctuary" type="button">
+            <span class="neora-pair-hearts" id="capsuleBtnIcon">🪐💖</span>
             <span class="copy-label" id="capsuleBtnLabel">Pair Partner</span>
+            <span class="neora-pair-arrow" aria-hidden="true">›</span>
+            <span class="neora-blossom-accent" aria-hidden="true">🌸</span>
           </button>
         </div>
 
@@ -1367,7 +1407,24 @@
 
             <!-- Stats Pill Row -->
             <div class="skydash-metrics-row">
-              <div class="skydash-pill diamonds">💎 <span id="skydashDiamondsVal">0</span></div>
+              <div class="skydash-pill diamonds neora-gem-counter">
+                <span class="neora-diamond-wrap">
+                  <svg class="neora-diamond-svg" width="14" height="12" viewBox="0 0 24 22" fill="none">
+                    <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_sd)" stroke="#a5f3fc" stroke-width="0.8"/>
+                    <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <defs>
+                      <linearGradient id="gem_body_sd" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#38bdf8"/>
+                        <stop offset="0.5" stop-color="#818cf8"/>
+                        <stop offset="1" stop-color="#c084fc"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </span>
+                <span id="skydashDiamondsVal">0</span>
+              </div>
               <div class="skydash-pill score">🏆 <span id="skydashScoreVal">0</span></div>
               <div class="skydash-pill combo" id="skydashComboPill">🔥 <span id="skydashComboVal">×0</span></div>
             </div>
@@ -1534,7 +1591,24 @@
               <span class="social-base-badge" id="socialBaseBadge">🐺 Wolf Boy</span>
             </div>
             <div class="social-currency-row">
-              <span class="social-currency-chip diamonds">💎 <b id="socialDiamondsCount">5,000</b></span>
+              <span class="social-currency-chip diamonds neora-gem-counter" title="Your Diamond Treasury">
+                <span class="neora-diamond-wrap">
+                  <svg class="neora-diamond-svg" width="16" height="14" viewBox="0 0 24 22" fill="none">
+                    <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_soc)" stroke="#a5f3fc" stroke-width="0.8"/>
+                    <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                    <defs>
+                      <linearGradient id="gem_body_soc" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#38bdf8"/>
+                        <stop offset="0.5" stop-color="#818cf8"/>
+                        <stop offset="1" stop-color="#c084fc"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </span>
+                <b id="socialDiamondsCount">5,000</b>
+              </span>
               <span class="social-seat-chip" id="socialSeatChip">Solo Passenger</span>
             </div>
           </div>
@@ -1802,10 +1876,25 @@
 
             <!-- Stats Bar (3 pill cards) -->
             <div class="passport-stats-grid">
-              <div class="passport-stat-pill">
+              <div class="passport-stat-pill diamond-stat neora-gem-counter">
                 <div class="stat-top">
-                  <span class="stat-val diamond-val">💎 <b id="passportDiamonds">5,000</b></span>
-                  <button type="button" class="stat-plus-btn" id="passportDiamondsPlusBtn" title="Add Diamonds">+</button>
+                  <span class="neora-diamond-wrap">
+                    <svg class="neora-diamond-svg" width="18" height="16" viewBox="0 0 24 22" fill="none">
+                      <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_pp)" stroke="#a5f3fc" stroke-width="0.8"/>
+                      <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                      <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                      <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
+                      <defs>
+                        <linearGradient id="gem_body_pp" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
+                          <stop stop-color="#38bdf8"/>
+                          <stop offset="0.5" stop-color="#818cf8"/>
+                          <stop offset="1" stop-color="#c084fc"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </span>
+                  <span class="stat-val diamond-val"><b id="passportDiamonds">5,000</b></span>
+                  <button type="button" class="stat-plus-btn neora-gem-plus-btn" id="passportDiamondsPlusBtn" title="Add Diamonds">+</button>
                 </div>
                 <span class="stat-lbl">DIAMONDS</span>
               </div>

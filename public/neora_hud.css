@@ -1,0 +1,788 @@
+/**
+ * NEORA HUD Redesign & Universal Diamond UI Design System
+ * Pixel-perfect implementation matching neora_hud_full_reference.png
+ * Deep indigo & violet twilight palette, golden highlights, soft pink & cyan glows,
+ * rounded glass-like panels, and responsive desktop/tablet/mobile layouts.
+ */
+
+:root {
+  --neora-bg-twilight: linear-gradient(135deg, rgba(20, 16, 45, 0.94) 0%, rgba(36, 22, 62, 0.94) 100%);
+  --neora-gold-border: rgba(253, 224, 71, 0.5);
+  --neora-gold-glow: 0 0 16px rgba(251, 191, 36, 0.25);
+  --neora-pink-glow: 0 0 16px rgba(236, 72, 153, 0.3);
+  --neora-cyan-glow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+
+/* ==========================================================================
+   1. TOP FLIGHT STATUS BAR (NEORA HUD HEADER)
+   ========================================================================== */
+.flight-header.neora-hud-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  padding-top: max(14px, env(safe-area-inset-top));
+  background: linear-gradient(180deg, rgba(12, 9, 28, 0.88) 0%, rgba(18, 12, 38, 0.5) 70%, transparent 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.flight-header.neora-hud-header > * {
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   2. PLAYER PROFILE PANEL (LEFT)
+   ========================================================================== */
+.flight-header-profile-btn.neora-profile-panel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 4px 16px 4px 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(22, 16, 48, 0.92) 0%, rgba(38, 24, 68, 0.92) 100%);
+  border: 1.5px solid var(--neora-gold-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--neora-pink-glow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  cursor: pointer;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex: none;
+  position: relative;
+  text-align: left;
+}
+
+.flight-header-profile-btn.neora-profile-panel:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(253, 224, 71, 0.85);
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 22px rgba(236, 72, 153, 0.45);
+}
+
+.flight-header-profile-btn.neora-profile-panel:active {
+  transform: scale(0.97);
+}
+
+/* Avatar Circle & Halo */
+.neora-profile-panel .profile-chip-avatar-wrap {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #f472b6;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.4), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 0 14px rgba(244, 114, 182, 0.6);
+  flex: none;
+  overflow: visible;
+}
+
+.neora-profile-panel .profile-chip-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Golden Crown atop Avatar */
+.profile-crown-icon {
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.85));
+  z-index: 2;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+/* Sparkle Star */
+.profile-avatar-sparkle {
+  position: absolute;
+  bottom: -4px;
+  left: -3px;
+  font-size: 13px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px #fde68a);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.neora-profile-panel .profile-chip-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 11px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
+  z-index: 2;
+}
+
+/* Profile Content Info */
+.profile-chip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.profile-chip-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.1;
+}
+
+.neora-profile-panel .profile-chip-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.neora-profile-panel .profile-chip-arrow {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fde68a;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.flight-header-profile-btn.neora-profile-panel:hover .profile-chip-arrow {
+  transform: translateX(2px);
+  color: #fff;
+}
+
+.neora-profile-panel .profile-chip-sub {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: rgba(220, 210, 255, 0.65);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Level & Progress Bar */
+.profile-level-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.profile-level-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.profile-level-track {
+  width: 72px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-level-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c084fc 0%, #38bdf8 100%);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.85);
+  transition: width 0.4s ease;
+}
+
+/* ==========================================================================
+   3. RIGHT UTILITY CLUSTER
+   ========================================================================== */
+.hdr-right.neora-hdr-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+/* Circular Glass Action Buttons (Camera, Mail, Settings) */
+.neora-circle-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(22, 18, 48, 0.92) 0%, rgba(36, 24, 68, 0.92) 100%);
+  border: 1.5px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 12px rgba(168, 85, 247, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  padding: 0;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: none;
+}
+
+.neora-circle-btn:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(192, 132, 252, 0.9);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 18px rgba(192, 132, 252, 0.5);
+  color: #fff;
+}
+
+.neora-circle-btn:active {
+  transform: scale(0.94);
+}
+
+.neora-circle-btn svg {
+  display: block;
+  stroke: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s ease;
+}
+
+.neora-circle-btn:hover svg {
+  transform: scale(1.08);
+}
+
+.neora-notif-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f43f5e;
+  border: 2px solid #1a1236;
+  box-shadow: 0 0 8px #f43f5e;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   4. ACTIVITY / FLAME COUNTER (#dailyChip)
+   ========================================================================== */
+.dly-chip,
+.neora-activity-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 3px 8px 3px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(40, 16, 38, 0.92) 0%, rgba(58, 20, 48, 0.92) 100%);
+  border: 1.5px solid rgba(244, 114, 182, 0.55);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 14px rgba(244, 114, 182, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: none;
+  user-select: none;
+}
+
+.dly-chip:hover,
+.neora-activity-counter:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(251, 146, 60, 0.9);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 20px rgba(251, 146, 60, 0.5);
+}
+
+.dly-chip .dly-fire-icon,
+.neora-activity-counter .flame-icon {
+  font-size: 16px;
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85));
+  animation: neoraFlamePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes neoraFlamePulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85)); }
+  50% { transform: scale(1.12); filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.95)); }
+}
+
+.dly-chip b,
+.neora-activity-counter b {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.02em;
+}
+
+.dly-plus-btn,
+.neora-activity-counter .plus-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1;
+  transition: all 0.18s ease;
+  margin-left: 2px;
+}
+
+.dly-chip:hover .dly-plus-btn,
+.neora-activity-counter:hover .plus-btn {
+  transform: scale(1.15) rotate(90deg);
+  background: linear-gradient(135deg, #f472b6 0%, #fb7185 100%);
+  box-shadow: 0 0 12px rgba(244, 114, 182, 0.9);
+}
+
+/* ==========================================================================
+   5. MASTER REUSABLE DIAMOND / GEM UI COMPONENT
+   Applied across HUD Header, Passport, Social Drawer, Monopoly & Vault
+   ========================================================================== */
+.neora-gem-counter,
+.vault-pill,
+.passport-stat-pill.diamond-stat,
+.social-currency-chip.diamonds,
+.monopoly-vault-diamonds,
+.skydash-pill.diamonds {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 3px 8px 3px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(16, 20, 48, 0.94) 0%, rgba(28, 22, 62, 0.94) 100%) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.65) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 16px rgba(56, 189, 248, 0.35) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: none;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.neora-gem-counter:hover,
+.vault-pill:hover,
+.passport-stat-pill.diamond-stat:hover,
+.social-currency-chip.diamonds:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(125, 211, 252, 0.95) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 22px rgba(56, 189, 248, 0.6) !important;
+}
+
+.neora-gem-counter:active,
+.vault-pill:active {
+  transform: scale(0.96);
+}
+
+/* 3D Crystal Gem Glyph / SVG Icon */
+.neora-diamond-wrap,
+.vault-pill-gem,
+.neora-gem-counter .gem-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
+  animation: neoraGemFloat 3s ease-in-out infinite;
+}
+
+@keyframes neoraGemFloat {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7)); transform: translateY(0); }
+  50% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.95)); transform: translateY(-1.5px); }
+}
+
+.neora-gem-counter b,
+.vault-pill b,
+.social-currency-chip.diamonds b,
+.passport-stat-pill.diamond-stat b {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.02em;
+}
+
+/* Interactive Top-Up / Plus Action Button */
+.vault-plus-btn,
+.neora-gem-plus-btn,
+.passport-stat-pill.diamond-stat .stat-plus-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-left: 2px;
+}
+
+.vault-pill:hover .vault-plus-btn,
+.neora-gem-counter:hover .neora-gem-plus-btn {
+  transform: scale(1.15) rotate(90deg);
+  background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%) !important;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.95) !important;
+}
+
+/* Specific overrides for Passport sheet, Social Drawer, and Vault header integration */
+.passport-stat-pill.diamond-stat {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  height: auto !important;
+  padding: 8px 10px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(20, 16, 45, 0.94) 0%, rgba(36, 22, 62, 0.94) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.2) !important;
+}
+
+.passport-stat-pill.diamond-stat .stat-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 4px;
+}
+
+.passport-stat-pill.diamond-stat .neora-diamond-wrap {
+  margin-right: 2px;
+}
+
+.passport-stat-pill.diamond-stat .stat-plus-btn {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.social-currency-chip.diamonds {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 2px 10px 2px 8px !important;
+  font-size: 13px !important;
+}
+
+.vault-coin.diamonds.neora-gem-counter {
+  height: 34px !important;
+  padding: 2px 10px 2px 8px !important;
+  font-size: 13px !important;
+  gap: 6px !important;
+}
+
+
+/* ==========================================================================
+   6. WORLD MODE BANNER (#flightStatusCapsule / .neora-world-banner)
+   ========================================================================== */
+.flight-status-capsule.neora-world-banner {
+  position: absolute;
+  top: max(74px, calc(env(safe-area-inset-top, 0px) + 68px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(94%, 740px);
+  height: 48px;
+  padding: 4px 6px 4px 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(20, 15, 46, 0.94) 0%, rgba(38, 20, 62, 0.92) 50%, rgba(24, 14, 48, 0.94) 100%);
+  border: 1.5px solid var(--neora-gold-border);
+  box-shadow: 0 10px 30px rgba(8, 5, 20, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--neora-gold-glow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.flight-status-capsule.neora-world-banner.in-call {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-14px);
+}
+
+/* Crescent Moon & Planet Ring Decor on Left */
+.neora-banner-moon-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  flex: none;
+  margin-right: -4px;
+}
+
+.neora-banner-moon {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.8));
+  animation: neoraMoonWobble 4s ease-in-out infinite;
+}
+
+.neora-banner-sparkle {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  font-size: 11px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px #fff);
+  animation: neoraSparkleGlint 2.2s ease-in-out infinite;
+}
+
+@keyframes neoraMoonWobble {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-6deg) scale(1.05); }
+}
+
+@keyframes neoraSparkleGlint {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Status Dot & Mode Label */
+.neora-world-banner .capsule-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.85);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.neora-world-banner.ready .capsule-dot {
+  background: #10b981;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.95);
+  animation: capsuleDotPulse 1.5s ease-in-out infinite;
+}
+
+.neora-world-banner .capsule-text {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pair Partner Action Button (Right) */
+.capsule-copy-btn.neora-pair-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px 0 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+  border: 1.5px solid rgba(253, 224, 71, 0.65);
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex: none;
+  position: relative;
+}
+
+.capsule-copy-btn.neora-pair-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  border-color: rgba(253, 224, 71, 0.95);
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.capsule-copy-btn.neora-pair-btn:active {
+  transform: scale(0.96);
+}
+
+.neora-pair-hearts {
+  font-size: 15px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
+
+.neora-pair-arrow {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fde68a;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.capsule-copy-btn.neora-pair-btn:hover .neora-pair-arrow {
+  transform: translateX(2px);
+}
+
+.neora-blossom-accent {
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px #f472b6);
+  margin-left: -2px;
+}
+
+/* ==========================================================================
+   7. RESPONSIVE BREAKPOINTS & MOBILE OPTIMIZATIONS
+   ========================================================================== */
+@media (max-width: 900px) {
+  .flight-header.neora-hud-header {
+    padding: 10px 16px;
+  }
+  .flight-status-capsule.neora-world-banner {
+    top: max(68px, calc(env(safe-area-inset-top, 0px) + 60px));
+    width: min(96%, 600px);
+    height: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  .flight-header.neora-hud-header {
+    padding: 8px 12px;
+  }
+
+  .flight-header-profile-btn.neora-profile-panel {
+    height: 44px;
+    padding: 3px 10px 3px 4px;
+    gap: 8px;
+  }
+
+  .neora-profile-panel .profile-chip-avatar-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  .neora-profile-panel .profile-chip-title {
+    font-size: 12.5px;
+    max-width: 80px;
+  }
+
+  .profile-level-track {
+    width: 48px;
+  }
+
+  .hdr-right.neora-hdr-right {
+    gap: 6px;
+  }
+
+  .neora-circle-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .neora-circle-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* Keep camera, flame & diamond visible, fold settings into passport tap on small mobile */
+  #flightHeaderSettingsBtn {
+    display: none;
+  }
+
+  .dly-chip,
+  .neora-activity-counter {
+    height: 34px;
+    padding: 2px 6px 2px 8px;
+    font-size: 12px !important;
+  }
+
+  .dly-chip b,
+  .neora-activity-counter b {
+    font-size: 12.5px;
+  }
+
+  .neora-gem-counter,
+  .vault-pill {
+    height: 34px;
+    padding: 2px 6px 2px 8px;
+    font-size: 12px !important;
+  }
+
+  .neora-gem-counter b,
+  .vault-pill b {
+    font-size: 12.5px;
+  }
+
+  .dly-plus-btn,
+  .vault-plus-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+
+  .flight-status-capsule.neora-world-banner {
+    top: max(62px, calc(env(safe-area-inset-top, 0px) + 54px));
+    height: 40px;
+    padding: 2px 4px 2px 10px;
+  }
+
+  .neora-world-banner .capsule-text {
+    font-size: 11.5px;
+  }
+
+  .capsule-copy-btn.neora-pair-btn {
+    height: 30px;
+    padding: 0 10px 0 8px;
+    font-size: 11.5px;
+  }
+}
+
+/* Accessible reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .profile-crown-icon,
+  .neora-banner-moon,
+  .neora-banner-sparkle,
+  .neora-diamond-wrap,
+  .dly-chip .dly-fire-icon {
+    animation: none !important;
+  }
+}
