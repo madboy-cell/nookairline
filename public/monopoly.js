@@ -2947,6 +2947,16 @@ function closeMonopolyGame(broadcast = true) {
   if (monopolyState && monopolyState.gameOver) {
     monopolyState.gameOver = null;
     hideVictory();
+    if (currentFlightRoom) {
+      if (typeof sendSignaling === 'function') {
+        sendSignaling({ type: 'room_match_finished', roomId: currentFlightRoom.id || currentFlightRoom.roomId });
+      }
+      currentFlightRoom = null;
+      currentFlightRoomIsHost = false;
+      currentFlightRoomSlot = null;
+    }
+    sessionStorage.removeItem('neora_active_room_id');
+    localStorage.removeItem('nook_sky_monopoly_room_v1');
   }
   if (AudioFX && AudioFX.suspend) AudioFX.suspend();
   saveLocalMonopolyState();
@@ -5142,7 +5152,10 @@ function updateBoardTiles({ animate = true } = {}) {
     if (tile.type !== 'property') {
       const bld = el.querySelector('.tile-monopoly-buildings');
       if (bld && typeof getTile25dLandmarkHtml === 'function') {
-        bld.innerHTML = getTile25dLandmarkHtml(tile.id, null, st);
+        const landmarkHtml = getTile25dLandmarkHtml(tile.id, null, st);
+        bld.innerHTML = landmarkHtml;
+        const hasMonument = landmarkHtml.includes('monument-25d-wrap');
+        el.classList.toggle('has-monument', hasMonument);
       }
       if (!el.dataset.sig) { pill.className = 'tile-pill tile-special-pill'; pill.textContent = tile.shortName; el.dataset.sig = 'x'; }
       return;
@@ -5284,6 +5297,8 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   el.classList.toggle('tile-olympus-temple', isOlympus);
 
   const landmarkHtml = getTile25dLandmarkHtml(tile.id, prop, st);
+  const hasMonument = landmarkHtml.includes('monument-25d-wrap');
+  el.classList.toggle('has-monument', hasMonument);
 
   if (prop) {
     ribbon.className = 'tile-owner-ribbon';
@@ -10879,6 +10894,19 @@ function renderVictory() {
   ov.style.display = '';
   if (ov.dataset.key === String(g.at) && ov.classList.contains('active')) return;
   ov.dataset.key = String(g.at);
+
+  // 🧹 Auto-terminate & clear active room session so client and server have a clean slate:
+  if (currentFlightRoom) {
+    const finishedRoomId = currentFlightRoom.id || currentFlightRoom.roomId;
+    if (typeof sendSignaling === 'function') {
+      sendSignaling({ type: 'room_match_finished', roomId: finishedRoomId });
+    }
+    currentFlightRoom = null;
+    currentFlightRoomIsHost = false;
+    currentFlightRoomSlot = null;
+  }
+  sessionStorage.removeItem('neora_active_room_id');
+  localStorage.removeItem('nook_sky_monopoly_room_v1');
 
   const isSpectator = !!isSpectatorMode || getMonopolyMyRole() === 'spectator';
   const meRole = isSpectator ? 'spectator' : getMonopolyMyRole();

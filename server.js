@@ -1558,6 +1558,14 @@ function handleRoomMessage(ws, message) {
     return;
   }
 
+  if (message.type === 'room_match_finished') {
+    if (message.roomId) {
+      roomRegistry.deleteRoom(message.roomId);
+      broadcastDepartureBoard();
+    }
+    return;
+  }
+
   if (message.type === 'room_leave') {
     const res = roomRegistry.leaveRoom(ws, { explicit: true, uid: message.uid });
     if (res && res.room) {
@@ -1983,6 +1991,8 @@ wss.on('connection', (ws, req) => {
               reason: message.state.gameOver.reason,
               state: message.state
             });
+            // Automatically terminate and delete finished room from active memory
+            roomRegistry.deleteRoom(currentRoom.id);
             broadcastDepartureBoard();
           }
         }
