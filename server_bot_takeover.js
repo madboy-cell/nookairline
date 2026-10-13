@@ -12,7 +12,7 @@
 
 const Bot = require('./public/monopoly_bot.js');
 
-const TAKEOVER_GRACE_MS = 10 * 1000; // 10 seconds grace before bot takeover
+const TAKEOVER_GRACE_MS = 30 * 1000; // 30 seconds grace before bot takeover
 const BOT_STEP_DELAY_MS = 1200; // 1.2s delay for natural turn pacing
 const ABANDONMENT_TIMEOUT_MS = 180 * 1000; // 3 minutes with 0 humans terminates match
 

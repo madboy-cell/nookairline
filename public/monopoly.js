@@ -2896,6 +2896,19 @@ function openMonopolyGame(broadcast = true) {
   void modal.offsetWidth;
   modal.classList.add('active');
   monopolyState.active = true;
+  window.isMonopolyPlayerAway = false;
+
+  if (currentFlightRoom && typeof sendSignaling === 'function') {
+    const myUid = getPersistentPlayerUid();
+    const mySlot = currentFlightRoomSlot || (currentFlightRoom.slots || []).find((s) => s.occupiedBy && (s.occupiedBy === myUid || s.occupiedBy === `user_${myUid}`));
+    if (mySlot && (mySlot.controller === 'BOT_TEMPORARY' || !mySlot.connected)) {
+      sendSignaling({
+        type: 'room_rejoin',
+        roomId: currentFlightRoom.id,
+        uid: myUid
+      });
+    }
+  }
 
   if (window.SkyPixi && typeof window.SkyPixi.init === 'function') {
     window.SkyPixi.init().then(() => {
@@ -7053,6 +7066,7 @@ function handleUserRollRequest(e) {
   }
   if (now - rollStartedAt < 800) return;
   AudioFX.init();
+  window.isMonopolyPlayerAway = false;
 
   const currentRole = monopolyState.currentTurn || 'bkk';
   if (isRoleLocked(currentRole)) return;
@@ -8684,6 +8698,7 @@ function finishTurn() {
 
 function endTurn() {
   const st = monopolyState;
+  clearBotTimer();
   st.isRolling = false;
   isAnimating = false;
   releaseRoleLocks();
@@ -9256,6 +9271,10 @@ function clearBotTimer() {
   if (botActionTimer) {
     clearTimeout(botActionTimer);
     botActionTimer = null;
+  }
+  if (botWatchdogTimer) {
+    clearTimeout(botWatchdogTimer);
+    botWatchdogTimer = null;
   }
 }
 
@@ -11840,7 +11859,17 @@ function handleMonopolyMessage(message) {
  */
 function onWebSocketReconnect() {
   console.log('[Monopoly] Signaling connected. Syncing active board state...');
+  window.isMonopolyPlayerAway = false;
   if (typeof sendSignaling === 'function') {
+    const myUid = getPersistentPlayerUid();
+    const activeRoomId = currentFlightRoom?.id || (typeof localStorage !== 'undefined' && localStorage.getItem('sky_active_room_id'));
+    if (activeRoomId) {
+      sendSignaling({
+        type: 'room_rejoin',
+        roomId: activeRoomId,
+        uid: myUid
+      });
+    }
     sendSignaling({ type: 'monopoly_request_sync', clientState: monopolyState });
   }
 }
