@@ -3046,71 +3046,102 @@
   }
 
   /**
-   * 🔱 S5 Mythic Ultimate: Abyssal Tidal Cataclysm
-   * Giant surging tsunami wave rolling across board, sucking wealthiest rival into whirlpool,
-   * dragging them backward 3 tiles with water rapids, waterlogging roll, and siphon drain.
+   * 🔱 S5 Mythic Ultimate: Abyssal Tidal Cataclysm & Kraken Trench
+   * Surging vector tsunami wave, 3D Abyssal Trident plunging from sky into the whirlpool,
+   * dragging wealthiest rival backward 3-4 tiles into the abyss, flooding claimed properties
+   * (Sunken Ruins = 0 rent for rivals; Coral Palace = +30% rent), and siphoning oxygen tax!
    */
   async function abyssalCataclysm(d = {}) {
     if (!refs()) return;
     const casterRole = d.casterRole || d.role || 'dxb';
     const targetRole = d.targetRole || d.targetR;
     const targetP = d.targetP || {};
-    const tidalDmg = d.tidalDmg != null ? d.tidalDmg : 150;
+    const tidalDmg = d.tidalDmg != null ? d.tidalDmg : 200;
+    const floodedTiles = Array.isArray(d.floodedTiles) ? d.floodedTiles : [3, 7, 12];
 
     const casterEl = tok.el[casterRole] || $(`${casterRole}Token`);
     const fromP = casterEl ? relRect(casterEl, L.moment) : (point({ token: casterRole }) || center());
 
     const targetEl = targetRole ? (tok.el[targetRole] || $(`${targetRole}Token`)) : null;
     const toP = targetEl ? relRect(targetEl, L.moment) : (targetRole ? point({ token: targetRole }) : { x: fromP.x + 130, y: fromP.y - 70 });
+    const c = center();
 
-    // 1. Atmosphere: Abyssal ocean trench vignette + sonar crash
+    // Phase 1: Atmosphere & Sounds
     sfx('playAbyssalWave');
+    if (AudioFX.playAbyssWhirlpool) sfx('playAbyssWhirlpool');
     sfx('playBoom');
-    flash('rgba(6, 182, 212, 0.75)', 350);
+    flash('rgba(6, 182, 212, 0.88)', 380);
     shake('heavy');
-    vignette(4, 'abyss-deep');
+    vignette(5.0, 'abyss-deep');
 
     if (window.SkyPixi && window.SkyPixi.isReady) {
       window.SkyPixi.ultimates.abyssCataclysm({ targetP: toP });
     }
 
     if (casterEl) casterEl.classList.add('fx-token-abyss-monarch');
-    if (targetEl) targetEl.classList.add('fx-token-drowning');
+    if (targetEl) targetEl.classList.add('fx-token-drowned-spin');
 
-    // 2. Floating Waterlog Badge over target
-    let badge = null;
+    // Phase 2: Giant 3D Trident Prop Descending into Whirlpool
+    const tridentAnchor = safeMonumentAnchor(c, 25);
+    const tridentWrap = document.createElement('div');
+    tridentWrap.className = 'fx-atlantis-rising-wrap';
+    tridentWrap.style.left = `${tridentAnchor.modelX}px`;
+    tridentWrap.style.top = `${tridentAnchor.modelY}px`;
+    tridentWrap.innerHTML = `
+      <img src="assets/s5/atlantis_trident_prop.png" class="fx-atlantis-hero-img" alt="Abyssal Trident" />
+    `;
+    L.moment.appendChild(tridentWrap);
+    tridentWrap.animate([
+      { transform: 'translate(-50%, -180%) scale(1.8) rotate(-20deg)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.1) rotate(5deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
+
+    // Floating Badge over Trident
+    const tridentBadge = document.createElement('div');
+    tridentBadge.className = 'fx-atlantis-maelstrom-badge';
+    tridentBadge.innerHTML = `🔱 ABYSSAL CATACLYSM! 🌊<br><small style="font-size:9.5px;opacity:0.95;">KRAKEN TRENCH UNLEASHED · -${tidalDmg}🪙 OXYGEN TAX</small>`;
+    tridentBadge.style.left = `${tridentAnchor.badgeX}px`;
+    tridentBadge.style.top = `${tridentAnchor.badgeY}px`;
+    L.moment.appendChild(tridentBadge);
+
+    // Phase 3: Surging Coral Reef ground decals on flooded tiles
+    const groundDecals = [];
+    floodedTiles.forEach((tid, idx) => {
+      const tilePt = point({ tileId: tid });
+      if (!tilePt) return;
+      setTimeout(() => {
+        const decalWrap = document.createElement('div');
+        decalWrap.className = 'fx-surface-impact-wrap';
+        decalWrap.style.left = `${tilePt.x}px`;
+        decalWrap.style.top = `${tilePt.y}px`;
+        decalWrap.innerHTML = `<img src="assets/s5/abyssal_coral_reef.png" class="fx-surface-impact-img" alt="Coral Reef" />`;
+        L.moment.appendChild(decalWrap);
+        groundDecals.push(decalWrap);
+
+        ring(tilePt.x, tilePt.y, 110, '#06b6d4', 500);
+        burst({ x: tilePt.x, y: tilePt.y, name: 'water', count: 12, spread: 80, up: 50, life: 700, size: 18 });
+      }, 250 + idx * 100);
+    });
+
+    // Waterlog badge over target
+    let targetBadge = null;
     if (targetRole) {
-      badge = document.createElement('div');
-      badge.className = 'fx-waterlog-badge';
-      badge.innerHTML = `🌊 -3 TILES & -${tidalDmg}🪙<span style="font-size:10px;display:block;opacity:0.9;">WATERLOGGED!</span>`;
-      badge.style.left = `${toP.x}px`;
-      badge.style.top = `${toP.y - 36}px`;
-      L.moment.appendChild(badge);
-      requestAnimationFrame(() => {
-        badge.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      });
+      targetBadge = document.createElement('div');
+      targetBadge.className = 'fx-waterlog-badge';
+      targetBadge.innerHTML = `🌊 -3 TILES & -${tidalDmg}🪙<span style="font-size:10px;display:block;opacity:0.9;">DRAGGED INTO TRENCH!</span>`;
+      targetBadge.style.left = `${toP.x}px`;
+      targetBadge.style.top = `${toP.y - 36}px`;
+      L.moment.appendChild(targetBadge);
     }
 
-    // 3. Surging Vector Tsunami Wave rolling across board
-    const waveNode = spawn('abyssal_tidal_crest', fromP.x, fromP.y, 170, 'fx-glow-cyan');
-    waveNode.animate([
-      { transform: at(fromP.x, fromP.y, 'scale(0.3) rotate(-30deg)'), opacity: 0 },
-      { transform: at((fromP.x + toP.x) * 0.5, (fromP.y + toP.y) * 0.5 - 30, 'scale(1.8) rotate(15deg)'), opacity: 1, offset: 0.5 },
-      { transform: at(toP.x, toP.y, 'scale(2.2) rotate(45deg)'), opacity: 0.9, offset: 0.85 },
-      { transform: at(toP.x, toP.y, 'scale(2.6) rotate(60deg)'), opacity: 0 }
-    ], { duration: T(1100), easing: 'ease-out' });
-
-    ring(toP.x, toP.y, 140, '#06b6d4', 600);
-    ring(toP.x, toP.y, 240, '#0284c7', 850);
-
-    // 4. White-water foam & coin siphon stream back to caster
+    // Siphon streams & drag target backward
     if (targetRole) {
       coins({ from: { x: toP.x, y: toP.y }, to: { x: fromP.x, y: fromP.y }, amount: tidalDmg });
-      burst({ x: toP.x, y: toP.y, name: 'water', count: 24, spread: 180, up: 140, gravity: 280, life: 900, size: 22 });
-      burst({ x: toP.x, y: toP.y, name: 'abyssal_tidal_crest', count: 8, spread: 120, up: 80, life: 750, size: 18 });
+      burst({ x: toP.x, y: toP.y, name: 'water', count: 28, spread: 220, up: 160, gravity: 280, life: 1000, size: 22 });
+      burst({ x: toP.x, y: toP.y, name: 'droplet', count: 18, spread: 180, up: 140, life: 800, size: 16 });
     }
 
-    // Drag target backward 3 tiles visually if position is provided
     if (targetRole && targetP.pos != null && api.tokens && api.tokens.teleport) {
       setTimeout(() => {
         api.tokens.teleport(targetRole, targetP.pos);
@@ -3119,26 +3150,26 @@
     }
 
     try {
-      await sleep(T(1150));
+      await sleep(T(1500));
     } finally {
-      waveNode.remove();
-      if (badge) {
-        badge.style.opacity = '0';
-        badge.style.transform = 'translate(-50%, -70%) scale(0.7)';
-        setTimeout(() => badge.remove(), 350);
-      }
+      tridentWrap.remove();
+      tridentBadge.remove();
+      if (targetBadge) targetBadge.remove();
+      groundDecals.forEach(d => {
+        d.style.opacity = '0';
+        setTimeout(() => d.remove(), 400);
+      });
       if (casterEl) casterEl.classList.remove('fx-token-abyss-monarch');
-      if (targetEl) targetEl.classList.remove('fx-token-drowning');
+      if (targetEl) targetEl.classList.remove('fx-token-drowned-spin');
     }
 
-    // 5. Heroic Detonation & Banner
-    ring(fromP.x, fromP.y, 180, '#06b6d4', 650);
-    ring(fromP.x, fromP.y, 300, '#0284c7', 950);
+    // Phase 4: Detonation & Banner
+    ring(fromP.x, fromP.y, 200, '#06b6d4', 700);
+    ring(fromP.x, fromP.y, 320, '#0284c7', 950);
     burst({ x: fromP.x, y: fromP.y, name: 'water', count: 26, spread: 260, up: 180, gravity: 240, life: 1100, size: 24 });
-    burst({ x: fromP.x, y: fromP.y, name: 'gem', count: 14, spread: 190, up: 120, life: 950, size: 18 });
 
     const targetName = (targetP && targetP.name) ? targetP.name : (targetRole ? targetRole.toUpperCase() : 'RIVAL');
-    const b = banner('🔱 ABYSSAL CATACLYSM! 🌊', `TSUNAMI DRAGGED ${targetName} -3 TILES · -${tidalDmg}🪙!`, 'cyan', 1600);
+    const b = banner('🔱 ABYSSAL CATACLYSM! 🌊', `TSUNAMI DRAGGED ${targetName} -3 TILES · PROPERTIES FLOODED!`, 'cyan', 1700);
     await b;
   }
 
@@ -3254,26 +3285,28 @@
   }
 
   /**
-   * 🐉 S1 Mythic Ultimate: Emerald Naga Surge
-   * Sacred Mekong River Dragon emerging from Start Tile, slithering across the board,
-   * sprouting glowing Lotus Water Domes on owned properties, and bestowing +500🪙 hoard.
+   * 🐉 S1 Mythic Ultimate: Emerald Naga Surge & Sacred Mekong Inundation
+   * Descending 3D Naga Emerald Crest, multi-target procedural river torrent paths,
+   * sprouting ground impact water surges on Bangkok tiles, drowning spins on rivals,
+   * and +500🪙 Mekong Hoard payout!
    */
   async function emeraldNagaSurge(d = {}) {
     if (!refs()) return;
     const role = d.role || 'bkk';
     const amount = d.amount || 500;
-    const ownedTiles = Array.isArray(d.ownedTiles) ? d.ownedTiles : [];
+    const ownedTiles = Array.isArray(d.ownedTiles) ? d.ownedTiles : [1, 2, 3];
 
     const casterEl = tok.el[role] || $(`${role}Token`);
     const pCoord = casterEl ? relRect(casterEl, L.moment) : (point({ token: role }) || center());
     const startP = point({ tileId: 0 }) || { x: (L.moment ? L.moment.clientWidth : 400) * 0.15, y: (L.moment ? L.moment.clientHeight : 500) * 0.85 };
 
-    // 1. Atmosphere: Jade river mist vignette + sacred gong
+    // Phase 1: Atmosphere
     sfx('playNagaGong');
     sfx('playNagaSurge');
-    flash('rgba(16, 185, 129, 0.72)', 350);
-    shake('medium');
-    vignette(4, 'naga-mist');
+    if (AudioFX.playNagaRapids) sfx('playNagaRapids');
+    flash('rgba(16, 185, 129, 0.85)', 360);
+    shake('heavy');
+    vignette(5.0, 'naga-mist');
 
     if (window.SkyPixi && window.SkyPixi.isReady) {
       window.SkyPixi.ultimates.emeraldNagaSurge({ cX: pCoord.x, cY: pCoord.y });
@@ -3281,115 +3314,234 @@
 
     if (casterEl) casterEl.classList.add('fx-token-naga-blessed');
 
-    // 2. Emerging Emerald Urn & Sacred Dragon
-    const urn = spawn('naga_emerald_urn', startP.x, startP.y, 140, 'fx-glow-green');
-    urn.animate([
-      { transform: at(startP.x, startP.y, 'scale(0.2) rotate(-30deg)'), opacity: 0 },
-      { transform: at(startP.x, startP.y - 40, 'scale(1.5) rotate(10deg)'), opacity: 1, offset: 0.5 },
-      { transform: at(pCoord.x, pCoord.y, 'scale(1.2) rotate(0deg)'), opacity: 0.9, offset: 0.85 },
-      { transform: at(pCoord.x, pCoord.y, 'scale(2.0) rotate(20deg)'), opacity: 0 }
-    ], { duration: T(1350), easing: 'ease-out' });
+    // Phase 2: 3D Naga Emerald Crest Hero Prop
+    const nagaAnchor = safeMonumentAnchor(startP, 20);
+    const nagaWrap = document.createElement('div');
+    nagaWrap.className = 'fx-naga-rising-wrap';
+    nagaWrap.style.left = `${nagaAnchor.modelX}px`;
+    nagaWrap.style.top = `${nagaAnchor.modelY}px`;
+    nagaWrap.innerHTML = `
+      <img src="assets/s1/naga_emerald_crest.png" class="fx-naga-hero-img" alt="Naga Crest" />
+    `;
+    L.moment.appendChild(nagaWrap);
+    nagaWrap.animate([
+      { transform: 'translate(-50%, -160%) scale(1.6) rotate(-25deg)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.15) rotate(10deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
 
-    // 3. Sprout Lotus Water Domes on owned properties
+    const nagaBadge = document.createElement('div');
+    nagaBadge.className = 'fx-naga-surge-badge';
+    nagaBadge.innerHTML = `🐉 EMERALD NAGA SURGE! 🪷<br><small style="font-size:9.5px;opacity:0.95;">SACRED MEKONG RAPIDS · +${amount}🪙 RIVER HOARD</small>`;
+    nagaBadge.style.left = `${nagaAnchor.badgeX}px`;
+    nagaBadge.style.top = `${nagaAnchor.badgeY}px`;
+    L.moment.appendChild(nagaBadge);
+
+    // Phase 3: Surface Reaction Water Surge Decals on Bangkok properties
     const domeNodes = [];
-    const tilesToBless = ownedTiles.length > 0 ? ownedTiles : [1, 2, 3];
-    tilesToBless.forEach((tid, idx) => {
+    ownedTiles.forEach((tid, idx) => {
       const tilePt = point({ tileId: tid });
       if (!tilePt) return;
 
       setTimeout(() => {
-        const dome = document.createElement('div');
-        dome.className = 'fx-lotus-dome';
-        dome.style.left = `${tilePt.x}px`;
-        dome.style.top = `${tilePt.y}px`;
-        L.moment.appendChild(dome);
-        domeNodes.push(dome);
+        const decalWrap = document.createElement('div');
+        decalWrap.className = 'fx-surface-impact-wrap';
+        decalWrap.style.left = `${tilePt.x}px`;
+        decalWrap.style.top = `${tilePt.y}px`;
+        decalWrap.innerHTML = `<img src="assets/s1/mekong_water_surge.png" class="fx-surface-impact-img" alt="Mekong Surge" />`;
+        L.moment.appendChild(decalWrap);
+        domeNodes.push(decalWrap);
 
         const badge = document.createElement('div');
         badge.className = 'fx-lotus-badge';
-        badge.innerHTML = `🪷 LOTUS SHIELD!`;
+        badge.innerHTML = `🪷 SACRED WATERWAY (+30%)`;
         badge.style.left = `${tilePt.x}px`;
-        badge.style.top = `${tilePt.y - 30}px`;
+        badge.style.top = `${tilePt.y - 32}px`;
         L.moment.appendChild(badge);
         domeNodes.push(badge);
 
-        ring(tilePt.x, tilePt.y, 100, '#10b981', 450);
-        burst({ x: tilePt.x, y: tilePt.y, name: 'sparkle', count: 8, spread: 70, up: 40, life: 500, size: 14 });
-      }, 300 + idx * 120);
+        ring(tilePt.x, tilePt.y, 100, '#10b981', 500);
+        burst({ x: tilePt.x, y: tilePt.y, name: 'sparkle', count: 12, spread: 75, up: 45, life: 600, size: 16 });
+      }, 250 + idx * 100);
     });
 
-    // 4. Emerald Hoard Siphon into caster
+    // Spin rivals caught in flood
+    Object.keys(tok.el).forEach(r => {
+      if (r !== role && tok.el[r]) {
+        tok.el[r].classList.add('fx-token-drowned-spin');
+      }
+    });
+
+    // Emerald Hoard Siphon into caster
     coins({ from: { tileId: 0 }, to: { x: pCoord.x, y: pCoord.y }, amount });
     burst({ x: pCoord.x, y: pCoord.y, name: 'coin', count: 28, spread: 260, up: 200, gravity: 350, life: 1100, size: 24 });
-    burst({ x: pCoord.x, y: pCoord.y, name: 'water', count: 20, spread: 220, up: 150, life: 1000, size: 20 });
-    burst({ x: pCoord.x, y: pCoord.y, name: 'naga_emerald_urn', count: 8, spread: 140, up: 80, life: 800, size: 22 });
+    burst({ x: pCoord.x, y: pCoord.y, name: 'water', count: 24, spread: 240, up: 160, life: 1000, size: 22 });
 
     try {
-      await sleep(T(1400));
+      await sleep(T(1500));
     } finally {
-      urn.remove();
+      nagaWrap.remove();
+      nagaBadge.remove();
       domeNodes.forEach(d => {
         d.style.opacity = '0';
         setTimeout(() => d.remove(), 400);
       });
       if (casterEl) casterEl.classList.remove('fx-token-naga-blessed');
+      Object.keys(tok.el).forEach(r => {
+        if (tok.el[r]) tok.el[r].classList.remove('fx-token-drowned-spin');
+      });
     }
 
-    // 5. Concentric Rings & Banner
-    ring(pCoord.x, pCoord.y, 180, '#10b981', 750);
-    ring(pCoord.x, pCoord.y, 280, '#ffd700', 950);
-    const b = banner('🐉 EMERALD NAGA SURGE! 🪷', `+${amount}🪙 RIVER HOARD · LOTUS WATER SHIELDS!`, 'green', 1600);
+    // Phase 4: Detonation & Banner
+    ring(pCoord.x, pCoord.y, 190, '#10b981', 750);
+    ring(pCoord.x, pCoord.y, 300, '#ffd700', 950);
+    const b = banner('🐉 EMERALD NAGA SURGE! 🪷', `+${amount}🪙 RIVER HOARD · SACRED MEKONG WATERWAYS!`, 'green', 1700);
     await b;
   }
 
   /**
-   * ☀️ S2 Mythic Ultimate: Solar-Lunar Eclipse Convergence
-   * Total solar eclipse blackout, diamond ring lens flare, violet stasis chains wrapping
-   * all rival properties to freeze rent to 0 for 1 round!
+   * 🦊 S2 Mythic Ultimate: Inari Nine-Tail Foxfire Mirage
+   * Descending 3D Foxfire Torii Gate, cherry blossom storm, spirit ribbons seeking rivals,
+   * possessed doppelgänger state, and position swap / spirit siphon!
+   */
+  async function inariFoxfireMirage(d = {}) {
+    if (!refs()) return;
+    const role = d.role || 'dxb';
+    const amount = d.amount || 500;
+    const targetRole = d.targetRole || (role === 'bkk' ? 'dxb' : 'bkk');
+
+    const casterEl = tok.el[role] || $(`${role}Token`);
+    const pCoord = casterEl ? relRect(casterEl, L.moment) : (point({ token: role }) || center());
+
+    const targetEl = targetRole ? (tok.el[targetRole] || $(`${targetRole}Token`)) : null;
+    const toP = targetEl ? relRect(targetEl, L.moment) : (targetRole ? point({ token: targetRole }) : { x: pCoord.x + 120, y: pCoord.y - 60 });
+    const c = center();
+
+    // Phase 1: Atmosphere
+    sfx('playInariFoxfire');
+    if (AudioFX.playInariFlute) sfx('playInariFlute');
+    flash('rgba(236, 72, 153, 0.85)', 360);
+    shake('heavy');
+    vignette(5.0, 'inari-twilight');
+
+    if (targetEl) targetEl.classList.add('fx-token-kitsune-possessed');
+
+    // Phase 2: Descend 3D Foxfire Torii Gate Prop
+    const toriiAnchor = safeMonumentAnchor(c, 25);
+    const toriiWrap = document.createElement('div');
+    toriiWrap.className = 'fx-inari-rising-wrap';
+    toriiWrap.style.left = `${toriiAnchor.modelX}px`;
+    toriiWrap.style.top = `${toriiAnchor.modelY}px`;
+    toriiWrap.innerHTML = `
+      <img src="assets/s2/inari_torii_gate.png" class="fx-inari-hero-img" alt="Inari Torii Gate" />
+    `;
+    L.moment.appendChild(toriiWrap);
+    toriiWrap.animate([
+      { transform: 'translate(-50%, -170%) scale(1.6)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.15)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
+
+    const toriiBadge = document.createElement('div');
+    toriiBadge.className = 'fx-inari-mirage-badge';
+    toriiBadge.innerHTML = `🦊 INARI DIVINITY! 🌸<br><small style="font-size:9.5px;opacity:0.95;">NINE-TAIL MIRAGE · 3 SPIRIT TAILS RESTORED</small>`;
+    toriiBadge.style.left = `${toriiAnchor.badgeX}px`;
+    toriiBadge.style.top = `${toriiAnchor.badgeY}px`;
+    L.moment.appendChild(toriiBadge);
+
+    // Phase 3: Foxfire ground decal under target
+    const groundDecal = document.createElement('div');
+    groundDecal.className = 'fx-surface-impact-wrap';
+    groundDecal.style.left = `${toP.x}px`;
+    groundDecal.style.top = `${toP.y}px`;
+    groundDecal.innerHTML = `<img src="assets/s2/foxfire_crests.png" class="fx-surface-impact-img" alt="Foxfire Crest" />`;
+    L.moment.appendChild(groundDecal);
+
+    // Siphon coins from rival
+    if (targetRole) {
+      coins({ from: { x: toP.x, y: toP.y }, to: { x: pCoord.x, y: pCoord.y }, amount: Math.min(amount, 250) });
+      burst({ x: toP.x, y: toP.y, name: 'sparkle', count: 20, spread: 180, up: 120, life: 900, size: 20 });
+    }
+
+    try {
+      await sleep(T(1500));
+    } finally {
+      toriiWrap.remove();
+      toriiBadge.remove();
+      groundDecal.remove();
+      if (targetEl) targetEl.classList.remove('fx-token-kitsune-possessed');
+    }
+
+    // Phase 4: Detonation & Banner
+    ring(pCoord.x, pCoord.y, 190, '#ec4899', 750);
+    ring(pCoord.x, pCoord.y, 300, '#ffd700', 950);
+    const b = banner('🦊 INARI DIVINITY: NINE-TAIL MIRAGE! 🌸', '3 SPIRIT TAILS RESTORED · FOXFIRE CONFUSION ACTIVE!', 'magenta', 1700);
+    await b;
+  }
+
+  /**
+   * ☀️ S2 Mythic Ultimate: Solar-Lunar Eclipse Convergence & Somnambulism
+   * Total solar eclipse blackout, diamond corona flare, 3D Moon Disk suspended above,
+   * gravitational pull beams locking rival rent to 0 and dragging victims 3 tiles forward!
    */
   async function eclipseConvergence(d = {}) {
     if (!refs()) return;
     const casterRole = d.casterRole || d.role || 'bkk';
-    const rivalTiles = Array.isArray(d.rivalTiles) ? d.rivalTiles : [];
+    const rivalTiles = Array.isArray(d.rivalTiles) ? d.rivalTiles : [5, 9, 14, 17];
 
     const casterEl = tok.el[casterRole] || $(`${casterRole}Token`);
     const pCoord = casterEl ? relRect(casterEl, L.moment) : (point({ token: casterRole }) || center());
     const c = center();
 
-    // 1. Atmosphere: Midnight totality blackout vignette + cosmic drone
+    // Phase 1: Total Blackout Atmosphere
     sfx('playEclipseConvergence');
+    if (AudioFX.playEclipseBlackout) sfx('playEclipseBlackout');
     sfx('playBoom');
-    flash('rgba(99, 102, 241, 0.78)', 400);
+    flash('rgba(99, 102, 241, 0.92)', 400);
     shake('heavy');
-    vignette(5, 'eclipse-totality');
+    vignette(5.5, 'total-eclipse');
 
     if (window.SkyPixi && window.SkyPixi.isReady) {
       window.SkyPixi.ultimates.eclipseConvergence({ cX: c.x, cY: c.y });
     }
 
-    // 2. Aligning Celestial Yin-Yang Eclipse at center
-    const eclipse = spawn('eclipse_yin_yang', c.x, c.y, 170, 'fx-glow-purple');
-    eclipse.animate([
-      { transform: at(c.x, c.y, 'scale(0.1) rotate(0deg)'), opacity: 0 },
-      { transform: at(c.x, c.y, 'scale(1.5) rotate(180deg)'), opacity: 1, offset: 0.4 },
-      { transform: at(c.x, c.y, 'scale(1.2) rotate(360deg)'), opacity: 1, offset: 0.75 },
-      { transform: at(c.x, c.y, 'scale(2.2) rotate(540deg)'), opacity: 0 }
-    ], { duration: T(1450), easing: 'ease-out' });
+    // Phase 2: 3D Eclipsed Moon Disk Prop
+    const moonAnchor = safeMonumentAnchor(c, 25);
+    const moonWrap = document.createElement('div');
+    moonWrap.className = 'fx-eclipse-rising-wrap';
+    moonWrap.style.left = `${moonAnchor.modelX}px`;
+    moonWrap.style.top = `${moonAnchor.modelY}px`;
+    moonWrap.innerHTML = `
+      <img src="assets/s2/eclipse_moon_disk.png" class="fx-eclipse-hero-img" alt="Eclipse Moon Disk" />
+    `;
+    L.moment.appendChild(moonWrap);
+    moonWrap.animate([
+      { transform: 'translate(-50%, -160%) scale(1.6) rotate(-30deg)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.15) rotate(15deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
 
-    // 3. Stasis Chains wrapping rival properties
-    const chainNodes = [];
-    const targetTiles = rivalTiles.length > 0 ? rivalTiles : [5, 9, 14, 17];
-    targetTiles.forEach((tid, idx) => {
+    const moonBadge = document.createElement('div');
+    moonBadge.className = 'fx-eclipse-blackout-badge';
+    moonBadge.innerHTML = `🌑 TOTAL ECLIPSE APOCALYPSE! 🌙<br><small style="font-size:9.5px;opacity:0.95;">ALL RIVAL RENT FROZEN TO 0 · SOMNAMBULISM ACTIVE</small>`;
+    moonBadge.style.left = `${moonAnchor.badgeX}px`;
+    moonBadge.style.top = `${moonAnchor.badgeY}px`;
+    L.moment.appendChild(moonBadge);
+
+    // Phase 3: Surface Void Rift decals under rival properties
+    const riftNodes = [];
+    rivalTiles.forEach((tid, idx) => {
       const tilePt = point({ tileId: tid });
       if (!tilePt) return;
 
       setTimeout(() => {
-        const chain = document.createElement('div');
-        chain.className = 'fx-stasis-chains';
-        chain.style.left = `${tilePt.x}px`;
-        chain.style.top = `${tilePt.y}px`;
-        L.moment.appendChild(chain);
-        chainNodes.push(chain);
+        const decalWrap = document.createElement('div');
+        decalWrap.className = 'fx-surface-impact-wrap';
+        decalWrap.style.left = `${tilePt.x}px`;
+        decalWrap.style.top = `${tilePt.y}px`;
+        decalWrap.innerHTML = `<img src="assets/s2/eclipse_void_rift.png" class="fx-surface-impact-img" alt="Void Rift" />`;
+        L.moment.appendChild(decalWrap);
+        riftNodes.push(decalWrap);
 
         const badge = document.createElement('div');
         badge.className = 'fx-stasis-badge';
@@ -3397,36 +3549,45 @@
         badge.style.left = `${tilePt.x}px`;
         badge.style.top = `${tilePt.y - 30}px`;
         L.moment.appendChild(badge);
-        chainNodes.push(badge);
+        riftNodes.push(badge);
 
         ring(tilePt.x, tilePt.y, 90, '#818cf8', 450);
-        burst({ x: tilePt.x, y: tilePt.y, name: 'sparkle', count: 8, spread: 60, up: 30, life: 500, size: 14 });
-      }, 350 + idx * 90);
+        burst({ x: tilePt.x, y: tilePt.y, name: 'sparkle', count: 10, spread: 65, up: 35, life: 550, size: 16 });
+      }, 250 + idx * 90);
     });
 
-    ring(c.x, c.y, 220, '#ffd700', 800);
-    ring(c.x, c.y, 340, '#6366f1', 1100);
-    burst({ x: c.x, y: c.y, name: 'sparkle', count: 32, spread: 300, up: 200, gravity: 0, life: 1200, size: 22 });
+    // Mark rival tokens with Somnambulism
+    Object.keys(tok.el).forEach(r => {
+      if (r !== casterRole && tok.el[r]) {
+        tok.el[r].classList.add('fx-token-somnambulism');
+      }
+    });
 
     try {
-      await sleep(T(1450));
+      await sleep(T(1500));
     } finally {
-      eclipse.remove();
-      chainNodes.forEach(cn => {
-        cn.style.opacity = '0';
-        setTimeout(() => cn.remove(), 400);
+      moonWrap.remove();
+      moonBadge.remove();
+      riftNodes.forEach(rn => {
+        rn.style.opacity = '0';
+        setTimeout(() => rn.remove(), 400);
+      });
+      Object.keys(tok.el).forEach(r => {
+        if (tok.el[r]) tok.el[r].classList.remove('fx-token-somnambulism');
       });
     }
 
-    // 4. Detonation & Heroic Banner
-    const b = banner('☀️ TOTAL ECLIPSE CONVERGENCE! 🌙', '0 RIVAL RENT FOR 1 ROUND · STASIS ACTIVE!', 'gold', 1600);
+    // Phase 4: Detonation & Banner
+    ring(c.x, c.y, 220, '#ffd700', 800);
+    ring(c.x, c.y, 340, '#6366f1', 1100);
+    const b = banner('☀️ TOTAL ECLIPSE APOCALYPSE! 🌙', '0 RIVAL RENT FOR 1 ROUND · SOMNAMBULISM ACTIVE!', 'purple', 1700);
     await b;
   }
 
   /**
-   * 🪔 S3 Mythic Ultimate: Cosmic Genie Wish
-   * Arabian magic lamp rub, towering swirling violet stardust smoke, physical house-to-hotel
-   * golden transmutation with Midas Touch, and shower of star-miles (+350🪙).
+   * 🪔 S3 Mythic Ultimate: Cosmic Genie Wish & The 3 Legendary Wishes
+   * Descending 3D Cosmic Djinn Lamp, golden stardust clouds, physical house-to-hotel
+   * transmutation with Midas Touch, ground decal Oasis portals, and shower of star-miles (+350🪙).
    */
   async function cosmicGenieWish(d = {}) {
     if (!refs()) return;
@@ -3439,67 +3600,164 @@
     const tilePt = upgradedTileId != null ? point({ tileId: upgradedTileId }) : null;
     const destPt = tilePt || { x: pCoord.x + 120, y: pCoord.y - 80 };
 
-    // 1. Atmosphere: Amethyst & desert gold vignette + genie wish tone
+    // Phase 1: Atmosphere
     sfx('playDjinnWish');
-    flash('rgba(168, 85, 247, 0.72)', 350);
-    shake('medium');
-    vignette(4, 'djinn-palace');
+    if (AudioFX.playDjinnChime) sfx('playDjinnChime');
+    flash('rgba(168, 85, 247, 0.85)', 360);
+    shake('heavy');
+    vignette(5.0, 'djinn-palace');
 
     if (window.SkyPixi && window.SkyPixi.isReady) {
       window.SkyPixi.ultimates.cosmicGenieWish({ cX: pCoord.x, cY: pCoord.y });
     }
 
-    // 2. Shaking Brass Lamp at caster
-    const lamp = spawn('djinn_magic_lamp', pCoord.x, pCoord.y - 10, 145, 'fx-glow-purple');
-    lamp.animate([
-      { transform: at(pCoord.x, pCoord.y - 10, 'scale(0.2) rotate(-30deg)'), opacity: 0 },
-      { transform: at(pCoord.x, pCoord.y - 30, 'scale(1.4) rotate(15deg)'), opacity: 1, offset: 0.4 },
-      { transform: at((pCoord.x + destPt.x) * 0.5, (pCoord.y + destPt.y) * 0.5 - 40, 'scale(1.2) rotate(-10deg)'), opacity: 1, offset: 0.7 },
-      { transform: at(destPt.x, destPt.y, 'scale(1.8) rotate(0deg)'), opacity: 0 }
-    ], { duration: T(1350), easing: 'ease-out' });
+    // Phase 2: 3D Cosmic Djinn Lamp Prop
+    const lampAnchor = safeMonumentAnchor(destPt, 20);
+    const lampWrap = document.createElement('div');
+    lampWrap.className = 'fx-djinn-rising-wrap';
+    lampWrap.style.left = `${lampAnchor.modelX}px`;
+    lampWrap.style.top = `${lampAnchor.modelY}px`;
+    lampWrap.innerHTML = `
+      <img src="assets/s3/djinn_cosmic_lamp.png" class="fx-djinn-hero-img" alt="Djinn Lamp" />
+    `;
+    L.moment.appendChild(lampWrap);
+    lampWrap.animate([
+      { transform: 'translate(-50%, -150%) scale(1.6) rotate(-20deg)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.15) rotate(10deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
 
-    // 3. Stardust Transmutation at Target Tile
-    let badge = null;
+    const wishBadge = document.createElement('div');
+    wishBadge.className = 'fx-djinn-wish-badge';
+    wishBadge.innerHTML = `🪔 COSMIC GENIE WISH! ✨<br><small style="font-size:9.5px;opacity:0.95;">THREE WISHES UNLEASHED · +${amount}🪙 GOLD HOARD</small>`;
+    wishBadge.style.left = `${lampAnchor.badgeX}px`;
+    wishBadge.style.top = `${lampAnchor.badgeY}px`;
+    L.moment.appendChild(wishBadge);
+
+    // Phase 3: Mirage Oasis Ground Decal on Transmuted Tile
+    const decalWrap = document.createElement('div');
+    decalWrap.className = 'fx-surface-impact-wrap';
+    decalWrap.style.left = `${destPt.x}px`;
+    decalWrap.style.top = `${destPt.y}px`;
+    decalWrap.innerHTML = `<img src="assets/s3/mirage_oasis_portal.png" class="fx-surface-impact-img" alt="Oasis Portal" />`;
+    L.moment.appendChild(decalWrap);
+
     let targetTileEl = upgradedTileId != null ? $(`boardTile_${upgradedTileId}`) : null;
     if (targetTileEl) targetTileEl.classList.add('fx-midas-glow');
 
-    setTimeout(() => {
-      badge = document.createElement('div');
-      badge.className = 'fx-midas-badge';
-      badge.innerHTML = upgradedTileId != null ? `✨ TRANSMUTED TO HOTEL! 🏨` : `✨ +${amount}🪙 GOLDEN DICE! 🎲`;
-      badge.style.left = `${destPt.x}px`;
-      badge.style.top = `${destPt.y - 32}px`;
-      L.moment.appendChild(badge);
-      requestAnimationFrame(() => {
-        badge.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      });
-
-      ring(destPt.x, destPt.y, 140, '#ffd700', 600);
-      ring(destPt.x, destPt.y, 220, '#c084fc', 850);
-      burst({ x: destPt.x, y: destPt.y, name: 'gem', count: 18, spread: 180, up: 120, life: 900, size: 20 });
-      burst({ x: destPt.x, y: destPt.y, name: 'sparkle', count: 24, spread: 220, up: 150, life: 1000, size: 22 });
-      sfx('playVictory');
-    }, 450);
-
-    // 4. Starlight Miles stream into caster
+    // Starlight stream into caster
     coins({ from: { bank: true }, to: { x: pCoord.x, y: pCoord.y }, amount });
-    burst({ x: pCoord.x, y: pCoord.y, name: 'sparkle', count: 24, spread: 220, up: 160, gravity: -20, life: 950, size: 20 });
+    burst({ x: pCoord.x, y: pCoord.y, name: 'sparkle', count: 28, spread: 240, up: 180, gravity: -20, life: 1000, size: 22 });
+    burst({ x: destPt.x, y: destPt.y, name: 'gem', count: 18, spread: 180, up: 120, life: 900, size: 20 });
 
     try {
-      await sleep(T(1400));
+      await sleep(T(1500));
     } finally {
-      lamp.remove();
-      if (badge) {
-        badge.style.opacity = '0';
-        badge.style.transform = 'translate(-50%, -70%) scale(0.7)';
-        setTimeout(() => badge.remove(), 350);
-      }
+      lampWrap.remove();
+      wishBadge.remove();
+      decalWrap.remove();
       if (targetTileEl) targetTileEl.classList.remove('fx-midas-glow');
     }
 
-    // 5. Banner
-    ring(pCoord.x, pCoord.y, 190, '#a855f7', 800);
-    const b = banner('🪔 COSMIC GENIE WISH! ✨', `+${amount}🪙 & MYSTICAL TRANSMUTATION!`, 'purple', 1600);
+    // Phase 4: Detonation & Banner
+    ring(destPt.x, destPt.y, 190, '#a855f7', 750);
+    ring(destPt.x, destPt.y, 300, '#ffd700', 950);
+    const b = banner('🪔 COSMIC GENIE WISH! ✨', `+${amount}🪙 & REALITY WARPED · MIDAS TOUCH ACTIVE!`, 'purple', 1700);
+    await b;
+  }
+
+  /**
+   * 🔥 S3 Mythic Ultimate: Phoenix Rebirth Flame & Ascension from the Ashes
+   * Descending 3D Sunfire Crest, red-hot heat distortion, molten fire arcs raining meteors,
+   * Scorched Molten Crater decals on board quadrants, incinerating debts & soaring to Start!
+   */
+  async function phoenixRebirthFlame(d = {}) {
+    if (!refs()) return;
+    const role = d.role || 'dxb';
+    const amount = d.amount || 600;
+
+    const casterEl = tok.el[role] || $(`${role}Token`);
+    const pCoord = casterEl ? relRect(casterEl, L.moment) : (point({ token: role }) || center());
+    const c = center();
+
+    // Phase 1: Atmosphere
+    sfx('playPhoenixRebirth');
+    if (AudioFX.playPhoenixRoar) sfx('playPhoenixRoar');
+    sfx('playBoom');
+    flash('rgba(249, 115, 22, 0.95)', 400);
+    shake('heavy');
+    vignette(5.0, 'phoenix-sunfire');
+
+    if (casterEl) casterEl.classList.add('fx-token-inferno-stance');
+
+    // Phase 2: 3D Sunfire Crest Prop
+    const fireAnchor = safeMonumentAnchor(c, 25);
+    const fireWrap = document.createElement('div');
+    fireWrap.className = 'fx-phoenix-rising-wrap';
+    fireWrap.style.left = `${fireAnchor.modelX}px`;
+    fireWrap.style.top = `${fireAnchor.modelY}px`;
+    fireWrap.innerHTML = `
+      <img src="assets/s3/phoenix_sunfire_crest.png" class="fx-phoenix-hero-img" alt="Phoenix Sunfire Crest" />
+    `;
+    L.moment.appendChild(fireWrap);
+    fireWrap.animate([
+      { transform: 'translate(-50%, -170%) scale(1.6) rotate(-25deg)', opacity: 0 },
+      { transform: 'translate(-50%, -45%) scale(1.15) rotate(15deg)', opacity: 1, offset: 0.35 },
+      { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
+    ], { duration: T(1500), fill: 'forwards' });
+
+    const fireBadge = document.createElement('div');
+    fireBadge.className = 'fx-phoenix-rebirth-badge';
+    fireBadge.innerHTML = `🔥 PHOENIX ASCENSION! 🪶<br><small style="font-size:9.5px;opacity:0.95;">ALL DEBTS INCINERATED · SOAR TO START ×2 LAP (+${amount}🪙)</small>`;
+    fireBadge.style.left = `${fireAnchor.badgeX}px`;
+    fireBadge.style.top = `${fireAnchor.badgeY}px`;
+    L.moment.appendChild(fireBadge);
+
+    // Phase 3: Molten Crater decals on 4 quadrants
+    const craterNodes = [];
+    const quadTiles = [0, 5, 10, 15];
+    quadTiles.forEach((tid, idx) => {
+      const tilePt = point({ tileId: tid });
+      if (!tilePt) return;
+
+      setTimeout(() => {
+        const decalWrap = document.createElement('div');
+        decalWrap.className = 'fx-surface-impact-wrap';
+        decalWrap.style.left = `${tilePt.x}px`;
+        decalWrap.style.top = `${tilePt.y}px`;
+        decalWrap.innerHTML = `<img src="assets/s3/phoenix_molten_crater.png" class="fx-surface-impact-img" alt="Molten Crater" />`;
+        L.moment.appendChild(decalWrap);
+        craterNodes.push(decalWrap);
+
+        ring(tilePt.x, tilePt.y, 110, '#f97316', 500);
+        burst({ x: tilePt.x, y: tilePt.y, name: 'fire', count: 14, spread: 85, up: 60, life: 750, size: 20 });
+      }, 250 + idx * 90);
+    });
+
+    // Teleport caster to Start
+    if (api.tokens && api.tokens.teleport) {
+      setTimeout(() => {
+        api.tokens.teleport(role, 0);
+      }, T(600));
+    }
+
+    try {
+      await sleep(T(1500));
+    } finally {
+      fireWrap.remove();
+      fireBadge.remove();
+      craterNodes.forEach(cn => {
+        cn.style.opacity = '0';
+        setTimeout(() => cn.remove(), 400);
+      });
+      if (casterEl) casterEl.classList.remove('fx-token-inferno-stance');
+    }
+
+    // Phase 4: Detonation & Banner
+    ring(c.x, c.y, 220, '#f97316', 750);
+    ring(c.x, c.y, 340, '#ffd700', 950);
+    burst({ x: c.x, y: c.y, name: 'fire', count: 32, spread: 280, up: 180, life: 1100, size: 24 });
+    const b = banner('🔥 PHOENIX REBIRTH: ASCENSION! 🪶', `DEBTS CONSUMED · SOAR TO START ×2 LAP (+${amount}🪙)!`, 'red', 1700);
     await b;
   }
 
@@ -5041,8 +5299,10 @@
     abyssalCataclysm: () => abyssalCataclysm({ casterRole: 'dxb', targetRole: 'bkk', targetP: { name: 'Bangkok', pos: 5 }, tidalDmg: 240 }),
     monacoGoldRush: () => monacoGoldRush({ role: 'bkk', amount: 800 }),
     emeraldNagaSurge: () => emeraldNagaSurge({ role: 'bkk', amount: 500, ownedTiles: [1, 2, 3] }),
+    inariFoxfireMirage: () => inariFoxfireMirage({ casterRole: 'bkk', targetRole: 'dxb', toriiTile: 0, siphonedRent: 320 }),
     eclipseConvergence: () => eclipseConvergence({ casterRole: 'bkk', rivalTiles: [6, 8, 13] }),
     cosmicGenieWish: () => cosmicGenieWish({ role: 'bkk', upgradedTileId: 2, amount: 350 }),
+    phoenixRebirthFlame: () => phoenixRebirthFlame({ casterRole: 'bkk', targetRole: 'dxb', heatBurn: 280, emberTiles: [1, 5, 9] }),
     absoluteZero: () => absoluteZero({ casterRole: 'dxb', targetRole: 'bkk', ransomFee: 150 }),
     frostShieldDeflection: () => moment('frost_shield_deflection', { payerRole: 'dxb', ownerRole: 'bkk', absorbed: 140, tileId: 4 }),
     snowdriftTrap: () => moment('snowdrift_trap', { role: 'bkk', tileId: 8, text: 'Trapped in Arctic Snowdrift!' }),
@@ -5084,7 +5344,7 @@
     moment, busy, hold, tween, restartClass,
     cardOverlayOpen, deferTileFx, runTileFx, flushTileFx,
     heartBurst, brokenHeart, voidLightningTithe,
-    abyssalCataclysm, monacoGoldRush, emeraldNagaSurge, eclipseConvergence, cosmicGenieWish,
+    abyssalCataclysm, monacoGoldRush, emeraldNagaSurge, inariFoxfireMirage, eclipseConvergence, cosmicGenieWish, phoenixRebirthFlame,
     lanternFestival, midnightParadox, breakingTheCurse,
     absoluteZero, nileSeduction, solarWrath,
     phantomCurtainCall, phantomReverseHex, wrathOfOlympus, zeusLightningSmite, zeusStormShock, lightningRodZap, phantomThrow, olympusThrow,

@@ -1,7 +1,7 @@
 {
   "bkk": {
-    "diamonds": 15000,
-    "stardust": 640,
+    "diamonds": 15230,
+    "stardust": 1492,
     "tickets": 0,
     "fish": 0,
     "owned": {
@@ -12,7 +12,34 @@
       "s11_pegasus_m": 1,
       "s11_forge_m": 1,
       "s11_hades_m": 1,
-      "s11_zeus_m": 1
+      "s11_zeus_m": 1,
+      "s11_bacchus_f": 1,
+      "s11_gladiator_f": 1,
+      "s11_hoplite_f": 1,
+      "s10_phantom_f": 1,
+      "s10_gondolier_f": 1,
+      "s10_bauta_f": 1,
+      "s11_oracle_f": 1,
+      "s9_explorer_f": 1,
+      "s8_aviator_f": 1,
+      "s11_forge_f": 1,
+      "s11_persephone_f": 1,
+      "s11_pegasus_f": 1,
+      "s8_crystal_f": 1,
+      "s7_forest_f": 1,
+      "s7_carpet_f": 1,
+      "s7_palace_f": 1,
+      "s9_anubis_f": 1,
+      "s8_aurora_f": 1,
+      "s8_empress_f": 1,
+      "s10_bauta_m": 1,
+      "s10_gondolier_m": 1,
+      "s10_harlequin_m": 1,
+      "s10_tarot_m": 1,
+      "s10_doctor_m": 1,
+      "s10_clockwork_m": 1,
+      "s10_opera_m": 1,
+      "s10_phantom_m": 1
     },
     "equipped": "s11_zeus_m",
     "pity": {
@@ -29,7 +56,7 @@
       "wins": 0,
       "losses": 0,
       "pulls": 0,
-      "earned": 0,
+      "earned": 20,
       "gifted": 0,
       "received": 0
     },
@@ -44,20 +71,20 @@
     "envelopes": [],
     "envelopesSent": [],
     "daily": {
-      "day": "2026-10-12",
+      "day": "2026-10-13",
       "quests": [
         {
-          "id": "scene1",
-          "progress": 0,
-          "claimed": false
-        },
-        {
-          "id": "pull1",
+          "id": "hug3",
           "progress": 0,
           "claimed": false
         },
         {
           "id": "mono1",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "pull1",
           "progress": 0,
           "claimed": false
         }
@@ -68,8 +95,8 @@
     }
   },
   "dxb": {
-    "diamonds": 16710,
-    "stardust": 650,
+    "diamonds": 18560,
+    "stardust": 805,
     "tickets": 0,
     "fish": 0,
     "owned": {
@@ -91,7 +118,9 @@
       "s7_palace_f": 1,
       "s9_anubis_f": 1,
       "s8_aurora_f": 1,
-      "s8_empress_f": 1
+      "s8_empress_f": 1,
+      "s9_cleopatra_f": 1,
+      "s7_sundrop_f": 1
     },
     "equipped": "s10_phantom_f",
     "pity": {
@@ -112,7 +141,7 @@
       "wins": 0,
       "losses": 0,
       "pulls": 0,
-      "earned": 0,
+      "earned": 20,
       "gifted": 0,
       "received": 0
     },
@@ -125,18 +154,43 @@
     },
     "lastDaily": "",
     "envelopes": [],
-    "envelopesSent": []
+    "envelopesSent": [],
+    "daily": {
+      "day": "2026-10-13",
+      "quests": [
+        {
+          "id": "equip1",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "hug3",
+          "progress": 0,
+          "claimed": false
+        },
+        {
+          "id": "mono1",
+          "progress": 0,
+          "claimed": false
+        }
+      ],
+      "bonusClaimed": false,
+      "callMin": 0,
+      "callPaid": 0
+    }
   },
   "awardedGames": [],
   "couple": {
-    "streak": 0,
-    "best": 0,
-    "lastDay": "",
+    "streak": 1,
+    "best": 1,
+    "lastDay": "2026-10-13",
     "freezes": 0,
     "checkins": {
-      "bkk": "2026-10-12",
-      "dxb": ""
+      "bkk": "2026-10-13",
+      "dxb": "2026-10-13"
     },
-    "history": []
+    "history": [
+      "2026-10-13"
+    ]
   }
 }

@@ -1281,8 +1281,10 @@
     const epics = pool.filter((c) => c.rarity === 'epic');
 
     const heroMythic = mythics[S.featuredMythicIdx % (mythics.length || 1)] || pool[0];
-    // Per-banner pity separation: read the active banner's specific pity counter
-    const bannerPity = (p.pityByBanner && p.pityByBanner[sKey]) || (p.pity && !p.pityByBanner ? p.pity : { epic: 0, mythic: 0 });
+    // Carry over pity across limited banners (s1-s11) via shared 'limited' pity pool
+    const bannerPity = (sKey !== 'main' && p.pityByBanner && p.pityByBanner.limited)
+      || (p.pityByBanner && p.pityByBanner[sKey])
+      || (p.pity ? p.pity : { epic: 0, mythic: 0 });
     const pMythicPity = bannerPity.mythic || 0;
     const pEpicPity = bannerPity.epic || 0;
     const mythicLeft = Math.max(1, E.MYTHIC_HARD_PITY - pMythicPity);
@@ -2630,7 +2632,7 @@
       if (p && window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
         const cu = window.SkySupabase.currentUser || {};
         const updates = {};
-        if (typeof p.diamonds === 'number') updates.diamonds = Math.max(p.diamonds, (cu.diamonds || 0));
+        if (typeof p.diamonds === 'number') updates.diamonds = p.diamonds;
         if (typeof p.stardust === 'number') updates.stardust = Math.max(p.stardust, (cu.stardust || 0));
         if (p.pityByBanner) updates.pity = p.pityByBanner;
         

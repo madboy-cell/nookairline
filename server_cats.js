@@ -84,8 +84,11 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
       role,
       ...payload,
       cat,
-      fish: { bkk: vault.bkk.fish, dxb: vault.dxb.fish },
-      catDay: { [role]: vault[role].catDay },
+      fish: { bkk: vault.bkk ? vault.bkk.fish : 0, dxb: vault.dxb ? vault.dxb.fish : 0 },
+      catDay: {
+        bkk: vault.bkk ? vault.bkk.catDay : null,
+        dxb: vault.dxb ? vault.dxb.catDay : null
+      },
       fed: L.fed
     };
     if (isCouple()) {
@@ -185,10 +188,10 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
     const st = L.owned[catId];
     const def = Cats.BY_ID[catId];
     if (!st || !def) return { error: 'That cat isn’t in the lounge' };
-    if (!['feed', 'pet', 'play'].includes(action)) return { error: 'Unknown action' };
+    if (!['feed', 'pet', 'play', 'brush'].includes(action)) return { error: 'Unknown action' };
     const p = person(role);
     const now = Date.now();
-    const cd = { feed: E.FEED_COOLDOWN_MS, pet: E.PET_COOLDOWN_MS, play: E.PLAY_COOLDOWN_MS }[action];
+    const cd = { feed: E.FEED_COOLDOWN_MS, pet: E.PET_COOLDOWN_MS, play: E.PLAY_COOLDOWN_MS, brush: E.BRUSH_COOLDOWN_MS || 1200 }[action];
     if (now - (lastAction[role][action] || 0) < cd * 0.8) return { silent: true };
     lastAction[role][action] = now;
 
@@ -198,7 +201,7 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
     if (action === 'feed') {
       if (before.hunger >= E.FULL_AT) {
         const bonuses = checkHandoff(role);
-        if (bonuses.length) persistVault();
+        persistVault();
         return { soft: 'full', catId, action, bonuses };
       }
       st.hunger = Math.min(100, st.hunger + E.FEED);
@@ -227,6 +230,13 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
         }
       }
       if (daily) daily.track(role, 'cat_pet', 1);
+    } else if (action === 'brush') {
+      const gainLove = (E.BRUSH || 20) * (def.perk === 'sakura' ? 1.5 : 1);
+      st.love = Math.min(100, st.love + gainLove);
+      st.fun = Math.min(100, st.fun + 5);
+      out.gain = giveFish(role, (E.CARE_FISH && E.CARE_FISH.brush) || 2, true);
+      p.catStats.brushes = (p.catStats.brushes || 0) + 1;
+      if (daily) daily.track(role, 'cat_pet', 1);
     } else if (action === 'play') {
       if (before.fun >= E.TIRED_AT) return { soft: 'tired', catId, action };
       st.fun = Math.min(100, st.fun + E.PLAY);
@@ -236,8 +246,8 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
       if (daily) daily.track(role, 'cat_play', 1);
     }
     st.care = st.care || { bkk: 0, dxb: 0 };
-    st.care[role] = (st.care[role] || 0) + (action === 'pet' ? 1 : 3);
-    if (action !== 'pet') log(role, action, catId);
+    st.care[role] = (st.care[role] || 0) + (action === 'pet' ? 1 : (action === 'brush' ? 2 : 3));
+    if (action !== 'pet' && action !== 'brush') log(role, action, catId);
     persistVault();
     return out;
   }

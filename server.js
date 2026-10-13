@@ -369,7 +369,10 @@ const cats = createCats({
   broadcastVault: (extra) => broadcastVault(extra),
   publicProfiles: () => publicProfiles(),
   daily,
-  features: () => ({ couple: !!(vault.couple && vault.couple.active && bkkSocket && dxbSocket) })
+  features: () => ({
+    couple: !!(vault.couple && vault.couple.active),
+    coupleOnline: !!(vault.couple && vault.couple.active && bkkSocket && dxbSocket)
+  })
 });
 
 // 🤖 Sky Monopoly Solo Bot: server authority for Captain Whiskers matches (see server_monobot.js)
@@ -388,10 +391,15 @@ function getBannerPity(p, season = 'main') {
     p.pityByBanner = {};
   }
   const sKey = String(season || 'main');
-  if (!p.pityByBanner[sKey]) {
-    p.pityByBanner[sKey] = { epic: 0, mythic: 0 };
+  const poolKey = sKey === 'main' ? 'main' : 'limited';
+  if (!p.pityByBanner[poolKey]) {
+    const legacy = p.pityByBanner[sKey] || p.pity || { epic: 0, mythic: 0 };
+    p.pityByBanner[poolKey] = { epic: legacy.epic || 0, mythic: legacy.mythic || 0 };
   }
-  return p.pityByBanner[sKey];
+  if (poolKey === 'limited') {
+    p.pityByBanner[sKey] = p.pityByBanner[poolKey];
+  }
+  return p.pityByBanner[poolKey];
 }
 
 function rollRarity(p, season = 'main') {
@@ -402,19 +410,21 @@ function rollRarity(p, season = 'main') {
   if (pity.mythic > ECON.MYTHIC_SOFT_PITY) {
     mythicChance += (pity.mythic - ECON.MYTHIC_SOFT_PITY) * ECON.MYTHIC_SOFT_STEP;
   }
+  let outcome = 'rare';
   if (pity.mythic >= ECON.MYTHIC_HARD_PITY || Math.random() < mythicChance) {
     pity.mythic = 0;
     pity.epic = 0;
-    p.pity = { ...pity };
-    return 'mythic';
-  }
-  if (pity.epic >= ECON.EPIC_PITY || Math.random() < ECON.RATES.epic / (1 - ECON.RATES.mythic)) {
+    outcome = 'mythic';
+  } else if (pity.epic >= ECON.EPIC_PITY || Math.random() < ECON.RATES.epic / (1 - ECON.RATES.mythic)) {
     pity.epic = 0;
-    p.pity = { ...pity };
-    return 'epic';
+    outcome = 'epic';
   }
   p.pity = { ...pity };
-  return 'rare';
+  const sKey = String(season || 'main');
+  if (sKey !== 'main' && p.pityByBanner) {
+    p.pityByBanner.limited = pity;
+  }
+  return outcome;
 }
 
 function vaultPull(role, count, season = 'main', useTicket = false) {
@@ -424,15 +434,8 @@ function vaultPull(role, count, season = 'main', useTicket = false) {
     return { error: `Season ${sched.name || season} banner has ended!` };
   }
   const p = vault[role];
-  if (useTicket) {
-    if ((p.tickets || 0) < 1) return { error: 'No Lucky Flight Tickets remaining' };
-    p.tickets -= 1;
-    count = 1;
-  } else {
-    const cost = count === 10 ? ECON.PULL_10 : ECON.PULL_1;
-    if (p.diamonds < cost) return { error: 'Not enough diamonds' };
-    p.diamonds -= cost;
-  }
+
+  // 1. Resolve and validate pool BEFORE deducting any currency
   let pool = Costumes.poolFor(role, season);
   if (!pool || pool.length === 0) {
     try {
@@ -443,6 +446,19 @@ function vaultPull(role, count, season = 'main', useTicket = false) {
     } catch (_) {}
   }
   if (!pool || pool.length === 0) return { error: 'Invalid season pool' };
+
+  // 2. Validate balance and safely deduct currency
+  if (useTicket) {
+    if ((p.tickets || 0) < 1) return { error: 'No Lucky Flight Tickets remaining' };
+    p.tickets -= 1;
+    count = 1;
+  } else {
+    const cost = count === 10 ? ECON.PULL_10 : ECON.PULL_1;
+    if (p.diamonds < cost) return { error: 'Not enough diamonds' };
+    p.diamonds -= cost;
+  }
+  vault[role].lastSpentAt = Date.now();
+
   const results = [];
   for (let i = 0; i < count; i++) {
     const rarity = rollRarity(p, season);
@@ -485,6 +501,7 @@ function vaultExchange(role, costumeId) {
   const price = Costumes.RARITY[c.rarity].shop;
   if (p.stardust < price) return { error: 'Not enough stardust' };
   p.stardust -= price;
+  vault[role].lastSpentAt = Date.now();
   p.owned[c.id] = 1;
   persistVault();
   return { results: [{ id: c.id, rarity: c.rarity, dupe: false, dust: 0, exchanged: true }] };
@@ -694,9 +711,11 @@ function handleVaultMessage(ws, message) {
           changed = true;
         }
       }
-      if (typeof message.stardust === 'number' && message.stardust > vault[role].stardust) {
-        vault[role].stardust = message.stardust;
-        changed = true;
+      if (typeof message.stardust === 'number') {
+        if (timeSinceSpent > 60000 && message.stardust > vault[role].stardust) {
+          vault[role].stardust = message.stardust;
+          changed = true;
+        }
       }
       if (changed) {
         persistVault();

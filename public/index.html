@@ -264,7 +264,8 @@
         <!-- Four Compact Player Cards in a Single Row (Matches reference_crops/03_four_player_cards.png) -->
         <div class="monopoly-players-bar neora-players-bar" id="monopolyPlayersBar">
           <!-- Card 1: P1 (Host / You) -->
-          <div class="monopoly-player-card player-bkk" id="monopolyPlayerCardBkk" data-seat="1">
+          <div class="monopoly-player-card neora-player-card player-bkk" id="monopolyPlayerCardBkk" data-seat="1">
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
               <span class="player-crown-icon" aria-hidden="true">👑</span>
               <img src="assets/bkk_warrior_idle.png" class="player-thumb-mini" id="monopolyBkkThumb" alt="P1" />
@@ -279,20 +280,23 @@
                 <span class="player-miles-pill" id="monopolyBkkMiles">1,200</span>
               </div>
               <div class="player-nw-badge" id="monopolyBkkNw">NW 1,200</div>
+              <div class="player-ult-wrap" id="monopolyBkkUltWrap" title="Ultimate Charge: 0%">
+                <span class="player-ult-bolt" aria-hidden="true">⚡</span>
+                <div class="player-ult-track" id="monopolyBkkUltTrack">
+                  <div class="player-ult-fill" id="monopolyBkkUltFill"></div>
+                </div>
+                <span class="player-ult-label" id="monopolyBkkUltLabel">0%</span>
+              </div>
             </div>
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <!-- Hidden compatibility hooks -->
             <span class="player-prop-badge hidden" id="monopolyBkkProps">🏰 0</span>
             <span class="player-passes hidden" id="monopolyBkkPasses"></span>
             <span class="player-items-mini hidden" id="monopolyBkkItems"></span>
-            <div class="player-ult-track hidden" id="monopolyBkkUltTrack">
-              <div class="player-ult-fill" id="monopolyBkkUltFill"></div>
-              <span class="player-ult-label" id="monopolyBkkUltLabel">0%</span>
-            </div>
           </div>
 
           <!-- Card 2: P2 (Co-Pilot / Rival) -->
-          <div class="monopoly-player-card player-dxb" id="monopolyPlayerCardDxb" data-seat="2">
+          <div class="monopoly-player-card neora-player-card player-dxb" id="monopolyPlayerCardDxb" data-seat="2">
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
               <img src="assets/got_queen_idle.png" class="player-thumb-mini" id="monopolyDxbThumb" alt="P2" />
             </div>
@@ -306,20 +310,23 @@
                 <span class="player-miles-pill" id="monopolyDxbMiles">1,200</span>
               </div>
               <div class="player-nw-badge" id="monopolyDxbNw">NW 1,200</div>
+              <div class="player-ult-wrap" id="monopolyDxbUltWrap" title="Ultimate Charge: 0%">
+                <span class="player-ult-bolt" aria-hidden="true">⚡</span>
+                <div class="player-ult-track" id="monopolyDxbUltTrack">
+                  <div class="player-ult-fill" id="monopolyDxbUltFill"></div>
+                </div>
+                <span class="player-ult-label" id="monopolyDxbUltLabel">0%</span>
+              </div>
             </div>
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <!-- Hidden compatibility hooks -->
             <span class="player-prop-badge hidden" id="monopolyDxbProps">🏰 0</span>
             <span class="player-passes hidden" id="monopolyDxbPasses"></span>
             <span class="player-items-mini hidden" id="monopolyDxbItems"></span>
-            <div class="player-ult-track hidden" id="monopolyDxbUltTrack">
-              <div class="player-ult-fill" id="monopolyDxbUltFill"></div>
-              <span class="player-ult-label" id="monopolyDxbUltLabel">0%</span>
-            </div>
           </div>
 
           <!-- Card 3: P3 (Bot 1 / Guest 3) -->
-          <div class="monopoly-player-card player-bot1" id="monopolyPlayerCardBot1" data-seat="3">
+          <div class="monopoly-player-card neora-player-card player-bot1" id="monopolyPlayerCardBot1" data-seat="3">
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
               <img src="assets/bot_mochi.jpg" class="player-thumb-mini" id="monopolyBot1Thumb" alt="P3" />
             </div>
@@ -333,19 +340,22 @@
                 <span class="player-miles-pill" id="monopolyBot1Miles">1,200</span>
               </div>
               <div class="player-nw-badge" id="monopolyBot1Nw">NW 1,200</div>
+              <div class="player-ult-wrap" id="monopolyBot1UltWrap" title="Ultimate Charge: 0%">
+                <span class="player-ult-bolt" aria-hidden="true">⚡</span>
+                <div class="player-ult-track" id="monopolyBot1UltTrack">
+                  <div class="player-ult-fill" id="monopolyBot1UltFill"></div>
+                </div>
+                <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
+              </div>
             </div>
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <!-- Hidden compatibility hooks -->
             <span class="player-prop-badge hidden" id="monopolyBot1Props">🏰 0</span>
             <span class="player-items-mini hidden" id="monopolyBot1Items"></span>
-            <div class="player-ult-track hidden" id="monopolyBot1UltTrack">
-              <div class="player-ult-fill" id="monopolyBot1UltFill"></div>
-              <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
-            </div>
           </div>
 
           <!-- Card 4: P4 (Bot 2 / Guest 4) -->
-          <div class="monopoly-player-card player-bot2" id="monopolyPlayerCardBot2" data-seat="4">
+          <div class="monopoly-player-card neora-player-card player-bot2" id="monopolyPlayerCardBot2" data-seat="4">
+            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
               <img src="assets/bot_captain.jpg" class="player-thumb-mini" id="monopolyBot2Thumb" alt="P4" />
             </div>
@@ -359,15 +369,17 @@
                 <span class="player-miles-pill" id="monopolyBot2Miles">1,200</span>
               </div>
               <div class="player-nw-badge" id="monopolyBot2Nw">NW 1,200</div>
+              <div class="player-ult-wrap" id="monopolyBot2UltWrap" title="Ultimate Charge: 0%">
+                <span class="player-ult-bolt" aria-hidden="true">⚡</span>
+                <div class="player-ult-track" id="monopolyBot2UltTrack">
+                  <div class="player-ult-fill" id="monopolyBot2UltFill"></div>
+                </div>
+                <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
+              </div>
             </div>
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
             <!-- Hidden compatibility hooks -->
             <span class="player-prop-badge hidden" id="monopolyBot2Props">🏰 0</span>
             <span class="player-items-mini hidden" id="monopolyBot2Items"></span>
-            <div class="player-ult-track hidden" id="monopolyBot2UltTrack">
-              <div class="player-ult-fill" id="monopolyBot2UltFill"></div>
-              <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
-            </div>
           </div>
         </div>
 
@@ -2264,6 +2276,32 @@
           </div>
         </section>
 
+      </div>
+    </div>
+  <!-- Floating Mini-Call Island (Voice Call Dynamic Island) -->
+  <div id="floatingCallIsland" class="floating-call-island hidden" role="region" aria-label="Active Call Dynamic Island">
+    <div class="fci-content" id="fciContent">
+      <div class="fci-avatar-wrap">
+        <img id="fciPartnerAvatar" class="fci-avatar" src="assets/sprites/default_partner.png" alt="Partner">
+        <span class="fci-pulse-dot" title="Line Live"></span>
+      </div>
+      <div class="fci-info" id="fciInfo">
+        <span class="fci-name" id="fciPartnerName">Partner</span>
+        <span class="fci-timer" id="fciTimer">00:00</span>
+      </div>
+      <div class="fci-waveform" aria-hidden="true">
+        <span class="fci-bar bar-1"></span>
+        <span class="fci-bar bar-2"></span>
+        <span class="fci-bar bar-3"></span>
+        <span class="fci-bar bar-4"></span>
+      </div>
+      <div class="fci-actions">
+        <button id="fciMuteBtn" class="fci-btn fci-btn-mute" type="button" title="Mute / Unmute" aria-label="Toggle Mute">
+          <span class="fci-mute-icon">🎤</span>
+        </button>
+        <button id="fciHangupBtn" class="fci-btn fci-btn-hangup" type="button" title="End Call" aria-label="Hang Up">
+          <span class="fci-hangup-icon">📞</span>
+        </button>
       </div>
     </div>
   </div>

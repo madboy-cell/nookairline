@@ -1098,6 +1098,7 @@
         <div class="cl-actions">
           <button class="cl-act feed ${full ? 'meh' : ''}" data-c="feed" data-id="${id}" id="clActFeed"><span class="ic">${def.food}</span><b>Feed</b><small>${full ? 'Full 😽' : capped ? 'Yum' : `+${E.CARE_FISH.feed}🐟`}</small></button>
           <button class="cl-act pet" data-c="pet" data-id="${id}" id="clActPet"><span class="ic">🫶</span><b>Pet</b><small>${capped ? 'Rub me' : `+${E.CARE_FISH.pet}🐟 / rub`}</small></button>
+          <button class="cl-act brush" data-c="brush" data-id="${id}" id="clActBrush"><span class="ic">🪮</span><b>Brush</b><small>${capped ? 'Groom' : `+${(E.CARE_FISH && E.CARE_FISH.brush) || 2}🐟`}</small></button>
           <button class="cl-act play ${tired ? 'meh' : ''}" data-c="play" data-id="${id}" id="clActPlay"><span class="ic">🪶</span><b>Play</b><small>${tired ? 'Sleepy 😴' : capped ? 'Zoomies' : `+${E.CARE_FISH.play}🐟`}</small></button>
         </div>
       </article>`;
@@ -1166,7 +1167,7 @@
     }
   }
 
-  const FEED_VERB = { feed: 'fed', play: 'played with', gift: 'opened a gift from', pull: 'adopted', pet: 'petted' };
+  const FEED_VERB = { feed: 'fed', play: 'played with', gift: 'opened a gift from', pull: 'adopted', pet: 'petted', brush: 'brushed' };
   function addFeed(role, action, catId, extra) {
     const def = C.BY_ID[catId];
     if (!def) return;
@@ -1589,6 +1590,20 @@
         } catch (err) {}
         break;
       }
+      case 'brush': {
+        if (!S.nodes[id]) summon(id);
+        const el = S.nodes[id];
+        if (!el) break;
+        t.disabled = true; setTimeout(() => { t.disabled = false; }, 1200);
+        S.woke[id] = napWindow();
+        Sound.purrStart(0.18);
+        hearts(catHead(id), 2);
+        react(id, 'squish', 600);
+        say(id, id === 'r_persian' ? '✨ Royal grooming approved! 👑' : '✨ So fluffy and clean! 🪮', 1400);
+        setTimeout(() => { Sound.purrStop(); decorateCat(id); }, 800);
+        send({ type: 'vault_cat_care', catId: id, action: 'brush' });
+        break;
+      }
       case 'play': {
         if (!S.nodes[id]) summon(id);
         const n = needs(id);
@@ -1657,7 +1672,13 @@
       if (msg.action !== 'pet') addFeed(msg.role, msg.action, id);
     } else if (S.open && def && isCoupleActive()) {
       // 👻 Partner presence: you see their hand / bowl / toy in your lounge
-      if (!S.nodes[id] && msg.action !== 'pull') summon(id);
+      if (msg.action !== 'pet') addFeed(msg.role, msg.action, id);
+      if (!S.nodes[id]) {
+        toast(`🐾 ${msg.role.toUpperCase()} ${FEED_VERB[msg.action] || 'cared for'} ${def.name}`);
+        handleBonuses(msg, id, def);
+        refreshLight();
+        return;
+      }
       if (msg.action === 'pet') {
         const h = catHead(id);
         const g = fx('ghost', `🫳<em>${msg.role.toUpperCase()}</em>`, { x: h.x, y: h.y - 4 }, {}, 1300);
@@ -1666,6 +1687,12 @@
         react(id, 'squish', 400);
         const el = S.nodes[id];
         if (el && !S.petting) { el.classList.add('bliss'); clearTimeout(el._pb); el._pb = setTimeout(() => { el.classList.remove('bliss'); decorateCat(id); }, 1100); }
+      } else if (msg.action === 'brush') {
+        const h = catHead(id);
+        fx('ghost', `🪮<em>${msg.role.toUpperCase()}</em>`, { x: h.x, y: h.y - 4 }, {}, 1300);
+        hearts(h, 2);
+        react(id, 'squish', 400);
+        say(id, `${msg.role.toUpperCase()} brushed my coat! ✨`, 1400);
       } else if (msg.action === 'feed') {
         feed(id, true);
       } else if (msg.action === 'play') {
@@ -1678,7 +1705,6 @@
         const R = C.RARITY[msg.best.rarity];
         toast(`<div><b>🎰 ${msg.role.toUpperCase()} opened ${msg.count > 1 ? `${msg.count} capsules` : 'a capsule'}!</b><span>Best: <em style="color:${R.color}">${R.label} ${def.name}</em>${msg.best.isNew ? ' — new to the lounge! 🏠' : ''}</span></div>`, 'cl-toast', 4200);
       }
-      if (msg.action !== 'pet') addFeed(msg.role, msg.action, id);
     } else if (!mine && def && isCoupleActive() && msg.action === 'pull' && msg.best && msg.best.rarity !== 'common') {
       const R = C.RARITY[msg.best.rarity];
       toast(`<div><b>🐾 ${msg.role.toUpperCase()} adopted ${def.name}!</b><span><em style="color:${R.color}">${R.label}</em> · come say hi in the Cat Lounge</span></div>`, 'cl-toast', 4200);

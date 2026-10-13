@@ -761,6 +761,10 @@ async function startCall() {
     else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
     return;
   }
+  if (window.nookPartnerOnline === false) {
+    showToast('⏳ Partner is currently offline. Call line will be ready once partner boards.');
+    return;
+  }
   if (!localStream) {
     await initLocalMedia();
   }
@@ -807,6 +811,25 @@ async function startCall() {
 
 // 5. Handle Incoming Call Offer (supports seamless renegotiation)
 async function handleOffer(offer, fresh = false) {
+  if (window.SkySupabase && typeof window.SkySupabase.checkCoupleCallAllowed === 'function') {
+    if (!window.SkySupabase.checkCoupleCallAllowed()) {
+      console.warn('[Security] Rejecting call offer: couple verification failed.');
+      sendSignaling({ type: 'hangup', reason: 'unauthorized' });
+      return;
+    }
+  }
+
+  const isPolite = (typeof myTerminal !== 'undefined' && myTerminal === 'dxb');
+  if (peerConnection && peerConnection.signalingState !== 'stable') {
+    if (!isPolite && !fresh) {
+      console.log('[WebRTC] Impolite peer ignoring offer glare');
+      return;
+    }
+    try {
+      await peerConnection.setLocalDescription({ type: 'rollback' });
+    } catch (_) {}
+  }
+
   if (!isCallActive) {
     isCallActive = true;
     if (window.NookTelemetry) window.NookTelemetry.callStarted('receiver');
@@ -835,14 +858,24 @@ async function handleOffer(offer, fresh = false) {
     }
   }
 
+  if (!localStream) {
+    try {
+      await initLocalMedia();
+    } catch (e) {
+      console.warn('[WebRTC] Could not initialize local media for answer:', e);
+    }
+  }
+
   // Only create a new connection if one doesn't exist yet
   if (!peerConnection) {
     createPeerConnection();
-    if (localStream) {
-      localStream.getAudioTracks().forEach((track) => {
-        peerConnection.addTrack(track, localStream);
-      });
-    }
+  }
+  if (localStream && peerConnection) {
+    const senders = peerConnection.getSenders();
+    localStream.getAudioTracks().forEach((track) => {
+      const alreadyAdded = senders.some((s) => s.track === track);
+      if (!alreadyAdded) peerConnection.addTrack(track, localStream);
+    });
   }
 
   try {
@@ -890,8 +923,7 @@ async function handleAnswer(answer) {
 
 // 7. Handle ICE Candidate (queued until the remote description is in place)
 async function handleCandidate(candidate) {
-  if (!peerConnection) return;
-  if (!peerConnection.remoteDescription) {
+  if (!peerConnection || !peerConnection.remoteDescription) {
     pendingCandidates.push(candidate);
     return;
   }
@@ -1063,10 +1095,23 @@ async function triggerSilentIceRestart() {
   }
 }
 
-function restartIce() {
-  if (peerConnection) {
+async function restartIce() {
+  if (!peerConnection || !isCallActive) return;
+  try {
     tlog('ice_restart', { reason: 'ice_failed' });
-    peerConnection.restartIce();
+    if (typeof peerConnection.restartIce === 'function') {
+      peerConnection.restartIce();
+    }
+    const rawOffer = await peerConnection.createOffer({ iceRestart: true });
+    const offer = {
+      type: rawOffer.type,
+      sdp: optimizeAudioSDP(rawOffer.sdp)
+    };
+    await peerConnection.setLocalDescription(offer);
+    sendSignaling({ type: 'offer', offer: offer });
+  } catch (err) {
+    console.warn('[WebRTC] restartIce error:', err);
+    tlog('ice_restart_error', { message: err.message });
   }
 }
 
@@ -1224,6 +1269,12 @@ function endCall(sendNotification = true) {
   callConnectedOnce = false;
   pendingCandidates = [];
 
+  if (localStream) {
+    localStream.getTracks().forEach((track) => track.stop());
+    localStream = null;
+  }
+  if (localVideo) localVideo.srcObject = null;
+
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
@@ -1234,6 +1285,7 @@ function endCall(sendNotification = true) {
   if (remoteAudio) {
     remoteAudio.srcObject = null;
   }
+  hideFloatingCallIsland();
   if (flightStatusCapsule) {
     flightStatusCapsule.classList.remove('in-call');
     updateCapsule('Flight Ended • Tap Connect to Rejoin', true);
@@ -1259,33 +1311,40 @@ function endCall(sendNotification = true) {
   playCabinChime('hangup');
 }
 
+function toggleMute() {
+  triggerHaptic(12);
+  if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
+    if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
+    else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
+    return;
+  }
+  if (!localStream) return;
+  isMicMuted = !isMicMuted;
+  localStream.getAudioTracks().forEach((track) => {
+    track.enabled = !isMicMuted;
+  });
+
+  if (micBtn) {
+    micBtn.classList.toggle('active-off', isMicMuted);
+    const onIcon = micBtn.querySelector('.icon-on');
+    const offIcon = micBtn.querySelector('.icon-off');
+    if (onIcon) onIcon.classList.toggle('hidden', isMicMuted);
+    if (offIcon) offIcon.classList.toggle('hidden', !isMicMuted);
+  }
+  if (micLabel) micLabel.textContent = isMicMuted ? 'Muted' : 'Mute';
+
+  sendSignaling({
+    type: 'media_state',
+    isCameraOff,
+    isMicMuted
+  });
+  updateFloatingCallIsland();
+}
+
 // --- UI Controls & Event Listeners ---
 function setupEventListeners() {
   // Mic Toggle
-  micBtn.addEventListener('click', () => {
-    triggerHaptic(12);
-    if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
-      if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
-      else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
-      return;
-    }
-    if (!localStream) return;
-    isMicMuted = !isMicMuted;
-    localStream.getAudioTracks().forEach((track) => {
-      track.enabled = !isMicMuted;
-    });
-
-    micBtn.classList.toggle('active-off', isMicMuted);
-    micBtn.querySelector('.icon-on').classList.toggle('hidden', isMicMuted);
-    micBtn.querySelector('.icon-off').classList.toggle('hidden', !isMicMuted);
-    micLabel.textContent = isMicMuted ? 'Muted' : 'Mute';
-
-    sendSignaling({
-      type: 'media_state',
-      isCameraOff,
-      isMicMuted
-    });
-  });
+  micBtn.addEventListener('click', toggleMute);
 
   // Camera Toggle — actually opens/releases the camera hardware
   let cameraBusy = false;
@@ -1455,6 +1514,9 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Setup Floating Mini-Call Island Controls
+  setupFloatingCallIslandEvents();
 }
 
 function updateCallActionBtn(inCall) {
@@ -1474,16 +1536,106 @@ function updateBadge(text, isLive) {
   }
 }
 
+// =========================================================
+// 🌟 FLOATING MINI-CALL ISLAND (Voice Call Dynamic Island)
+// =========================================================
+function getFloatingIslandElements() {
+  return {
+    island: document.getElementById('floatingCallIsland'),
+    avatar: document.getElementById('fciPartnerAvatar'),
+    name: document.getElementById('fciPartnerName'),
+    timer: document.getElementById('fciTimer'),
+    muteBtn: document.getElementById('fciMuteBtn'),
+    hangupBtn: document.getElementById('fciHangupBtn'),
+    content: document.getElementById('fciContent')
+  };
+}
+
+function showFloatingCallIsland() {
+  const els = getFloatingIslandElements();
+  if (!els.island) return;
+  updateFloatingCallIsland();
+  els.island.classList.remove('hidden');
+}
+
+function hideFloatingCallIsland() {
+  const els = getFloatingIslandElements();
+  if (!els.island) return;
+  els.island.classList.add('hidden');
+}
+
+function updateFloatingCallIsland() {
+  const els = getFloatingIslandElements();
+  if (!els.island || !isCallActive) return;
+
+  let pName = 'Partner';
+  let pAvatar = 'assets/sprites/default_partner.png';
+
+  if (window.partnerAvatar && window.partnerAvatar.name) {
+    pName = window.partnerAvatar.name;
+  } else if (window.SkySupabase?.coupleStatus?.partner?.username) {
+    pName = window.SkySupabase.coupleStatus.partner.username;
+  }
+
+  if (window.partnerAvatar && window.partnerAvatar.sprite) {
+    pAvatar = window.partnerAvatar.sprite;
+  }
+
+  if (els.name) els.name.textContent = pName;
+  if (els.avatar && els.avatar.getAttribute('src') !== pAvatar) els.avatar.src = pAvatar;
+
+  if (els.timer && callDuration) {
+    els.timer.textContent = callDuration.textContent || '00:00';
+  }
+
+  if (els.muteBtn) {
+    els.muteBtn.classList.toggle('is-muted', !!isMicMuted);
+    els.muteBtn.innerHTML = isMicMuted ? '<span class="fci-mute-icon">🔇</span>' : '<span class="fci-mute-icon">🎤</span>';
+  }
+}
+
+function setupFloatingCallIslandEvents() {
+  const els = getFloatingIslandElements();
+  if (!els.island) return;
+
+  if (els.muteBtn) {
+    els.muteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMute();
+      updateFloatingCallIsland();
+    });
+  }
+
+  if (els.hangupBtn) {
+    els.hangupBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      endCall(true);
+    });
+  }
+
+  if (els.content) {
+    els.content.addEventListener('click', () => {
+      const skyLounge = document.getElementById('skyLounge');
+      if (skyLounge) skyLounge.scrollIntoView({ behavior: 'smooth' });
+      if (typeof showToast === 'function') {
+        showToast('📞 1:1 Couple Call Live Line');
+      }
+    });
+  }
+}
+
 // Call Duration Counter (idempotent: ontrack fires per track and again after auto-heal)
 function startCallTimer() {
   if (callTimerInterval) return;
   callStartTime = Date.now();
   callTimerChip.classList.remove('hidden');
+  showFloatingCallIsland();
   callTimerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
     const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const secs = String(elapsed % 60).padStart(2, '0');
     callDuration.textContent = `${mins}:${secs}`;
+    updateFloatingCallIsland();
   }, 1000);
 }
 
@@ -1492,6 +1644,7 @@ function stopCallTimer() {
   callTimerInterval = null;
   callTimerChip.classList.add('hidden');
   callDuration.textContent = '00:00';
+  hideFloatingCallIsland();
 }
 
 // Draggable PiP for Touch & Mouse

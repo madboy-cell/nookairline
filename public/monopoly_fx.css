@@ -1787,6 +1787,304 @@ img.fx-vis { object-fit: contain; }
   transform: translate(-50%, -50%);
 }
 
+/* =========================================================
+   REWORKED MYTHIC CINEMATIC HERO PROPS & TACTICAL STAGING
+   ========================================================= */
+
+/* Hero Prop Base Wrappers */
+.fx-naga-rising-wrap,
+.fx-inari-rising-wrap,
+.fx-eclipse-rising-wrap,
+.fx-djinn-rising-wrap,
+.fx-phoenix-rising-wrap,
+.fx-atlantis-rising-wrap {
+  position: absolute;
+  pointer-events: none;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+}
+
+/* S1 Naga Emerald Crest Prop */
+.fx-naga-hero-img {
+  width: clamp(84px, 24vw, 112px);
+  height: clamp(84px, 24vw, 112px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px #10b981) drop-shadow(0 0 38px #6ee7b7) brightness(1.15);
+  animation: fxPropFloating 2.2s ease-in-out infinite alternate;
+}
+
+/* S2 Inari Torii Gate Prop */
+.fx-inari-hero-img {
+  width: clamp(86px, 24vw, 115px);
+  height: clamp(86px, 24vw, 115px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px #ec4899) drop-shadow(0 0 42px #f43f5e) brightness(1.2);
+  animation: fxPropFloating 2.4s ease-in-out infinite alternate;
+}
+
+/* S2 Celestial Eclipse Moon Disk Prop */
+.fx-eclipse-hero-img {
+  width: clamp(88px, 25vw, 118px);
+  height: clamp(88px, 25vw, 118px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px #818cf8) drop-shadow(0 0 45px #ffd700) brightness(1.18);
+  animation: fxEclipseDiskHover 3s ease-in-out infinite alternate;
+}
+@keyframes fxEclipseDiskHover {
+  0% { transform: translateY(0) rotate(-4deg); }
+  100% { transform: translateY(-6px) rotate(4deg); }
+}
+
+/* S3 Cosmic Djinn Lamp Prop */
+.fx-djinn-hero-img {
+  width: clamp(86px, 24vw, 115px);
+  height: clamp(86px, 24vw, 115px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px #c084fc) drop-shadow(0 0 45px #fbbf24) brightness(1.2);
+  animation: fxPropFloating 2s ease-in-out infinite alternate;
+}
+
+/* S3 Phoenix Sunfire Crest Prop */
+.fx-phoenix-hero-img {
+  width: clamp(90px, 25vw, 120px);
+  height: clamp(90px, 25vw, 120px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px #f97316) drop-shadow(0 0 48px #ef4444) brightness(1.22);
+  animation: fxPhoenixWingsPulse 1.8s ease-in-out infinite alternate;
+}
+@keyframes fxPhoenixWingsPulse {
+  0% { transform: scale(0.96) translateY(0); filter: drop-shadow(0 0 16px #f97316); }
+  100% { transform: scale(1.08) translateY(-8px); filter: drop-shadow(0 0 35px #fbbf24) drop-shadow(0 0 55px #ef4444); }
+}
+
+/* S5 Atlantis Abyssal Trident Prop */
+.fx-atlantis-hero-img {
+  width: clamp(70px, 20vw, 98px);
+  height: clamp(95px, 28vw, 130px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px #06b6d4) drop-shadow(0 0 45px #38bdf8) brightness(1.2);
+  animation: fxTridentDrift 2.2s ease-in-out infinite alternate;
+}
+@keyframes fxTridentDrift {
+  0% { transform: translateY(0) rotate(-2deg); }
+  100% { transform: translateY(-7px) rotate(3deg); }
+}
+
+@keyframes fxPropFloating {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-6px) scale(1.04); }
+}
+
+/* Surface Ground Reaction / Impact Decal */
+.fx-surface-impact-wrap {
+  position: absolute;
+  pointer-events: none;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+}
+.fx-surface-impact-img {
+  width: clamp(65px, 18vw, 92px);
+  height: clamp(65px, 18vw, 92px);
+  object-fit: contain;
+  opacity: 0.95;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+/* Heroic Tactical Badges */
+.fx-naga-surge-badge,
+.fx-inari-mirage-badge,
+.fx-eclipse-blackout-badge,
+.fx-djinn-wish-badge,
+.fx-phoenix-rebirth-badge,
+.fx-atlantis-maelstrom-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 12px;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
+  z-index: 52;
+  animation: fxBadgeFloat 1.8s ease-in-out infinite alternate;
+}
+@keyframes fxBadgeFloat {
+  0% { transform: translate(-50%, -50%) scale(0.98); }
+  100% { transform: translate(-50%, -56%) scale(1.03); }
+}
+
+.fx-naga-surge-badge {
+  background: linear-gradient(135deg, rgba(6, 95, 70, 0.98), rgba(16, 185, 129, 0.95));
+  color: #fff;
+  border: 2px solid #a7f3d0;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75), 0 0 18px #10b981;
+}
+
+.fx-inari-mirage-badge {
+  background: linear-gradient(135deg, rgba(136, 19, 55, 0.98), rgba(236, 72, 153, 0.95));
+  color: #fff;
+  border: 2px solid #fbcfe8;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75), 0 0 20px #ec4899;
+}
+
+.fx-eclipse-blackout-badge {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 27, 75, 0.98));
+  color: #fde047;
+  border: 2px solid #c084fc;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85), 0 0 22px #818cf8;
+}
+
+.fx-djinn-wish-badge {
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.98), rgba(168, 85, 247, 0.95));
+  color: #fef08a;
+  border: 2px solid #ffd700;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75), 0 0 20px #c084fc;
+}
+
+.fx-phoenix-rebirth-badge {
+  background: linear-gradient(135deg, rgba(154, 52, 18, 0.98), rgba(249, 115, 22, 0.96));
+  color: #fff;
+  border: 2px solid #fed7aa;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75), 0 0 24px #f97316;
+}
+
+.fx-atlantis-maelstrom-badge {
+  background: linear-gradient(135deg, rgba(8, 47, 73, 0.98), rgba(6, 182, 212, 0.96));
+  color: #fff;
+  border: 2px solid #a5f3fc;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75), 0 0 22px #06b6d4;
+}
+
+/* Atmospheric Shift Vignettes */
+.fx-vignette.total-eclipse {
+  background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.35) 0%, rgba(10, 15, 30, 0.92) 65%, rgba(0, 0, 0, 0.98) 100%) !important;
+  box-shadow: inset 0 0 100px rgba(99, 102, 241, 0.5) !important;
+}
+
+.fx-vignette.phoenix-sunfire {
+  background: radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.25) 0%, rgba(154, 52, 18, 0.82) 70%, rgba(69, 10, 10, 0.96) 100%) !important;
+  box-shadow: inset 0 0 90px rgba(239, 68, 68, 0.6) !important;
+}
+
+.fx-vignette.inari-twilight {
+  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, rgba(131, 24, 67, 0.8) 70%, rgba(40, 5, 25, 0.96) 100%) !important;
+  box-shadow: inset 0 0 85px rgba(244, 114, 182, 0.55) !important;
+}
+
+/* Kinetic Status Reactions on Tokens */
+.fx-token-drowned-spin {
+  animation: fxTokenDrownSpin 0.9s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
+  filter: drop-shadow(0 0 14px #06b6d4) !important;
+}
+@keyframes fxTokenDrownSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(0.85); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.fx-token-kitsune-possessed {
+  animation: fxTokenKitsuneGlitch 0.4s ease-in-out infinite alternate !important;
+  filter: drop-shadow(0 0 16px #ec4899) hue-rotate(45deg) !important;
+}
+@keyframes fxTokenKitsuneGlitch {
+  0% { transform: translate(-2px, 0) scale(1); }
+  50% { transform: translate(2px, -2px) scale(1.08); }
+  100% { transform: translate(-1px, 2px) scale(0.96); }
+}
+
+.fx-token-somnambulism {
+  animation: fxTokenSomnambulismBob 1.6s ease-in-out infinite alternate !important;
+  filter: drop-shadow(0 0 16px #818cf8) opacity(0.85) !important;
+}
+@keyframes fxTokenSomnambulismBob {
+  0% { transform: translateY(0) scale(0.96); opacity: 0.75; }
+  100% { transform: translateY(-5px) scale(1.02); opacity: 1; }
+}
+
+.fx-token-inferno-stance {
+  animation: fxTokenInfernoFlicker 0.3s ease-in-out infinite alternate !important;
+  filter: drop-shadow(0 0 18px #f97316) drop-shadow(0 0 35px #ef4444) brightness(1.25) !important;
+}
+@keyframes fxTokenInfernoFlicker {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.08) translateY(-2px); }
+}
+
+/* Djinn 3-Wish Interactive Selection Modal (Micro-HUD) */
+.fx-djinn-wish-picker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #ffd700;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.6);
+  z-index: 60;
+  pointer-events: auto;
+  max-width: 320px;
+  width: 90vw;
+  box-sizing: border-box;
+}
+.fx-wish-cards-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.fx-wish-card-btn {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(88, 28, 135, 0.75), rgba(59, 7, 100, 0.95));
+  border: 1.5px solid #c084fc;
+  border-radius: 10px;
+  color: #fff;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.fx-wish-card-btn:hover,
+.fx-wish-card-btn:active {
+  transform: translateY(-2px) scale(1.03);
+  border-color: #ffd700;
+  box-shadow: 0 4px 16px rgba(253, 224, 71, 0.6);
+  background: linear-gradient(180deg, rgba(147, 51, 234, 0.85), rgba(88, 28, 135, 0.98));
+}
+.fx-wish-card-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+.fx-wish-card-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fef08a;
+  text-align: center;
+  line-height: 1.15;
+}
+.fx-wish-card-sub {
+  font-size: 8px;
+  opacity: 0.85;
+  text-align: center;
+  margin-top: 3px;
+}
+
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .board-token.is-active .token-body,

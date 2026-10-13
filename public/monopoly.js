@@ -1553,6 +1553,30 @@ function getTileRent(tileId, levelOverride) {
     return 0;
   }
 
+  // 🪔 S3 Midas Touch: Hotel transmuted to solid gold = 0 rent!
+  if (prop && prop.isTransmutedGold) {
+    return 0;
+  }
+
+  // 🔱 S5 Atlantis Sunken Ruin vs Coral Palace:
+  if (monopolyState.floodedTiles && monopolyState.floodedTiles[tileId] && prop && prop.owner) {
+    if (isAbyssalDrifter(prop.owner)) {
+      rent *= 1.3; // Bioluminescent Coral Palace: +30% rent!
+    } else {
+      return 0; // Sunken Ruin: Rent disabled underwater!
+    }
+  }
+
+  // 🐉 S1 Sacred Waterways: +30% rent multiplier
+  if (monopolyState.sacredWaterways && monopolyState.sacredWaterways[tileId]) {
+    rent *= 1.3;
+  }
+
+  // 🌓 S2 Eclipse Shadow Tiles: 1.5× Nightmare Toll
+  if (monopolyState.eclipseShadowTiles && monopolyState.eclipseShadowTiles[tileId]) {
+    rent *= 1.5;
+  }
+
   // 🐉 S1 Mekong Lotus Water Shield: +50% rent bonus
   if (prop && prop.waterShield) {
     rent *= 1.5;
@@ -5087,6 +5111,16 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   el.classList.toggle('tile-wish-sanctuary', !!(st.wishSanctuaries && st.wishSanctuaries[tile.id]));
   el.classList.toggle('tile-banana-trap', !!(st.bananaTraps && st.bananaTraps[tile.id] > 0));
 
+  // 🐉 S1 Sacred Waterways, 🦊 S2 Inari Torii, ☀️ S2 Eclipse Shadow, 🪔 S3 Djinn Oasis, 🔥 S3 Phoenix Embers, 🔱 S5 Atlantis Flooded
+  el.classList.toggle('tile-naga-waterway', !!(st.sacredWaterways && st.sacredWaterways[tile.id]));
+  el.classList.toggle('tile-inari-torii', !!(st.inariToriiGates && st.inariToriiGates[tile.id]));
+  el.classList.toggle('tile-eclipse-shadow', !!(st.eclipseShadowTiles && st.eclipseShadowTiles[tile.id]));
+  el.classList.toggle('tile-djinn-oasis', !!(st.djinnOasisTiles && st.djinnOasisTiles[tile.id]));
+  el.classList.toggle('tile-phoenix-embers', !!(st.phoenixEmbers && st.phoenixEmbers[tile.id]));
+  el.classList.toggle('tile-atlantis-flooded', !!(st.floodedTiles && st.floodedTiles[tile.id]));
+  el.classList.toggle('is-coral-palace', !!(st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && isAbyssalDrifter(prop.owner)));
+  el.classList.toggle('is-sunken-ruin', !!(st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && !isAbyssalDrifter(prop.owner)));
+
   const isCitadel = !!(prop && (prop.isGlacialCitadel || (st && st.glacialCitadelTile === tile.id)));
   const isCitadelAura = !isCitadel && (st && st.glacialCitadelTile != null) && (tile.id === (st.glacialCitadelTile - 1 + 20) % 20 || tile.id === (st.glacialCitadelTile + 1) % 20);
   const isPyramid = !!(prop && (prop.isGoldenPyramid || (st && st.goldenPyramidTile === tile.id)));
@@ -5503,8 +5537,8 @@ function getRoleUltimate(role) {
     return {
       id: 'abyss_cataclysm',
       badge: '🔱 S5 MYTHIC ULTIMATE',
-      title: 'ABYSSAL TIDAL CATACLYSM',
-      desc: 'Bioluminescent sea storm drags the leading rival backward 3 tiles directly into treacherous waters!',
+      title: 'MAELSTROM CATACLYSM & THE KRAKEN TRENCH',
+      desc: 'Summons the Abyssal Trident! Sucks the leading rival 4 tiles backward into the whirlpool, drains -180🪙 oxygen tax, and permanently floods 3 tiles into Coral Palaces (+30% Rent) / Sunken Ruins (0 Rent)!',
       haloColor: '#06b6d4'
     };
   }
@@ -5512,8 +5546,8 @@ function getRoleUltimate(role) {
     return {
       id: 'naga_surge',
       badge: '🐉 S1 MYTHIC ULTIMATE',
-      title: 'EMERALD NAGA SURGE',
-      desc: 'Naga serpent blesses all Bangkok properties with Lotus Shields and bestows +500🪙 sacred river hoard!',
+      title: 'THE SACRED MEKONG FLASH FLOOD',
+      desc: 'Emerald serpent coils from the deep! Floods 3 properties into Sacred Waterways (+30% Rent, pushes rivals 2 tiles downstream into kill-zones), shields all Bangkok properties, and siphons +180🪙 flood tribute!',
       haloColor: '#10b981'
     };
   }
@@ -5521,8 +5555,8 @@ function getRoleUltimate(role) {
     return {
       id: 'inari_mirage',
       badge: '🦊 S2 MYTHIC ULTIMATE',
-      title: 'NINE-TAIL FOXFIRE MIRAGE',
-      desc: 'Summons 3 sacred Foxfire Spirit Tails and manifests 2 cursed spirit traps on rival airport tiles!',
+      title: 'NINE-TAIL DOPPELGÄNGER & WEALTH MIRROR',
+      desc: 'Sprouts 9 blazing Foxfire Tails! Summons the 3D Foxfire Torii Gate, curses rivals with Direction Inversion, siphons 25% liquid coins, and swaps physical runway positions with the leader!',
       haloColor: '#ec4899'
     };
   }
@@ -5530,8 +5564,8 @@ function getRoleUltimate(role) {
     return {
       id: 'eclipse_convergence',
       badge: '☀️ S2 MYTHIC ULTIMATE',
-      title: 'SOLAR-LUNAR CONVERGENCE',
-      desc: 'Total eclipse inverts air traffic: rivals collect 0 rent for 1 lap and all airport taxes funnel into your vault!',
+      title: 'TOTAL LUNAR BLACKOUT & SOMNAMBULISM TRANCE',
+      desc: 'Solar and lunar disks merge into total cosmic blackout! Traps rivals in Somnambulism Sleepwalk (pulled 3 tiles into Eclipse properties with 1.5× Nightmare Toll) and nullifies rival rent for 1 round!',
       haloColor: '#fbbf24'
     };
   }
@@ -5539,8 +5573,8 @@ function getRoleUltimate(role) {
     return {
       id: 'djinn_wish',
       badge: '🪔 S3 MYTHIC ULTIMATE',
-      title: 'COSMIC GENIE WISH',
-      desc: 'Rub the magic lamp: instant free Landmark upgrade + 350🪙 gold wish grant!',
+      title: 'COSMIC DJINN: REALITY OF THE THREE WISHES',
+      desc: 'Unseals the Golden Cosmic Lamp! Choose from 3 Legendary Wishes: Mirage Oasis (Swap ANY 2 properties), Midas Touch (transmute rival hotel to gold), or Flying Carpet +350🪙 gold wish grant!',
       haloColor: '#a855f7'
     };
   }
@@ -5548,8 +5582,8 @@ function getRoleUltimate(role) {
     return {
       id: 'phoenix_rebirth',
       badge: '🔥 S3 MYTHIC ULTIMATE',
-      title: 'PHOENIX REBIRTH FLAME',
-      desc: 'Sacred fire incinerates debts, claims +450🪙 from the Ash Pot, and teleports player to START with ×2 Lap Bonus!',
+      title: 'SUPERNOVA CREMATION & ASH ASCENSION',
+      desc: 'Incinerates all rival shields across the board! Rises from the ashes with +600🪙 surge, carpets 4 tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with Triple Lap Bonus!',
       haloColor: '#f97316'
     };
   }
@@ -5618,6 +5652,14 @@ function executeUltimate(role) {
   p.ult = 0;
   const ultData = getRoleUltimate(role);
   AudioFX.init();
+
+  isAnimating = true;
+  activeRollLocks[role] = true;
+  setTimeout(() => {
+    isAnimating = false;
+    releaseRoleLocks(role);
+    renderAll();
+  }, 2200);
 
   triggerUltimateEffects(role, ultData, true);
 
@@ -6106,85 +6148,210 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
 
     case 'abyss_cataclysm': {
       const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
-      if (rivals.length > 0) {
-        const targetR = rivals.sort((a, b) => netWorth(b) - netWorth(a))[0];
-        const targetP = st.players[targetR];
-        const tidalDmg = Math.min(150, Math.max(50, Math.round(targetP.miles * 0.2)));
-        if (isInitiator) {
-          targetP.pos = (targetP.pos - 3 + MONOPOLY_TILES.length) % MONOPOLY_TILES.length;
-          if (tidalDmg > 0) {
-            targetP.miles = Math.max(0, targetP.miles - tidalDmg);
-            p.miles += tidalDmg;
-          }
+      let targetR = rivals.length > 0 ? rivals.sort((a, b) => netWorth(b) - netWorth(a))[0] : null;
+      let targetP = targetR ? st.players[targetR] : null;
+      const tidalDmg = targetP ? Math.min(180, Math.max(60, Math.round(targetP.miles * 0.25))) : 120;
+      const floodedTiles = [];
+
+      if (isInitiator) {
+        if (targetP) {
+          targetP.pos = (targetP.pos - 4 + MONOPOLY_TILES.length) % MONOPOLY_TILES.length;
+          targetP.miles = Math.max(0, targetP.miles - tidalDmg);
           targetP.waterlogged = true;
+          p.miles += tidalDmg;
         }
-        tacticalSummary = { targetR, targetP, tidalDmg };
+        // Permanently flood 3 strategic tiles into Coral Palaces (+30% rent) / Sunken Ruins (0 rent)
+        st.floodedTiles = st.floodedTiles || {};
+        const floodCandidates = [
+          targetP ? targetP.pos : (p.pos + 4) % 20,
+          (p.pos + 2) % 20,
+          (p.pos + 3) % 20
+        ];
+        floodCandidates.forEach(tid => {
+          st.floodedTiles[tid] = { floodedBy: role };
+          floodedTiles.push(tid);
+        });
       }
+      tacticalSummary = { targetR, targetP, tidalDmg, floodedTiles };
       break;
     }
 
     case 'naga_surge': {
+      let floodTribute = 0;
+      const victims = [];
+      const nagaTiles = [];
       if (isInitiator) {
         p.miles += 500;
         p.clashTokens = Math.min(4, (p.clashTokens || 0) + 1);
+
+        // Fortify all Naga's properties with Water Shields
         ownedTileIds(role).forEach(tid => {
           if (st.properties[tid]) st.properties[tid].waterShield = true;
         });
+
+        // Flood Bangkok (1, 2, 3) or top 3 highest value properties into Sacred Waterways
+        st.sacredWaterways = st.sacredWaterways || {};
+        const topProps = Object.keys(st.properties)
+          .filter(tid => st.properties[tid]?.owner)
+          .sort((a, b) => (st.properties[b].level || 1) - (st.properties[a].level || 1))
+          .slice(0, 3)
+          .map(Number);
+        const candidates = topProps.length >= 3 ? topProps : [1, 2, 3];
+        candidates.forEach(tid => {
+          st.sacredWaterways[tid] = { creator: role, bonusRent: 0.30 };
+          nagaTiles.push(tid);
+        });
+
+        // Siphon 60🪙 flood relief tribute from all rivals
+        const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
+        rivals.forEach(r => {
+          const rp = st.players[r];
+          if (!rp) return;
+          const siph = Math.min(rp.miles, 60);
+          rp.miles = Math.max(0, rp.miles - siph);
+          floodTribute += siph;
+          victims.push({ role: r, amount: siph });
+        });
+        p.miles += floodTribute;
       }
+      tacticalSummary = { siphonedTotal: floodTribute, nagaTiles, victims };
       break;
     }
 
     case 'inari_mirage': {
+      const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
+      const targetR = rivals.length > 0 ? rivals.sort((a, b) => netWorth(b) - netWorth(a))[0] : null;
+      const targetP = targetR ? st.players[targetR] : null;
+      let siphonedRent = 150;
+      let toriiTile = (p.pos + 5) % 20;
+
       if (isInitiator) {
         p.foxfireTails = 3;
-        st.bananaTraps = st.bananaTraps || {};
-        const rivalTiles = Object.keys(st.properties).filter(tid => st.properties[tid].owner && st.properties[tid].owner !== role).map(Number);
-        const chosen = [...rivalTiles.slice(0, 2)];
-        if (chosen.length < 2) chosen.push((p.pos + 3) % 20);
-        if (chosen.length < 2) chosen.push((p.pos + 7) % 20);
-        chosen.slice(0, 2).forEach(tid => { st.bananaTraps[tid] = (st.bananaTraps[tid] || 0) + 1; });
+
+        // Erect Inari Torii Gate
+        st.inariToriiGates = st.inariToriiGates || {};
+        st.inariToriiGates[toriiTile] = { creator: role };
+
+        if (targetP) {
+          siphonedRent = Math.min(350, Math.max(80, Math.round(targetP.miles * 0.25)));
+          targetP.miles = Math.max(0, targetP.miles - siphonedRent);
+          p.miles += siphonedRent;
+
+          // Swap runway physical positions with the leader!
+          const tempPos = p.pos;
+          p.pos = targetP.pos;
+          targetP.pos = tempPos;
+          targetP.invertDirectionNext = true; // Invert movement direction on their next turn!
+        }
       }
+      tacticalSummary = { targetR, targetP, toriiTile, siphonedRent };
       break;
     }
 
     case 'eclipse_convergence': {
+      const rivalTiles = Object.keys(st.properties).filter(tid => st.properties[tid]?.owner && st.properties[tid].owner !== role).map(Number);
       if (isInitiator) {
         st.eclipseInvertRounds = 1;
         st.eclipseCaster = role;
+        p.miles += 300;
+
+        // Mark rival properties as Eclipse Shadow Tiles (1.5× Nightmare Toll)
+        st.eclipseShadowTiles = st.eclipseShadowTiles || {};
+        rivalTiles.forEach(tid => {
+          st.eclipseShadowTiles[tid] = { caster: role };
+        });
+
+        // Inflict Somnambulism on rivals: pulled 3 tiles forward on next turn
+        const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
+        rivals.forEach(r => {
+          const rp = st.players[r];
+          if (rp) rp.somnambulismSteps = 3;
+        });
       }
+      tacticalSummary = { rivalTiles };
       break;
     }
 
     case 'djinn_wish': {
       const myTiles = ownedTileIds(role);
       let upgradedTileId = null;
-      if (myTiles.length > 0) {
-        const lowestId = myTiles.sort((a, b) => (st.properties[a].level || 1) - (st.properties[b].level || 1))[0];
-        if (isInitiator) {
-          p.miles += 350;
+      let transmutedTileId = null;
+
+      if (isInitiator) {
+        p.miles += 350;
+
+        // Upgrade lowest owned property for free
+        if (myTiles.length > 0) {
+          const lowestId = myTiles.sort((a, b) => (st.properties[a].level || 1) - (st.properties[b].level || 1))[0];
           if (st.properties[lowestId]) {
             st.properties[lowestId].level = Math.min(3, (st.properties[lowestId].level || 1) + 1);
           }
-        }
-        upgradedTileId = lowestId;
-      } else {
-        if (isInitiator) {
-          p.miles += 550;
+          upgradedTileId = lowestId;
+        } else {
+          p.miles += 200;
           if (p.inventory && p.inventory.length < MONO_CFG.MAX_ITEMS && !p.inventory.includes('golden_dice')) {
             p.inventory.push('golden_dice');
           }
         }
+
+        // Midas Touch: Transmute rival's highest hotel into solid gold (0 rent, grants 80🪙 payout)
+        const rivalHotels = Object.keys(st.properties)
+          .filter(tid => st.properties[tid]?.owner && st.properties[tid].owner !== role && (st.properties[tid].level || 1) >= 2)
+          .sort((a, b) => (st.properties[b].level || 1) - (st.properties[a].level || 1));
+        if (rivalHotels.length > 0) {
+          transmutedTileId = Number(rivalHotels[0]);
+          st.properties[transmutedTileId].isTransmutedGold = true;
+          st.properties[transmutedTileId].transmutedRounds = 2;
+        }
+
+        // Manifest Oasis Portal on 2 tiles
+        st.djinnOasisTiles = st.djinnOasisTiles || {};
+        [(p.pos + 3) % 20, (p.pos + 7) % 20].forEach(tid => {
+          st.djinnOasisTiles[tid] = { creator: role, bonusReward: 75 };
+        });
       }
-      tacticalSummary = { upgradedTileId };
+      tacticalSummary = { upgradedTileId, transmutedTileId, wishType: 'empire' };
       break;
     }
 
     case 'phoenix_rebirth': {
+      let heatBurn = 0;
+      const emberTiles = [(p.pos + 2) % 20, (p.pos + 5) % 20, (p.pos + 9) % 20, (p.pos + 14) % 20];
+      const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
+      const targetR = rivals.length > 0 ? rivals.sort((a, b) => netWorth(b) - netWorth(a))[0] : null;
+      const targetP = targetR ? st.players[targetR] : null;
+
       if (isInitiator) {
-        p.miles += 450;
+        p.miles += 600;
         p.pos = 0;
-        grantMiles(role, MONO_CFG.LAP_BONUS * 2);
+        grantMiles(role, MONO_CFG.LAP_BONUS * 3); // Triple Lap Bonus
+        p.phoenixGraceActive = true; // Invincible Sunfire Armor
+
+        // Incinerate all rival shields across the board
+        Object.keys(st.properties).forEach(tid => {
+          const pr = st.properties[tid];
+          if (pr && pr.owner && pr.owner !== role) {
+            delete pr.shield;
+            delete pr.frostShield;
+            delete pr.waterShield;
+            delete pr.torchShield;
+          }
+        });
+
+        // Carpet 4 tiles in Sacred Golden Embers
+        st.phoenixEmbers = st.phoenixEmbers || {};
+        emberTiles.forEach(tid => {
+          st.phoenixEmbers[tid] = { creator: role, damage: 40, rounds: 2 };
+        });
+
+        // Scorch leading rival for 80🪙 heat damage
+        if (targetP) {
+          heatBurn = Math.min(targetP.miles, 80);
+          targetP.miles = Math.max(0, targetP.miles - heatBurn);
+          p.miles += heatBurn;
+        }
       }
+      tacticalSummary = { emberTiles, heatBurn, targetR, targetP };
       break;
     }
 
@@ -6511,42 +6678,43 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
     }
 
     case 'abyss_cataclysm': {
-      const { targetR, targetP, tidalDmg } = tacticalSummary;
+      const { targetR, targetP, tidalDmg = 120, floodedTiles = [] } = tacticalSummary;
       if (window.MonoFX && typeof MonoFX.abyssalCataclysm === 'function') {
-        MonoFX.abyssalCataclysm({ casterRole: role, targetRole: targetR, targetP, tidalDmg });
+        MonoFX.abyssalCataclysm({ casterRole: role, targetRole: targetR, targetP, tidalDmg, floodedTiles });
       } else {
         AudioFX.playAbyssalWave();
         AudioFX.playAbyssalSplash();
         AudioFX.playBoom();
         if (window.MonoFX) {
-          if (MonoFX.banner) MonoFX.banner('🔱 ABYSSAL CATACLYSM!', targetP ? `TSUNAMI DRAGGED ${targetP.name} -3 TILES!` : 'TITANIC TIDAL SURGE AWAKENED!', 'cyan', 1600);
+          if (MonoFX.banner) MonoFX.banner('🔱 ABYSSAL CATACLYSM!', targetP ? `KRAKEN TRENCH DRAGGED ${targetP.name} -4 TILES!` : 'TITANIC TIDAL SURGE AWAKENED!', 'cyan', 1800);
           if (targetR && targetP && MonoFX.tokens && MonoFX.tokens.teleport) MonoFX.tokens.teleport(targetR, targetP.pos);
           MonoFX.ring(c.x, c.y, 240, '#06b6d4', 850);
           MonoFX.ring(c.x, c.y, 340, '#0284c7', 1100);
           MonoFX.burst({ x: c.x, y: c.y, name: 'abyssal_tidal_crest', count: 18, spread: 240, up: 160, life: 1100 });
           MonoFX.burst({ x: c.x, y: c.y, name: 'water', count: 30, spread: 280, up: 200, gravity: 260, life: 1200, size: 24 });
-          if (targetR) MonoFX.coins({ from: { role: targetR }, to: { role }, amount: tidalDmg || 150 });
+          if (targetR) MonoFX.coins({ from: { role: targetR }, to: { role }, amount: tidalDmg });
         }
       }
       if (targetR && targetP) {
-        floatText(targetP.pos, `🌊 -3 TILES & -${tidalDmg || 150}🪙!`, 'neg fx-big');
-        announce(`🔱🌊 <strong>ABYSSAL TIDAL CATACLYSM!</strong> A massive tsunami pulled ${targetP.name} backward 3 tiles, drained <strong>${tidalDmg || 150}🪙</strong>, and waterlogged their next roll!`);
+        floatText(targetP.pos, `🌊 -4 TILES & -${tidalDmg}🪙!`, 'neg fx-big');
+        announce(`🔱🌊 <strong>MAELSTROM CATACLYSM & THE KRAKEN TRENCH!</strong> ${p.name} summoned the Abyssal Trident and a titanic whirlpool! Dragged ${targetP.name} 4 tiles backward into the trench (-${tidalDmg}🪙 oxygen tax), waterlogged their next roll, and permanently flooded 3 runway tiles into Coral Palaces (+30% Rent) and Sunken Ruins (0 Rent)!`);
       } else {
         floatText(p.pos, '🌊 ABYSSAL TIDAL CATACLYSM! 🔱', 'pos fx-big');
-        announce(`🔱🌊 <strong>ABYSSAL TIDAL CATACLYSM!</strong> A titanic ocean wave crested over the runway!`);
+        announce(`🔱🌊 <strong>MAELSTROM CATACLYSM!</strong> A titanic ocean whirlpool crested over the runway, flooding properties!`);
       }
       break;
     }
 
     case 'naga_surge': {
       const myOwned = ownedTileIds(role);
+      const { siphonedTotal = 0, nagaTiles = [] } = tacticalSummary;
       if (window.MonoFX && typeof MonoFX.emeraldNagaSurge === 'function') {
-        MonoFX.emeraldNagaSurge({ role, amount: 500, ownedTiles: myOwned });
+        MonoFX.emeraldNagaSurge({ role, amount: 500, ownedTiles: myOwned, siphonedTotal, nagaTiles });
       } else {
         AudioFX.playNagaSurge();
         if (AudioFX.playNagaGong) AudioFX.playNagaGong();
         if (window.MonoFX) {
-          if (MonoFX.banner) MonoFX.banner('🐉 EMERALD NAGA SURGE!', '+500🪙 RIVER HOARD · LOTUS SHIELDS!', 'green', 1500);
+          if (MonoFX.banner) MonoFX.banner('🐉 THE SACRED MEKONG FLOOD!', '+500🪙 RIVER HOARD · WATERWAYS & SHIELDS!', 'green', 1800);
           MonoFX.ring(pCoord.x, pCoord.y, 180, '#10b981', 750);
           MonoFX.ring(pCoord.x, pCoord.y, 280, '#ffd700', 950);
           MonoFX.burst({ x: c.x, y: c.y, name: 'naga_emerald_urn', count: 18, spread: 200, up: 140, life: 1100 });
@@ -6555,80 +6723,95 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           MonoFX.coins({ from: { tileId: 0 }, to: { role }, amount: 500 });
         }
       }
-      floatText(p.pos, '+500🪙 NAGA TREASURE! 🐉', 'pos fx-big');
-      announce(`🐉🪷 <strong>EMERALD NAGA SURGE!</strong> Ancient serpent spirits bestowed <strong>+500🪙</strong> and blessed Bangkok with Lotus Water Shields!`);
+      floatText(p.pos, `+${500 + siphonedTotal}🪙 NAGA TREASURE! 🐉`, 'pos fx-big');
+      announce(`🐉🪷 <strong>THE SACRED MEKONG FLASH FLOOD!</strong> ${p.name} invoked the ancient emerald Naga! Flooded 3 properties into Sacred Waterways (+30% Rent, washes rivals 2 tiles downstream into kill-zones), blessed Bangkok with Lotus Shields, and collected <strong>+${500 + siphonedTotal}🪙</strong> in river hoard and flood tribute!`);
       break;
     }
 
     case 'inari_mirage': {
+      const { targetR, targetP, toriiTile = 5, siphonedRent = 150 } = tacticalSummary;
       AudioFX.playInariFoxfire();
-      if (window.MonoFX) {
-        if (MonoFX.banner) MonoFX.banner('🦊 FOXFIRE MIRAGE!', '3 SPIRIT TAILS RESTORED · TRAPS LAID!', 'pink', 1500);
+      if (window.MonoFX && typeof MonoFX.inariFoxfireMirage === 'function') {
+        MonoFX.inariFoxfireMirage({ casterRole: role, targetRole: targetR, toriiTile, siphonedRent });
+      } else if (window.MonoFX) {
+        if (MonoFX.banner) MonoFX.banner('🦊 NINE-TAIL MIRAGE TRANSCENDENCE!', '9 SPIRIT TAILS · TORII GATE · POSITIONS SWAPPED!', 'pink', 1800);
         MonoFX.ring(pCoord.x, pCoord.y, 190, '#f97316', 750);
         MonoFX.ring(pCoord.x, pCoord.y, 280, '#ec4899', 950);
         MonoFX.burst({ x: c.x, y: c.y, name: 'inari_foxfire_sigil', count: 20, spread: 220, up: 140, life: 1000 });
         MonoFX.burst({ x: pCoord.x, y: pCoord.y, name: 'fire', count: 18, spread: 200, up: 140, life: 950 });
       }
-      floatText(p.pos, '🦊 3 TAILS & SPIRIT TRAPS!', 'pos fx-big');
-      announce(`🦊🔥 <strong>NINE-TAIL FOXFIRE MIRAGE!</strong> ${p.name} restored all 3 Spirit Tails and laid cursed Foxfire traps on the runway!`);
+      floatText(p.pos, `🦊 +${siphonedRent}🪙 SWAPPED! 🌸`, 'pos fx-big');
+      if (targetP) {
+        floatText(targetP.pos, `🦊 POSSESSED (-${siphonedRent}🪙)!`, 'neg fx-big');
+        announce(`🦊🌸 <strong>NINE-TAIL DOPPELGÄNGER & WEALTH MIRROR!</strong> ${p.name} sprouted 9 blazing Foxfire Tails and manifested the 3D Foxfire Torii Gate! Siphoned <strong>+${siphonedRent}🪙</strong> from ${targetP.name}, inverted their next roll direction, and swapped physical runway positions!`);
+      } else {
+        announce(`🦊🔥 <strong>NINE-TAIL FOXFIRE MIRAGE!</strong> ${p.name} restored all 3 Spirit Tails and laid the sacred Foxfire Torii Gate!`);
+      }
       break;
     }
 
     case 'eclipse_convergence': {
-      const rivalProperties = Object.keys(st.properties).filter(tid => st.properties[tid].owner && st.properties[tid].owner !== role).map(Number);
+      const { rivalTiles = [] } = tacticalSummary;
+      AudioFX.playEclipseConvergence();
       if (window.MonoFX && typeof MonoFX.eclipseConvergence === 'function') {
-        MonoFX.eclipseConvergence({ casterRole: role, rivalTiles: rivalProperties });
-      } else {
-        AudioFX.playEclipseConvergence();
-        if (window.MonoFX) {
-          if (MonoFX.banner) MonoFX.banner('☀️ ECLIPSE CONVERGENCE!', '0 RIVAL RENT FOR 1 ROUND!', 'gold', 1500);
-          MonoFX.ring(c.x, c.y, 220, '#ffd700', 800);
-          MonoFX.ring(c.x, c.y, 320, '#6366f1', 1100);
-          MonoFX.burst({ x: c.x, y: c.y, name: 'eclipse_yin_yang', count: 20, spread: 240, up: 150, life: 1100 });
-          MonoFX.burst({ x: pCoord.x, y: pCoord.y, name: 'sparkle', count: 24, spread: 220, up: 140, gravity: 0, life: 950, size: 20 });
-        }
+        MonoFX.eclipseConvergence({ casterRole: role, rivalTiles });
+      } else if (window.MonoFX) {
+        if (MonoFX.banner) MonoFX.banner('🌓 TOTAL LUNAR BLACKOUT!', 'SOMNAMBULISM SLEEPWALK · 0 RIVAL RENT!', 'gold', 1800);
+        MonoFX.ring(c.x, c.y, 220, '#ffd700', 800);
+        MonoFX.ring(c.x, c.y, 320, '#6366f1', 1100);
+        MonoFX.burst({ x: c.x, y: c.y, name: 'eclipse_yin_yang', count: 20, spread: 240, up: 150, life: 1100 });
+        MonoFX.burst({ x: pCoord.x, y: pCoord.y, name: 'sparkle', count: 24, spread: 220, up: 140, gravity: 0, life: 950, size: 20 });
       }
-      floatText(p.pos, '☀️ ECLIPSE: 0 RIVAL RENT!', 'pos fx-big');
-      announce(`☀️🌙 <strong>SOLAR-LUNAR CONVERGENCE!</strong> Celestial darkness descended: all rival rent collections reduced to 0 for 1 round!`);
+      floatText(p.pos, '🌓 TOTAL ECLIPSE & SOMNAMBULISM! 🌑', 'pos fx-big');
+      announce(`🌓🌑 <strong>TOTAL LUNAR BLACKOUT & SOMNAMBULISM TRANCE!</strong> Sun and Moon merged into cosmic darkness! Rivals are trapped in Somnambulism Sleepwalk (pulled 3 tiles into Eclipse properties with 1.5× Nightmare Toll), and all rival rent collections are nullified (0 rent) for 1 round!`);
       break;
     }
 
     case 'djinn_wish': {
-      const { upgradedTileId } = tacticalSummary;
+      const { upgradedTileId, transmutedTileId } = tacticalSummary;
       if (upgradedTileId != null && st.properties[upgradedTileId]) {
         floatText(upgradedTileId, `🪔 UPGRADED TO ${st.properties[upgradedTileId].level >= 3 ? 'HOTEL 🏨' : 'HOUSE 🏠🏠'}!`, 'pos fx-big');
       } else {
         floatText(p.pos, '🪔 +200🪙 & GOLDEN DICE! 🎲', 'pos fx-big');
       }
+      if (transmutedTileId != null) {
+        floatText(transmutedTileId, '🏆 TRANSMUTED TO SOLID GOLD (0 RENT)!', 'pos fx-big');
+      }
       if (window.MonoFX && typeof MonoFX.cosmicGenieWish === 'function') {
-        MonoFX.cosmicGenieWish({ role, upgradedTileId, amount: 350 });
+        MonoFX.cosmicGenieWish({ role, upgradedTileId, amount: 350, transmutedTileId });
       } else {
         AudioFX.playDjinnWish();
         if (window.MonoFX) {
-          if (MonoFX.banner) MonoFX.banner('🪔 COSMIC GENIE WISH!', '+350🪙 & MYSTICAL UPGRADE!', 'purple', 1500);
+          if (MonoFX.banner) MonoFX.banner('🪔 COSMIC GENIE: THREE WISHES!', '+350🪙 · FREE HOTEL UPGRADE · MIDAS TOUCH!', 'purple', 1800);
           MonoFX.ring(pCoord.x, pCoord.y, 190, '#a855f7', 800);
           MonoFX.burst({ x: c.x, y: c.y, name: 'djinn_magic_lamp', count: 18, spread: 220, up: 150, life: 1000 });
           MonoFX.burst({ x: pCoord.x, y: pCoord.y, name: 'sparkle', count: 24, spread: 220, up: 150, gravity: -20, life: 950, size: 18 });
           MonoFX.coins({ from: { bank: true }, to: { role }, amount: 350 });
         }
       }
-      announce(`🪔✨ <strong>COSMIC GENIE WISH!</strong> The Starlight Djinn granted <strong>+350🪙</strong> and an instant mystical boon!`);
+      announce(`🪔✨ <strong>COSMIC DJINN: REALITY OF THE THREE WISHES!</strong> ${p.name} unsealed the Golden Cosmic Lamp! Granted <strong>+350🪙</strong> wish gold, upgraded property to Hotel, and transmuted rival luxury hotel into solid gold for 2 rounds!`);
       break;
     }
 
     case 'phoenix_rebirth': {
+      const { emberTiles = [], heatBurn = 0, targetR, targetP } = tacticalSummary;
       AudioFX.playPhoenixRebirth();
       AudioFX.playBoom();
-      if (window.MonoFX) {
-        if (MonoFX.banner) MonoFX.banner('🔥 PHOENIX REBIRTH!', 'SOAR TO START · ×2 LAP BONUS (+400🪙)!', 'red', 1500);
+      if (window.MonoFX && typeof MonoFX.phoenixRebirthFlame === 'function') {
+        MonoFX.phoenixRebirthFlame({ casterRole: role, targetRole: targetR, heatBurn, emberTiles });
+      } else if (window.MonoFX) {
+        if (MonoFX.banner) MonoFX.banner('🔥 SUPERNOVA CREMATION & ASH ASCENSION!', 'SOAR TO START · ×3 LAP BONUS (+600🪙)!', 'red', 1800);
         if (MonoFX.tokens && MonoFX.tokens.teleport) MonoFX.tokens.teleport(role, 0);
         MonoFX.ring(c.x, c.y, 250, '#ef4444', 900);
         MonoFX.ring(c.x, c.y, 360, '#f97316', 1100);
         MonoFX.burst({ x: c.x, y: c.y, name: 'phoenix_pyre_crest', count: 26, spread: 280, up: 180, life: 1200 });
         MonoFX.burst({ x: c.x, y: c.y, name: 'fire', count: 22, spread: 240, up: 160, life: 1000 });
       }
-      floatText(0, '🔥 PHOENIX REBIRTH ×2 LAP!', 'pos fx-big');
-      announce(`🔥🪶 <strong>PHOENIX REBIRTH FLAME!</strong> Sacred solar fire cleansed all debts, flying ${p.name} directly to START with ×2 Lap Bonus!`);
+      floatText(0, '🔥 PHOENIX REBIRTH ×3 LAP! 🪶', 'pos fx-big');
+      if (targetP && heatBurn > 0) {
+        floatText(targetP.pos, `🔥 -${heatBurn}🪙 HEAT BURN!`, 'neg fx-big');
+      }
+      announce(`🔥🪶 <strong>SUPERNOVA CREMATION & ASH ASCENSION!</strong> Sacred solar fire vaporized ALL rival shields across the board! ${p.name} rose from the ashes with <strong>+600🪙</strong> cash surge, carpeted 4 runway tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with a <strong>Triple Lap Bonus</strong>!`);
       break;
     }
 
@@ -6658,6 +6841,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
 // =========================================================
 let lastUserRollTapTime = 0;
 function handleUserRollRequest(e) {
+  if (isSpectatorMode) return;
   if (e && e.preventDefault && e.type === 'touchend') e.preventDefault();
   const now = Date.now();
   if (now - lastUserRollTapTime < 400) {
@@ -7370,6 +7554,70 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       }
     }
 
+    // 🐉 S1 Naga Fireballs on Rolling 6:
+    if (rollVal === 6 && (isNaga || (perkOf(playerKey) && perkOf(playerKey).nagaFireballs))) {
+      monopolyState.sacredWaterways = monopolyState.sacredWaterways || {};
+      const targetProps = Object.keys(monopolyState.properties || {})
+        .filter(tid => monopolyState.properties[tid]?.owner)
+        .sort((a, b) => (monopolyState.properties[b].level || 1) - (monopolyState.properties[a].level || 1))
+        .slice(0, 3)
+        .map(Number);
+      const smiteList = targetProps.length >= 3 ? targetProps : [1, 2, 3];
+      smiteList.forEach(tid => {
+        monopolyState.sacredWaterways[tid] = { creator: playerKey, bonusRent: 0.30 };
+      });
+      grantMiles(playerKey, 90);
+      chargeUlt(playerKey, 15, 'Naga Fireballs');
+      if (AudioFX.playNagaWave) AudioFX.playNagaWave();
+      emitFx({ kind: 'moment', id: 'naga_river_surge', role: playerKey, tiles: smiteList });
+      floatText(player.pos, '🐉 NAGA FIREBALLS SMITE! +90🪙', 'pos fx-big');
+      announce(`🐉🌊 <strong>NAGA FIREBALLS SMITE!</strong> Rolling a 6 launched 3 sacred fireballs into the sky! Smote 3 luxury properties into <strong>Sacred Waterways (+30% Rent, Mekong Rapids downstream)</strong> and gathered <strong>+90🪙</strong> river treasure!`);
+    }
+
+    // 🦊 S2 Inari Torii Gate on Rolling 6:
+    if (rollVal === 6 && (isInari || (perkOf(playerKey) && perkOf(playerKey).mirageTorii))) {
+      monopolyState.inariToriiGates = monopolyState.inariToriiGates || {};
+      monopolyState.inariToriiGates[player.pos] = { creator: playerKey };
+      floatText(player.pos, '🦊 TORII GATE SET! 🌸', 'pos');
+      announce(`🦊🌸 <strong>INARI ILLUSION GATE!</strong> Rolling a 6 planted a mystical Torii Gate at ${MONOPOLY_TILES[player.pos]?.name || 'tile'}! Next rival stepping through suffers Foxfire Confusion (Inverted Roll Direction)!`);
+    }
+
+    // 🌓 S2 Eclipse Alignment on Rolling 6:
+    if (rollVal === 6 && (isEclipse || (perkOf(playerKey) && perkOf(playerKey).totalEclipseBlackout))) {
+      chargeUlt(playerKey, 15, 'Eclipse Alignment');
+      grantMiles(playerKey, 80);
+      const rivals = Object.keys(monopolyState.players || {}).filter(r => r !== playerKey && !monopolyState.players[r]?.bankrupt);
+      if (rivals.length > 0) {
+        const nearestR = rivals[0];
+        if (monopolyState.players[nearestR]) {
+          monopolyState.players[nearestR].somnambulismSteps = 3;
+          floatText(monopolyState.players[nearestR].pos, '🌑 SOMNAMBULISM TRANCE! 😴', 'neg');
+          announce(`🌓🌑 <strong>ECLIPSE SOMNAMBULISM!</strong> Rolling a 6 channeled cosmic twilight: ${monopolyState.players[nearestR].name} is hexed with <strong>Somnambulism Sleepwalk (pulled 3 tiles into Eclipse territory)</strong>!`);
+        }
+      }
+      floatText(player.pos, '🌓 ECLIPSE HARMONY +80🪙', 'pos');
+    }
+
+    // 🔥 S3 Phoenix Sunfire Flare on Rolling 6:
+    if (rollVal === 6 && (isPhoenix || (perkOf(playerKey) && perkOf(playerKey).sunfireImmolation))) {
+      grantMiles(playerKey, 90);
+      chargeUlt(playerKey, 15, 'Solar Pyre Flare');
+      monopolyState.phoenixEmbers = monopolyState.phoenixEmbers || {};
+      monopolyState.phoenixEmbers[player.pos] = { creator: playerKey, damage: 40, rounds: 2 };
+      floatText(player.pos, '🔥 SACRED EMBERS SET! +90🪙', 'pos');
+      announce(`🔥☀️ <strong>PHOENIX SUNFIRE FLARE!</strong> Rolling a 6 erupted with sacred solar fire: carpeted ${MONOPOLY_TILES[player.pos]?.name || 'runway'} with <strong>Golden Embers (40🪙 heat damage)</strong> and earned +90🪙 catch-up energy!`);
+    }
+
+    // 🔱 S5 Atlantis Tidal Surge on Rolling 6:
+    if (rollVal === 6 && (isAbyss || (perkOf(playerKey) && perkOf(playerKey).claimedTileFlooding))) {
+      monopolyState.floodedTiles = monopolyState.floodedTiles || {};
+      monopolyState.floodedTiles[player.pos] = { floodedBy: playerKey };
+      grantMiles(playerKey, 80);
+      chargeUlt(playerKey, 15, 'Tidal Surge');
+      floatText(player.pos, '🔱 TILE FLOODED: OCEAN TRENCH! 🌊', 'pos');
+      announce(`🔱🌊 <strong>BIOLUMINESCENT FLOOD SURGE!</strong> Rolling a 6 flooded ${MONOPOLY_TILES[player.pos]?.name || 'the tile'} into an <strong>Ocean Trench (Coral Palace / Sunken Ruin)</strong> with trench warp current!`);
+    }
+
     // --- BIOLUMINESCENT DRIFT TACTICAL DECISION ---
     if (drift > 0) {
       const targetA = (player.pos + rollVal) % MONOPOLY_TILES.length;
@@ -7445,7 +7693,13 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     }
 
     // Normal Non-Drift Move
-    const totalSteps = rollVal;
+    let totalSteps = rollVal;
+    if (player.somnambulismSteps) {
+      totalSteps = player.somnambulismSteps;
+      delete player.somnambulismSteps;
+      announce(`🌓😴 <strong>SOMNAMBULISM SLEEPWALK!</strong> ${player.name} is sleepwalking in a cosmic trance! Pulled forward exactly <strong>${totalSteps} steps</strong>!`);
+      floatText(player.pos, '🌑 SLEEPWALKING (3 STEPS) 😴', 'neg fx-big');
+    }
     setMonopolyTicker(isVipCasino
       ? `🎰 <strong>VIP High-Roller Express!</strong> ${player.name} rolled a <strong>4</strong> straight to Sky Casino! 💎`
       : isMonaco
@@ -7498,7 +7752,10 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
   const FX = window.MonoFX;
   if (FX && FX.tokens && typeof FX.tokens.lock === 'function') FX.tokens.lock(playerKey, true);
   const driftPerk = Number(perkOf(playerKey).oceanDrift) || 0;
-  const isReverse = (monopolyState.midnightReverseRounds || 0) > 0;
+  const isReverse = (monopolyState.midnightReverseRounds || 0) > 0 || !!p.invertDirectionNext;
+  if (p.invertDirectionNext) {
+    delete p.invertDirectionNext;
+  }
   const isSupernova = typeof isAstralSovereign === 'function' ? isAstralSovereign(playerKey) : false;
 
   const startPos = Number(p.pos) || 0;
@@ -7516,6 +7773,17 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
         ? ((startPos - (i + 1)) % numTiles + numTiles) % numTiles
         : (startPos + (i + 1)) % numTiles;
       p.pos = nextPos;
+
+      // 🔥 S3 Phoenix Underdog Inferno Stance (leaves scorched footprints if behind on Net Worth):
+      if (isPhoenixAscendant(playerKey)) {
+        const myNw = netWorth(playerKey);
+        const rivals = Object.keys(monopolyState.players || {}).filter(r => r !== playerKey && !monopolyState.players[r]?.bankrupt);
+        const maxRivalNw = rivals.length > 0 ? Math.max(...rivals.map(r => netWorth(r))) : 0;
+        if (myNw < maxRivalNw) {
+          monopolyState.phoenixEmbers = monopolyState.phoenixEmbers || {};
+          monopolyState.phoenixEmbers[nextPos] = { creator: playerKey, damage: 40, rounds: 2 };
+        }
+      }
 
       const passedStart = isReverse ? (from === 0 || p.pos === 0) : (p.pos === 0);
       if (passedStart) {
@@ -7751,6 +8019,81 @@ function resolveLanding(playerKey, tile) {
       renderMonopolyBoard();
       resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
       return;
+    }
+  }
+
+  // 🐉 S1 Sacred Waterways & Mekong Rapids:
+  if (st.sacredWaterways && st.sacredWaterways[tile.id] && !isNagaWarden(playerKey) && !p.bankrupt) {
+    const nagaCreator = st.sacredWaterways[tile.id].creator;
+    const waterwayRentBonus = 40;
+    p.miles = Math.max(0, p.miles - waterwayRentBonus);
+    if (st.players[nagaCreator]) st.players[nagaCreator].miles += waterwayRentBonus;
+    if (AudioFX.playNagaWave) AudioFX.playNagaWave();
+    floatText(tile.id, `🌊 MEKONG RAPIDS! -${waterwayRentBonus}🪙`, 'neg fx-big');
+    const pushDownstream = 2;
+    p.pos = (p.pos + pushDownstream) % MONOPOLY_TILES.length;
+    announce(`🐉🌊 <strong>MEKONG RAPIDS PUSH!</strong> ${p.name} was caught in the roaring emerald currents of ${st.players[nagaCreator]?.name || 'Naga'}'s Sacred Waterway! Paid <strong>${waterwayRentBonus}🪙</strong> waterway toll and was washed <strong>+${pushDownstream} tiles downstream</strong> to ${MONOPOLY_TILES[p.pos].name}!`);
+    renderMonopolyBoard();
+    resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+    return;
+  }
+
+  // 🦊 S2 Inari Torii Gate: Foxfire Confusion & Direction Inversion:
+  if (st.inariToriiGates && st.inariToriiGates[tile.id] && !isInariFoxfire(playerKey)) {
+    const toriiCreator = st.inariToriiGates[tile.id].creator;
+    delete st.inariToriiGates[tile.id];
+    p.invertDirectionNext = true;
+    if (AudioFX.playInariFoxfire) AudioFX.playInariFoxfire();
+    floatText(tile.id, '🦊 TORII ILLUSION: NEXT ROLL REVERSED!', 'neg fx-big');
+    announce(`🦊🌸 <strong>FOXFIRE ILLUSION GATE!</strong> ${p.name} stepped through the sacred Torii Gate of ${st.players[toriiCreator]?.name || 'Inari'}! Mesmerized by spirit flames: <strong>next roll direction is INVERTED (walks backwards)</strong>!`);
+    renderMonopolyBoard();
+  }
+
+  // 🔥 S3 Phoenix Golden Embers: Heat Burn
+  if (st.phoenixEmbers && st.phoenixEmbers[tile.id] && !isPhoenixAscendant(playerKey) && !p.bankrupt) {
+    const emberCreator = st.phoenixEmbers[tile.id].creator;
+    const emberDmg = Math.min(p.miles, st.phoenixEmbers[tile.id].damage || 40);
+    if (emberDmg > 0) {
+      p.miles -= emberDmg;
+      if (st.players[emberCreator]) st.players[emberCreator].miles += emberDmg;
+      if (AudioFX.playPhoenixFlames) AudioFX.playPhoenixFlames();
+      floatText(tile.id, `🔥 -${emberDmg}🪙 HEAT BURN!`, 'neg fx-big');
+      announce(`🔥☀️ <strong>SACRED GOLDEN EMBERS!</strong> ${p.name} stepped into scorching phoenix fire at ${tile.name}! Took <strong>-${emberDmg}🪙</strong> heat damage siphoned to ${st.players[emberCreator]?.name || 'Phoenix'}!`);
+    }
+  }
+
+  // 🪔 S3 Djinn Oasis Portal: Starlight Wish Gold
+  if (st.djinnOasisTiles && st.djinnOasisTiles[tile.id]) {
+    const oasis = st.djinnOasisTiles[tile.id];
+    delete st.djinnOasisTiles[tile.id];
+    const reward = oasis.bonusReward || 75;
+    grantMiles(playerKey, reward);
+    if (oasis.creator && oasis.creator !== playerKey && st.players[oasis.creator]) {
+      grantMiles(oasis.creator, 50);
+    }
+    if (AudioFX.playDjinnWish) AudioFX.playDjinnWish();
+    floatText(tile.id, `🪔 +${reward}🪙 MIRAGE OASIS!`, 'pos fx-big');
+    announce(`🪔✨ <strong>MIRAGE OASIS PORTAL!</strong> ${p.name} drank from the celestial spring at ${tile.name} and collected <strong>+${reward}🪙</strong> starlight gold!`);
+    renderMonopolyBoard();
+  }
+
+  // 🔱 S5 Atlantis Ocean Trench Surf / Nitrogen Decompression:
+  if (st.floodedTiles && st.floodedTiles[tile.id]) {
+    if (isAbyssalDrifter(playerKey)) {
+      const allFlooded = Object.keys(st.floodedTiles).map(Number).filter(tid => tid !== tile.id);
+      if (allFlooded.length > 0) {
+        const destTile = allFlooded[0];
+        p.pos = destTile;
+        if (AudioFX.playAbyssalSplash) AudioFX.playAbyssalSplash();
+        floatText(tile.id, '🔱 OCEAN TRENCH WARP! 🌊', 'pos fx-big');
+        announce(`🔱🌊 <strong>OCEAN TRENCH WARP!</strong> ${p.name} dove into the abyssal current and surfed through the trench to <strong>${MONOPOLY_TILES[destTile].name}</strong>!`);
+        renderMonopolyBoard();
+        resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+        return;
+      }
+    } else {
+      floatText(tile.id, '🌊 FLOODED TRENCH: WATERLOGGED!', 'neg');
+      p.waterlogged = true;
     }
   }
 
@@ -8104,9 +8447,12 @@ function endTurn() {
   if (st.magnet && st.magnet.target === prev) st.magnet = null;
   st.pendingDecision = null;
   st.turnResolver = null;
+  const order = getTurnOrder();
+  const prevIdx = order.indexOf(prev);
   const nextRole = getNextTurn(prev);
   st.currentTurn = nextRole;
-  if (nextRole === getTurnOrder()[0]) {
+  const nextIdx = order.indexOf(nextRole);
+  if (nextIdx <= prevIdx || nextIdx === 0) {
     st.round = (st.round || 1) + 1;
     if (st.eclipseInvertRounds > 0) {
       st.eclipseInvertRounds -= 1;
@@ -10733,6 +11079,7 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_created' || message.type === 'room_joined') {
+    isSpectatorMode = !!message.spectator;
     currentFlightRoom = message.room;
     currentFlightRoomIsHost = (message.type === 'room_created') || (message.slot && message.slot.id === 1);
     currentFlightRoomSlot = message.slot || (message.room && message.room.slots && message.room.slots[0]);
@@ -10930,9 +11277,37 @@ function handleMonopolyMessage(message) {
     return;
   }
 
+  if (message.type === 'room_finished') {
+    if (currentFlightRoom) currentFlightRoom.status = 'finished';
+    try { localStorage.removeItem('sky_active_room_id'); } catch (_) {}
+    const banner = $m('neoraActiveMatchBanner');
+    if (banner) banner.classList.add('hidden');
+    if (message.state) mergeIncomingState(message.state);
+    return;
+  }
+
   if (message.type !== 'monopoly_action') return;
 
   switch (message.action) {
+    case 'buy':
+      if (message.state) mergeIncomingState(message.state);
+      if (message.tileId != null) actBuy(message.tileId);
+      break;
+
+    case 'pass':
+      if (message.state) mergeIncomingState(message.state);
+      if (message.tileId != null) actPassBuy(message.tileId);
+      break;
+
+    case 'upgrade':
+      if (message.state) mergeIncomingState(message.state);
+      if (message.tileId != null) actUpgrade(message.tileId);
+      break;
+
+    case 'rent':
+      if (message.state) mergeIncomingState(message.state);
+      if (message.tileId != null) actPayRent(message.tileId);
+      break;
     case 'reset_game': {
       const prevPlayed = Array.isArray(monopolyState.playedCardIds) ? monopolyState.playedCardIds : [];
       const persistent = loadPersistentPlayedCardIds();

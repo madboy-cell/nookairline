@@ -775,3 +775,182 @@ html, body {
   transition: transform 0.2s, filter 0.2s;
 }
 .seat-taken-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+/* =========================================================
+ * 🌟 FLOATING MINI-CALL ISLAND (Voice Call Dynamic Island)
+ * ========================================================= */
+.floating-call-island {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  padding: 5px 12px 5px 6px;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.25);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, box-shadow 0.3s ease;
+  max-width: 92vw;
+}
+
+.floating-call-island:hover {
+  transform: translateX(-50%) translateY(-2px) scale(1.02);
+  box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.7), 0 0 28px rgba(244, 63, 94, 0.4);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.floating-call-island.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-20px) scale(0.92);
+}
+
+.fci-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fci-avatar-wrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.fci-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1e1b4b;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.fci-pulse-dot {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 8px #10b981;
+  animation: fci-pulse 2s infinite;
+}
+
+@keyframes fci-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.fci-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 68px;
+}
+
+.fci-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fci-timer {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+}
+
+.fci-waveform {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 18px;
+  padding: 0 4px;
+}
+
+.fci-bar {
+  width: 2.5px;
+  background: #f43f5e;
+  border-radius: 2px;
+  animation: fci-wave 1.2s ease-in-out infinite;
+}
+
+.fci-bar.bar-1 { height: 6px; animation-delay: 0.1s; }
+.fci-bar.bar-2 { height: 14px; animation-delay: 0.3s; }
+.fci-bar.bar-3 { height: 10px; animation-delay: 0.2s; }
+.fci-bar.bar-4 { height: 7px; animation-delay: 0.4s; }
+
+@keyframes fci-wave {
+  0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+.fci-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 2px;
+}
+
+.fci-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.fci-btn:active {
+  transform: scale(0.9);
+}
+
+.fci-btn-mute {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.fci-btn-mute:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.fci-btn-mute.is-muted {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.fci-btn-hangup {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.fci-btn-hangup:hover {
+  background: #dc2626;
+}
+

@@ -2317,6 +2317,273 @@ body.has-active-modal .vault-pill * {
 }
 
 /* =========================================================
+   REWORKED MYTHIC BOARD TILE & HAZARD EFFECTS
+   ========================================================= */
+
+/* S1: Sacred Mekong Waterway */
+.board-tile.tile-naga-waterway {
+  background: radial-gradient(circle at 50% 60%, rgba(16, 185, 129, 0.42) 0%, rgba(6, 78, 59, 0.85) 100%) !important;
+  outline: 2px solid rgba(16, 185, 129, 0.98) !important;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.75), inset 0 0 14px rgba(52, 211, 153, 0.6) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-naga-waterway::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s1/mekong_water_surge.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.52;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: mekongSurgeFlow 3.2s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes mekongSurgeFlow {
+  0% { transform: scale(1) translateY(0); filter: hue-rotate(0deg); }
+  100% { transform: scale(1.08) translateY(-3px); filter: hue-rotate(15deg); }
+}
+.board-tile.tile-naga-waterway::after {
+  content: '🌊 +30%';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #a7f3d0;
+  background: rgba(6, 78, 59, 0.9);
+  border: 1px solid #10b981;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* S2: Inari Torii Illusion Gate */
+.board-tile.tile-inari-torii {
+  background: radial-gradient(circle at 50% 60%, rgba(236, 72, 153, 0.4) 0%, rgba(136, 19, 55, 0.85) 100%) !important;
+  outline: 2px solid rgba(236, 72, 153, 0.98) !important;
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.75), inset 0 0 14px rgba(244, 114, 182, 0.5) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-inari-torii::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s2/foxfire_crests.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.65;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: inariToriiPulse 2.4s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes inariToriiPulse {
+  0% { transform: scale(0.92); opacity: 0.5; }
+  100% { transform: scale(1.06); opacity: 0.75; }
+}
+.board-tile.tile-inari-torii::after {
+  content: '⛩️ INVERT';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #fbcfe8;
+  background: rgba(136, 19, 55, 0.9);
+  border: 1px solid #ec4899;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* S2: Total Eclipse Void Shadow */
+.board-tile.tile-eclipse-shadow {
+  background: radial-gradient(circle at 50% 50%, rgba(30, 27, 75, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+  outline: 2px solid rgba(99, 102, 241, 0.95) !important;
+  box-shadow: 0 0 18px rgba(99, 102, 241, 0.65), inset 0 0 14px rgba(129, 140, 248, 0.4) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-eclipse-shadow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s2/eclipse_void_rift.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.65;
+  mix-blend-mode: lighten;
+  pointer-events: none;
+  animation: eclipseRiftSpin 6s linear infinite;
+  z-index: 2;
+}
+@keyframes eclipseRiftSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.05); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.board-tile.tile-eclipse-shadow::after {
+  content: '🌑 0 RENT';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #c7d2fe;
+  background: rgba(30, 27, 75, 0.95);
+  border: 1px solid #818cf8;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* S3: Cosmic Djinn Oasis Portal */
+.board-tile.tile-djinn-oasis {
+  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.4) 0%, rgba(88, 28, 135, 0.9) 100%) !important;
+  outline: 2px solid rgba(168, 85, 247, 0.95) !important;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.7), inset 0 0 12px rgba(234, 179, 8, 0.5) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-djinn-oasis::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s3/mirage_oasis_portal.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: djinnPortalHover 3s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes djinnPortalHover {
+  0% { transform: scale(0.96) rotate(-2deg); }
+  100% { transform: scale(1.06) rotate(3deg); }
+}
+.board-tile.tile-djinn-oasis::after {
+  content: '🪔 OASIS';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #fef08a;
+  background: rgba(88, 28, 135, 0.92);
+  border: 1px solid #fbbf24;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* S3: Phoenix Molten Embers */
+.board-tile.tile-phoenix-embers {
+  background: radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.45) 0%, rgba(154, 52, 18, 0.9) 100%) !important;
+  outline: 2px solid rgba(249, 115, 22, 0.98) !important;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 14px rgba(239, 68, 68, 0.6) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-phoenix-embers::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s3/phoenix_molten_crater.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: phoenixEmbersGlow 2s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes phoenixEmbersGlow {
+  0% { filter: brightness(1) drop-shadow(0 0 4px #ef4444); }
+  100% { filter: brightness(1.3) drop-shadow(0 0 12px #f97316); }
+}
+.board-tile.tile-phoenix-embers::after {
+  content: '🔥 -40🪙';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #fed7aa;
+  background: rgba(154, 52, 18, 0.95);
+  border: 1px solid #f97316;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* S5: Atlantis Flooded Property (Sunken Ruins or Coral Palace) */
+.board-tile.tile-atlantis-flooded {
+  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.45) 0%, rgba(8, 47, 73, 0.92) 100%) !important;
+  outline: 2px solid rgba(6, 182, 212, 0.98) !important;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.8), inset 0 0 15px rgba(56, 189, 248, 0.6) !important;
+  position: relative;
+  overflow: hidden;
+}
+.board-tile.tile-atlantis-flooded::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/s5/abyssal_coral_reef.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: atlantisReefCurrent 3.5s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes atlantisReefCurrent {
+  0% { transform: translateY(0) scale(1); filter: hue-rotate(0deg); }
+  100% { transform: translateY(-4px) scale(1.05); filter: hue-rotate(20deg); }
+}
+.board-tile.tile-atlantis-flooded.is-coral-palace::after {
+  content: '🪸 +30%';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #a5f3fc;
+  background: rgba(8, 47, 73, 0.95);
+  border: 1px solid #06b6d4;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.board-tile.tile-atlantis-flooded.is-sunken-ruin::after {
+  content: '🔱 0 RENT';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #fed7aa;
+  background: rgba(124, 45, 18, 0.95);
+  border: 1px solid #ea580c;
+  border-radius: 4px;
+  padding: 1px 3px;
+  z-index: 12;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* =========================================================
    S2-B: CELESTIAL ECLIPSE YIN-YANG ORBIT & STANCE DOMAIN
    ========================================================= */
 .eclipse-dice-orbit {

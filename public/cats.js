@@ -31,15 +31,16 @@
     // Needs fall from 100 → 0 over this many hours
     DECAY_H: { hunger: 10, love: 14, fun: 8 },
     START_NEEDS: 80,
-    FEED: 45, PET: 6, PLAY: 35,
+    FEED: 45, PET: 6, PLAY: 35, BRUSH: 20,
     FULL_AT: 92,                       // "I'm full!" — feeding does nothing above this
     TIRED_AT: 95,                      // too sleepy to play above this fun level
 
-    CARE_FISH: { feed: 3, pet: 1, play: 4 },
+    CARE_FISH: { feed: 3, pet: 1, play: 4, brush: 2 },
     CARE_FISH_CAP: 60,                 // per person per day
     PET_COOLDOWN_MS: 650,
     FEED_COOLDOWN_MS: 2500,
     PLAY_COOLDOWN_MS: 4000,
+    BRUSH_COOLDOWN_MS: 1200,
 
     GIFT_MOOD: 60,                     // happy cats (mood ≥ 60) bring each of you one gift a day
     GIFTS_PER_DAY: 8,
