@@ -171,9 +171,9 @@ class RoomRegistry {
           const isBot = type === 'bot';
           const isClosed = type === 'closed';
 
-          const defaultBotName = (idx === 2)
+          const defaultBotName = (idx === 1)
             ? (s.difficulty === 'insane' ? 'Astral Sovereign 🌌' : s.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣')
-            : (idx === 3)
+            : (idx === 2)
               ? (s.difficulty === 'insane' ? 'Chrono Sovereign ⏳' : s.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱')
               : (s.difficulty === 'insane' ? 'Apex Sovereign ⚡' : s.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
 
@@ -1011,7 +1011,12 @@ class RoomRegistry {
         slot.ready = true;
         slot.connected = true;
         slot.difficulty = update.difficulty || slot.difficulty || 'easy';
-        slot.name = update.name || (slot.difficulty === 'insane' ? 'Apex Sovereign ⚡' : slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+        const defaultBotName = (slot.id === 2)
+          ? (slot.difficulty === 'insane' ? 'Astral Sovereign 🌌' : slot.difficulty === 'hard' ? 'Major Whiskers 🐯' : 'Cadet Mochi 🐣')
+          : (slot.id === 3)
+            ? (slot.difficulty === 'insane' ? 'Chrono Sovereign ⏳' : slot.difficulty === 'hard' ? 'Admiral Claw 🦁' : 'Pilot Pip 🐱')
+            : (slot.difficulty === 'insane' ? 'Apex Sovereign ⚡' : slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+        slot.name = update.name || defaultBotName;
         slot.avatar = update.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png';
       } else if (update.type === 'closed') {
         slot.controller = 'NONE';

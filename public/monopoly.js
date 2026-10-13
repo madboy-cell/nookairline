@@ -2386,6 +2386,10 @@ function initMonopoly() {
         const role = roles[idx];
         const color = colors[idx];
 
+        const defaultEasyName = idx === 0 ? 'Cadet Mochi 🐣' : (idx === 1 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾');
+        const defaultHardName = idx === 0 ? 'Major Whiskers 🐯' : (idx === 1 ? 'Admiral Claw 🦁' : 'Capt. Whiskers 😼');
+        const defaultInsaneName = idx === 0 ? 'Astral Sovereign 🌌' : (idx === 1 ? 'Chrono Sovereign ⏳' : 'Apex Sovereign ⚡');
+
         if (val === 'easy') {
           customSlots.push({
             id: slotId,
@@ -2395,7 +2399,7 @@ function initMonopoly() {
             difficulty: 'easy',
             ready: true,
             occupiedBy: null,
-            name: idx === 1 ? 'Cadet Mochi 🐣' : (idx === 2 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾'),
+            name: defaultEasyName,
             avatar: 'assets/ui/neora_ref/avatar_bot_blue.png'
           });
         } else if (val === 'hard') {
@@ -2407,7 +2411,19 @@ function initMonopoly() {
             difficulty: 'hard',
             ready: true,
             occupiedBy: null,
-            name: idx === 1 ? 'Major Whiskers 🐯' : (idx === 2 ? 'Admiral Claw 🦁' : 'Capt. Whiskers 😼'),
+            name: defaultHardName,
+            avatar: 'assets/ui/neora_ref/avatar_bot_blue.png'
+          });
+        } else if (val === 'insane') {
+          customSlots.push({
+            id: slotId,
+            role,
+            color,
+            type: 'bot',
+            difficulty: 'insane',
+            ready: true,
+            occupiedBy: null,
+            name: defaultInsaneName,
             avatar: 'assets/ui/neora_ref/avatar_bot_blue.png'
           });
         } else if (val === 'closed') {
@@ -2469,8 +2485,8 @@ function initMonopoly() {
         if (icon) { icon.textContent = '🔒'; icon.classList.remove('hidden'); }
         if (img) img.classList.add('hidden');
       } else {
-        // easy or hard bot
-        if (circle) circle.className = 'slot-avatar-circle bot';
+        // easy, hard, or insane bot
+        if (circle) circle.className = (val === 'insane') ? 'slot-avatar-circle bot insane' : 'slot-avatar-circle bot';
         if (icon) icon.classList.add('hidden');
         if (img) img.classList.remove('hidden');
       }
@@ -3996,16 +4012,25 @@ function renderNeoraWaitingRoom() {
           </div>
         `;
       } else if (slot.type === 'bot') {
+        const isEasy = slot.difficulty === 'easy';
+        const isInsane = slot.difficulty === 'insane';
         const botAvatar = slot.avatar || 'assets/ui/neora_ref/avatar_bot_blue.png';
-        const botName = slot.name || (slot.difficulty === 'hard' ? 'Capt. Whiskers 😼' : 'Trainee Mochi 🐾');
+        const defaultBotName = slot.id === 2
+          ? (isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯')
+          : (slot.id === 3
+            ? (isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁')
+            : (isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼'));
+        const botName = slot.name || defaultBotName;
+        const pillText = isInsane ? '+ Ready ⚡' : '+ Ready 🤖';
+        const pillClass = isInsane ? 'slot-ready-pill is-ready is-insane' : 'slot-ready-pill is-ready';
         card.innerHTML = `
           <span class="slot-more-dots" title="Configure Bot">···</span>
-          <div class="slot-avatar-container">
+          <div class="slot-avatar-container ${isInsane ? 'is-insane-avatar' : ''}">
             <img src="${botAvatar}" class="slot-avatar-img" alt="" />
           </div>
           <div class="slot-info-col">
-            <span class="slot-name-badge">${botName}</span>
-            <span class="slot-ready-pill is-ready">+ Ready 🤖</span>
+            <span class="slot-name-badge ${isInsane ? 'slot-name-insane' : ''}">${botName}</span>
+            <span class="${pillClass}">${pillText}</span>
           </div>
         `;
       } else if (slot.type === 'closed') {
@@ -4176,8 +4201,9 @@ function openSlotConfigPopover(slotId) {
       let isActive = false;
       if (slot) {
         if (opt === 'open' && slot.type === 'human' && !slot.occupiedBy) isActive = true;
-        else if (opt === 'easy' && slot.type === 'bot' && slot.difficulty !== 'hard') isActive = true;
+        else if (opt === 'easy' && slot.type === 'bot' && slot.difficulty === 'easy') isActive = true;
         else if (opt === 'hard' && slot.type === 'bot' && slot.difficulty === 'hard') isActive = true;
+        else if (opt === 'insane' && slot.type === 'bot' && slot.difficulty === 'insane') isActive = true;
         else if (opt === 'closed' && slot.type === 'closed') isActive = true;
       }
       btn.classList.toggle('active-opt', isActive);
@@ -4225,9 +4251,14 @@ function initNeoraSlotConfigPopover() {
       if (opt === 'open') {
         update = { type: 'human', difficulty: null, name: 'Open Slot', avatar: '', ready: false, occupiedBy: null, kick: true };
       } else if (opt === 'easy') {
-        update = { type: 'bot', difficulty: 'easy', name: 'Trainee Mochi 🐾', avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
+        const defaultName = slotId === 2 ? 'Cadet Mochi 🐣' : (slotId === 3 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾');
+        update = { type: 'bot', difficulty: 'easy', name: defaultName, avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
       } else if (opt === 'hard') {
-        update = { type: 'bot', difficulty: 'hard', name: 'Capt. Whiskers 😼', avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
+        const defaultName = slotId === 2 ? 'Major Whiskers 🐯' : (slotId === 3 ? 'Admiral Claw 🦁' : 'Capt. Whiskers 😼');
+        update = { type: 'bot', difficulty: 'hard', name: defaultName, avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
+      } else if (opt === 'insane') {
+        const defaultName = slotId === 2 ? 'Astral Sovereign 🌌' : (slotId === 3 ? 'Chrono Sovereign ⏳' : 'Apex Sovereign ⚡');
+        update = { type: 'bot', difficulty: 'insane', name: defaultName, avatar: 'assets/ui/neora_ref/avatar_bot_blue.png', ready: true, occupiedBy: null };
       } else if (opt === 'closed') {
         update = { type: 'closed', difficulty: null, name: 'Closed Seat', avatar: '', ready: false, occupiedBy: null };
       }
@@ -4241,7 +4272,7 @@ function initNeoraSlotConfigPopover() {
         });
       }
       if (typeof showToast === 'function') {
-        const label = opt === 'open' ? 'Open' : (opt === 'easy' ? 'Bot (Easy)' : (opt === 'hard' ? 'Bot (Hard)' : 'Closed'));
+        const label = opt === 'open' ? 'Open' : (opt === 'easy' ? 'Bot (Easy)' : (opt === 'hard' ? 'Bot (Hard)' : (opt === 'insane' ? 'Bot (Insane ⚡)' : 'Closed')));
         showToast(`Seat ${slotId} configured: ${label}`);
       }
       closeSlotConfigPopover();
@@ -4319,7 +4350,7 @@ function renderNeoraCreateRoom() {
       if (icon) { icon.textContent = '🔒'; icon.classList.remove('hidden'); }
       if (img) img.classList.add('hidden');
     } else {
-      if (circle) circle.className = 'slot-avatar-circle bot';
+      if (circle) circle.className = (val === 'insane') ? 'slot-avatar-circle bot insane' : 'slot-avatar-circle bot';
       if (icon) icon.classList.add('hidden');
       if (img) img.classList.remove('hidden');
     }

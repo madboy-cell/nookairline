@@ -6921,6 +6921,45 @@ body.has-active-modal .vault-pill * {
   color: #fda4af;
 }
 
+.slot-popover-opt.opt-insane {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.12));
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+.slot-popover-opt.opt-insane:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(236, 72, 153, 0.22));
+  border-color: #c084fc;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+}
+.slot-popover-opt.opt-insane .opt-text strong {
+  color: #e879f9;
+}
+.slot-popover-opt.opt-insane .opt-text span {
+  color: #f0abfc;
+}
+.slot-popover-opt.opt-insane.active-opt {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.32), rgba(236, 72, 153, 0.28));
+  border-color: #f0abfc;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.55);
+}
+
+.slot-avatar-circle.bot.insane,
+.slot-avatar-container.is-insane-avatar {
+  border: 1.5px solid #c084fc;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55);
+}
+.slot-name-badge.slot-name-insane {
+  color: #f5d0fe;
+  text-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+}
+.slot-ready-pill.is-insane {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.3)) !important;
+  color: #f0abfc !important;
+  border: 1px solid rgba(168, 85, 247, 0.55) !important;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.45);
+}
+
 /* In-Room Live Chat Container */
 .neora-chat-container {
   display: flex;
