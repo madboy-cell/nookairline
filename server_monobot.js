@@ -83,6 +83,7 @@ module.exports = function createMonoBot({ vault, persistVault, sendToRole, broad
           }
 
           vault[role].diamonds -= stake;
+          vault[role].lastSpentAt = Date.now();
         }
 
         // If an unfinished session was open, forfeit it

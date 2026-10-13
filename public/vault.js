@@ -40,7 +40,8 @@
     envelopeMessage: 'Good luck pulling Mythic in Season 7 Enchanted Fairytales! 👑🏮✨',
     envelopeBlessing: 'mythic',
     showingEnvelope: null,
-    envelopeTarget: null
+    envelopeTarget: null,
+    hasInitialCloudHydration: false
   };
 
   // ---------------------------------------------------------------------------
@@ -1645,13 +1646,28 @@
     if (S.pulling || !p) return;
     const cost = count === 10 ? E.PULL_10 : E.PULL_1;
     if (p.diamonds < cost) { toast(`💎 Need ${fmt(cost)} diamonds — win a Monopoly game!`); return; }
+
+    // Deduct immediately on client for snappy responsive UX
+    p.diamonds -= cost;
+    updatePills();
+    if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+      window.SkySupabase.updateProfile({ diamonds: p.diamonds, allowDecrease: true });
+    }
+
     S.pulling = true;
     const reqId = `p${++S.reqSeq}_${Date.now()}`;
-    const season = S.gachaSeason || 's5';
-    S.pending = { reqId, count, season };
+    const season = S.gachaSeason || 's7';
+    S.pending = { reqId, count, season, cost };
     clearTimeout(S.pendingTimer);
     S.pendingTimer = setTimeout(() => {
       if (S.pending && S.pending.reqId === reqId) {
+        if (typeof S.pending.cost === 'number') {
+          p.diamonds += S.pending.cost;
+          updatePills();
+          if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+            window.SkySupabase.updateProfile({ diamonds: p.diamonds });
+          }
+        }
         S.pending = null; S.pulling = false;
         closePullFx();
         toast('📡 The vault didn\u2019t answer — check your connection');
@@ -1661,20 +1677,34 @@
     openPullFx();
     const pullerName = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) ||
                        (myRole() === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
-    send({ type: 'vault_pull', count, reqId, season, username: pullerName });
+    send({ type: 'vault_pull', count, reqId, season, role: myRole(), username: pullerName });
   }
 
   function pullTicket() {
     const p = me();
     if (S.pulling || !p) return;
     if ((p.tickets || 0) < 1) { toast('🎟️ No Lucky Flight Tickets remaining'); return; }
+
+    p.tickets -= 1;
+    updatePills();
+    if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+      window.SkySupabase.updateProfile({ tickets: p.tickets, allowDecrease: true });
+    }
+
     S.pulling = true;
     const reqId = `pt${++S.reqSeq}_${Date.now()}`;
     const season = S.gachaSeason || 'main';
-    S.pending = { reqId, count: 1, season };
+    S.pending = { reqId, count: 1, season, usedTicket: true };
     clearTimeout(S.pendingTimer);
     S.pendingTimer = setTimeout(() => {
       if (S.pending && S.pending.reqId === reqId) {
+        if (S.pending.usedTicket) {
+          p.tickets = (p.tickets || 0) + 1;
+          updatePills();
+          if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+            window.SkySupabase.updateProfile({ tickets: p.tickets });
+          }
+        }
         S.pending = null; S.pulling = false;
         closePullFx();
         toast('📡 The vault didn\u2019t answer — check your connection');
@@ -1684,7 +1714,7 @@
     openPullFx();
     const pullerName = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) ||
                        (myRole() === 'dxb' ? 'Dragon Girl 🐉' : 'Wolf Boy 🐺');
-    send({ type: 'vault_pull', count: 1, reqId, season, useTicket: true, username: pullerName });
+    send({ type: 'vault_pull', count: 1, reqId, season, useTicket: true, role: myRole(), username: pullerName });
   }
 
   function exchange(id) {
@@ -2570,7 +2600,8 @@
     S.profiles = profiles;
 
     // 🔥 CRITICAL: Cloud Hydration Guard
-    // Merge cloud Supabase inventory, stardust, and diamonds into local S.profiles[role] so server restarts NEVER wipe player data!
+    // Merge cloud Supabase inventory, stardust, and diamonds into local S.profiles[role] ONLY ONCE on session startup
+    // so server restarts NEVER wipe player data, while allowing normal spending to consume currency!
     try {
       const role = myRole();
       const cu = window.SkySupabase && window.SkySupabase.currentUser;
@@ -2582,27 +2613,29 @@
             S.profiles[role].owned[costumeId] = 1;
           }
         });
-        // Stardust Cloud Shield: hydrate higher balance from Supabase if server restarted with stale data
-        if (typeof cu.stardust === 'number' && cu.stardust > (S.profiles[role].stardust || 0)) {
-          S.profiles[role].stardust = cu.stardust;
-          send({
-            type: 'vault_sync_cloud',
-            terminal: role,
-            inventory: Object.keys(S.profiles[role].owned),
-            diamonds: S.profiles[role].diamonds,
-            stardust: cu.stardust
-          });
-        }
-        // Diamonds Cloud Shield: hydrate higher balance from Supabase
-        if (typeof cu.diamonds === 'number' && cu.diamonds > (S.profiles[role].diamonds || 0)) {
-          S.profiles[role].diamonds = cu.diamonds;
-          send({
-            type: 'vault_sync_cloud',
-            terminal: role,
-            inventory: Object.keys(S.profiles[role].owned),
-            diamonds: cu.diamonds,
-            stardust: S.profiles[role].stardust
-          });
+        // Initial session hydration: if the server restarted with default/fresh data, hydrate cloud balance ONCE
+        if (!S.hasInitialCloudHydration) {
+          S.hasInitialCloudHydration = true;
+          let needsSync = false;
+          // Stardust Cloud Shield: hydrate higher balance from Supabase if server restarted with stale data
+          if (typeof cu.stardust === 'number' && cu.stardust > (S.profiles[role].stardust || 0)) {
+            S.profiles[role].stardust = cu.stardust;
+            needsSync = true;
+          }
+          // Diamonds Cloud Shield: hydrate higher balance from Supabase if server restarted with stale data
+          if (typeof cu.diamonds === 'number' && cu.diamonds > (S.profiles[role].diamonds || 0)) {
+            S.profiles[role].diamonds = cu.diamonds;
+            needsSync = true;
+          }
+          if (needsSync) {
+            send({
+              type: 'vault_sync_cloud',
+              terminal: role,
+              inventory: Object.keys(S.profiles[role].owned),
+              diamonds: S.profiles[role].diamonds,
+              stardust: S.profiles[role].stardust
+            });
+          }
         }
       }
     } catch (e) {
@@ -2644,7 +2677,7 @@
         if (mergedInventory.length > 0) {
           updates.inventory = mergedInventory;
         }
-        window.SkySupabase.updateProfile(updates);
+        window.SkySupabase.updateProfile({ ...updates, allowDecrease: true });
       }
     } catch (_) {}
   }
@@ -2664,7 +2697,12 @@
               ? window.SkySupabase.currentUser.inventory
               : [];
             const mergedInventory = Array.from(new Set([...currentCloud, ...pulledIds]));
-            window.SkySupabase.updateProfile({ inventory: mergedInventory });
+            const p = me();
+            const updates = { inventory: mergedInventory };
+            if (p && typeof p.diamonds === 'number') updates.diamonds = p.diamonds;
+            if (p && typeof p.stardust === 'number') updates.stardust = p.stardust;
+            if (p && typeof p.tickets === 'number') updates.tickets = p.tickets;
+            window.SkySupabase.updateProfile({ ...updates, allowDecrease: true });
           }
         }
         if (S.pending && msg.reqId === S.pending.reqId) {
@@ -2716,6 +2754,21 @@
       case 'vault_error':
         if (msg.scope === 'cats') { if (window.NookCats) window.NookCats.handleMessage(msg); break; }
         if (S.pending && (!msg.reqId || msg.reqId === S.pending.reqId)) {
+          const p = me();
+          if (p && typeof S.pending.cost === 'number') {
+            p.diamonds += S.pending.cost;
+            updatePills();
+            if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+              window.SkySupabase.updateProfile({ diamonds: p.diamonds });
+            }
+          }
+          if (p && S.pending.usedTicket) {
+            p.tickets = (p.tickets || 0) + 1;
+            updatePills();
+            if (window.SkySupabase && typeof window.SkySupabase.updateProfile === 'function') {
+              window.SkySupabase.updateProfile({ tickets: p.tickets });
+            }
+          }
           S.pending = null;
           clearTimeout(S.pendingTimer);
           S.pulling = false;
@@ -2818,6 +2871,7 @@
       if (S.open) render();
     });
     window.addEventListener('sky:auth_state_changed', (e) => {
+      S.hasInitialCloudHydration = false;
       const u = e.detail?.user;
       if (u && Array.isArray(u.inventory)) {
         const r = myRole();

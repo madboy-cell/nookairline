@@ -303,6 +303,7 @@ module.exports = function createCats({ vault, persistVault, sendToRole, broadcas
     const p = person(role);
     if (p.diamonds < pack.diamonds) return { error: `Need 💎${pack.diamonds}` };
     p.diamonds -= pack.diamonds;
+    p.lastSpentAt = Date.now();
     p.fish += pack.fish;
     persistVault();
     return { pack };
