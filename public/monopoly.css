@@ -499,39 +499,13 @@ body.has-active-modal .vault-pill * {
 /* =========================================================
    2.5D ISOMETRIC DIORAMA LANDMARK SYSTEM (DIRECTLY ON TILES)
    ========================================================= */
-
-/* When a tile has a 2.5D landmark monument, hide the default emoji icon and text name */
-.board-tile.has-monument .tile-icon,
-.board-tile.has-monument .tile-name {
-  display: none !important;
-}
-
-/* Center the monument container right in the middle of the tile */
-.board-tile.has-monument .tile-monopoly-buildings {
+.monument-25d-wrap {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate3d(-50%, -50%, 0);
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 8;
-}
-
-/* Ensure the rent/price pill stays neatly anchored at the bottom edge */
-.board-tile.has-monument .tile-content-body {
-  justify-content: flex-end !important;
-  padding-bottom: 2px !important;
-  z-index: 12;
-}
-
-.monument-25d-wrap {
-  position: relative;
-  width: clamp(34px, 8vw, 44px);
-  height: clamp(34px, 8vw, 44px);
+  transform: translate3d(-50%, -54%, 0);
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -542,17 +516,17 @@ body.has-active-modal .vault-pill * {
 }
 
 @keyframes monument25dFloat {
-  0% { transform: translate3d(0, 2px, 0) scale(0.97); }
-  100% { transform: translate3d(0, -3px, 0) scale(1.03); }
+  0% { transform: translate3d(-50%, -50%, 0) scale(0.97); }
+  100% { transform: translate3d(-50%, -58%, 0) scale(1.03); }
 }
 
 .monument-25d-shadow {
   position: absolute;
-  bottom: 1px;
+  bottom: 0px;
   left: 50%;
   transform: translateX(-50%);
-  width: clamp(26px, 6.5vw, 36px);
-  height: 10px;
+  width: 36px;
+  height: 12px;
   background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.3) 55%, transparent 75%);
   border-radius: 50%;
   z-index: 1;
@@ -596,8 +570,8 @@ body.has-active-modal .vault-pill * {
 
 /* 2.5D Model Images */
 .monument-25d-img {
-  width: clamp(30px, 7.5vw, 42px);
-  height: clamp(30px, 7.5vw, 42px);
+  width: 42px;
+  height: 42px;
   object-fit: contain;
   position: relative;
   z-index: 4;
@@ -10045,17 +10019,17 @@ body.has-active-modal .vault-pill * {
     padding: 0.5px 2px !important;
   }
   .monument-25d-wrap {
-    width: clamp(26px, 7vw, 32px) !important;
-    height: clamp(26px, 7vw, 32px) !important;
-    transform: none !important;
+    width: 36px !important;
+    height: 36px !important;
+    transform: translate3d(-50%, -50%, 0) !important;
   }
   .monument-25d-img {
-    width: clamp(24px, 6.5vw, 30px) !important;
-    height: clamp(24px, 6.5vw, 30px) !important;
+    width: 34px !important;
+    height: 34px !important;
   }
   .monument-25d-shadow {
-    width: clamp(20px, 5.5vw, 26px) !important;
-    height: 8px !important;
+    width: 28px !important;
+    height: 9px !important;
   }
   .monument-badge-gold,
   .monument-badge-ice,
@@ -10067,9 +10041,9 @@ body.has-active-modal .vault-pill * {
   .monument-badge-rose,
   .monument-badge-oasis,
   .monument-badge-fire {
-    font-size: 5.5px !important;
-    padding: 0.5px 2px !important;
-    bottom: -3px !important;
+    font-size: 5.8px !important;
+    padding: 0.5px 2.5px !important;
+    bottom: -4px !important;
   }
   .neora-roll-btn {
     height: 40px !important;

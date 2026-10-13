@@ -5142,9 +5142,7 @@ function updateBoardTiles({ animate = true } = {}) {
     if (tile.type !== 'property') {
       const bld = el.querySelector('.tile-monopoly-buildings');
       if (bld && typeof getTile25dLandmarkHtml === 'function') {
-        const landmarkHtml = getTile25dLandmarkHtml(tile.id, null, st);
-        bld.innerHTML = landmarkHtml;
-        el.classList.toggle('has-monument', !!landmarkHtml && landmarkHtml.includes('monument-25d-wrap'));
+        bld.innerHTML = getTile25dLandmarkHtml(tile.id, null, st);
       }
       if (!el.dataset.sig) { pill.className = 'tile-pill tile-special-pill'; pill.textContent = tile.shortName; el.dataset.sig = 'x'; }
       return;
@@ -5286,7 +5284,6 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   el.classList.toggle('tile-olympus-temple', isOlympus);
 
   const landmarkHtml = getTile25dLandmarkHtml(tile.id, prop, st);
-  el.classList.toggle('has-monument', !!landmarkHtml && landmarkHtml.includes('monument-25d-wrap'));
 
   if (prop) {
     ribbon.className = 'tile-owner-ribbon';
@@ -7057,64 +7054,6 @@ function handleUserRollRequest(e) {
   startRoll(d6(), false);
 }
 
-// =========================================================
-// CENTRALIZED FINITE STATE MACHINE (ZERO DEADLOCK GUARANTEE)
-// Phases: 'IDLE' | 'ROLLING' | 'MOVING' | 'LANDED' | 'DECISION' | 'TURN_ADVANCE'
-// =========================================================
-let currentPhaseWatchdog = null;
-
-function setGamePhase(nextPhase, payload = {}) {
-  const st = monopolyState;
-  if (!st) return;
-
-  const prevPhase = st.gamePhase || 'IDLE';
-  st.gamePhase = nextPhase;
-
-  if (currentPhaseWatchdog) {
-    clearTimeout(currentPhaseWatchdog);
-    currentPhaseWatchdog = null;
-  }
-
-  // 1. Phase-based state and lock enforcement:
-  if (nextPhase === 'IDLE' || nextPhase === 'TURN_ADVANCE') {
-    st.isRolling = false;
-    isAnimating = false;
-    releaseRoleLocks();
-    if (nextPhase === 'IDLE') st.pendingDecision = null;
-    clearBotTimer();
-  } else if (nextPhase === 'ROLLING') {
-    st.isRolling = true;
-    isAnimating = true;
-    rollStartedAt = Date.now();
-  } else if (nextPhase === 'MOVING') {
-    st.isRolling = false;
-    isAnimating = true;
-  } else if (nextPhase === 'LANDED') {
-    st.isRolling = false;
-    isAnimating = false;
-    releaseRoleLocks();
-  } else if (nextPhase === 'DECISION') {
-    st.isRolling = false;
-    isAnimating = false;
-    releaseRoleLocks();
-  }
-
-  // 2. Safety Watchdog: If state stays in ROLLING or MOVING for > 6.5s, auto-recover to IDLE
-  if (nextPhase === 'ROLLING' || nextPhase === 'MOVING') {
-    currentPhaseWatchdog = setTimeout(() => {
-      if (st.gamePhase === 'ROLLING' || st.gamePhase === 'MOVING') {
-        console.warn(`[Monopoly FSM] Watchdog timeout for phase '${st.gamePhase}'. Force-advancing to IDLE.`);
-        setGamePhase('IDLE');
-        if (st.currentTurn && st.players && st.players[st.currentTurn]?.isBot) {
-          checkBotTurn();
-        }
-      }
-    }, 6500);
-  }
-
-  updateMonopolyHUD();
-}
-
 function startRoll(rollVal, viaGolden) {
   const st = monopolyState;
   const me = getMonopolyMyRole();
@@ -7126,14 +7065,17 @@ function startRoll(rollVal, viaGolden) {
     const elapsed = Date.now() - (rollStartedAt || 0);
     if (elapsed > 4000) {
       console.warn('[Monopoly] Blocked startRoll had expired lock (>4s). Clearing and proceeding for', playerKey);
-      setGamePhase('IDLE');
+      st.isRolling = false;
+      isAnimating = false;
+      releaseRoleLocks();
     } else {
       console.warn('[Monopoly] Blocked startRoll: roll or move already in progress for', playerKey);
       return;
     }
   }
-  setGamePhase('ROLLING');
   activeRollLocks[playerKey] = true;
+  st.isRolling = true;
+  isAnimating = true;
 
   if (pl && pl.loadedRoll) {
     rollVal = pl.loadedRoll;
@@ -7204,13 +7146,17 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       return;
     }
   }
-  setGamePhase('MOVING');
   activeRollLocks[playerKey] = true;
+  monopolyState.isRolling = true;
+  isAnimating = true;
 
   const rollCycleWatchdog = setTimeout(() => {
     if (activeRollLocks[playerKey] || activeMoveLocks[playerKey] || monopolyState.isRolling || isAnimating) {
       console.warn(`[Monopoly] Roll cycle watchdog timeout for ${playerKey}. Force releasing locks.`);
-      setGamePhase('LANDED');
+      activeRollLocks[playerKey] = false;
+      activeMoveLocks[playerKey] = false;
+      monopolyState.isRolling = false;
+      isAnimating = false;
       onTileLanded(playerKey);
       flushQueuedMessages();
     }
@@ -8213,7 +8159,6 @@ function flushQueuedMessages() {
 // 15. LANDING RESOLUTION (RESOLVER ONLY)
 // =========================================================
 function onTileLanded(playerKey) {
-  setGamePhase('LANDED');
   try {
     const st = monopolyState;
     if (!st || !st.players) return;
@@ -8235,7 +8180,6 @@ function onTileLanded(playerKey) {
 }
 
 function setDecision(decision) {
-  setGamePhase('DECISION');
   monopolyState.pendingDecision = decision;
   pushState();
   reconcileOverlays();
@@ -8695,7 +8639,10 @@ function resolveLanding(playerKey, tile) {
 }
 
 function finishTurn() {
-  setGamePhase('TURN_ADVANCE');
+  monopolyState.pendingDecision = null;
+  monopolyState.isRolling = false;
+  isAnimating = false;
+  releaseRoleLocks();
   hideModal('decision:');
   if (checkGameOver()) {
     pushState();
@@ -8722,10 +8669,13 @@ function finishTurn() {
 
 function endTurn() {
   const st = monopolyState;
-  setGamePhase('IDLE');
+  st.isRolling = false;
+  isAnimating = false;
+  releaseRoleLocks();
   st.hadBonusRoll = false;
   const prev = st.currentTurn;
   if (st.magnet && st.magnet.target === prev) st.magnet = null;
+  st.pendingDecision = null;
   st.turnResolver = null;
   const order = getTurnOrder();
   const prevIdx = order.indexOf(prev);
@@ -9314,7 +9264,10 @@ function armBotWatchdog(phase = 'turn') {
     // Force clear any stuck roll/animation locks when watchdog fires!
     if (s.isRolling || isAnimating || isRoleLocked(botRole)) {
       console.warn(`[Monopoly] Bot ${botRole} watchdog detected stuck roll/anim lock. Force clearing locks!`);
-      setGamePhase('IDLE');
+      s.isRolling = false;
+      isAnimating = false;
+      releaseRoleLocks();
+      updateMonopolyHUD();
     }
 
     if (s.activeDuel && !s.activeDuel.settled) {
@@ -9361,7 +9314,10 @@ function checkBotTurn() {
     const elapsed = Date.now() - (rollStartedAt || 0);
     if (elapsed > 3500) {
       console.warn(`[Monopoly] checkBotTurn: detected stuck roll/anim lock (${elapsed}ms) for ${botRole}. Force resetting.`);
-      setGamePhase('IDLE');
+      st.isRolling = false;
+      isAnimating = false;
+      releaseRoleLocks();
+      updateMonopolyHUD();
     } else {
       setTimeout(() => { checkBotTurn(); }, 400);
       return;
@@ -10923,19 +10879,6 @@ function renderVictory() {
   ov.style.display = '';
   if (ov.dataset.key === String(g.at) && ov.classList.contains('active')) return;
   ov.dataset.key = String(g.at);
-
-  // 🧹 Auto-terminate & clear active room session so client and server have a clean slate:
-  if (currentFlightRoom) {
-    const finishedRoomId = currentFlightRoom.id || currentFlightRoom.roomId;
-    if (typeof sendSignaling === 'function') {
-      sendSignaling({ type: 'room_match_finished', roomId: finishedRoomId });
-    }
-    currentFlightRoom = null;
-    currentFlightRoomIsHost = false;
-    currentFlightRoomSlot = null;
-  }
-  sessionStorage.removeItem('neora_active_room_id');
-  localStorage.removeItem('nook_sky_monopoly_room_v1');
 
   const isSpectator = !!isSpectatorMode || getMonopolyMyRole() === 'spectator';
   const meRole = isSpectator ? 'spectator' : getMonopolyMyRole();
