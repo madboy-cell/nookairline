@@ -434,6 +434,21 @@
       const isSolar = (cid.includes('s9_ra') || cid.includes('s9_sekhmet') || (cid.includes('ra') && !cid.includes('pharaoh') && !cid.includes('rapunzel')) || cid.includes('sekhmet') || (typeof isSolarDivinity === 'function' && isSolarDivinity(r)));
       const hasSolarWings = isSolar && (pData && (pData.ult >= 100 || pData.goldenRollNext || pData.hasSolarFalconWings || state.hadBonusRoll));
       el.classList.toggle('token-solar-falcon-wings', !!hasSolarWings);
+
+      // S2 Celestial Eclipse: Somnambulism Sleepwalk Trance
+      const isSleepwalking = !!(pData && pData.somnambulismSteps > 0);
+      el.classList.toggle('fx-token-somnambulism', isSleepwalking);
+      let sleepCrown = el.querySelector('.token-somnambulism-crown');
+      if (isSleepwalking) {
+        if (!sleepCrown) {
+          sleepCrown = document.createElement('div');
+          sleepCrown.className = 'token-somnambulism-crown';
+          sleepCrown.innerHTML = '<img src="assets/thumbs/props/somnambulism_trance.png" class="sleepwalk-moon-img" alt="Sleepwalking" /><span class="sleepwalk-zzz">z<sup>z<sup>z</sup></sup></span>';
+          el.appendChild(sleepCrown);
+        }
+      } else if (sleepCrown) {
+        sleepCrown.remove();
+      }
     });
     // Clean up tokens that are no longer in players state
     Object.keys(tok.el).forEach((r) => {

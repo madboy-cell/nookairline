@@ -168,12 +168,14 @@ function wait(ms) {
 // 4. Live Match Simulation Engine
 // ---------------------------------------------------------------------------
 class LiveMatchSimulation {
-  constructor(roomKey, flightName, hostPersona, playerPersonas, sockets) {
+  constructor(roomKey, flightName, hostPersona, playerPersonas, sockets, onComplete) {
     this.roomKey = roomKey;
     this.flightName = flightName;
     this.hostPersona = hostPersona;
     this.playerPersonas = playerPersonas;
     this.sockets = sockets;
+    this.onComplete = onComplete;
+    this.finished = false;
     this.room = null;
     this.active = false;
     this.turnTimer = null;
@@ -451,18 +453,16 @@ class LiveMatchSimulation {
         state: this.gameState
       }));
 
-      // Restart match in 7 seconds so spectator sees victory and game loops indefinitely
-      setTimeout(() => {
-        console.log(`[${this.roomKey}] 🔄 Resetting and launching fresh match...`);
-        this.initGameState();
-        const hostWs = this.getSocket(this.hostPersona.id);
-        hostWs.send(JSON.stringify({
-          type: 'monopoly_action',
-          action: 'reset_game',
-          state: this.gameState
-        }));
-        this.scheduleNextTurn(2500);
-      }, 7000);
+      this.active = false;
+      this.finished = true;
+      if (this.turnTimer) {
+        clearTimeout(this.turnTimer);
+        this.turnTimer = null;
+      }
+
+      if (typeof this.onComplete === 'function') {
+        this.onComplete(this);
+      }
       return;
     }
 
@@ -505,10 +505,38 @@ async function startSwarm() {
       console.log(`  ✓ Connected: ${p.name} (${p.id})`);
     }
 
+    let spectatorCheerTimer = null;
+    const activeSims = [];
+
+    const handleSimulationComplete = (completedSim) => {
+      console.log(`[${completedSim.roomKey}] 🏁 Simulation complete!`);
+      const allDone = activeSims.every((s) => s.finished);
+      if (allDone) {
+        console.log('\n🏆 All simulated matches have finished!');
+        console.log('⏳ Giving spectators 8 seconds to celebrate on the Victory Ceremony screen...');
+        setTimeout(() => {
+          console.log('👋 Quitting all 10 virtual agents and disconnecting...');
+          if (spectatorCheerTimer) clearInterval(spectatorCheerTimer);
+          for (const p of PERSONAS) {
+            const ws = socketMap[p.id];
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              try {
+                ws.send(JSON.stringify({ type: 'room_leave', uid: p.id }));
+                ws.close();
+              } catch (_) {}
+            }
+          }
+          console.log('✨ All 10 agents successfully quit. Process exiting cleanly.');
+          process.exit(0);
+        }, 8000);
+      }
+    };
+
     // --- SETUP ROOM 1: FLIGHT SKY-777 ---
     const r1Host = PERSONAS[0];
     const r1Players = PERSONAS.slice(0, 4);
-    const simR1 = new LiveMatchSimulation('SKY-777', 'Flight SKY-777 ✈️ High-Roller Express', r1Host, r1Players, socketMap);
+    const simR1 = new LiveMatchSimulation('SKY-777', 'Flight SKY-777 ✈️ High-Roller Express', r1Host, r1Players, socketMap, handleSimulationComplete);
+    activeSims.push(simR1);
     await simR1.setupRoom();
 
     // AI Spectator joins SKY-777
@@ -525,7 +553,7 @@ async function startSwarm() {
     console.log(`  ✓ Spectator ${specPersona.name} joined Flight SKY-777`);
 
     // Spectator periodic cheers
-    setInterval(() => {
+    spectatorCheerTimer = setInterval(() => {
       if (simR1.room && simR1.active) {
         const cheer = SPECTATOR_CHEERS[Math.floor(Math.random() * SPECTATOR_CHEERS.length)];
         specWs.send(JSON.stringify({
@@ -540,21 +568,23 @@ async function startSwarm() {
     // --- SETUP ROOM 2: FLIGHT SKY-888 ---
     const r2Host = PERSONAS[4];
     const r2Players = PERSONAS.slice(4, 8);
-    const simR2 = new LiveMatchSimulation('SKY-888', 'Flight SKY-888 🌌 Astral Odyssey', r2Host, r2Players, socketMap);
+    const simR2 = new LiveMatchSimulation('SKY-888', 'Flight SKY-888 🌌 Astral Odyssey', r2Host, r2Players, socketMap, handleSimulationComplete);
+    activeSims.push(simR2);
     await simR2.setupRoom();
 
-    // --- SETUP ROOM 3: FLIGHT SKY-999 (Boarding Lounge) ---
+    // --- SETUP ROOM 3: FLIGHT SKY-999 (Boarding Lounge with Auto-Takeoff) ---
     const r3Host = PERSONAS[8];
     const r3Ws = socketMap[r3Host.id];
     console.log(`[SKY-999] Creating open boarding flight hosted by ${r3Host.name}...`);
+    const pR3Created = waitForPacket(r3Ws, (m) => m.type === 'room_created');
     r3Ws.send(JSON.stringify({
       type: 'room_create',
       hostUid: r3Host.id,
       hostName: r3Host.name,
       hostAvatar: r3Host.avatar,
-      flightName: 'Flight SKY-999 ☁️ Sunset Lounge (Open)',
+      flightName: 'Flight SKY-999 ☁️ Sunset Lounge (Auto-Start)',
       isPublic: true,
-      tags: ['Relaxed', 'Open Seats', 'Newbies Welcome ♡'],
+      tags: ['Relaxed', 'Auto-Start', 'Join to Play! ♡'],
       slots: [
         { id: 1, role: 'bkk', color: 'ruby', type: 'human', controller: 'HUMAN', ready: true, occupiedBy: r3Host.id, name: r3Host.name, avatar: r3Host.avatar, connected: true },
         { id: 2, role: 'dxb', color: 'cyan', type: 'human', controller: 'HUMAN', ready: false, occupiedBy: null, name: 'Open Slot', avatar: '', connected: false },
@@ -562,6 +592,50 @@ async function startSwarm() {
         { id: 4, role: 'bot2', color: 'amber', type: 'human', controller: 'HUMAN', ready: false, occupiedBy: null, name: 'Open Slot', avatar: '', connected: false }
       ]
     }));
+
+    const r3CreatedMsg = await pR3Created;
+    const r3RoomId = r3CreatedMsg.room.id;
+    console.log(`[SKY-999] Room created with Flight No: ${r3CreatedMsg.room.flightNumber} (ID: ${r3RoomId})`);
+
+    // Listen for humans joining SKY-999 to auto-start
+    let r3Launched = false;
+    r3Ws.on('message', async (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        if (msg.type === 'room_update' && msg.room && msg.room.id === r3RoomId && !r3Launched) {
+          const humanGuests = (msg.room.slots || []).filter((s) => s.type === 'human' && s.occupiedBy && s.occupiedBy !== r3Host.id);
+          if (humanGuests.length > 0) {
+            r3Launched = true;
+            console.log(`[SKY-999] 👤 Human player "${humanGuests[0].name}" joined! Auto-filling crew and launching!`);
+            r3Ws.send(JSON.stringify({
+              type: 'room_chat',
+              roomId: r3RoomId,
+              sender: { uid: r3Host.id, name: r3Host.name, avatar: r3Host.avatar },
+              text: `Welcome aboard ${humanGuests[0].name}! Auto-filling co-pilots and launching in 3s! 🛫`
+            }));
+            await wait(1000);
+            for (const slot of (msg.room.slots || [])) {
+              if (!slot.occupiedBy && slot.type !== 'closed') {
+                r3Ws.send(JSON.stringify({
+                  type: 'room_slot_change',
+                  roomId: r3RoomId,
+                  slotId: slot.id,
+                  action: 'bot',
+                  botLevel: 'hard'
+                }));
+                await wait(200);
+              }
+            }
+            await wait(1000);
+            r3Ws.send(JSON.stringify({
+              type: 'room_start',
+              roomId: r3RoomId
+            }));
+            console.log(`[SKY-999] 🚀 Flight launched with human player!`);
+          }
+        }
+      } catch (_) {}
+    });
 
     // Start matches in SKY-777 and SKY-888!
     await simR1.startMatch();
@@ -571,8 +645,9 @@ async function startSwarm() {
     console.log('\n================================================================================');
     console.log('✨ 10-AGENT SWARM SIMULATION IS RUNNING LIVE!');
     console.log('You can now open http://localhost:3000 in your browser,');
-    console.log('Open the Departure Board / Monopoly Lobby, click "Spectate" 👁️ on SKY-777 or SKY-888,');
-    console.log('and watch the live gameplay unfolding with real-time rolls, moves, and purchases!');
+    console.log('Open the Departure Board / Monopoly Lobby:');
+    console.log('- Click "👁 Watching" on SKY-777 or SKY-888 to spectate live 4-player in-flight gameplay!');
+    console.log('- Click "Join" on SKY-999 to enter and Cloud Neo will auto-fill co-pilots and launch with you!');
     console.log('================================================================================\n');
 
   } catch (err) {

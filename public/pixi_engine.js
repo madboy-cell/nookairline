@@ -138,6 +138,7 @@
         updateParticles(delta);
         updateMeshes(delta);
         updateAmbient(delta);
+        updateTileAuras(delta);
 
         // Demand-driven sleeper: if no active particles and no active meshes, sleep after 35 frames (~0.5s)
         if (SkyPixi.activeParticles.length === 0 && SkyPixi.activeMeshes.length === 0) {
@@ -208,6 +209,281 @@
           additive: true
         });
       }
+    }
+  }
+
+  let tileAuraTimer = 0;
+  function updateTileAuras(delta) {
+    if (!SkyPixi.isReady || !SkyPixi.canvas) return;
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const st = window.monopolyState;
+    if (!st) return;
+
+    tileAuraTimer += delta;
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+    const isMobile = (window.innerWidth && window.innerWidth < 768) || /iPhone|iPad|iPod|Android/i.test(ua);
+    const interval = isMobile ? 32 : 18;
+    if (tileAuraTimer < interval) return;
+    tileAuraTimer = 0;
+
+    if (SkyPixi.activeParticles.length >= (isMobile ? 35 : 70)) return;
+
+    const wrap = document.getElementById('monopolyBoardWrap') || SkyPixi.canvas;
+    const bRect = (wrap && wrap.getBoundingClientRect) ? wrap.getBoundingClientRect() : null;
+    if (!bRect || !bRect.width) return;
+
+    const getTileCenter = (tileId) => {
+      const el = document.getElementById(`boardTile_${tileId}`);
+      if (!el || !el.getBoundingClientRect) return null;
+      const tRect = el.getBoundingClientRect();
+      if (!tRect.width || !tRect.height) return null;
+      return {
+        x: tRect.left - bRect.left + tRect.width / 2,
+        y: tRect.top - bRect.top + tRect.height / 2
+      };
+    };
+
+    // 1. 🔥 Phoenix Molten Embers / Flames
+    if (st.phoenixEmbers) {
+      Object.keys(st.phoenixEmbers).forEach((tid) => {
+        const pt = getTileCenter(tid);
+        if (!pt) return;
+        SkyPixi.spawnParticle({
+          textureName: 'sunflame',
+          x: pt.x + (Math.random() * 22 - 11),
+          y: pt.y + 4,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -(Math.random() * 0.9 + 0.6),
+          life: 0,
+          maxLife: 42,
+          scaleStart: 0.26,
+          scaleEnd: 0.08,
+          alphaStart: 0.85,
+          alphaEnd: 0,
+          color: Math.random() > 0.4 ? 0xf97316 : 0xef4444,
+          blendMode: 'add'
+        });
+      });
+    }
+
+    // 2. 🌊 Sacred Mekong Waterways
+    if (st.sacredWaterways) {
+      Object.keys(st.sacredWaterways).forEach((tid) => {
+        const pt = getTileCenter(tid);
+        if (!pt) return;
+        SkyPixi.spawnParticle({
+          textureName: 'bubble',
+          x: pt.x + (Math.random() * 24 - 12),
+          y: pt.y + 6,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: -(Math.random() * 0.7 + 0.4),
+          life: 0,
+          maxLife: 45,
+          scaleStart: 0.2,
+          scaleEnd: 0.32,
+          alphaStart: 0.75,
+          alphaEnd: 0,
+          color: 0x10b981,
+          blendMode: 'add'
+        });
+      });
+    }
+
+    // 3. ⛩️ Inari Torii Gate (Sacred Sakura Petals & Lantern Sparks)
+    if (st.inariToriiGates) {
+      Object.keys(st.inariToriiGates).forEach((tid) => {
+        const pt = getTileCenter(tid);
+        if (!pt) return;
+        SkyPixi.spawnParticle({
+          textureName: Math.random() > 0.35 ? 'petal' : 'spark',
+          x: pt.x + (Math.random() * 24 - 12),
+          y: pt.y - 10 + (Math.random() * 6),
+          vx: (Math.random() - 0.4) * 0.6,
+          vy: (Math.random() * 0.5 + 0.3),
+          life: 0,
+          maxLife: 48,
+          scaleStart: 0.25,
+          scaleEnd: 0.18,
+          alphaStart: 0.85,
+          alphaEnd: 0,
+          color: Math.random() > 0.5 ? 0xec4899 : 0xfbbf24,
+          blendMode: 'normal'
+        });
+      });
+    }
+
+    // 4. 🔱 Atlantis Flooded Properties (Coral Palace vs Sunken Ruins)
+    if (st.floodedTiles) {
+      Object.keys(st.floodedTiles).forEach((tid) => {
+        const pt = getTileCenter(tid);
+        if (!pt) return;
+        const prop = st.properties && st.properties[tid];
+        const isCoral = prop && prop.owner && (prop.owner === 'dxb' || prop.owner === 'bkk');
+        SkyPixi.spawnParticle({
+          textureName: 'bubble',
+          x: pt.x + (Math.random() * 26 - 13),
+          y: pt.y + (Math.random() * 10),
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -(Math.random() * 0.8 + 0.5),
+          life: 0,
+          maxLife: 44,
+          scaleStart: 0.18,
+          scaleEnd: 0.32,
+          alphaStart: 0.8,
+          alphaEnd: 0,
+          color: isCoral ? 0x06b6d4 : 0x0284c7,
+          blendMode: 'add'
+        });
+      });
+    }
+
+    // 5. 🪞 Venetian Reverse Hex Mirror (Crystal Shards & Rose Petals)
+    if (st.reverseRentHexTile != null) {
+      const pt = getTileCenter(st.reverseRentHexTile);
+      if (pt) {
+        SkyPixi.spawnParticle({
+          textureName: Math.random() > 0.45 ? 'crystal' : 'petal',
+          x: pt.x + (Math.random() * 22 - 11),
+          y: pt.y + (Math.random() * 8 - 4),
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -(Math.random() * 0.6 + 0.3),
+          life: 0,
+          maxLife: 46,
+          scaleStart: 0.24,
+          scaleEnd: 0.14,
+          alphaStart: 0.9,
+          alphaEnd: 0,
+          color: Math.random() > 0.5 ? 0xf43f5e : 0xfbbf24,
+          blendMode: 'add'
+        });
+      }
+    }
+
+    // 6. ⚱️ Midas Transmuted Solid Gold Hotel
+    if (st.properties) {
+      Object.keys(st.properties).forEach((tid) => {
+        const pr = st.properties[tid];
+        if (pr && pr.isTransmutedGold) {
+          const pt = getTileCenter(tid);
+          if (!pt) return;
+          SkyPixi.spawnParticle({
+            textureName: 'coin',
+            x: pt.x + (Math.random() * 22 - 11),
+            y: pt.y - 8,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: -(Math.random() * 0.7 + 0.4),
+            life: 0,
+            maxLife: 42,
+            scaleStart: 0.26,
+            scaleEnd: 0.15,
+            alphaStart: 0.9,
+            alphaEnd: 0,
+            color: 0xfde047,
+            blendMode: 'normal'
+          });
+        }
+      });
+    }
+
+    // 7. 🏺 The Great Golden Pyramid
+    const pyrTile = st.goldenPyramidTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isGoldenPyramid));
+    if (pyrTile != null) {
+      const pt = getTileCenter(pyrTile);
+      if (pt) {
+        SkyPixi.spawnParticle({
+          textureName: 'sunflame',
+          x: pt.x + (Math.random() * 20 - 10),
+          y: pt.y - 12,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -(Math.random() * 0.8 + 0.4),
+          life: 0,
+          maxLife: 44,
+          scaleStart: 0.24,
+          scaleEnd: 0.12,
+          alphaStart: 0.85,
+          alphaEnd: 0,
+          color: 0xfbbf24,
+          blendMode: 'add'
+        });
+      }
+    }
+
+    // 8. 🏰 Glacial Ice Citadel
+    const citTile = st.glacialCitadelTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isGlacialCitadel));
+    if (citTile != null) {
+      const pt = getTileCenter(citTile);
+      if (pt) {
+        SkyPixi.spawnParticle({
+          textureName: 'crystal',
+          x: pt.x + (Math.random() * 20 - 10),
+          y: pt.y - 10,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -(Math.random() * 0.6 + 0.3),
+          life: 0,
+          maxLife: 46,
+          scaleStart: 0.24,
+          scaleEnd: 0.12,
+          alphaStart: 0.9,
+          alphaEnd: 0,
+          color: 0x38bdf8,
+          blendMode: 'add'
+        });
+      }
+    }
+
+    // 9. 🏛️ Mount Olympus Temple
+    const olTile = st.olympusTempleTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isOlympusTemple));
+    if (olTile != null) {
+      const pt = getTileCenter(olTile);
+      if (pt) {
+        SkyPixi.spawnParticle({
+          textureName: 'spark',
+          x: pt.x + 8 + (Math.random() * 6 - 3),
+          y: pt.y - 16 + (Math.random() * 6 - 3),
+          vx: (Math.random() - 0.5) * 1.0,
+          vy: (Math.random() - 0.5) * 1.0,
+          life: 0,
+          maxLife: 22,
+          scaleStart: 0.32,
+          scaleEnd: 0.1,
+          alphaStart: 1.0,
+          alphaEnd: 0,
+          color: Math.random() > 0.5 ? 0x38bdf8 : 0xfde047,
+          blendMode: 'add'
+        });
+      }
+    }
+
+    // 10. 😴 Somnambulism Sleepwalk Tokens
+    if (st.players) {
+      Object.keys(st.players).forEach((r) => {
+        const pl = st.players[r];
+        if (pl && pl.somnambulismSteps > 0) {
+          const el = document.getElementById(`${r}Token`);
+          if (!el || !el.getBoundingClientRect) return;
+          const tRect = el.getBoundingClientRect();
+          if (!tRect.width || !tRect.height) return;
+          const pt = {
+            x: tRect.left - bRect.left + tRect.width / 2,
+            y: tRect.top - bRect.top + tRect.height / 2
+          };
+          SkyPixi.spawnParticle({
+            textureName: Math.random() > 0.4 ? 'crescent' : 'spark',
+            x: pt.x + (Math.random() * 18 - 9),
+            y: pt.y - 14 + (Math.random() * 4 - 2),
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: -(Math.random() * 0.6 + 0.3),
+            life: 0,
+            maxLife: 42,
+            scaleStart: 0.26,
+            scaleEnd: 0.12,
+            alphaStart: 0.85,
+            alphaEnd: 0,
+            color: 0xc084fc,
+            blendMode: 'add'
+          });
+        }
+      });
     }
   }
 

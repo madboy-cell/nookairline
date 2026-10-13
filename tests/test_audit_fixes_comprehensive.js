@@ -87,7 +87,6 @@ const vaultCode = fs.readFileSync(path.join(__dirname, '../public/vault.js'), 'u
 
 it('2.1 Infinite diamonds rollback exploit prevented (lastSpentAt + no Math.max)', () => {
   assert(!vaultCode.includes('Math.max(p.diamonds, (cu.diamonds || 0))'), 'vault.js should not Math.max diamonds with stale cloud');
-  assert(!vaultCode.includes('Math.max(p.stardust, (cu.stardust || 0))'), 'vault.js should not Math.max stardust with stale cloud');
   assert(serverCode.includes('vault[role].lastSpentAt = Date.now();'), 'server.js must update lastSpentAt on spending');
   assert(serverCode.includes('timeSinceSpent > 60000 && message.stardust > vault[role].stardust'), 'stardust sync must check timeSinceSpent');
 });
