@@ -5362,7 +5362,7 @@ function rollButtonState() {
   if (st.gameOver) return { label: 'GAME OVER 🏆', enabled: false, cls: '' };
   if (st.isRolling || isAnimating) {
     const elapsed = Date.now() - (rollStartedAt || 0);
-    if (elapsed > 4500) {
+    if (elapsed > 7500) {
       console.warn('[Monopoly] rollButtonState: auto-clearing stuck rolling/animating lock.');
       st.isRolling = false;
       isAnimating = false;
@@ -7166,8 +7166,8 @@ function startRoll(rollVal, viaGolden) {
 function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false) {
   if (activeMoveLocks[playerKey]) {
     const elapsed = Date.now() - (rollStartedAt || 0);
-    if (elapsed > 4000) {
-      console.warn('[Monopoly] Blocked executeRoll had expired activeMoveLock (>4s). Clearing for', playerKey);
+    if (elapsed > 7500) {
+      console.warn('[Monopoly] Blocked executeRoll had expired activeMoveLock (>7.5s). Clearing for', playerKey);
       activeMoveLocks[playerKey] = false;
       activeRollLocks[playerKey] = false;
     } else {
@@ -7189,7 +7189,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       onTileLanded(playerKey);
       flushQueuedMessages();
     }
-  }, 9500);
+  }, 11000);
 
   AudioFX.init();
   chargeUlt(playerKey, viaGolden || rollVal >= 6 ? 25 : 10, 'Roll');
@@ -9346,7 +9346,7 @@ function checkBotTurn() {
   // Auto-recovery for stuck animation / roll locks:
   if (st.isRolling || isAnimating || isRoleLocked(botRole)) {
     const elapsed = Date.now() - (rollStartedAt || 0);
-    if (elapsed > 3500) {
+    if (elapsed > 7500) {
       console.warn(`[Monopoly] checkBotTurn: detected stuck roll/anim lock (${elapsed}ms) for ${botRole}. Force resetting.`);
       st.isRolling = false;
       isAnimating = false;
@@ -9392,7 +9392,7 @@ function scheduleBotRoll() {
     if (!st.active || st.currentTurn !== botRole) return;
     if (st.isRolling || isAnimating || isRoleLocked(botRole)) {
       const elapsed = Date.now() - (rollStartedAt || 0);
-      if (elapsed > 3500) {
+      if (elapsed > 7500) {
         console.warn(`[Monopoly] scheduleBotRoll: force clearing stuck roll lock for ${botRole}.`);
         st.isRolling = false;
         isAnimating = false;

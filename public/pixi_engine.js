@@ -213,35 +213,51 @@
   }
 
   let tileAuraTimer = 0;
+  let cachedTileCenters = null;
+  let cachedTileCenterTime = 0;
+
   function updateTileAuras(delta) {
     if (!SkyPixi.isReady || !SkyPixi.canvas) return;
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     const st = window.monopolyState;
     if (!st) return;
 
+    // 🚀 Yield 100% GPU/CPU to avatar hops & rolls to eliminate frame drops & lag
+    if (window.isAnimating || st.isRolling) return;
+
     tileAuraTimer += delta;
     const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
     const isMobile = (window.innerWidth && window.innerWidth < 768) || /iPhone|iPad|iPod|Android/i.test(ua);
-    const interval = isMobile ? 32 : 18;
+    const interval = isMobile ? 36 : 18;
     if (tileAuraTimer < interval) return;
     tileAuraTimer = 0;
 
-    if (SkyPixi.activeParticles.length >= (isMobile ? 35 : 70)) return;
+    if (SkyPixi.activeParticles.length >= (isMobile ? 25 : 60)) return;
 
     const wrap = document.getElementById('monopolyBoardWrap') || SkyPixi.canvas;
     const bRect = (wrap && wrap.getBoundingClientRect) ? wrap.getBoundingClientRect() : null;
     if (!bRect || !bRect.width) return;
 
-    const getTileCenter = (tileId) => {
-      const el = document.getElementById(`boardTile_${tileId}`);
-      if (!el || !el.getBoundingClientRect) return null;
-      const tRect = el.getBoundingClientRect();
-      if (!tRect.width || !tRect.height) return null;
-      return {
-        x: tRect.left - bRect.left + tRect.width / 2,
-        y: tRect.top - bRect.top + tRect.height / 2
-      };
-    };
+    // Cache tile center coordinates once every 3s instead of forced layout reflow every frame
+    const now = Date.now();
+    if (!cachedTileCenters || (now - cachedTileCenterTime > 3000)) {
+      cachedTileCenters = {};
+      cachedTileCenterTime = now;
+      for (let i = 0; i < 20; i++) {
+        const el = document.getElementById(`boardTile_${i}`);
+        if (el && el.getBoundingClientRect) {
+          const tRect = el.getBoundingClientRect();
+          if (tRect.width && tRect.height) {
+            cachedTileCenters[i] = {
+              x: tRect.left - bRect.left + tRect.width / 2,
+              y: tRect.top - bRect.top + tRect.height / 2
+            };
+          }
+        }
+      }
+    }
+
+    const getTileCenter = (tileId) => (cachedTileCenters ? cachedTileCenters[tileId] : null);
 
     // 1. 🔥 Phoenix Molten Embers / Flames
     if (st.phoenixEmbers) {
@@ -458,15 +474,9 @@
     if (st.players) {
       Object.keys(st.players).forEach((r) => {
         const pl = st.players[r];
-        if (pl && pl.somnambulismSteps > 0) {
-          const el = document.getElementById(`${r}Token`);
-          if (!el || !el.getBoundingClientRect) return;
-          const tRect = el.getBoundingClientRect();
-          if (!tRect.width || !tRect.height) return;
-          const pt = {
-            x: tRect.left - bRect.left + tRect.width / 2,
-            y: tRect.top - bRect.top + tRect.height / 2
-          };
+        if (pl && pl.somnambulismSteps > 0 && pl.pos != null) {
+          const pt = getTileCenter(pl.pos);
+          if (!pt) return;
           SkyPixi.spawnParticle({
             textureName: Math.random() > 0.4 ? 'crescent' : 'spark',
             x: pt.x + (Math.random() * 18 - 9),

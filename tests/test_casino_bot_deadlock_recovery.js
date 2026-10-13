@@ -23,9 +23,9 @@ function assertContains(str, snippet, desc) {
 
 console.log('--- 1. Verification of Deadlock Protections in public/monopoly.js ---');
 assertContains(monopolyJs, "if (st.isRolling || isAnimating)", "rollButtonState checks rolling/animating state");
-assertContains(monopolyJs, "auto-clearing stuck rolling/animating lock", "rollButtonState auto-clears stuck locks after 4.5s");
-assertContains(monopolyJs, "checkBotTurn: detected stuck roll/anim lock", "checkBotTurn auto-recovers stuck locks after 3.5s");
-assertContains(monopolyJs, "scheduleBotRoll: force clearing stuck roll lock", "scheduleBotRoll auto-clears stuck locks after 3.5s");
+assertContains(monopolyJs, "auto-clearing stuck rolling/animating lock", "rollButtonState auto-clears stuck locks after 7.5s");
+assertContains(monopolyJs, "checkBotTurn: detected stuck roll/anim lock", "checkBotTurn auto-recovers stuck locks after 7.5s");
+assertContains(monopolyJs, "scheduleBotRoll: force clearing stuck roll lock", "scheduleBotRoll auto-clears stuck locks after 7.5s");
 assertContains(monopolyJs, "Bot ${botRole} watchdog detected stuck roll/anim lock", "armBotWatchdog force-clears locks when firing");
 assertContains(monopolyJs, "const rollCycleWatchdog = setTimeout", "executeRoll contains safety watchdog timer");
 assertContains(monopolyJs, "clearTimeout(rollCycleWatchdog)", "executeRoll clears safety watchdog on movement completion");
@@ -64,7 +64,7 @@ function rollButtonState() {
   if (st.gameOver) return { label: 'GAME OVER 🏆', enabled: false, cls: '' };
   if (st.isRolling || isAnimating) {
     const elapsed = Date.now() - (rollStartedAt || 0);
-    if (elapsed > 4500) {
+    if (elapsed > 7500) {
       st.isRolling = false;
       isAnimating = false;
       releaseRoleLocks();
@@ -87,7 +87,7 @@ function checkBotTurn() {
 
   if (st.isRolling || isAnimating || activeRollLocks[botRole]) {
     const elapsed = Date.now() - (rollStartedAt || 0);
-    if (elapsed > 3500) {
+    if (elapsed > 7500) {
       st.isRolling = false;
       isAnimating = false;
       releaseRoleLocks();
@@ -112,7 +112,7 @@ monopolyState.currentTurn = 'bot1';
 // Step 3: Simulate lingering animation or stuck roll flag from casino spin
 monopolyState.isRolling = true;
 isAnimating = true;
-rollStartedAt = Date.now() - 5000; // 5 seconds ago
+rollStartedAt = Date.now() - 8000; // 8 seconds ago
 
 // Verify that prior to fix, this would return ROLLING... 🎲 forever
 // With our fix, rollButtonState clears the stuck lock immediately!
@@ -125,7 +125,7 @@ console.log('  ✅ [PASS] 2.2 Stuck ROLLING... button self-heals and unlocks');
 // Step 4: Verify checkBotTurn() auto-clears expired locks and executes bot move
 monopolyState.isRolling = true;
 isAnimating = true;
-rollStartedAt = Date.now() - 4000; // 4 seconds ago
+rollStartedAt = Date.now() - 8000; // 8 seconds ago
 checkBotTurn();
 
 assert.strictEqual(botRollTriggered, true, 'Bot turn auto-recovers and executes roll');
