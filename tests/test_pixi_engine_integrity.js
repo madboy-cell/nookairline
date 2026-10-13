@@ -162,6 +162,150 @@ it('4.5 index.html properly loads pixi_engine.js after vendor engines', () => {
   assert.ok(pixiEngineIdx < monopolyFxIdx, 'pixi_engine.js must load before monopoly_fx.js');
 });
 
+// -------------------------------------------------------------
+// Test 4.6: SkyPixi.spawnParticle primitive & safe fallback
+// -------------------------------------------------------------
+it('4.6 SkyPixi exposes spawnParticle and handles safe fallback & active spawning', () => {
+  const code = fs.readFileSync(path.join(__dirname, '../public/pixi_engine.js'), 'utf8');
+  const sandbox = {
+    window: {},
+    document: { readyState: 'complete', getElementById: () => null, querySelector: () => null, createElement: () => ({ style: {} }), addEventListener: () => {} },
+    console: { log: () => {}, warn: () => {}, error: () => {} },
+    setTimeout: () => {}
+  };
+  sandbox.window = sandbox;
+  vm.runInNewContext(code, sandbox);
+
+  const sp = sandbox.window.SkyPixi;
+  assert.strictEqual(typeof sp.spawnParticle, 'function', 'SkyPixi.spawnParticle must be a function');
+  assert.strictEqual(sp.spawnParticle({ textureName: 'bubble', x: 50, y: 50 }), false, 'Returns false without throwing when WebGL is inactive');
+});
+
+// -------------------------------------------------------------
+// Test 4.7: Environmental Monument Auras & Ticker Loop Resilience
+// -------------------------------------------------------------
+it('4.7 Environmental Monument Auras (Temple, Waterways, Flooded) run without throwing and culls particles', async () => {
+  const pixiCode = fs.readFileSync(path.join(__dirname, '../public/pixi_engine.js'), 'utf8');
+
+  class MockContainer {
+    constructor() { this.children = []; }
+    addChild(c) { this.children.push(c); return c; }
+    removeChild(c) {
+      const idx = this.children.indexOf(c);
+      if (idx !== -1) this.children.splice(idx, 1);
+    }
+  }
+
+  class MockGraphics {
+    constructor() {
+      this.calls = [];
+      this.parent = new MockContainer();
+    }
+    clear() { this.calls.push('clear'); return this; }
+    circle(x, y, r) { this.calls.push({ fn: 'circle', x, y, r }); return this; }
+    star(x, y, p, r1, r2) { this.calls.push({ fn: 'star', x, y, p, r1, r2 }); return this; }
+    poly(pts) { this.calls.push({ fn: 'poly', pts }); return this; }
+    fill(cfg) { this.calls.push({ fn: 'fill', cfg }); return this; }
+    stroke(cfg) { this.calls.push({ fn: 'stroke', cfg }); return this; }
+    destroy() { this.destroyed = true; }
+  }
+
+  class MockSprite {
+    constructor(tex) {
+      this.texture = tex;
+      this.x = 0;
+      this.y = 0;
+      this.vx = 0;
+      this.vy = 0;
+      this.life = 0;
+      this.maxLife = 40;
+      this.alpha = 1;
+      this.scale = { set(v) { this.v = v; } };
+      this.anchor = { set(v) { this.v = v; } };
+      this.parent = new MockContainer();
+    }
+    destroy() { this.destroyed = true; }
+  }
+
+  const mockApp = {
+    init: async () => {},
+    stage: new MockContainer(),
+    renderer: {
+      generateTexture: () => ({ id: 'mock_tex_' + Math.random() }),
+      resize: (w, h) => {}
+    },
+    ticker: {
+      listeners: [],
+      add(fn) { this.listeners.push(fn); },
+      step(delta = 1) { this.listeners.forEach(fn => fn({ deltaTime: delta })); },
+      stop() { this.stopped = true; },
+      start() { this.stopped = false; }
+    }
+  };
+
+  const sandbox = {
+    window: {
+      monopolyState: {
+        olympusTempleTile: 17,
+        sacredWaterways: { 3: { creator: 'bkk', bonusRent: 0.3 } },
+        floodedTiles: { 11: { floodedBy: 'dxb' } },
+        properties: {
+          4: { isTransmutedGold: true },
+          17: { isOlympusTemple: true }
+        }
+      }
+    },
+    document: {
+      readyState: 'complete',
+      getElementById: (id) => {
+        if (id === 'monopolyBoardWrap') return { clientWidth: 380, clientHeight: 532, appendChild: () => {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 380, height: 532 }) };
+        if (id === 'skyPixiCanvas') return { width: 380, height: 532, style: {} };
+        if (id.startsWith('boardTile_')) {
+          return { getBoundingClientRect: () => ({ left: 50, top: 50, width: 40, height: 40 }) };
+        }
+        return null;
+      },
+      querySelector: () => null,
+      createElement: () => ({ id: 'skyPixiCanvas', width: 380, height: 532, style: {} }),
+      addEventListener: () => {}
+    },
+    PIXI: {
+      Application: function() { return mockApp; },
+      Container: MockContainer,
+      Graphics: MockGraphics,
+      Sprite: MockSprite
+    },
+    console: { log: () => {}, warn: () => {}, error: () => {} },
+    setTimeout: (fn) => fn()
+  };
+  sandbox.window = Object.assign(sandbox.window, sandbox);
+
+  vm.runInNewContext(pixiCode, sandbox);
+  const sp = sandbox.window.SkyPixi;
+  assert.ok(sp, 'SkyPixi must exist');
+
+  await sp.init();
+  assert.strictEqual(sp.isReady, true, 'SkyPixi must be ready after init');
+
+  // Test explicit spawnParticle
+  const directSpawn = sp.spawnParticle({ textureName: 'bubble', x: 100, y: 120, color: 0x10b981, maxLife: 30 });
+  assert.strictEqual(directSpawn, true, 'Direct spawnParticle should return true');
+  assert.ok(sp.activeParticles.length >= 1, 'Active particles must have direct spawn');
+
+  // Step 50 frames to trigger tile auras (interval is 36 frames on mobile or 18 on desktop)
+  for (let f = 0; f < 50; f++) {
+    mockApp.ticker.step(1);
+  }
+
+  // Active particles should have been spawned by updateTileAuras without throwing
+  assert.ok(sp.activeParticles.length > 0, 'Particles should be actively generated by Temple, Waterways & Flooding');
+
+  // Test clearAll
+  sp.clearAll();
+  assert.strictEqual(sp.activeParticles.length, 0, 'clearAll must purge all active particles');
+  assert.strictEqual(sp.activeMeshes.length, 0, 'clearAll must purge all active meshes');
+});
+
 console.log('\n============================================================');
 console.log(`RESULTS: ${passed} passed, ${failed} failed`);
 console.log('============================================================\n');

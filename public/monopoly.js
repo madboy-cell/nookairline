@@ -3004,6 +3004,7 @@ function startBotGame(level = 'hard') {
     }
   }
 
+  if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') window.SkyPixi.clearAll();
   const fresh = createDefaultMonopolyState();
   fresh.mode = 'bot';
   fresh.turnOrder = [myRole, botRole];
@@ -4896,6 +4897,7 @@ function startPartyGame(config = {}) {
   const partnerRole = otherRole(myRole);
 
   const hasBots = activeSlots.some((s) => s.type === 'bot');
+  if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') window.SkyPixi.clearAll();
   const fresh = createDefaultMonopolyState();
   fresh.mode = activeSlots.length > 2 ? '4p' : (hasBots ? 'bot' : 'couple');
   fresh.active = true;
@@ -5047,6 +5049,7 @@ function resetMonopolyGame() {
   }
   const myRole = getMonopolyMyRole();
   const partnerRole = otherRole(myRole);
+  if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') window.SkyPixi.clearAll();
   const fresh = createDefaultMonopolyState();
   fresh.mode = 'couple';
   fresh.active = true;
@@ -7542,15 +7545,39 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         text: player.name
       });
       if (rollVal >= 5) {
-        player.carpetCharges = Math.min(3, (player.carpetCharges || 0) + 1);
-        player.carpetGlideActive = true;
-        AudioFX.playDjinnCarpet();
-        const wishAmt = 50;
-        grantMiles(playerKey, wishAmt);
-        emitFx({ kind: 'moment', id: 'djinn_carpet_glide', role: playerKey, text: `${player.name} Carpet Flight!` });
-        emitFx({ kind: 'moment', id: 'djinn_lucky_wish', role: playerKey, amount: wishAmt });
-        floatText(player.pos, `🧞 CARPET FLIGHT (+${wishAmt} Wish 🪔)`, 'pos');
-        announce(`🪔✨ <strong>GENIE'S LUCKY WISH!</strong> ${player.name} soared on a Magic Carpet and received <strong>+${wishAmt}🪙</strong> wish miles!`);
+        // Cosmic Djinn 3 Wishes on Roll 5–6 (Carpet Flight, Oasis Portal, or Midas Gold)
+        const wishType = (player.pos % 3 === 0) ? 'carpet' : (player.pos % 3 === 1) ? 'oasis' : 'midas';
+        if (wishType === 'carpet') {
+          player.carpetCharges = Math.min(3, (player.carpetCharges || 0) + 1);
+          player.carpetGlideActive = true;
+          AudioFX.playDjinnCarpet();
+          grantMiles(playerKey, 60);
+          emitFx({ kind: 'moment', id: 'djinn_carpet_glide', role: playerKey, text: `${player.name} Carpet Flight!` });
+          floatText(player.pos, '🧞 WISH 1: CARPET FLIGHT (+60🪙 🪔)', 'pos');
+          announce(`🪔✨ <strong>GENIE'S WISH: MAGIC CARPET!</strong> ${player.name} soared on a Magic Carpet (0 rent on next landing + 60🪙)!`);
+        } else if (wishType === 'oasis') {
+          const oasisTile = (player.pos + 3) % MONOPOLY_TILES.length;
+          monopolyState.djinnOasisTiles = monopolyState.djinnOasisTiles || {};
+          monopolyState.djinnOasisTiles[oasisTile] = { creator: playerKey, bonusReward: 75 };
+          AudioFX.playDjinnWish();
+          grantMiles(playerKey, 75);
+          floatText(player.pos, '🪔 WISH 2: OASIS PORTAL (+75🪙)', 'pos');
+          announce(`🪔✨ <strong>GENIE'S WISH: OASIS PORTAL!</strong> ${player.name} manifested a Mirage Oasis at ${MONOPOLY_TILES[oasisTile].name} and harvested +75🪙 celestial water!`);
+        } else {
+          const rivalProps = Object.keys(monopolyState.properties || {})
+            .filter(tid => monopolyState.properties[tid]?.owner && monopolyState.properties[tid].owner !== playerKey);
+          if (rivalProps.length > 0) {
+            const transId = Number(rivalProps[0]);
+            monopolyState.properties[transId].isTransmutedGold = true;
+            monopolyState.properties[transId].transmutedRounds = 2;
+            floatText(transId, '🏆 TRANSMUTED TO SOLID GOLD!', 'pos fx-big');
+            announce(`🪔⚱️ <strong>GENIE'S WISH: MIDAS TOUCH!</strong> ${player.name} transmuted ${MONOPOLY_TILES[transId].name} into Solid Gold (0 Rent for 2 rounds)!`);
+          } else {
+            grantMiles(playerKey, 80);
+            floatText(player.pos, '⚱️ MIDAS GOLD +80🪙', 'pos');
+            announce(`🪔⚱️ <strong>GENIE'S WISH: MIDAS TREASURY!</strong> ${player.name} extracted +80🪙 pure gold from the Cosmic Lamp!`);
+          }
+        }
       }
     } else if (isPhoenix) {
       AudioFX.playPhoenixImpact();
@@ -7824,13 +7851,14 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       chargeUlt(playerKey, 15, 'Eclipse Alignment');
       grantMiles(playerKey, 80);
       const rivals = Object.keys(monopolyState.players || {}).filter(r => r !== playerKey && !monopolyState.players[r]?.bankrupt);
-      if (rivals.length > 0) {
-        const nearestR = rivals[0];
-        if (monopolyState.players[nearestR]) {
-          monopolyState.players[nearestR].somnambulismSteps = 3;
-          floatText(monopolyState.players[nearestR].pos, '🌑 SOMNAMBULISM TRANCE! 😴', 'neg');
-          announce(`🌓🌑 <strong>ECLIPSE SOMNAMBULISM!</strong> Rolling a 6 channeled cosmic twilight: ${monopolyState.players[nearestR].name} is hexed with <strong>Somnambulism Sleepwalk (pulled 3 tiles into Eclipse territory)</strong>!`);
+      rivals.forEach(r => {
+        if (monopolyState.players[r]) {
+          monopolyState.players[r].somnambulismSteps = 3;
+          floatText(monopolyState.players[r].pos != null ? monopolyState.players[r].pos : 0, '🌑 SOMNAMBULISM TRANCE! 😴', 'neg');
         }
+      });
+      if (rivals.length > 0) {
+        announce(`🌓🌑 <strong>TOTAL LUNAR BLACKOUT & SOMNAMBULISM!</strong> Rolling a 6 channeled cosmic twilight: all rivals are hexed with <strong>Somnambulism Sleepwalk (pulled 3 tiles forward on next turn)</strong>!`);
       }
       floatText(player.pos, '🌓 ECLIPSE HARMONY +80🪙', 'pos');
     }
@@ -7853,6 +7881,23 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       chargeUlt(playerKey, 15, 'Tidal Surge');
       floatText(player.pos, '🔱 TILE FLOODED: OCEAN TRENCH! 🌊', 'pos');
       announce(`🔱🌊 <strong>BIOLUMINESCENT FLOOD SURGE!</strong> Rolling a 6 flooded ${MONOPOLY_TILES[player.pos]?.name || 'the tile'} into an <strong>Ocean Trench (Coral Palace / Sunken Ruin)</strong> with trench warp current!`);
+    }
+
+    // If sleepwalking in somnambulism trance, somnambulism overrides drift
+    if (player.somnambulismSteps) {
+      let totalSteps = player.somnambulismSteps;
+      delete player.somnambulismSteps;
+      announce(`🌓😴 <strong>SOMNAMBULISM SLEEPWALK!</strong> ${player.name} is sleepwalking in a cosmic trance! Pulled forward exactly <strong>${totalSteps} steps</strong>!`);
+      floatText(player.pos, '🌑 SLEEPWALKING (3 STEPS) 😴', 'neg fx-big');
+      setTimeout(() => {
+        animateAvatarMove(playerKey, totalSteps, () => {
+          clearTimeout(rollCycleWatchdog);
+          activeMoveLocks[playerKey] = false;
+          activeRollLocks[playerKey] = false;
+          onTileLanded(playerKey);
+        });
+      }, 160);
+      return;
     }
 
     // --- BIOLUMINESCENT DRIFT TACTICAL DECISION ---
@@ -8276,7 +8321,8 @@ function resolveLanding(playerKey, tile) {
   }
 
   // 🐉 S1 Sacred Waterways & Mekong Rapids:
-  if (st.sacredWaterways && st.sacredWaterways[tile.id] && !isNagaWarden(playerKey) && !p.bankrupt) {
+  if (st.sacredWaterways && st.sacredWaterways[tile.id] && !isNagaWarden(playerKey) && !p.bankrupt && !p._inWaterwayPush) {
+    p._inWaterwayPush = true;
     const nagaCreator = st.sacredWaterways[tile.id].creator;
     const waterwayRentBonus = 40;
     p.miles = Math.max(0, p.miles - waterwayRentBonus);
@@ -8333,16 +8379,19 @@ function resolveLanding(playerKey, tile) {
   // 🔱 S5 Atlantis Ocean Trench Surf / Nitrogen Decompression:
   if (st.floodedTiles && st.floodedTiles[tile.id]) {
     if (isAbyssalDrifter(playerKey)) {
-      const allFlooded = Object.keys(st.floodedTiles).map(Number).filter(tid => tid !== tile.id);
-      if (allFlooded.length > 0) {
-        const destTile = allFlooded[0];
-        p.pos = destTile;
-        if (AudioFX.playAbyssalSplash) AudioFX.playAbyssalSplash();
-        floatText(tile.id, '🔱 OCEAN TRENCH WARP! 🌊', 'pos fx-big');
-        announce(`🔱🌊 <strong>OCEAN TRENCH WARP!</strong> ${p.name} dove into the abyssal current and surfed through the trench to <strong>${MONOPOLY_TILES[destTile].name}</strong>!`);
-        renderMonopolyBoard();
-        resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
-        return;
+      if (!p._inTrenchWarp) {
+        p._inTrenchWarp = true;
+        const allFlooded = Object.keys(st.floodedTiles).map(Number).filter(tid => tid !== tile.id);
+        if (allFlooded.length > 0) {
+          const destTile = allFlooded[0];
+          p.pos = destTile;
+          if (AudioFX.playAbyssalSplash) AudioFX.playAbyssalSplash();
+          floatText(tile.id, '🔱 OCEAN TRENCH WARP! 🌊', 'pos fx-big');
+          announce(`🔱🌊 <strong>OCEAN TRENCH WARP!</strong> ${p.name} dove into the abyssal current and surfed through the trench to <strong>${MONOPOLY_TILES[destTile].name}</strong>!`);
+          renderMonopolyBoard();
+          resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+          return;
+        }
       }
     } else {
       floatText(tile.id, '🌊 FLOODED TRENCH: WATERLOGGED!', 'neg');
@@ -8672,6 +8721,11 @@ function finishTurn() {
   monopolyState.isRolling = false;
   isAnimating = false;
   releaseRoleLocks();
+  const curP = monopolyState.players && monopolyState.players[monopolyState.currentTurn];
+  if (curP) {
+    delete curP._inTrenchWarp;
+    delete curP._inWaterwayPush;
+  }
   hideModal('decision:');
   if (checkGameOver()) {
     pushState();
@@ -8860,18 +8914,35 @@ function openDecisionModal(d) {
 // =========================================================
 // 16b. SHARED ACTION HANDLERS (Used by both UI and Bot)
 // =========================================================
+function getEffectiveTilePrice(tile, pk) {
+  if (!tile) return 0;
+  let effectivePrice = tile.price;
+  const p = monopolyState.players && monopolyState.players[pk];
+  if (!p) return effectivePrice;
+  if (perkOf(pk).pumpkinWarp) effectivePrice = Math.round(effectivePrice * 0.7); // 30% Pumpkin discount!
+  if (isBeastAdam(pk) || perkOf(pk).formShiftStance || perkOf(pk).castleDiscount) effectivePrice = Math.round(effectivePrice * 0.7); // 30% Castle Architecture discount!
+  if (isOlympusDivinity(pk) && (p.hasOlympusPegasusWings || p.goldenRollNext)) {
+    effectivePrice = Math.round(effectivePrice * 0.75); // 25% Olympus Divine Tithe discount during Pegasus Flight!
+  }
+  // 🔥 S3 Dune Phoenix: 50% Underdog discount when trailing in 3rd or 4th place
+  if (isPhoenixAscendant(pk)) {
+    const allRoles = Object.keys(monopolyState.players || {}).filter(r => !monopolyState.players[r]?.bankrupt);
+    const rankedByNw = [...allRoles].sort((a, b) => netWorth(b) - netWorth(a));
+    const myRank = rankedByNw.indexOf(pk);
+    if (myRank >= 2 || (allRoles.length === 2 && myRank === 1)) {
+      effectivePrice = Math.round(effectivePrice * 0.5); // 50% Underdog discount!
+    }
+  }
+  return effectivePrice;
+}
+
 function actBuy(tileId) {
   const st = monopolyState;
   const tile = MONOPOLY_TILES[tileId];
   const pk = st.currentTurn;
   const p = st.players[pk];
   if (!tile) { finishTurn(); return; }
-  let effectivePrice = tile.price;
-  if (perkOf(pk).pumpkinWarp) effectivePrice = Math.round(effectivePrice * 0.7); // 30% Pumpkin discount!
-  if (isBeastAdam(pk) || perkOf(pk).formShiftStance || perkOf(pk).castleDiscount) effectivePrice = Math.round(effectivePrice * 0.7); // 30% Castle Architecture discount!
-  if (isOlympusDivinity(pk) && (p.hasOlympusPegasusWings || p.goldenRollNext)) {
-    effectivePrice = Math.round(effectivePrice * 0.75); // 25% Olympus Divine Tithe discount during Pegasus Flight!
-  }
+  const effectivePrice = getEffectiveTilePrice(tile, pk);
   if (p.miles < effectivePrice) { finishTurn(); return; }
   p.miles -= effectivePrice;
   st.properties[tile.id] = { owner: pk, level: 1 };
@@ -9695,7 +9766,8 @@ function renderBuyModal(d, key) {
   const tile = MONOPOLY_TILES[d.tileId];
   const pk = st.currentTurn;
   const p = st.players[pk];
-  const can = p.miles >= tile.price;
+  const effectivePrice = getEffectiveTilePrice(tile, pk);
+  const can = p.miles >= effectivePrice;
   const zt = zoneTiles(tile.zone);
   const ownedInZone = zt.filter((t) => st.properties[t.id] && st.properties[t.id].owner === pk).length;
 
@@ -9705,13 +9777,13 @@ function renderBuyModal(d, key) {
       <h3 class="card-title">${tile.icon} ${tile.name}</h3>
       <p class="card-desc">${tile.desc}</p>
       <div class="card-stats">
-        <span>Price <strong>${fmt(tile.price)}🪙</strong></span>
+        <span>Price <strong>${fmt(effectivePrice)}🪙</strong>${effectivePrice < tile.price ? ` <del style="opacity:0.6">${fmt(tile.price)}🪙</del>` : ''}</span>
         <span>You have <strong>${fmt(p.miles)}🪙</strong></span>
       </div>
       <div class="card-ladder">Rent: ${rentLadder(tile.id)}</div>
       <div class="card-hint">👑 Own all ${zt.length} in ${ZONES[tile.zone].label} → rent ×2</div>
       <div class="card-actions">
-        <button class="btn-buy-prop" data-act="buy" ${can ? '' : 'disabled'}>${can ? `Buy for ${fmt(tile.price)}🪙 🏠` : 'Not enough miles'}</button>
+        <button class="btn-buy-prop" data-act="buy" ${can ? '' : 'disabled'}>${can ? `Buy for ${fmt(effectivePrice)}🪙 🏠` : 'Not enough miles'}</button>
         <button class="btn-pass-prop" data-act="pass">Pass ➡️</button>
       </div>
     </div>
@@ -10910,6 +10982,7 @@ function renderVictory() {
   const g = st.gameOver;
   const ov = $m('monopolyVictoryOverlay');
   if (!g || !ov) return;
+  if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') window.SkyPixi.clearAll();
   ov.style.display = '';
   if (ov.dataset.key === String(g.at) && ov.classList.contains('active')) return;
   ov.dataset.key = String(g.at);
@@ -11779,6 +11852,7 @@ function handleMonopolyMessage(message) {
       const allPlayed = Array.from(new Set([...prevPlayed, ...persistent].map(Number).filter(isValidCardId)));
       savePersistentPlayedCardIds(allPlayed);
 
+      if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') window.SkyPixi.clearAll();
       monopolyState = createDefaultMonopolyState();
       if (message.state) mergeIncomingState(message.state);
       monopolyState.playedCardIds = Array.from(new Set([...(monopolyState.playedCardIds || []), ...allPlayed]));

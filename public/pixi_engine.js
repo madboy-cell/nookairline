@@ -125,9 +125,12 @@
 
       function wakeTicker() {
         idleTickerFrames = 0;
-        if (!tickerRunning && SkyPixi.app && SkyPixi.app.ticker) {
-          tickerRunning = true;
-          try { SkyPixi.app.ticker.start(); } catch (e) {}
+        if (SkyPixi.app && SkyPixi.app.ticker) {
+          const started = SkyPixi.app.ticker.started;
+          if (!tickerRunning || !started) {
+            tickerRunning = true;
+            try { SkyPixi.app.ticker.start(); } catch (e) {}
+          }
         }
       }
       SkyPixi.wakeTicker = wakeTicker;
@@ -135,10 +138,10 @@
       // Start high-refresh ticker loop with demand-driven power saving
       app.ticker.add((time) => {
         const delta = (time && time.deltaTime) ? time.deltaTime : 1;
-        updateParticles(delta);
-        updateMeshes(delta);
-        updateAmbient(delta);
-        updateTileAuras(delta);
+        try { updateParticles(delta); } catch (e) { console.warn('[SkyPixi] updateParticles notice:', e.message); }
+        try { updateMeshes(delta); } catch (e) { console.warn('[SkyPixi] updateMeshes notice:', e.message); }
+        try { updateAmbient(delta); } catch (e) { console.warn('[SkyPixi] updateAmbient notice:', e.message); }
+        try { updateTileAuras(delta); } catch (e) { console.warn('[SkyPixi] updateTileAuras notice:', e.message); }
 
         // Demand-driven sleeper: if no active particles and no active meshes, sleep after 35 frames (~0.5s)
         if (SkyPixi.activeParticles.length === 0 && SkyPixi.activeMeshes.length === 0) {
@@ -649,9 +652,16 @@
       // Scale and opacity decay
       if (p.decayAlpha) {
         p.alpha = Math.max(0, 1 - (p.life / p.maxLife));
+      } else if (p.alphaStart !== undefined && p.alphaEnd !== undefined) {
+        const prog = Math.min(1, p.life / p.maxLife);
+        p.alpha = Math.max(0, p.alphaStart + (p.alphaEnd - p.alphaStart) * prog);
       }
       if (p.scaleDecay) {
         const sc = Math.max(0.01, p.initialScale * (1 - (p.life / p.maxLife) * 0.4));
+        p.scale.set(sc);
+      } else if (p.scaleStart !== undefined && p.scaleEnd !== undefined) {
+        const prog = Math.min(1, p.life / p.maxLife);
+        const sc = Math.max(0.01, p.scaleStart + (p.scaleEnd - p.scaleStart) * prog);
         p.scale.set(sc);
       }
 
@@ -681,6 +691,51 @@
         list.splice(i, 1);
       }
     }
+  }
+
+  /**
+   * Spawns a single configured GPU particle (used by environmental monument auras and skills).
+   */
+  function spawnParticle(opts = {}) {
+    if (!SkyPixi.isReady) return false;
+    if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
+
+    const kind = opts.textureName || opts.kind || 'spark';
+    const texture = SkyPixi.textures[kind] || SkyPixi.textures.spark;
+    if (!texture) return false;
+
+    const container = SkyPixi.layers.particles;
+    if (!container) return false;
+
+    const sprite = new PIXI.Sprite(texture);
+    sprite.anchor.set(0.5);
+    sprite.x = opts.x || 0;
+    sprite.y = opts.y || 0;
+    sprite.vx = opts.vx || 0;
+    sprite.vy = opts.vy || 0;
+    sprite.gravity = opts.gravity !== undefined ? opts.gravity : 0;
+    sprite.vRot = opts.vRot !== undefined ? opts.vRot : (Math.random() - 0.5) * 0.1;
+    sprite.life = opts.life || 0;
+    sprite.maxLife = opts.maxLife || 40;
+
+    sprite.scaleStart = opts.scaleStart !== undefined ? opts.scaleStart : 0.25;
+    sprite.scaleEnd = opts.scaleEnd !== undefined ? opts.scaleEnd : 0.1;
+    sprite.scale.set(sprite.scaleStart);
+
+    sprite.alphaStart = opts.alphaStart !== undefined ? opts.alphaStart : 1.0;
+    sprite.alphaEnd = opts.alphaEnd !== undefined ? opts.alphaEnd : 0.0;
+    sprite.alpha = sprite.alphaStart;
+
+    if (opts.color !== undefined) {
+      try { sprite.tint = opts.color; } catch (e) {}
+    }
+    if (opts.blendMode) {
+      try { sprite.blendMode = opts.blendMode; } catch (e) {}
+    }
+
+    container.addChild(sprite);
+    SkyPixi.activeParticles.push(sprite);
+    return true;
   }
 
   /**
@@ -1200,6 +1255,9 @@
   };
 
   function clearAll() {
+    cachedTileCenters = null;
+    cachedTileCenterTime = 0;
+    tileAuraTimer = 0;
     if (!SkyPixi.isReady) return;
     const pList = SkyPixi.activeParticles;
     while (pList.length > 0) {
@@ -1219,6 +1277,7 @@
   SkyPixi.init = init;
   SkyPixi.resize = resize;
   SkyPixi.clearAll = clearAll;
+  SkyPixi.spawnParticle = spawnParticle;
   SkyPixi.spawnCoinBurst = spawnCoinBurst;
   SkyPixi.spawnRadialBurst = spawnRadialBurst;
   SkyPixi.spawnShockwaveRing = spawnShockwaveRing;
