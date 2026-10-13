@@ -5126,7 +5126,10 @@ function renderMonopolyBoard(opts = {}) {
   if (!ensureBoardBuilt()) return;
   const wasHydrated = boardHydrated;
   updateBoardTiles({ animate: !opts.instant });
-  if (window.MonoFX) MonoFX.tokens.sync(monopolyState, { animate: wasHydrated && !opts.instant && !isAnimating });
+  if (window.MonoFX) {
+    if (typeof MonoFX.clearDesat === 'function') MonoFX.clearDesat();
+    MonoFX.tokens.sync(monopolyState, { animate: wasHydrated && !opts.instant && !isAnimating });
+  }
 }
 
 function rollButtonState() {
@@ -5224,12 +5227,21 @@ function updateMonopolyHUD() {
 
     const thumb = $m(`monopoly${cap}Thumb`);
     if (thumb && p.sprite && thumb.getAttribute('src') !== p.sprite) thumb.src = p.sprite;
-    card.classList.toggle('active-turn', turn === r && !st.gameOver);
+    const isBankrupt = !!p.bankrupt;
+    card.classList.toggle('active-turn', turn === r && !st.gameOver && !isBankrupt);
     card.classList.toggle('is-me', r === me);
-    card.classList.toggle('magnetized', !!(st.magnet && st.magnet.target === r));
-    card.classList.toggle('is-bankrupt', !!p.bankrupt);
-    if (p.bankrupt) {
+    card.classList.toggle('magnetized', !!(st.magnet && st.magnet.target === r) && !isBankrupt);
+    card.classList.toggle('is-bankrupt', isBankrupt);
+    if (isBankrupt) {
+      set(`monopoly${cap}Miles`, '<span style="color:#71717a;text-decoration:line-through;">0 🪙</span>');
+      set(`monopoly${cap}Props`, '<span style="color:#71717a;">🏰 0</span>');
       set(`monopoly${cap}Nw`, '<span class="bankrupt-label">💀 OUT</span>');
+      const ultTrack = $m(`monopoly${cap}UltTrack`);
+      if (ultTrack) ultTrack.classList.remove('is-ready');
+      const ultFill = $m(`monopoly${cap}UltFill`);
+      if (ultFill) ultFill.style.width = '0%';
+      const ultLabel = $m(`monopoly${cap}UltLabel`);
+      if (ultLabel) ultLabel.textContent = '0%';
     }
   });
 

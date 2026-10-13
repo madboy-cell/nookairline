@@ -4706,15 +4706,73 @@ body.has-active-modal .vault-pill * {
   flex-shrink: 0;
 }
 
-.monopoly-player-card.is-bankrupt {
-  opacity: 0.42 !important;
-  filter: grayscale(0.85);
-  transition: opacity 0.3s ease, filter 0.3s ease;
+.monopoly-player-card.is-bankrupt,
+.neora-player-card.is-bankrupt {
+  background: #09090b !important;
+  background: linear-gradient(180deg, #141416 0%, #050507 100%) !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.5) !important;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.95), 0 0 8px rgba(239, 68, 68, 0.2) !important;
+  opacity: 0.85 !important;
+  filter: none !important;
+  transform: none !important;
+  animation: none !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+.monopoly-player-card.is-bankrupt .player-thumb-mini,
+.neora-player-card.is-bankrupt .player-thumb-mini {
+  filter: grayscale(1) brightness(0.35) contrast(1.1) !important;
+  opacity: 0.5 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-crown-icon,
+.neora-player-card.is-bankrupt .player-crown-icon {
+  display: none !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-signal-bars,
+.neora-player-card.is-bankrupt .player-signal-bars {
+  opacity: 0.2 !important;
+  filter: grayscale(1) !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-seat-tag,
+.neora-player-card.is-bankrupt .player-seat-tag {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border: 0.5px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-name-mini,
+.neora-player-card.is-bankrupt .player-name-mini {
+  color: #71717a !important;
+  text-decoration: line-through rgba(239, 68, 68, 0.75) !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-balance-row,
+.neora-player-card.is-bankrupt .player-balance-row {
+  opacity: 0.5 !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-miles-pill,
+.neora-player-card.is-bankrupt .player-miles-pill {
+  color: #71717a !important;
+}
+
+.monopoly-player-card.is-bankrupt .player-nw-badge,
+.neora-player-card.is-bankrupt .player-nw-badge {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #fca5a5 !important;
+  font-weight: 900 !important;
 }
 
 .bankrupt-label {
-  color: #ef4444 !important;
-  font-weight: 800 !important;
+  color: #fca5a5 !important;
+  font-weight: 900 !important;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }

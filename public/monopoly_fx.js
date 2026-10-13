@@ -491,6 +491,10 @@
 
   function place(role, tileId) {
     const el = tok.el[role];
+    if (typeof monopolyState !== 'undefined' && monopolyState.players && monopolyState.players[role] && monopolyState.players[role].bankrupt) {
+      if (el) el.style.opacity = '0';
+      return;
+    }
     tok.shown[role] = tileId;
     if (!el) return;
     const a = anchor(role, tileId, tok.shown);
@@ -504,6 +508,10 @@
   function placeAll() {
     const roles = Object.keys(tok.shown);
     roles.forEach((r) => {
+      if (typeof monopolyState !== 'undefined' && monopolyState.players && monopolyState.players[r] && monopolyState.players[r].bankrupt) {
+        if (tok.el[r]) tok.el[r].style.opacity = '0';
+        return;
+      }
       if (!tok.busy[r] && tok.shown[r] != null) place(r, tok.shown[r]);
     });
   }
@@ -719,6 +727,11 @@
     mount(state);
     const roles = Object.keys(state.players);
     roles.forEach((r) => {
+      if (state.players[r] && state.players[r].bankrupt) {
+        if (tok.el[r]) tok.el[r].style.opacity = '0';
+        delete tok.shown[r];
+        return;
+      }
       if (tok.busy[r] || tok.lock[r] || (typeof window !== 'undefined' && window.activeMoveLocks && window.activeMoveLocks[r])) return;
       const pos = state.players[r].pos;
       if (tok.shown[r] == null || !opts.animate) { tok.shown[r] = pos; return; }
@@ -3683,12 +3696,13 @@
 
     async bankrupt(d) {
       refs();
-      if (L.wrap) L.wrap.classList.add('fx-desat');
+      if (L.wrap) L.wrap.classList.remove('fx-desat');
       sfx('playMiss');
       const fall = d.role ? fallToken(d.role) : Promise.resolve();
       await sleep(T(250));
       await banner('BANKRUPT!', d.text || '', 'red', 900);
       await fall;
+      if (L.wrap) L.wrap.classList.remove('fx-desat');
     },
 
     // 🎰 S4 Mythic: VIP High-Roller Express

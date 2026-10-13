@@ -923,23 +923,33 @@
             .from('friendships')
             .select(`
               id,
+              user_id,
+              friend_id,
               status,
               created_at,
+              sender:profiles!friendships_user_id_fkey(id, username, character_base, equipped_costume),
               friend:profiles!friendships_friend_id_fkey(id, username, character_base, equipped_costume)
             `)
-            .eq('user_id', this.currentUser.id);
+            .or(`user_id.eq.${this.currentUser.id},friend_id.eq.${this.currentUser.id}`);
 
           if (!error && Array.isArray(data)) {
             this.friends = data
-              .filter((d) => d && d.friend)
-              .map((d) => ({
-                friendshipId: d.id,
-                id: d.friend.id,
-                username: d.friend.username || 'Co-Pilot',
-                character_base: d.friend.character_base || 'dxb',
-                status: d.status,
-                isOnline: this.localProvider.onlinePlayers.has(d.friend.id)
-              }));
+              .map((d) => {
+                if (!d) return null;
+                const isSender = d.user_id === this.currentUser.id;
+                const targetProfile = isSender ? d.friend : d.sender;
+                if (!targetProfile) return null;
+                return {
+                  friendshipId: d.id,
+                  id: targetProfile.id,
+                  username: targetProfile.username || 'Co-Pilot',
+                  character_base: targetProfile.character_base || 'dxb',
+                  status: d.status,
+                  isOnline: this.localProvider.onlinePlayers.has(targetProfile.id),
+                  friend: targetProfile
+                };
+              })
+              .filter((d) => d && d.friend);
           }
         } catch (e) {
           console.warn('[SkySupabase] Failed to fetch live friends:', e);
@@ -968,8 +978,21 @@
       if (!targetUsernameOrId || !targetUsernameOrId.trim()) throw new Error('Target username is required.');
 
       const target = targetUsernameOrId.trim();
-      const existing = this.friends.find((f) => f.username === target || f.id === target);
-      if (existing) throw new Error(`Already friends with ${target}.`);
+      const targetLower = target.toLowerCase();
+
+      // Guard: Cannot add self
+      if (
+        (this.currentUser.id && this.currentUser.id.toLowerCase() === targetLower) ||
+        (this.currentUser.username && this.currentUser.username.toLowerCase() === targetLower)
+      ) {
+        throw new Error('You cannot add yourself as a friend.');
+      }
+
+      const existing = this.friends.find((f) => 
+        (f.id && f.id.toLowerCase() === targetLower) || 
+        (f.username && f.username.toLowerCase() === targetLower)
+      );
+      if (existing) throw new Error(`Already friends with ${existing.username || target}.`);
 
       const newFriend = {
         friendshipId: `fr_${Date.now()}`,
@@ -981,20 +1004,44 @@
       };
 
       if (this.isLiveClient && !this.currentUser.isGuest) {
-        const { data: targetProfile, error: pErr } = await this.client
-          .from('profiles')
-          .select('id, username, character_base')
-          .or(`id.eq.${target},username.eq.${target}`)
-          .single();
+        // Safe profile lookup: test UUID format vs callsign username
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(target);
+        let query = this.client.from('profiles').select('id, username, character_base, equipped_costume');
+        if (isUuid) {
+          query = query.eq('id', target);
+        } else {
+          query = query.ilike('username', target);
+        }
+        const { data: targetProfile, error: pErr } = await query.maybeSingle();
 
         if (pErr || !targetProfile) throw new Error(`Player "${target}" not found.`);
+        if (targetProfile.id === this.currentUser.id) throw new Error('You cannot add yourself as a friend.');
 
-        const { error } = await this.client.from('friendships').insert({
-          user_id: this.currentUser.id,
-          friend_id: targetProfile.id,
-          status: 'accepted'
-        });
-        if (error) throw error;
+        // Check if reciprocal friendship already exists in either direction
+        const { data: existingPair } = await this.client
+          .from('friendships')
+          .select('id, status')
+          .or(`and(user_id.eq.${this.currentUser.id},friend_id.eq.${targetProfile.id}),and(user_id.eq.${targetProfile.id},friend_id.eq.${this.currentUser.id})`)
+          .maybeSingle();
+
+        if (existingPair) {
+          if (existingPair.status !== 'accepted') {
+            await this.client.from('friendships').update({ status: 'accepted' }).eq('id', existingPair.id);
+          }
+          newFriend.friendshipId = existingPair.id;
+        } else {
+          const { data: inserted, error } = await this.client.from('friendships').insert({
+            user_id: this.currentUser.id,
+            friend_id: targetProfile.id,
+            status: 'accepted'
+          }).select().single();
+          if (error) throw error;
+          if (inserted) newFriend.friendshipId = inserted.id;
+        }
+
+        newFriend.id = targetProfile.id;
+        newFriend.username = targetProfile.username;
+        newFriend.character_base = targetProfile.character_base || 'dxb';
       } else {
         const list = this.localProvider.getFriends();
         list.push(newFriend);
@@ -1005,15 +1052,31 @@
       return newFriend;
     }
 
-    async removeFriend(friendshipId) {
+    async removeFriend(friendshipOrUserId) {
+      if (!friendshipOrUserId) return { success: true };
       if (this.isLiveClient && !this.currentUser.isGuest) {
-        await this.client.from('friendships').delete().eq('id', friendshipId);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(friendshipOrUserId);
+        if (isUuid) {
+          await this.client
+            .from('friendships')
+            .delete()
+            .or(`id.eq.${friendshipOrUserId},and(user_id.eq.${this.currentUser.id},friend_id.eq.${friendshipOrUserId}),and(user_id.eq.${friendshipOrUserId},friend_id.eq.${this.currentUser.id})`);
+        } else {
+          await this.client.from('friendships').delete().eq('id', friendshipOrUserId);
+        }
       } else {
-        const list = this.localProvider.getFriends().filter((f) => f.friendshipId !== friendshipId);
+        const list = this.localProvider.getFriends().filter((f) => f.friendshipId !== friendshipOrUserId && f.id !== friendshipOrUserId);
         this.localProvider.saveFriends(list);
       }
       await this.getFriends();
       return { success: true };
+    }
+
+    /**
+     * Softer alias for taking a short break together
+     */
+    async takeBreak() {
+      return this.decouple();
     }
 
     // =========================================================================

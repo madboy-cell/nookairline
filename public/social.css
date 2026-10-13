@@ -1564,14 +1564,16 @@
 }
 
 .couple-action-btn.decouple {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
 }
 
 .couple-action-btn.decouple:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #fee2e2;
+  background: rgba(244, 114, 182, 0.18);
+  border-color: rgba(244, 114, 182, 0.45);
+  color: #fbcfe8;
+  box-shadow: 0 4px 14px rgba(244, 114, 182, 0.25);
 }
 
 .couple-safety-hint {

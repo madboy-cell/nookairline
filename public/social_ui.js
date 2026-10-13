@@ -455,14 +455,17 @@
 
       if (this.coupleDecoupleBtn) {
         this.coupleDecoupleBtn.addEventListener('click', async () => {
-          if (!confirm('Are you sure you want to decouple? (Your wardrobe items & diamonds will remain 100% safe and untouched)')) {
+          if (!confirm("Would you two like to take a sweet break for now? 🍃\n\n(Don't worry — your wardrobe items, diamonds, and progress will always remain 100% safe and intact.)")) {
             return;
           }
           try {
             await window.SkySupabase.decouple();
+            if (typeof showToast === 'function') {
+              showToast('Couple link paused. Taking a gentle break 🍃');
+            }
             this.render();
           } catch (err) {
-            alert(err.message || 'Decouple error.');
+            alert(err.message || 'Unable to update couple status right now.');
           }
         });
       }
@@ -494,6 +497,12 @@
           try {
             await window.SkySupabase.addFriend(target);
             if (this.addFriendInput) this.addFriendInput.value = '';
+            if (typeof showToast === 'function') {
+              showToast(`Added ${target} to your flight companions! ✈️`);
+            }
+            if (window.Sound && typeof window.Sound.reward === 'function') {
+              window.Sound.reward();
+            }
             this.render();
           } catch (err) {
             alert(err.message || 'Failed to add friend.');
