@@ -23,7 +23,6 @@
   <link rel="stylesheet" href="lounge.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="daily.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="catlounge.css?v=20261013_tokenfix">
-  <link rel="stylesheet" href="skydash.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="social.css?v=20261013_friends_break">
   <link rel="stylesheet" href="neora_hud.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="pwa_prompt.css?v=20261013_pwa">
@@ -203,13 +202,6 @@
         <span class="monopoly-btn-glow"></span>
         <span class="emote-icon"><img src="assets/ui/icon_monopoly.png" alt="" draggable="false"></span>
         <span class="emote-label">Monopoly</span>
-      </button>
-
-
-      <!-- Sky Dash Runner (Tales of Flight) -->
-      <button class="emote-btn skydash-btn" id="openSkyDashBtn" title="Sky Dash: Cloud Runner">
-        <span class="emote-icon"><img src="assets/ui/icon_runner.png" alt="" draggable="false"></span>
-        <span class="emote-label">Sky Dash</span>
       </button>
 
       <button class="emote-btn wardrobe-btn" id="openWardrobeBtn" title="Wardrobe, Codex & Gacha">
@@ -1450,193 +1442,6 @@
     </nav>
 
     <!-- =========================================================
-         SKY DASH: 2.5D SKY RUNNER MODAL
-         ========================================================= -->
-    <div class="skydash-modal hidden" id="skydashModal">
-      <div class="skydash-container">
-        <!-- Header -->
-        <header class="skydash-header">
-          <div class="skydash-brand">
-            <span class="skydash-logo-badge">👟</span>
-            <div class="skydash-title-wrap">
-              <span class="skydash-title">SKY RUNWAY</span>
-              <span class="skydash-subtitle">Sky Dash · Tales of Flight</span>
-            </div>
-          </div>
-          <div class="skydash-header-actions">
-            <button class="skydash-icon-btn" id="skydashCloseBtn" title="Close Runner">✕</button>
-          </div>
-        </header>
-
-        <!-- Canvas Viewport -->
-        <div class="skydash-canvas-wrapper">
-          <canvas id="skydashCanvas"></canvas>
-        </div>
-
-        <!-- In-Game Floating HUD -->
-        <div class="skydash-hud-layer" id="skydashHud">
-          <div class="skydash-hud-top">
-            <!-- Distance Progress Track -->
-            <div class="skydash-progress-row">
-              <span class="skydash-dist-text" id="skydashDistText">0m / 3,000m</span>
-              <div class="skydash-progress-track">
-                <div class="skydash-progress-fill" id="skydashProgressFill"></div>
-                <div class="skydash-runner-pin" id="skydashRunnerPin">✈️</div>
-              </div>
-            </div>
-
-            <!-- Stats Pill Row -->
-            <div class="skydash-metrics-row">
-              <div class="skydash-pill diamonds neora-gem-counter">
-                <span class="neora-diamond-wrap">
-                  <svg class="neora-diamond-svg" width="14" height="12" viewBox="0 0 24 22" fill="none">
-                    <path d="M12 21.5L1.5 8.5L5.5 1.5H18.5L22.5 8.5L12 21.5Z" fill="url(#gem_body_sd)" stroke="#a5f3fc" stroke-width="0.8"/>
-                    <path d="M5.5 1.5L8.5 8.5L12 21.5L15.5 8.5L18.5 1.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
-                    <path d="M1.5 8.5H22.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
-                    <path d="M8.5 8.5L12 1.5L15.5 8.5" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.8"/>
-                    <defs>
-                      <linearGradient id="gem_body_sd" x1="12" y1="1.5" x2="12" y2="21.5" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#38bdf8"/>
-                        <stop offset="0.5" stop-color="#818cf8"/>
-                        <stop offset="1" stop-color="#c084fc"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </span>
-                <span id="skydashDiamondsVal">0</span>
-              </div>
-              <div class="skydash-pill score">🏆 <span id="skydashScoreVal">0</span></div>
-              <div class="skydash-pill combo" id="skydashComboPill">🔥 <span id="skydashComboVal">×0</span></div>
-            </div>
-
-            <!-- Stamina & Fever Gauges -->
-            <div class="skydash-gauges-row">
-              <div class="skydash-gauge-container">
-                <span class="skydash-gauge-label">Stamina ⛽</span>
-                <div class="skydash-bar">
-                  <div class="skydash-bar-fill stamina" id="skydashStaminaFill" style="width: 100%;"></div>
-                </div>
-              </div>
-              <div class="skydash-gauge-container">
-                <span class="skydash-gauge-label">Fever 🌈</span>
-                <div class="skydash-bar">
-                  <div class="skydash-bar-fill fever" id="skydashFeverFill"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Ultimate Banner & Alert Flash -->
-          <div class="skydash-ult-banner" id="skydashUltBanner">✨ ULTIMATE RUSH! ✨</div>
-          <div class="skydash-alert-flash" id="skydashAlertFlash">⚡ LANDING DASH!</div>
-
-          <!-- 2-Thumb Touch Controls -->
-          <div class="skydash-controls-row">
-            <!-- Left: Jump Button -->
-            <button class="skydash-touch-btn jump-btn" id="skydashJumpBtn">
-              <span class="skydash-btn-icon">⬆️</span>
-              <span class="skydash-btn-label">Jump</span>
-            </button>
-
-            <!-- Center-Right: Item Slot -->
-            <div class="skydash-item-slot" id="skydashItemSlot" title="Tap to use item"></div>
-
-            <!-- Right: Slide & Dash Button -->
-            <button class="skydash-touch-btn slide-btn" id="skydashSlideBtn">
-              <span class="skydash-btn-icon">⬇️</span>
-              <span class="skydash-btn-label">Slide</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Pre-Race Lobby Overlay Card -->
-        <div class="skydash-lobby-overlay" id="skydashLobbyOverlay">
-          <div class="skydash-lobby-card">
-            <div class="skydash-lobby-banner">
-              <img src="assets/ui/banner_skydash.jpg" alt="Sky Dash Banner">
-              <div class="skydash-lobby-banner-overlay">
-                <span class="skydash-banner-badge">SEASON RUNWAY CIRCUIT</span>
-                <h2 class="skydash-banner-title">Tokyo Sakura Skyway 🌸</h2>
-              </div>
-            </div>
-
-            <div class="skydash-lobby-content">
-              <!-- Equipped Loadout -->
-              <div class="skydash-loadout-strip">
-                <div class="skydash-loadout-item">
-                  <div class="skydash-loadout-avatar-box">
-                    <img src="assets/s2/s2_inari_f.png" id="skydashLobbyAvatarImg" alt="Costume">
-                  </div>
-                  <div class="skydash-loadout-info">
-                    <span class="skydash-loadout-tag">Costume</span>
-                    <span class="skydash-loadout-name" id="skydashLobbyCostumeName">Inari Empress ⛩️</span>
-                    <span class="skydash-loadout-perk" id="skydashLobbyCostumePerk">Foxfire Rush</span>
-                  </div>
-                </div>
-
-                <div class="skydash-loadout-item">
-                  <div class="skydash-loadout-avatar-box">
-                    <img src="assets/cats/c_mochi.png" id="skydashLobbyCatImg" alt="Companion">
-                  </div>
-                  <div class="skydash-loadout-info">
-                    <span class="skydash-loadout-tag">Companion</span>
-                    <span class="skydash-loadout-name" id="skydashLobbyCatName">Mochi 🐣</span>
-                    <span class="skydash-loadout-perk" id="skydashLobbyCatPerk">Stamina Fish 🐟</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Mode Selector -->
-              <div class="skydash-mode-selector">
-                <button class="skydash-mode-tab active" id="skydashMode_solo">Solo Sprint 🏃</button>
-                <button class="skydash-mode-tab" id="skydashMode_duo">Duo Relay 💞</button>
-                <button class="skydash-mode-tab" id="skydashMode_boss">Boss Escape 🐙</button>
-              </div>
-
-              <!-- Launch Button -->
-              <button class="skydash-launch-btn" id="skydashLaunchBtn">
-                <span>🛫</span> Launch Flight!
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Post-Race Summary & Podium -->
-        <div class="skydash-summary-overlay" id="skydashSummaryOverlay">
-          <div class="skydash-summary-card">
-            <div class="skydash-summary-trophy">🏆</div>
-            <h2 class="skydash-summary-title">Flight Completed!</h2>
-            <p class="skydash-summary-subtitle">Spectacular runway landing at Cloud Station.</p>
-
-            <div class="skydash-summary-stats-grid">
-              <div class="skydash-stat-box">
-                <span class="skydash-stat-val" id="skydashSumDist">3,000m</span>
-                <span class="skydash-stat-lbl">Distance</span>
-              </div>
-              <div class="skydash-stat-box">
-                <span class="skydash-stat-val" id="skydashSumScore">245,000</span>
-                <span class="skydash-stat-lbl">Final Score</span>
-              </div>
-              <div class="skydash-stat-box">
-                <span class="skydash-stat-val" id="skydashSumDiamonds">+42 💎</span>
-                <span class="skydash-stat-lbl">Diamonds</span>
-              </div>
-              <div class="skydash-stat-box">
-                <span class="skydash-stat-val" id="skydashSumCombo">×48</span>
-                <span class="skydash-stat-lbl">Max Combo</span>
-              </div>
-            </div>
-
-            <div class="skydash-summary-actions">
-              <button class="skydash-summary-btn rematch" id="skydashRematchBtn">Fly Again ✈️</button>
-              <button class="skydash-summary-btn close" id="skydashSummaryCloseBtn">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- =========================================================
          PHASE 5: SOCIAL DRAWER & COUPLE SANCTUARY
          ========================================================= -->
     <div class="social-drawer-backdrop hidden" id="socialDrawerBackdrop"></div>
@@ -2481,8 +2286,6 @@
   <script src="monopoly_bot.js?v=20261013_perfopt"></script>
   <script src="monopoly_fx.js?v=20261013_perfopt"></script>
   <script src="monopoly.js?v=20261013_bot_insane"></script>
-  <script src="skydash_audio.js?v=20261013_tokenfix"></script>
-  <script src="skydash.js?v=20261013_tokenfix"></script>
   <!-- Phase 5 Supabase & Social SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>

@@ -859,7 +859,7 @@ function isNagaWarden(role) {
   const p = perkInfo(role);
   const costumeId = String(activeCostumeId(role) || '').toLowerCase();
   if (['s1_naga_m', 's1_kinnaree_f'].includes(costumeId)) return true;
-  if (costumeId.includes('naga') || costumeId.includes('kinnaree') || matchesSeasonId(costumeId, 's1') || (role === 'dxb' && (!costumeId || costumeId === 'got_queen'))) return true;
+  if (costumeId.includes('naga') || costumeId.includes('kinnaree')) return true;
   if (p && p.costume) {
     const c = p.costume;
     if (c.season === 's1' && c.rarity === 'mythic') return true;
@@ -1374,12 +1374,15 @@ function loadLocalMonopolyState(preferredMode) {
 let monopolyState = loadLocalMonopolyState() || createDefaultMonopolyState();
 
 let manualRoleOverride = null;
+let isSpectatorMode = false;
 
 /**
  * Robust terminal & role resolution: 'bkk', 'dxb', 'bot1', or 'bot2'.
- * Guarantees a human player is NEVER assigned to an AI bot role.
+ * Guarantees a human player is NEVER assigned to an AI bot role,
+ * and spectators are never assigned a player role.
  */
 function getMonopolyMyRole() {
+  if (isSpectatorMode) return 'spectator';
   if (manualRoleOverride) return manualRoleOverride;
 
   // 1. If an active match is in progress:
@@ -1466,14 +1469,15 @@ function partnerAway() {
 
 function isResolver() {
   const st = monopolyState;
-  if (!st) return false;
+  if (!st || isSpectatorMode) return false;
   if (st.mode === 'bot') return true;
   const currentP = st.players && st.players[st.currentTurn];
-  if (currentP && currentP.isBot) {
+  const isBotOrTakeover = currentP && (currentP.isBot || currentP.controller === 'BOT_TEMPORARY' || currentP.controller === 'BOT_PERMANENT');
+  if (isBotOrTakeover) {
     if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) return true;
     const me = getMonopolyMyRole();
     if (me === 'bkk') return true;
-    const firstHuman = Object.keys(st.players).find(r => !st.players[r].isBot);
+    const firstHuman = Object.keys(st.players).find(r => !st.players[r].isBot && st.players[r].controller !== 'BOT_TEMPORARY' && st.players[r].controller !== 'BOT_PERMANENT');
     if (firstHuman && me === firstHuman) return true;
     if (partnerAway() || window.nookPartnerOnline === false) return true;
     if (st.turnResolver === me) return true;
@@ -1982,15 +1986,15 @@ function mergeIncomingState(incoming) {
   const lc = local.activeChallenge;
   const mc = merged.activeChallenge;
   if (lc && mc && lc.id === mc.id && !mc.settled) {
-    ['bkk', 'dxb'].forEach((r) => {
-      if (mc.picks[r] == null && lc.picks[r] != null) mc.picks[r] = lc.picks[r];
+    Object.keys(merged.players || {}).forEach((r) => {
+      if (mc.picks && mc.picks[r] == null && lc.picks && lc.picks[r] != null) mc.picks[r] = lc.picks[r];
     });
   }
   const ld = local.activeDuel;
   const md = merged.activeDuel;
   if (ld && md && ld.id === md.id && !md.settled) {
-    ['bkk', 'dxb'].forEach((r) => {
-      if (md.rolls[r] == null && ld.rolls[r] != null) md.rolls[r] = ld.rolls[r];
+    Object.keys(merged.players || {}).forEach((r) => {
+      if (md.rolls && md.rolls[r] == null && ld.rolls && ld.rolls[r] != null) md.rolls[r] = ld.rolls[r];
     });
   }
   if (Array.isArray(incoming.playedCardIds) || Array.isArray(local.playedCardIds)) {
@@ -4897,10 +4901,18 @@ function promptResetOrMode() {
   hideVictory();
   if (monopolyState) monopolyState.gameOver = null;
   saveLocalMonopolyState();
-  showMonopolyLobby();
+  if (typeof showDepartureBoard === 'function') {
+    showDepartureBoard();
+  } else {
+    showMonopolyLobby();
+  }
 }
 
 function resetMonopolyGame() {
+  if (currentFlightRoom && Array.isArray(currentFlightRoom.slots) && currentFlightRoom.slots.length > 0) {
+    startPartyGame(currentFlightRoom);
+    return;
+  }
   const myRole = getMonopolyMyRole();
   const partnerRole = otherRole(myRole);
   const fresh = createDefaultMonopolyState();
@@ -5134,6 +5146,7 @@ function renderMonopolyBoard(opts = {}) {
 
 function rollButtonState() {
   const st = monopolyState;
+  if (isSpectatorMode) return { label: 'SPECTATING 👁', enabled: false, cls: '' };
   const me = getMonopolyMyRole();
   const turn = st.currentTurn || 'bkk';
   const currentP = st.players && st.players[turn];
@@ -5495,7 +5508,7 @@ function getRoleUltimate(role) {
       haloColor: '#06b6d4'
     };
   }
-  if (isNagaWarden(role) || cid.includes('naga') || cid.includes('kinnaree') || matchesSeasonId(cid, 's1') || (role === 'dxb' && (!cid || cid === 'got_queen'))) {
+  if (isNagaWarden(role) || ['s1_naga_m', 's1_kinnaree_f'].includes(cid) || cid.includes('naga') || cid.includes('kinnaree')) {
     return {
       id: 'naga_surge',
       badge: '🐉 S1 MYTHIC ULTIMATE',
@@ -5582,9 +5595,9 @@ function syncMonopolyCostumes() {
     const freshPerks = window.NookVault.monopolyPerks();
     if (freshPerks) {
       monopolyState.perks = monopolyState.perks || {};
-      ['bkk', 'dxb'].forEach((r) => {
+      Object.keys(monopolyState.players || {}).forEach((r) => {
         if (!monopolyState.players[r]?.isBot && freshPerks[r]) {
-          monopolyState.perks[r] = { ...(monopolyState.perks[r] || {}), ...freshPerks[r] };
+          monopolyState.perks[r] = { ...freshPerks[r] };
         }
       });
     }

@@ -370,8 +370,7 @@
 .vault-pill,
 .passport-stat-pill.diamond-stat,
 .social-currency-chip.diamonds,
-.monopoly-vault-diamonds,
-.skydash-pill.diamonds {
+.monopoly-vault-diamonds {
   display: inline-flex;
   align-items: center;
   gap: 8px;

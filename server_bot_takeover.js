@@ -207,21 +207,17 @@ class BotTakeoverManager {
       return;
     }
 
-    // 2. Execute dice roll
+    // 2. Execute dice roll (1d6 = 1..6 tiles on 20-tile board)
     if (!st.isRolling) {
-      const d1 = Math.floor(Math.random() * 6) + 1;
-      const d2 = Math.floor(Math.random() * 6) + 1;
-      const rollVal = d1 + d2;
+      const rollVal = Math.floor(Math.random() * 6) + 1;
 
-      console.log(`[BotTakeover] 🎲 Bot auto-roll for ${role} (${slot.name}): [${d1}, ${d2}] = ${rollVal}`);
+      console.log(`[BotTakeover] 🎲 Bot auto-roll for ${role} (${slot.name}): [${rollVal}]`);
 
       this.broadcastToRoom(room, {
         type: 'monopoly_action',
         action: 'roll',
         playerKey: role,
         rollVal,
-        dice1: d1,
-        dice2: d2,
         botAuto: true
       });
     }

@@ -4,7 +4,7 @@
  * Simulates 10 autonomous human personas performing:
  * Phase 1: New Member Onboarding, Character Base Selection (BKK / DXB) & Passports
  * Phase 2: Sky Social Handshake (Reciprocal Friend Requests, Couple Sanctuary, Call Gating, Clean Decouple)
- * Phase 3: Interactive Module Tour (Vault Gacha, Daily Attendance, Cat Lounge, Galley, SkyDash)
+ * Phase 3: Interactive Module Tour (Vault Gacha, Daily Attendance, Cat Lounge, Galley, Sanctuary Hug)
  * Phase 4: Multiplayer Flight Lobbies (Room 1, Room 2, Live Departure Board, Chat, Resilient Reconnection)
  * Phase 5: Live Monopoly Match with Dedicated Spectator (Agent 10 streams live moves without holding a seat)
  */
@@ -27,7 +27,7 @@ console.log('===================================================================
 const PERSONA_CONFIGS = [
   { id: 'usr_alex_01', name: 'Captain Alex 🐺', base: 'bkk', role: 'Host & P1', diamonds: 25000 },
   { id: 'usr_luna_02', name: 'Princess Luna 🐉', base: 'dxb', role: 'P2 & Couple 1', diamonds: 22000 },
-  { id: 'usr_kai_03',  name: 'Pilot Kai 🐺',     base: 'bkk', role: 'P3 & SkyDash Runner', diamonds: 18000 },
+  { id: 'usr_kai_03',  name: 'Pilot Kai 🐺',     base: 'bkk', role: 'P3 & Sanctuary Explorer', diamonds: 18000 },
   { id: 'usr_momo_04', name: 'Sailor Momo 🐉',    base: 'dxb', role: 'P4 & Couple 2', diamonds: 16000 },
   { id: 'usr_roy_05',  name: 'Jetstream Roy 🐺',  base: 'bkk', role: 'Room 2 Host', diamonds: 20000 },
   { id: 'usr_mira_06', name: 'Sky Queen Mira 🐉', base: 'dxb', role: 'Room 2 & Gacha Whale', diamonds: 45000 },
@@ -64,7 +64,7 @@ class AgentClient {
     this.dailyStreak = 0;
     this.catsCaredFor = {};
     this.galleyOrders = [];
-    this.skyDashBest = 0;
+    this.warmHugsSent = 0;
     
     // Networking
     this.wsClient = null;
@@ -185,13 +185,10 @@ class AgentClient {
     return { item: itemKey, diamonds: this.diamonds };
   }
 
-  recordSkyDashRun(meters) {
-    if (meters > this.skyDashBest) {
-      this.skyDashBest = meters;
-    }
-    const bonus = Math.floor(meters / 100);
-    this.diamonds += bonus;
-    return { run: meters, best: this.skyDashBest, bonusEarned: bonus };
+  sendWarmHug(recipientName = 'Aero Ken') {
+    this.warmHugsSent += 1;
+    this.diamonds += 10;
+    return { recipient: recipientName, hugsSent: this.warmHugsSent, bonusEarned: 10 };
   }
 }
 
@@ -657,10 +654,10 @@ function createWsClient(url) {
     galleyRes.item === 'espresso' && luna.diamonds === 21950 && luna.galleyOrders.length === 1
   );
 
-  // 3.5 SkyDash
-  const dashRes = kai.recordSkyDashRun(1250);
-  it('3.7 SkyDash Mini-Game: Pilot Kai logs 1,250m flight distance and earns 12💎 bonus',
-    dashRes.run === 1250 && dashRes.best === 1250 && dashRes.bonusEarned === 12
+  // 3.7 Sanctuary In-Flight Connection (Warm Hug)
+  const hugRes = kai.sendWarmHug('Aero Ken');
+  it('3.7 Sanctuary In-Flight Connection: Pilot Kai sends warm hug and earns 10💎 bonus',
+    hugRes.recipient === 'Aero Ken' && hugRes.bonusEarned === 10 && hugRes.hugsSent === 1
   );
 
   // =========================================================================

@@ -1504,7 +1504,7 @@ body.cl-lock { overflow: hidden; }
 .vault-toast.cl-toast { border-color: rgba(255, 143, 177, 0.55); }
 
 /* =============================================================================
-   Dock tile (6 tiles: Hug, Monopoly, Sky Dash, Wardrobe, Cats, Scenery)
+   Dock tile (5 tiles: Hug, Monopoly, Wardrobe, Couple Sanctuary, Scenery)
    ============================================================================= */
 .emotion-deck.has-cats { grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .emotion-deck.has-cats .emote-icon { width: 34px; height: 34px; }

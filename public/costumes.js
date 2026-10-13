@@ -268,11 +268,11 @@
     clinch:       { icon: '🥊', name: 'Clinch',          desc: 'You win ties when YOU attack in a Takeover duel.',        effects: { monopoly: { duelTieWin: true } } },
     smooth_sail:  { icon: '🛳️', name: 'Smooth Sailing',  desc: '+1 Clash Token every game (3 instead of 2).',             effects: { monopoly: { extraVibePass: 1 } } },
     lucky_red:    { icon: '🏮', name: 'Lucky Red',       desc: 'Your first Black Market item each game is 25% off.',      effects: { monopoly: { marketDiscount: 0.25 } } },
-    celestial:    { icon: '🐉', name: 'The Bangkok River Emperor', desc: '15% Mekong Hoard saved to Start. Crossing Start triggers Bangkok River Surge (Water Shields on owned BKK properties block C4). Sky Bridge (Tile 9) surfs straight to Start to cash out! Start with Golden Dice & +120 miles.', effects: { monopoly: { mekongHoard: 0.15, demolitionImmune: true, startItem: 'golden_dice', startMiles: 120, lapBonus: 50 }, skydash: { speedBonus: 0.15, hydroShield: true, name: 'Bangkok River Surge' } } },
+    celestial:    { icon: '🐉', name: 'The Bangkok River Emperor', desc: '15% Mekong Hoard saved to Start. Crossing Start triggers Bangkok River Surge (Water Shields on owned BKK properties block C4). Sky Bridge (Tile 9) surfs straight to Start to cash out! Start with Golden Dice & +120 miles.', effects: { monopoly: { mekongHoard: 0.15, demolitionImmune: true, startItem: 'golden_dice', startMiles: 120, lapBonus: 50 } } },
 
     // S2 Perks
-    inari_blessing:    { icon: '🦊', name: 'The 3 Foxfire Tails & Haunted Lands', desc: 'Starts with 3 Spirit Tails. Landing on built rival property consumes 1 Tail to pay 0 rent and curses the land with Foxfire (owner pays 40🪙 Spirit Tribute on visit). Rolling 6 or visiting Tokyo (Tiles 11-13) restores +1 Tail! Start with Golden Dice & +100 miles.', effects: { monopoly: { foxfireWard: 0.25, startItem: 'golden_dice', startMiles: 100, lapBonus: 40 }, skydash: { landingWindowBonus: 30, foxfireRush: true, name: 'The 3 Spirit Tails Rush' } } },
-    celestial_eclipse: { icon: '🌓', name: 'The Living Day & Night Cycle', desc: 'Living ambient cycle: Odd rolls trigger Solar Dawn (+20% rent collected, +30 miles on laps, warm golden lighting). Even rolls trigger Lunar Night (-25% rent paid to rivals, deep starlight). Start with Rent Shield & +120 miles.', effects: { monopoly: { eclipseBalance: true, startItem: 'shield', startMiles: 120, lapBonus: 50 }, skydash: { dayNightCycle: true, solarSpeed: 0.2, name: 'Day & Night Overdrive' } } },
+    inari_blessing:    { icon: '🦊', name: 'The 3 Foxfire Tails & Haunted Lands', desc: 'Starts with 3 Spirit Tails. Landing on built rival property consumes 1 Tail to pay 0 rent and curses the land with Foxfire (owner pays 40🪙 Spirit Tribute on visit). Rolling 6 or visiting Tokyo (Tiles 11-13) restores +1 Tail! Start with Golden Dice & +100 miles.', effects: { monopoly: { foxfireWard: 0.25, startItem: 'golden_dice', startMiles: 100, lapBonus: 40 } } },
+    celestial_eclipse: { icon: '🌓', name: 'The Living Day & Night Cycle', desc: 'Living ambient cycle: Odd rolls trigger Solar Dawn (+20% rent collected, +30 miles on laps, warm golden lighting). Even rolls trigger Lunar Night (-25% rent paid to rivals, deep starlight). Start with Rent Shield & +120 miles.', effects: { monopoly: { eclipseBalance: true, startItem: 'shield', startMiles: 120, lapBonus: 50 } } },
     festival_fortune:  { icon: '🎆', name: 'Festival Fortune',  desc: 'Passing START pays +60 more (260 instead of 200).',               effects: { monopoly: { lapBonus: 60 } } },
     chill_beats:       { icon: '🎧', name: 'Chill Beats',       desc: '+1 Clash Token every game and start with +80 miles.',             effects: { monopoly: { extraVibePass: 1, startMiles: 80 } } },
     noble_presence:    { icon: '⚔️', name: 'Noble Presence',    desc: 'You win ties when YOU attack in a Takeover duel.',                effects: { monopoly: { duelTieWin: true } } },
@@ -285,8 +285,8 @@
     express_line:      { icon: '🚄', name: 'Shinkansen Express', desc: 'Start every Monopoly game with +150 miles.',                      effects: { monopoly: { startMiles: 150 } } },
 
     // S3 Perks (Dubai Desert Mirage)
-    mirage_siphon:     { icon: '🪔', name: "Genie's Wish & Recharging Carpet", desc: "Recharging Magic Carpet glides over hazard tiles (recharges on rolling 5-6 or Tile 7 Airdrop). Rolling 5-6 rubs the magic lamp for +50 Wish miles! Rivals on special tiles pay 35🪙 tribute. +120 miles & 15% upgrade discount.", effects: { monopoly: { carpetDoublesImmunity: true, mirageTribute: 35, upgradeDiscount: 0.15, startMiles: 120 }, skydash: { carpetGlide: true, bonusDiamonds: 0.25, name: "Genie's Flying Carpet" } } },
-    demolition_sultan: { icon: '🔥', name: 'The Ash Pot & Casino Cleanse', desc: '40% of rent paid gathers into the Ash Pot, 100% refunded when crossing Start! Casino 💀 skull penalty converted into +100🪙 reward. 1-time Phoenix Rebirth revival to 250🪙 + Grace Ward! Start with C4 & +100 miles.', effects: { monopoly: { phoenixRebirth: true, startItem: 'c4', startMiles: 100, lapBonus: 40 }, skydash: { phoenixRevive: true, fireDash: true, name: 'Supernova Rebirth' } } },
+    mirage_siphon:     { icon: '🪔', name: "Genie's Wish & Recharging Carpet", desc: "Recharging Magic Carpet glides over hazard tiles (recharges on rolling 5-6 or Tile 7 Airdrop). Rolling 5-6 rubs the magic lamp for +50 Wish miles! Rivals on special tiles pay 35🪙 tribute. +120 miles & 15% upgrade discount.", effects: { monopoly: { carpetDoublesImmunity: true, mirageTribute: 35, upgradeDiscount: 0.15, startMiles: 120 } } },
+    demolition_sultan: { icon: '🔥', name: 'The Ash Pot & Casino Cleanse', desc: '40% of rent paid gathers into the Ash Pot, 100% refunded when crossing Start! Casino 💀 skull penalty converted into +100🪙 reward. 1-time Phoenix Rebirth revival to 250🪙 + Grace Ward! Start with C4 & +100 miles.', effects: { monopoly: { phoenixRebirth: true, startItem: 'c4', startMiles: 100, lapBonus: 40 } } },
     royal_falconry:    { icon: '🦅', name: 'Royal Falconry',     desc: 'Start every game holding a Golden Dice and pass START pays +70.', effects: { monopoly: { startItem: 'golden_dice', lapBonus: 70 } } },
     dune_drifter:      { icon: '🏎️', name: 'Dune Drifter',       desc: 'Passing START pays +80 more (280 instead of 200).',               effects: { monopoly: { lapBonus: 80 } } },
     oasis_sanctuary:   { icon: '🛡️', name: 'Oasis Sanctuary',    desc: 'Start every game holding a Rent Shield, and Casino curse costs 100 less.', effects: { monopoly: { startItem: 'shield', skullShield: 100 } } },
@@ -299,8 +299,8 @@
     pearl_diver:       { icon: '🦪', name: 'Pearl Diver',        desc: 'Casino curse costs 100 less, and start with +60 miles.',           effects: { monopoly: { skullShield: 100, startMiles: 60 } } },
 
     // S4 Perks (Monte Carlo Casino Royale)
-    vip_express:       { icon: '🍸', name: 'VIP Dividend & High-Roller Express', desc: 'Turn 1 launches straight to Sky Casino with loaded jackpot odds (neutralizes skull curse). Landing on own Grand Hotel pays +60🪙 VIP dividend! High-Roller House Rake collects +15% rent on your domain. +80 on Start.', effects: { monopoly: { firstRollCasino: true, loadedSlots: true, skullShield: 200, casinoRake: 0.15, lapBonus: 80 }, skydash: { jackpotFever: true, luxuryStart: 0.2, name: 'High-Roller 777 Rush' } } },
-    loaded_battle_dice:{ icon: '🎲', name: 'Loaded Battle Dice & Grand Rake', desc: 'Takeover Duels roll min 3 and win all ties. High-Roller House Rake collects +15% bonus miles on your domain! Landing on own Grand Hotel pays +60🪙 VIP dividend. 20% upgrade discount. Start with Rent Shield & +140 miles.', effects: { monopoly: { duelMinRoll: 3, duelTieWin: true, casinoRake: 0.15, upgradeDiscount: 0.2, startItem: 'shield', startMiles: 140 }, skydash: { jackpotFever: true, luxuryStart: 0.2, name: 'High-Roller 777 Rush' } } },
+    vip_express:       { icon: '🍸', name: 'VIP Dividend & High-Roller Express', desc: 'Turn 1 launches straight to Sky Casino with loaded jackpot odds (neutralizes skull curse). Landing on own Grand Hotel pays +60🪙 VIP dividend! High-Roller House Rake collects +15% rent on your domain. +80 on Start.', effects: { monopoly: { firstRollCasino: true, loadedSlots: true, skullShield: 200, casinoRake: 0.15, lapBonus: 80 } } },
+    loaded_battle_dice:{ icon: '🎲', name: 'Loaded Battle Dice & Grand Rake', desc: 'Takeover Duels roll min 3 and win all ties. High-Roller House Rake collects +15% bonus miles on your domain! Landing on own Grand Hotel pays +60🪙 VIP dividend. 20% upgrade discount. Start with Rent Shield & +140 miles.', effects: { monopoly: { duelMinRoll: 3, duelTieWin: true, casinoRake: 0.15, upgradeDiscount: 0.2, startItem: 'shield', startMiles: 140 } } },
     royal_bluff:       { icon: '🌀', name: 'Royal Bluff',             desc: 'Start game holding a Swap Portal and +90 miles.',                   effects: { monopoly: { startItem: 'swap', startMiles: 90 } } },
     riviera_siphon:    { icon: '🧲', name: 'Riviera Siphon',          desc: 'Start game holding a Magnet to siphon miles from the richest rival, and +60 miles.', effects: { monopoly: { startItem: 'magnet', startMiles: 60 } } },
     triple_seven:      { icon: '⚡', name: 'Triple Seven',            desc: 'Airdrop crates drop +80 miles and passing START pays +50 more.',     effects: { monopoly: { airdropBonus: 80, lapBonus: 50 } } },
@@ -313,8 +313,8 @@
     sleight_of_hand:   { icon: '🎩', name: 'Sleight of Hand',         desc: '+1 Clash Token every game (3 instead of 2).',                      effects: { monopoly: { extraVibePass: 1 } } },
 
     // S5 Perks (Atlantis: Bioluminescent Abyss)
-    tidal_surge_ward:   { icon: '🔱', name: 'The Sunken Treasure Diver & Pearl Ward', desc: 'Unbought tiles dredge up sunken glowing pearls (+50 miles / discount). Abyssal Pearl Ward negates fatal rent bankruptcy once (+150 miles emergency energy)! Start with Rent Shield & +140 miles.', effects: { monopoly: { pearlWard: true, startItem: 'shield', startMiles: 140, lapBonus: 50, duelTieWin: true }, skydash: { oceanDrift: 0.25, pearlMagnet: true, name: 'Abyssal Current Surf' } } },
-    bioluminescent_drift:{ icon: '🪼', name: 'Bioluminescent Abyss Drift', desc: 'Ocean currents drift you +1 extra tile on every dice roll! Unbought tiles dredge up sunken glowing pearls (+50 miles / discount). Start with Golden Dice, +100 miles, lap bonus +60, and Skull Shield 100.', effects: { monopoly: { oceanDrift: 1, startItem: 'golden_dice', startMiles: 100, lapBonus: 60, skullShield: 100 }, skydash: { oceanDrift: 0.25, pearlMagnet: true, name: 'Abyssal Current Surf' } } },
+    tidal_surge_ward:   { icon: '🔱', name: 'The Sunken Treasure Diver & Pearl Ward', desc: 'Unbought tiles dredge up sunken glowing pearls (+50 miles / discount). Abyssal Pearl Ward negates fatal rent bankruptcy once (+150 miles emergency energy)! Start with Rent Shield & +140 miles.', effects: { monopoly: { pearlWard: true, startItem: 'shield', startMiles: 140, lapBonus: 50, duelTieWin: true } } },
+    bioluminescent_drift:{ icon: '🪼', name: 'Bioluminescent Abyss Drift', desc: 'Ocean currents drift you +1 extra tile on every dice roll! Unbought tiles dredge up sunken glowing pearls (+50 miles / discount). Start with Golden Dice, +100 miles, lap bonus +60, and Skull Shield 100.', effects: { monopoly: { oceanDrift: 1, startItem: 'golden_dice', startMiles: 100, lapBonus: 60, skullShield: 100 } } },
     deep_pressure:      { icon: '🤿', name: 'Deep Pressure',          desc: 'Start game holding a C4 Remote Bomb to demolish rival hotels, and +100 miles.', effects: { monopoly: { startItem: 'c4', startMiles: 100 } } },
     reef_agility:       { icon: '🤺', name: 'Reef Agility',           desc: 'You win ties when YOU attack in Takeover duels. Start with a Rent Shield.', effects: { monopoly: { duelTieWin: true, startItem: 'shield' } } },
     sunken_doubloons:   { icon: '🏴‍☠️', name: 'Sunken Doubloons',       desc: 'Airdrop crates drop +90 miles and start game with +80 miles.', effects: { monopoly: { airdropBonus: 90, startMiles: 80 } } },
@@ -327,8 +327,8 @@
     bubble_vibe:        { icon: '🫧', name: 'Bubble Vibe',            desc: '+1 Clash Token every game (3 instead of 2).', effects: { monopoly: { extraVibePass: 1 } } },
 
     // S6 Perks (Starlight Odyssey: Celestial Gala)
-    supernova_overdrive: { icon: '☄️', name: 'Supernova Velocity Overdrive',   desc: 'Rolling a 6 ignites Supernova Velocity for an INSTANT bonus roll! Opponents stepping on your stardust trail trigger star chimes and pay +15 stardust toll. Start with 🎲 Golden Dice, +120 miles, and +65 lap bonus.', effects: { monopoly: { supernova6: true, startItem: 'golden_dice', startMiles: 120, lapBonus: 65 }, skydash: { warpSpeed: 0.35, stardustTrail: true, name: 'Cosmic Warp Drive' } } },
-    astral_aegis_tithe:  { icon: '🌌', name: 'The Cosmic Stardust Speedrunner & Star Tithe',  desc: '15% Star Tithe siphons cash from any rival entering your domain! Constellation Rebirth negates fatal bankruptcy once (+180 miles)! Leaves stardust trails (+15 toll). Start with Rent Shield & +140 miles.', effects: { monopoly: { starTithe: 0.15, constellationRebirth: true, startItem: 'shield', startMiles: 140, lapBonus: 60 }, skydash: { warpSpeed: 0.35, stardustTrail: true, name: 'Cosmic Warp Drive' } } },
+    supernova_overdrive: { icon: '☄️', name: 'Supernova Velocity Overdrive',   desc: 'Rolling a 6 ignites Supernova Velocity for an INSTANT bonus roll! Opponents stepping on your stardust trail trigger star chimes and pay +15 stardust toll. Start with 🎲 Golden Dice, +120 miles, and +65 lap bonus.', effects: { monopoly: { supernova6: true, startItem: 'golden_dice', startMiles: 120, lapBonus: 65 } } },
+    astral_aegis_tithe:  { icon: '🌌', name: 'The Cosmic Stardust Sovereign & Star Tithe',  desc: '15% Star Tithe siphons cash from any rival entering your domain! Constellation Rebirth negates fatal bankruptcy once (+180 miles)! Leaves stardust trails (+15 toll). Start with Rent Shield & +140 miles.', effects: { monopoly: { starTithe: 0.15, constellationRebirth: true, startItem: 'shield', startMiles: 140, lapBonus: 60 } } },
     shooting_star:       { icon: '🌠', name: 'Shooting Star',         desc: 'Airdrop crates drop +100 miles and start game with +90 miles.', effects: { monopoly: { airdropBonus: 100, startMiles: 90 } } },
     hubble_sight:        { icon: '🔭', name: 'Hubble Sight',          desc: 'First Black Market item is 35% off. Start with a Swap Portal and +90 miles.', effects: { monopoly: { marketDiscount: 0.35, startItem: 'swap', startMiles: 90 } } },
     orbital_ring:        { icon: '🪐', name: 'Orbital Ring',          desc: 'Passing START pays +85 more (285 total). Casino 💀 curse penalty costs 150 less.', effects: { monopoly: { lapBonus: 85, skullShield: 150 } } },
@@ -341,8 +341,8 @@
     lunar_radiance:      { icon: '🌙', name: 'Lunar Radiance',        desc: 'Casino 💀 curse penalty costs 100 less and start with +80 miles.', effects: { monopoly: { skullShield: 100, startMiles: 80 } } },
 
     // S7 Perks (Enchanted Fairytales & Royal Crowns)
-    sundrop_grapple_pan: { icon: '🏮', name: 'Sundrop Hair Zipline & Cast-Iron Parry', desc: 'Rapunzel 70ft Hair Zipline bridges over dangerous rival kill-zones up to 5 tiles ahead! Cast-Iron Frying Pan "CLANG!" parries 50% of incoming rival rent/attack damage. Start with 🎲 Golden Dice & +130 miles.', effects: { monopoly: { sundropZipline: true, fryingPanParry: 0.5, startItem: 'golden_dice', startMiles: 130, lapBonus: 60 }, skydash: { speedBonus: 0.2, hairGrapple: true, name: 'Sundrop Zipline' } } },
-    glass_clockwork_sovereign: { icon: '👠', name: 'Glass Slipper Trial & Pumpkin Carriage Warp', desc: 'Pumpkin Carriage transposes unowned tiles into golden warp stations! Dropped Glass Slipper fits Cinderella for free Diamond Palace, or sends rival trespassers to Prison! Start with Swap Portal & +140 miles.', effects: { monopoly: { pumpkinWarp: true, glassSlipperTrial: true, startItem: 'swap', startMiles: 140, lapBonus: 65, skullShield: 120 }, skydash: { speedBonus: 0.2, clockworkWarp: true, name: 'Chrono Carriage' } } },
+    sundrop_grapple_pan: { icon: '🏮', name: 'Sundrop Hair Zipline & Cast-Iron Parry', desc: 'Rapunzel 70ft Hair Zipline bridges over dangerous rival kill-zones up to 5 tiles ahead! Cast-Iron Frying Pan "CLANG!" parries 50% of incoming rival rent/attack damage. Start with 🎲 Golden Dice & +130 miles.', effects: { monopoly: { sundropZipline: true, fryingPanParry: 0.5, startItem: 'golden_dice', startMiles: 130, lapBonus: 60 } } },
+    glass_clockwork_sovereign: { icon: '👠', name: 'Glass Slipper Trial & Pumpkin Carriage Warp', desc: 'Pumpkin Carriage transposes unowned tiles into golden warp stations! Dropped Glass Slipper fits Cinderella for free Diamond Palace, or sends rival trespassers to Prison! Start with Swap Portal & +140 miles.', effects: { monopoly: { pumpkinWarp: true, glassSlipperTrial: true, startItem: 'swap', startMiles: 140, lapBonus: 65, skullShield: 120 } } },
     beast_fury_intellect: {
       icon: '🦁🌹',
       name: 'Beast Unleashed & Living Staff Shield',
@@ -357,8 +357,7 @@
           startMiles: 140,
           lapBonus: 70,
           duelTieWin: true
-        },
-        skydash: { speedBonus: 0.25, beastRoar: true, name: 'Beast Unleashed' }
+        }
       }
     },
     magic_carpet_ride:   { icon: '🧞', name: 'Magic Carpet Ride',     desc: 'Passing START pays +70 more (270 total). Airdrop crates drop +90 miles. Start with +90 miles.', effects: { monopoly: { lapBonus: 70, airdropBonus: 90, startMiles: 90 } } },
@@ -372,8 +371,7 @@
       name: 'Glacial Rent Shield & Absolute Zero Stasis',
       desc: '50% Permafrost Shield absorbs rent & inflicts Permafrost (-30% rival rent) for 2 rounds! Passing START drops Snowdrift Traps. Start with 🎲 Golden Dice & +140 miles.',
       effects: {
-        monopoly: { frostShield: 0.5, snowdriftTraps: true, startItem: 'golden_dice', startMiles: 140, lapBonus: 70 },
-        skydash: { speedBonus: 0.25, cryoDash: true, name: 'Glacial Absolute Zero' }
+        monopoly: { frostShield: 0.5, snowdriftTraps: true, startItem: 'golden_dice', startMiles: 140, lapBonus: 70 }
       }
     },
     aurora_veil: {
@@ -401,8 +399,7 @@
       name: 'Great Golden Pyramid & Nile Inundation',
       desc: 'Ascends Grand Hotels into Tier 4 3D Golden Pyramids (+150🪙 passive treasury each lap, 2× rent). Passing rivals pays 10% Royal Extortion. Start with 🎲 Golden Dice & +150 miles.',
       effects: {
-        monopoly: { goldenPyramid: true, royalExtortion: 0.1, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 },
-        skydash: { speedBonus: 0.25, goldAura: true, name: 'Golden Nile Flight' }
+        monopoly: { goldenPyramid: true, royalExtortion: 0.1, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 }
       }
     },
     solar_high_noon: {
@@ -410,8 +407,7 @@
       name: 'Desert Mirage & Daybreak Wrath of Ra',
       desc: 'Rival visits trigger Desert Mirage (50% item melt & +30% heat penalty). High-Noon Daybreak sweeps rivals forward in sandstorms! Start with Rent Shield & +150 miles.',
       effects: {
-        monopoly: { desertMirage: true, startItem: 'shield', startMiles: 150, lapBonus: 80 },
-        skydash: { speedBonus: 0.25, solarWings: true, name: 'Solar Falcon Glide' }
+        monopoly: { desertMirage: true, startItem: 'shield', startMiles: 150, lapBonus: 80 }
       }
     },
     anubis_shadows: {
@@ -433,8 +429,7 @@
       name: 'Phantom Curtain Call & Marionette Hex',
       desc: 'Rolling a 6 summons an Opera Gala Tribute (-60🪙 siphoned from rival +10% Ult). Hexes tiles with Reverse Rent Hex (100% rent inverted via Gilded Mirror). Rivals caught in Marionette Stasis roll max 3. Start with 🎲 Golden Dice, +150 miles & +75 lap bonus.',
       effects: {
-        monopoly: { reverseRentHex: true, marionetteStasis: true, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 },
-        skydash: { speedBonus: 0.25, phantomAura: true, name: 'Phantom Waltz' }
+        monopoly: { reverseRentHex: true, marionetteStasis: true, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 }
       }
     },
     tarot_card_draw: {
@@ -486,8 +481,7 @@
       name: 'Wrath of Olympus & Pegasus Bypass',
       desc: 'Rolling 6 calls down Zeus Lightning: smites 1 hotel level (+120🪙 rubble cash) OR deals -80🪙 Storm Shock (+10% Ult). Pegasus Wings bypass fatal rent & soar over hazard traps! Mount Olympus Temple radiates a +50% rent aura with a crackling Lightning Rod. Start with 🎲 Golden Dice, +150 miles & +75 lap bonus.',
       effects: {
-        monopoly: { zeusSmite: true, pegasusBypass: true, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 },
-        skydash: { speedBonus: 0.25, lightningAura: true, name: 'Olympus Divine Flight' }
+        monopoly: { zeusSmite: true, pegasusBypass: true, startItem: 'golden_dice', startMiles: 150, lapBonus: 75 }
       }
     },
     pegasus_tailwind: {
