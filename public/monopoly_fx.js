@@ -569,7 +569,7 @@
         { transform: tf(mid, -arc, 1.08, 1.08), offset: 0.45 },
         { transform: tf(B, 2, 1.14, 0.86), offset: 0.82 },
         { transform: tf(B), offset: 1 }
-      ], { duration: dur, easing: 'cubic-bezier(.3,.7,.4,1)' });
+      ], { duration: dur, easing: 'cubic-bezier(.22, 1, .36, 1)' });
       el.style.transform = tf(B);
       const shadow = el.querySelector('.token-shadow');
       if (shadow) {
@@ -629,10 +629,20 @@
           burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
         }
       }
-      setTimeout(() => {
-        sfx('playHop', opts.stepIndex || 0);
-        restartClass($(`boardTile_${toId}`), 'step-highlight', 320);
-      }, dur * 0.8);
+      const hopStartTime = performance.now();
+      let highlightTriggered = false;
+      const triggerHighlight = () => {
+        if (highlightTriggered || done) return;
+        const elapsed = performance.now() - hopStartTime;
+        if (elapsed >= dur * 0.75) {
+          highlightTriggered = true;
+          sfx('playHop', opts.stepIndex || 0);
+          restartClass($(`boardTile_${toId}`), 'step-highlight', 320);
+        } else {
+          requestAnimationFrame(triggerHighlight);
+        }
+      };
+      requestAnimationFrame(triggerHighlight);
       let done = false;
       const finish = () => {
         if (done) return;
