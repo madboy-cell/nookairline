@@ -4102,7 +4102,9 @@ body.has-active-modal .vault-pill * {
   gap: 4px;
 }
 
-/* --- Victory ceremony --- */
+/* =========================================================
+   24. NEORA LUXURY CYBER-AVIATION VICTORY CEREMONY
+   ========================================================= */
 .victory-overlay {
   position: absolute;
   inset: 0;
@@ -4110,14 +4112,13 @@ body.has-active-modal .vault-pill * {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.35), rgba(6, 10, 20, 0.97) 70%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: max(10px, env(safe-area-inset-top, 0px)) 12px max(14px, env(safe-area-inset-bottom, 0px));
+  background: radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.28) 0%, rgba(15, 23, 42, 0.94) 65%, #070913 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -4135,55 +4136,495 @@ body.has-active-modal .vault-pill * {
   0% { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(540deg); opacity: 0.6; }
 }
-.victory-card {
+
+.victory-card,
+.neora-victory-card {
   position: relative;
   width: 100%;
-  max-width: 330px;
+  max-width: 390px;
+  max-height: min(94vh, 780px);
+  max-height: min(94dvh, 780px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(22, 25, 54, 0.96) 0%, rgba(13, 15, 34, 0.98) 100%);
+  border: 1.5px solid rgba(253, 224, 71, 0.45);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: neoraVictoryPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@keyframes neoraVictoryPop {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.neora-card-close-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.neora-card-close-x:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.victory-header-fixed,
+.neora-victory-header {
+  flex: 0 0 auto;
+  padding: 14px 16px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  text-align: center;
-  padding: 18px 16px;
-  border-radius: 24px;
-  background: linear-gradient(165deg, #1e293b, #0f172a);
-  border: 2px solid var(--gold-primary);
-  box-shadow: 0 0 60px rgba(212, 175, 55, 0.5);
-  animation: cardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  gap: 3px;
 }
-.victory-crown { font-size: 40px; line-height: 1; animation: heartFloat 1.2s ease-in-out infinite alternate; }
-.victory-sprite { width: 72px; height: 72px; object-fit: contain; image-rendering: pixelated; }
-.victory-title {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 22px;
+.victory-crown { font-size: 32px; line-height: 1; animation: heartFloat 1.2s ease-in-out infinite alternate; }
+.victory-sprite { width: 52px; height: 52px; object-fit: contain; image-rendering: pixelated; }
+
+.victory-title,
+.victory-hero-title {
+  margin: 2px 0 0;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 19px;
   font-weight: 900;
-  color: var(--gold-light);
-  text-shadow: 0 2px 14px rgba(212, 175, 55, 0.7);
+  color: #fef08a;
+  text-shadow: 0 2px 16px rgba(251, 191, 36, 0.6);
+  letter-spacing: -0.01em;
 }
-.victory-reason { font-size: 11.5px; color: #cbd5e1; }
-.victory-nw { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
-.victory-nw div {
+.victory-reason,
+.victory-hero-subtitle {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+/* Scrollable Middle Container */
+.victory-scroll-body,
+.neora-victory-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(253, 224, 71, 0.3) transparent;
+}
+.victory-scroll-body::-webkit-scrollbar {
+  width: 5px;
+}
+.victory-scroll-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.victory-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(253, 224, 71, 0.3);
+  border-radius: 999px;
+}
+
+/* Section Labels */
+.neora-section-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  text-align: left;
+  margin: 2px 0 4px 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Podium Placement Cards */
+.neora-victory-podium,
+.victory-placements {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.neora-podium-card,
+.place-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease;
+  text-align: left;
+}
+.neora-podium-card.rank-gold,
+.place-row.place-first {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
+  border: 1.5px solid rgba(253, 230, 138, 0.6);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.25);
+}
+.neora-podium-card.is-self,
+.place-row.me-row {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+}
+
+.podium-avatar-wrap,
+.place-avatar-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #fde047;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.podium-avatar-img,
+.place-sprite {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.podium-crown-halo {
+  position: absolute;
+  top: -12px;
+  right: -5px;
+  font-size: 16px;
+  animation: heartFloat 1.2s infinite alternate;
+}
+.podium-rank-badge,
+.place-medal {
+  font-size: 18px;
+  line-height: 1;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.podium-player-details,
+.place-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 7px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  font-size: 10px;
-  color: #cbd5e1;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
-.victory-nw strong { font-size: 16px; color: #a5f3fc; }
+.podium-name-row,
+.place-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.podium-player-name,
+.place-name {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.podium-you-pill,
+.place-you-pill {
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #0c4a6e;
+}
+.podium-rank-title,
+.place-rank-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+.podium-rank-title.gold,
+.place-rank-badge.gold {
+  color: #fde68a;
+  text-shadow: 0 0 8px rgba(253, 230, 138, 0.5);
+}
+
+.podium-score-row,
+.place-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+}
+.podium-nw-badge,
+.place-nw-tag { color: #a5f3fc; font-weight: 700; }
+.podium-miles-badge { color: #fde047; }
+.podium-bankrupt-tag,
+.place-bankrupt-tag {
+  color: #fca5a5;
+  font-weight: 800;
+  background: rgba(239, 68, 68, 0.2);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+/* Payout Terminal & Loot Box */
+.neora-payout-terminal,
+.victory-loot-box {
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(253, 230, 138, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.payout-terminal-header,
+.victory-loot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+.payout-terminal-title,
+.victory-loot-title {
+  font: 800 12px/1 var(--font-heading);
+  color: #fde68a;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-vault-mini {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 1px solid #fef08a;
+  color: #78350f;
+  font: 900 10.5px/1 var(--font-heading);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  transition: transform 0.16s ease;
+}
+.btn-vault-mini:hover { transform: scale(1.05); }
+
+.payout-chips-grid,
+.victory-loot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.payout-daily-quest-note {
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Diamond Banner */
+.victory-diamonds {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px auto;
+  padding: 10px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.65), rgba(126, 34, 206, 0.65));
+  border: 1.5px solid rgba(147, 197, 253, 0.5);
+  box-shadow: 0 0 26px rgba(99, 102, 241, 0.35);
+  animation: vPop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.3s both;
+  text-align: left;
+}
+.victory-diamonds .vd-gem { font-size: 28px; filter: drop-shadow(0 0 10px rgba(147, 197, 253, 0.9)); animation: vGemBob 2.4s ease-in-out infinite; }
+.victory-diamonds div,
+.victory-diamonds .vd-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.victory-diamonds b { font: 900 22px/1 var(--font-heading, 'Outfit', sans-serif); color: #fff; }
+.victory-diamonds small { font-size: 11px; color: rgba(226, 232, 255, 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.victory-diamonds.confirmed { border-color: rgba(253, 230, 138, 0.85); box-shadow: 0 0 25px rgba(245, 158, 11, 0.45); }
+.victory-diamonds.lost-stake { background: linear-gradient(135deg, rgba(127, 29, 29, 0.65), rgba(69, 10, 10, 0.75)); border-color: rgba(248, 113, 113, 0.5); }
+.victory-diamonds.spectator-deck { background: linear-gradient(135deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.85)); border-color: rgba(148, 163, 184, 0.4); }
+
+/* Telemetry Grid */
+.neora-stats-accordion {
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.stats-accordion-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.stats-telemetry-grid,
 .victory-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 8px;
-  width: 100%;
+  gap: 4px 10px;
   font-size: 10px;
   color: #94a3b8;
   text-align: left;
 }
+.stats-telemetry-grid strong,
 .victory-stats strong { color: #fff; }
+
+/* Sticky Ergonomic Action Dock */
+.neora-victory-dock,
+.neora-action-dock {
+  flex: 0 0 auto;
+  padding: 10px 14px max(12px, env(safe-area-inset-bottom, 0px));
+  background: rgba(13, 15, 34, 0.98);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.dock-primary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+.dock-primary-row.single-btn {
+  grid-template-columns: 1fr;
+}
+
+.dock-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+.dock-secondary-row.single-btn {
+  grid-template-columns: 1fr;
+}
+
+.neora-btn-primary {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #fde047;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 60%, #b45309 100%);
+  color: #451a03;
+  font: 900 13px/1 var(--font-heading, 'Outfit', sans-serif);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+.neora-btn-primary.gold-glow {
+  animation: neoraBtnPulse 2s infinite ease-in-out;
+}
+@keyframes neoraBtnPulse {
+  0%, 100% { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45); }
+  50% { box-shadow: 0 6px 28px rgba(245, 158, 11, 0.8); }
+}
+.neora-btn-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.neora-btn-primary:active { transform: scale(0.98); }
+
+.neora-btn-vault {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #d8b4fe;
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  color: #ffffff;
+  font: 900 13px/1 var(--font-heading, 'Outfit', sans-serif);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+.neora-btn-vault:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.neora-btn-vault:active { transform: scale(0.98); }
+
+.neora-btn-secondary,
+.neora-btn-lobby {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.3));
+  border: 1px solid rgba(168, 85, 247, 0.6);
+  color: #e0e7ff;
+  font: 800 11px/1 var(--font-heading, 'Outfit', sans-serif);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
+}
+.neora-btn-secondary:hover,
+.neora-btn-lobby:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.45));
+}
+
+.neora-btn-tertiary,
+.neora-btn-exit {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font: 800 11px/1 var(--font-heading, 'Outfit', sans-serif);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
+}
+.neora-btn-tertiary:hover,
+.neora-btn-exit:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
 
 /* (Responsive Media Queries are consolidated at the end of this file to ensure proper cascading priority) */
 
@@ -8591,7 +9032,7 @@ body.has-active-modal .vault-pill * {
 .monopoly-players-bar,
 .monopoly-players-bar.party-4p {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 4px !important;
   width: 100% !important;
   flex-shrink: 0 !important;
@@ -8604,58 +9045,68 @@ body.has-active-modal .vault-pill * {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  padding: 3px 2px 4px !important;
+  justify-content: flex-start !important;
+  gap: 2px !important;
+  padding: 4px 3px 5px !important;
   border-radius: 11px !important;
-  background: rgba(15, 23, 42, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-sizing: border-box !important;
-  position: relative;
-  overflow: hidden;
+  position: relative !important;
+  overflow: hidden !important;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 48px !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
 }
 
 /* Player Role Borders & Active Turn Glow */
-.neora-player-card.player-bkk { border-color: rgba(59, 130, 246, 0.35) !important; }
-.neora-player-card.player-dxb { border-color: rgba(236, 72, 153, 0.35) !important; }
-.neora-player-card.player-bot1 { border-color: rgba(16, 185, 129, 0.35) !important; }
-.neora-player-card.player-bot2 { border-color: rgba(245, 158, 11, 0.35) !important; }
+.neora-player-card.player-bkk, .monopoly-player-card.player-bkk { border-color: rgba(59, 130, 246, 0.35) !important; }
+.neora-player-card.player-dxb, .monopoly-player-card.player-dxb { border-color: rgba(236, 72, 153, 0.35) !important; }
+.neora-player-card.player-bot1, .monopoly-player-card.player-bot1 { border-color: rgba(16, 185, 129, 0.35) !important; }
+.neora-player-card.player-bot2, .monopoly-player-card.player-bot2 { border-color: rgba(245, 158, 11, 0.35) !important; }
 
-.neora-player-card.active-turn {
+.neora-player-card.active-turn,
+.monopoly-player-card.active-turn {
   transform: translateY(-1px) scale(1.02);
   z-index: 5;
 }
-.neora-player-card.player-bkk.active-turn {
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+.neora-player-card.player-bkk.active-turn,
+.monopoly-player-card.player-bkk.active-turn {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.28) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
   border-color: #3b82f6 !important;
   box-shadow: 0 0 14px rgba(59, 130, 246, 0.6), inset 0 0 8px rgba(59, 130, 246, 0.3) !important;
 }
-.neora-player-card.player-dxb.active-turn {
-  background: linear-gradient(180deg, rgba(236, 72, 153, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+.neora-player-card.player-dxb.active-turn,
+.monopoly-player-card.player-dxb.active-turn {
+  background: linear-gradient(180deg, rgba(236, 72, 153, 0.28) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
   border-color: #ec4899 !important;
   box-shadow: 0 0 14px rgba(236, 72, 153, 0.6), inset 0 0 8px rgba(236, 72, 153, 0.3) !important;
 }
-.neora-player-card.player-bot1.active-turn {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+.neora-player-card.player-bot1.active-turn,
+.monopoly-player-card.player-bot1.active-turn {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.28) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
   border-color: #10b981 !important;
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 8px rgba(16, 185, 129, 0.3) !important;
 }
-.neora-player-card.player-bot2.active-turn {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+.neora-player-card.player-bot2.active-turn,
+.monopoly-player-card.player-bot2.active-turn {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.28) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
   border-color: #f59e0b !important;
   box-shadow: 0 0 14px rgba(245, 158, 11, 0.6), inset 0 0 8px rgba(245, 158, 11, 0.3) !important;
 }
 
 /* Empty Seat State (Preserves 4-card horizontal balance) */
-.neora-player-card.is-empty-seat {
+.neora-player-card.is-empty-seat,
+.monopoly-player-card.is-empty-seat {
   opacity: 0.42 !important;
   border: 1px dashed rgba(255, 255, 255, 0.25) !important;
   background: rgba(255, 255, 255, 0.02) !important;
 }
-.neora-player-card.is-empty-seat .player-thumb-mini {
+.neora-player-card.is-empty-seat .player-thumb-mini,
+.monopoly-player-card.is-empty-seat .player-thumb-mini {
   filter: grayscale(1) opacity(0.4) !important;
 }
 .empty-seat-tag {
@@ -8665,98 +9116,267 @@ body.has-active-modal .vault-pill * {
   letter-spacing: 0.4px;
 }
 
-/* Card Header: Seat Tag & Crown & Signal */
+/* Card Header: Avatar with Role-Colored Ring & Crown */
 .player-card-avatar-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
 }
 .player-crown-icon {
-  position: absolute;
-  top: -8px;
-  left: -2px;
-  font-size: 9px;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
-  z-index: 2;
+  position: absolute !important;
+  top: -8px !important;
+  left: -3px !important;
+  font-size: 10px !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9)) !important;
+  z-index: 4 !important;
 }
-.neora-player-card .player-thumb-mini {
-  width: 24px !important;
-  height: 24px !important;
+.player-thumb-mini,
+.neora-player-card .player-thumb-mini,
+.monopoly-player-card .player-thumb-mini {
+  width: 26px !important;
+  height: 26px !important;
   border-radius: 50% !important;
   object-fit: cover !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
-}
-.neora-player-card .player-signal-bars {
-  position: absolute;
-  top: 2px;
-  right: 3px;
-  font-size: 7px;
-  color: rgba(52, 211, 153, 0.85);
-  line-height: 1;
+  image-rendering: auto !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
 }
 
-.neora-player-card .player-info-mini {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  gap: 1px;
+/* Role-specific ring borders */
+.player-bkk .player-thumb-mini,
+.neora-player-card.player-bkk .player-thumb-mini {
+  border: 1.5px solid #3b82f6 !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5), 0 2px 6px rgba(0,0,0,0.6) !important;
+}
+.player-dxb .player-thumb-mini,
+.neora-player-card.player-dxb .player-thumb-mini {
+  border: 1.5px solid #ec4899 !important;
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.5), 0 2px 6px rgba(0,0,0,0.6) !important;
+}
+.player-bot1 .player-thumb-mini,
+.neora-player-card.player-bot1 .player-thumb-mini {
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5), 0 2px 6px rgba(0,0,0,0.6) !important;
+}
+.player-bot2 .player-thumb-mini,
+.neora-player-card.player-bot2 .player-thumb-mini {
+  border: 1.5px solid #f59e0b !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5), 0 2px 6px rgba(0,0,0,0.6) !important;
+}
+
+.player-signal-bars,
+.neora-player-card .player-signal-bars,
+.monopoly-player-card .player-signal-bars {
+  position: absolute !important;
+  top: 3px !important;
+  right: 4px !important;
+  font-size: 7px !important;
+  color: rgba(52, 211, 153, 0.85) !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+  z-index: 3 !important;
+}
+
+.player-info-mini,
+.neora-player-card .player-info-mini,
+.monopoly-player-card .player-info-mini {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 1.5px !important;
 }
 .player-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  max-width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
 }
 .player-seat-tag {
-  font-size: 7.5px;
-  font-weight: 900;
-  padding: 0 2.5px;
-  border-radius: 4px;
-  line-height: 1.1;
-  text-transform: uppercase;
+  font-size: 7.5px !important;
+  font-weight: 900 !important;
+  padding: 0.5px 3px !important;
+  border-radius: 4px !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase !important;
+  flex-shrink: 0 !important;
 }
-.player-seat-tag.p1-tag { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
-.player-seat-tag.p2-tag { color: #f472b6; background: rgba(236, 72, 153, 0.15); }
-.player-seat-tag.p3-tag { color: #34d399; background: rgba(16, 185, 129, 0.15); }
-.player-seat-tag.p4-tag { color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+.player-seat-tag.p1-tag { color: #60a5fa !important; background: rgba(59, 130, 246, 0.2) !important; }
+.player-seat-tag.p2-tag { color: #f472b6 !important; background: rgba(236, 72, 153, 0.2) !important; }
+.player-seat-tag.p3-tag { color: #34d399 !important; background: rgba(16, 185, 129, 0.2) !important; }
+.player-seat-tag.p4-tag { color: #fbbf24 !important; background: rgba(245, 158, 11, 0.2) !important; }
 
-.neora-player-card .player-name-mini {
+.player-name-mini,
+.neora-player-card .player-name-mini,
+.monopoly-player-card .player-name-mini {
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 18px) !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+/* Micro Perk Chips & Badges inside Cards */
+.neora-player-card .mono-perk-chip,
+.monopoly-player-card .mono-perk-chip {
+  min-width: 12px !important;
+  height: 12px !important;
   font-size: 8px !important;
-  font-weight: 800;
-  color: #f8fafc;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 58px;
+  padding: 0 2px !important;
+  border-radius: 3px !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+.neora-player-card .mono-hud-status-pill,
+.monopoly-player-card .mono-hud-status-pill {
+  font-size: 6.5px !important;
+  padding: 0 3px !important;
+  gap: 1.5px !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
+}
+.neora-player-card .you-tag,
+.monopoly-player-card .you-tag {
+  font-size: 6.5px !important;
+  padding: 0.5px 2.5px !important;
+  border-radius: 3.5px !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
 }
 .player-balance-row {
-  display: flex;
-  align-items: center;
-  gap: 1.5px;
-  line-height: 1;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  line-height: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 1px 0 !important;
 }
 .player-balance-row .coin-icon {
-  font-size: 7px;
-}
-.player-balance-row .player-miles-pill {
   font-size: 8px !important;
-  font-weight: 800;
-  color: #fde047;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+}
+.player-miles-pill,
+.player-balance-row .player-miles-pill {
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  color: #fde047 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.2px !important;
+  line-height: 1 !important;
 }
 .player-nw-badge {
-  font-size: 6.8px;
-  font-weight: 800;
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border: 0.5px solid rgba(56, 189, 248, 0.35);
-  border-radius: 5px;
-  padding: 0.5px 3.5px;
-  line-height: 1.2;
-  white-space: nowrap;
+  font-size: 7.2px !important;
+  font-weight: 800 !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  border: 0.5px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 5px !important;
+  padding: 0.5px 4px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.2px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Ultimate Gauge Compact Track */
+.player-ult-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  width: 100% !important;
+  max-width: 68px !important;
+  margin-top: 1.5px !important;
+  padding: 0 1px !important;
+  box-sizing: border-box !important;
+}
+.player-ult-bolt {
+  font-size: 6.5px !important;
+  line-height: 1 !important;
+  color: #38bdf8 !important;
+  flex-shrink: 0 !important;
+  transition: all 0.25s ease !important;
+}
+.player-ult-track {
+  flex: 1 !important;
+  min-width: 22px !important;
+  height: 4.5px !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  border-radius: 999px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.2) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+.player-ult-fill {
+  height: 100% !important;
+  width: 0% !important;
+  background: linear-gradient(90deg, #0284c7, #38bdf8, #818cf8) !important;
+  border-radius: 999px !important;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 0 5px rgba(56, 189, 248, 0.7) !important;
+}
+.player-ult-label {
+  font-size: 6.5px !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.3px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ult Ready State */
+.player-ult-wrap.is-ready .player-ult-bolt {
+  color: #f59e0b !important;
+  animation: ultBoltPulse 0.8s infinite alternate !important;
+}
+.player-ult-wrap.is-ready .player-ult-track {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4) !important;
+}
+.player-ult-track.is-ready .player-ult-fill,
+.player-ult-wrap.is-ready .player-ult-fill {
+  background: linear-gradient(90deg, #f59e0b, #ec4899, #a855f7) !important;
+  box-shadow: 0 0 8px #f59e0b, 0 0 12px #ec4899 !important;
+  animation: ultTrackReadyGlow 1s infinite alternate !important;
+}
+.player-ult-wrap.is-ready .player-ult-label {
+  color: #fbbf24 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 5px rgba(245, 158, 11, 0.8) !important;
+}
+.monopoly-player-card.ult-ready,
+.neora-player-card.ult-ready {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35) !important;
+}
+
+@keyframes ultBoltPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 4px #f59e0b); }
+}
+@keyframes ultTrackReadyGlow {
+  0% { opacity: 0.85; filter: brightness(1); }
+  100% { opacity: 1; filter: brightness(1.25); }
 }
 
 /* --- 3. Board Grid & Perimeter Layout --- */
@@ -9172,28 +9792,46 @@ body.has-active-modal .vault-pill * {
   }
   .neora-player-card,
   .monopoly-player-card {
-    min-height: 44px !important;
-    padding: 2px 1px 3px !important;
+    min-height: 0 !important;
+    padding: 3px 2px 4px !important;
   }
   .neora-player-card .player-thumb-mini,
   .monopoly-player-card .player-thumb-mini {
-    width: 21px !important;
-    height: 21px !important;
+    width: 22px !important;
+    height: 22px !important;
   }
   .neora-player-card .player-name-mini,
   .monopoly-player-card .player-name-mini {
-    font-size: 7.2px !important;
-    max-width: 48px !important;
+    font-size: 7.5px !important;
+    max-width: calc(100% - 15px) !important;
   }
   .player-seat-tag {
     font-size: 6.8px !important;
+    padding: 0.5px 2px !important;
+  }
+  .player-balance-row .coin-icon {
+    font-size: 7px !important;
   }
   .player-balance-row .player-miles-pill {
-    font-size: 7.2px !important;
+    font-size: 7.5px !important;
   }
   .player-nw-badge {
-    font-size: 6.2px !important;
-    padding: 0.5px 2.5px !important;
+    font-size: 6.5px !important;
+    padding: 0.5px 3px !important;
+  }
+  .player-ult-wrap {
+    max-width: 58px !important;
+    gap: 1.5px !important;
+  }
+  .player-ult-bolt {
+    font-size: 5.5px !important;
+  }
+  .player-ult-track {
+    height: 4px !important;
+    min-width: 18px !important;
+  }
+  .player-ult-label {
+    font-size: 5.8px !important;
   }
   .board-tile .tile-icon {
     font-size: 13px !important;
@@ -9213,6 +9851,46 @@ body.has-active-modal .vault-pill * {
   .neora-ult-btn {
     height: 40px !important;
     min-height: 40px !important;
+  }
+
+  /* Mobile Victory Ceremony & Reward Terminal */
+  .victory-overlay {
+    padding: max(6px, env(safe-area-inset-top, 0px)) 6px max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .victory-card,
+  .neora-victory-card {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 8px) !important;
+    border-radius: 20px !important;
+  }
+  .victory-header-fixed,
+  .neora-victory-header {
+    padding: 10px 12px 6px !important;
+    gap: 2px !important;
+  }
+  .victory-crown { font-size: 26px !important; }
+  .podium-avatar-wrap,
+  .place-avatar-wrap { width: 32px !important; height: 32px !important; }
+  .victory-sprite { width: 42px !important; height: 42px !important; }
+  .victory-title,
+  .victory-hero-title { font-size: 16px !important; }
+  .victory-scroll-body,
+  .neora-victory-scroll { padding: 6px 10px !important; gap: 8px !important; }
+  .neora-victory-dock,
+  .neora-action-dock {
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    gap: 6px !important;
+  }
+  .neora-btn-primary,
+  .neora-btn-vault {
+    padding: 9px 10px !important;
+    font-size: 11.5px !important;
+  }
+  .neora-btn-secondary,
+  .neora-btn-lobby,
+  .neora-btn-tertiary,
+  .neora-btn-exit {
+    padding: 7px 10px !important;
+    font-size: 10px !important;
   }
 }
 

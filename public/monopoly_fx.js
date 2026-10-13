@@ -298,9 +298,16 @@
   function burst({ x, y, name = 'sparkle', count = 8, spread = 120, up = 0, gravity = 300, life = 900, size = 18, filter = '', rotate = true }) {
     if (window.SkyPixi && window.SkyPixi.isReady) {
       const pixiKind = (name === 'fire' || name === 'flame') ? 'ember' :
-                       (name === 'ice' || name === 'frost' || name === 'crystal' || name === 'cryo_shatter_crystal') ? 'frost' :
+                       (name === 'sunflame' || name === 'solar_feather') ? 'sunflame' :
+                       (name === 'water' || name === 'bubble' || name === 'droplet') ? 'bubble' :
+                       (name === 'petal' || name === 'rose' || name === 'cherry_blossom') ? 'petal' :
+                       (name === 'crystal' || name === 'cryo_shatter_crystal') ? 'crystal' :
+                       (name === 'crescent' || name === 'moon') ? 'crescent' :
+                       (name === 'ice' || name === 'frost') ? 'frost' :
                        (name === 'star' || name === 'stardust' || name === 'starfall') ? 'stardust' :
-                       (name === 'chip' || name === 'monaco_chip') ? 'chip' : 'spark';
+                       (name === 'coin') ? 'coin' :
+                       (name === 'heart') ? 'heart' :
+                       (name === 'chip' || name === 'monaco_chip' || name === 'monaco_chip_stack') ? 'chip' : 'spark';
       window.SkyPixi.spawnRadialBurst(x, y, pixiKind, count * 2, { additive: true });
       return Promise.resolve();
     }
@@ -927,6 +934,10 @@
 
     if (casterEl) casterEl.classList.add('fx-token-sundrop-charge');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.lanternFestival({ cX: fromP.x, cY: fromP.y });
+    }
+
     // 2. Procedural SVG Floating Sky Lanterns
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'fx-mythic-overlay-svg fx-glow-gold');
@@ -991,7 +1002,7 @@
     });
 
     const startTime = performance.now();
-    const duration = T(950);
+    const duration = T(1200);
 
     try {
       while (performance.now() - startTime < duration) {
@@ -1031,8 +1042,8 @@
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 28, spread: 260, up: 180, life: 1200, size: 22 });
     burst({ x: fromP.x, y: fromP.y, name: 'gem', count: 16, spread: 220, up: 140, life: 1000, size: 18 });
 
-    const b = banner('🏮 WISH UPON A LANTERN FESTIVAL! ✨', '3 WISH SANCTUARIES · 1-ROUND IMMUNITY · BONUS ROLL 6!', 'gold', 1700);
-    await sleep(T(1200));
+    const b = banner('🏮 WISH UPON A LANTERN FESTIVAL! ✨', '3 WISH SANCTUARIES · 1-ROUND IMMUNITY · BONUS ROLL 6!', 'gold', 1950);
+    await sleep(T(1450));
     await b;
   }
 
@@ -1161,8 +1172,8 @@
 
     burst({ x: c.x, y: c.y, name: 'sparkle', count: 30, spread: 280, up: 180, life: 1200, size: 22 });
 
-    const b = banner('⏳ THE CHRONO-MIDNIGHT PARADOX! 👠', 'TIME REVERSED COUNTER-CLOCKWISE FOR 2 ROUNDS · RIVAL HOTELS REGRESSED!', 'cyan', 1700);
-    await sleep(T(1200));
+    const b = banner('⏳ THE CHRONO-MIDNIGHT PARADOX! 👠', 'TIME REVERSED COUNTER-CLOCKWISE FOR 2 ROUNDS · RIVAL HOTELS REGRESSED!', 'cyan', 1950);
+    await sleep(T(1450));
     await b;
   }
 
@@ -1188,6 +1199,10 @@
     vignette(3, 'rose-curse');
 
     if (casterEl) casterEl.classList.add('fx-token-beast-transfigure');
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.breakingTheCurse({ cX: c.x, cY: c.y });
+    }
 
     // 2. High-Res 3D Enchanted Rose Cloche Prop & Stained-Glass Halo
     const clocheWrap = document.createElement('div');
@@ -1306,8 +1321,8 @@
 
     const smashBannerText = smashedTile != null ? 'HOTEL DEMOLISHED · ' : '';
     const upBannerText = upgradedTiles.length > 0 ? `${upgradedTiles.length} CASTLES UPGRADED · ` : '';
-    const b = banner('🦁 BEAST RAMPAGE & ROSE RESTORATION! 👑', `${smashBannerText}${upBannerText}-${shockDmg}🪙 SHOCK · +30% TURRETS!`, 'pink', 2000);
-    await sleep(T(1200));
+    const b = banner('🦁 BEAST RAMPAGE & ROSE RESTORATION! 👑', `${smashBannerText}${upBannerText}-${shockDmg}🪙 SHOCK · +30% TURRETS!`, 'pink', 2250);
+    await sleep(T(1450));
     await b;
   }
 
@@ -1548,7 +1563,7 @@
       { transform: at(fromP.x, fromP.y, 'scale(1.5) rotate(0deg)'), opacity: 1, offset: 0.35 },
       { transform: at(fromP.x, fromP.y, 'scale(1.2) rotate(60deg)'), opacity: 0.95, offset: 0.75 },
       { transform: at(fromP.x, fromP.y, 'scale(2.2) rotate(120deg)'), opacity: 0 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     ring(fromP.x, fromP.y, 170, '#38bdf8', 650);
     ring(fromP.x, fromP.y, 290, '#f0f8ff', 900);
@@ -1559,8 +1574,8 @@
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 32, spread: 300, up: 190, life: 1250, size: 22 });
     burst({ x: fromP.x, y: fromP.y, name: 'gem', count: 18, spread: 230, up: 150, life: 980, size: 18 });
 
-    const b = banner('❄️ ABSOLUTE ZERO: GLACIAL CITADEL! 👑', `GLOBAL FLASH FREEZE · +${totalSiphoned}🪙 TRIBUTE · 3D CITADEL RAISED!`, 'cyan', 2400);
-    await sleep(T(1400));
+    const b = banner('❄️ ABSOLUTE ZERO: GLACIAL CITADEL! 👑', `GLOBAL FLASH FREEZE · +${totalSiphoned}🪙 TRIBUTE · 3D CITADEL RAISED!`, 'cyan', 2650);
+    await sleep(T(1650));
     crest.remove();
     await b;
   }
@@ -1708,8 +1723,8 @@
     burst({ x: fromP.x, y: fromP.y, name: 'coin', count: 20, spread: 260, up: 190, life: 1200, size: 22 });
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 32, spread: 300, up: 200, life: 1250, size: 22 });
 
-    const b = banner('🏺 NILE SEDUCTION & GOLDEN PYRAMID! 👑', `MIRAGE INCINERATION · +${extortedMiles}🪙 EXTORTION · GREAT PYRAMID ERECTED!`, 'gold', 2400);
-    await sleep(T(1400));
+    const b = banner('🏺 NILE SEDUCTION & GOLDEN PYRAMID! 👑', `MIRAGE INCINERATION · +${extortedMiles}🪙 EXTORTION · GREAT PYRAMID ERECTED!`, 'gold', 2650);
+    await sleep(T(1650));
     await b;
   }
 
@@ -1831,8 +1846,8 @@
     burst({ x: fromP.x, y: fromP.y, name: 'fire', count: 28, spread: 290, up: 190, life: 1200, size: 22 });
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 30, spread: 310, up: 200, life: 1250, size: 22 });
 
-    const b = banner('☀️ EYE OF RA: SOLAR WRATH! 🔥', `BLAZING SOLAR STRIKE · +${scorchedMiles}🪙 SCORCHED · RIVAL TOWERS STRIPPED!`, 'gold', 2400);
-    await sleep(T(1400));
+    const b = banner('☀️ EYE OF RA: SOLAR WRATH! 🔥', `BLAZING SOLAR STRIKE · +${scorchedMiles}🪙 SCORCHED · RIVAL TOWERS STRIPPED!`, 'gold', 2650);
+    await sleep(T(1650));
     await b;
   }
 
@@ -2062,7 +2077,7 @@
         badges.push(badge);
       });
 
-      await sleep(T(1150));
+      await sleep(T(1400));
     } finally {
       svg.remove();
       victimEntries.forEach(ve => {
@@ -2081,7 +2096,7 @@
         curtainStage.remove();
         maskWrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
         setTimeout(() => maskWrap.remove(), 550);
-      }, T(1800));
+      }, T(2050));
     }
 
     // Phase 4: Detonation & Heroic Banner
@@ -2095,8 +2110,8 @@
 
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 36, spread: 310, up: 210, life: 1300, size: 24 });
 
-    const b = banner('🎭 PHANTOM MASQUERADE: CURTAIN CALL! 🥀', `REVERSE RENT HEX DEPLOYED · +${siphonedMiles}🪙 GALA TRIBUTE · MARIONETTE STASIS!`, 'gold', 2400);
-    await sleep(T(1400));
+    const b = banner('🎭 PHANTOM MASQUERADE: CURTAIN CALL! 🥀', `REVERSE RENT HEX DEPLOYED · +${siphonedMiles}🪙 GALA TRIBUTE · MARIONETTE STASIS!`, 'gold', 2650);
+    await sleep(T(1650));
     await b;
   }
 
@@ -2129,6 +2144,15 @@
 
     const mirrorAnchor = safeMonumentAnchor(tilePt, 24);
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.phantomReverseHex({
+        mirrorP: { x: mirrorAnchor.modelX, y: mirrorAnchor.modelY },
+        targetP: pLandlord,
+        tenantP: pTenant,
+        amount
+      });
+    }
+
     // 1. 3D Venetian Gilded Mirror rising from tile
     const mirrorWrap = document.createElement('div');
     mirrorWrap.className = 'fx-phantom-mirror-wrap';
@@ -2145,7 +2169,7 @@
       { transform: 'translate(-50%, -50%) scale(0.2) translateY(40px)', opacity: 0 },
       { transform: 'translate(-50%, -50%) scale(1.15) translateY(-6px)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) translateY(0px)', opacity: 1 }
-    ], { duration: T(1200), fill: 'forwards' });
+    ], { duration: T(1450), fill: 'forwards' });
 
     // 2. SVG Inversion Ray Layer
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -2182,7 +2206,8 @@
     if (landlordEl) landlordEl.classList.add('fx-token-marionette-stasis');
 
     // Burst and shockwaves
-    burst({ x: mirrorAnchor.modelX, y: mirrorAnchor.modelY, name: 'sparkle', count: 24, spread: 160, up: 90, life: 800, size: 20 });
+    burst({ x: mirrorAnchor.modelX, y: mirrorAnchor.modelY, name: 'crystal', count: 24, spread: 160, up: 90, life: 900, size: 20 });
+    burst({ x: mirrorAnchor.modelX, y: mirrorAnchor.modelY, name: 'petal', count: 18, spread: 140, up: 80, life: 850, size: 18 });
     ring(mirrorAnchor.modelX, mirrorAnchor.modelY, 140, '#f43f5e', 500);
     ring(mirrorAnchor.modelX, mirrorAnchor.modelY, 220, '#fbbf24', 700);
 
@@ -2205,10 +2230,10 @@
     badge.innerHTML = `🪞 -${amount}🪙 REVERSED!`;
     L.moment.appendChild(badge);
 
-    const b = banner('🎭🪞 REVERSE RENT HEX INVERSION! 🥀', `THE PHANTOM'S MIRROR INVERTED THE DEED · +${amount}🪙 EXTORTED!`, 'gold', 2200);
+    const b = banner('🎭🪞 REVERSE RENT HEX INVERSION! 🥀', `THE PHANTOM'S MIRROR INVERTED THE DEED · +${amount}🪙 EXTORTED!`, 'gold', 2450);
 
     try {
-      await sleep(T(1000));
+      await sleep(T(1250));
     } finally {
       svg.remove();
       if (landlordEl) landlordEl.classList.remove('fx-token-marionette-stasis');
@@ -2400,7 +2425,7 @@
         badges.push(badge);
       });
 
-      await sleep(T(1100));
+      await sleep(T(1350));
     } finally {
       svg.remove();
       victimEntries.forEach(ve => {
@@ -2420,7 +2445,7 @@
           craterWrap.remove();
           templeWrap.remove();
         }, 650);
-      }, T(1800));
+      }, T(2050));
     }
 
     // Phase 4: Detonation & Heroic Banner
@@ -2434,8 +2459,8 @@
 
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 40, spread: 330, up: 220, life: 1350, size: 26 });
 
-    const b = banner('⚡ WRATH OF OLYMPUS: ZEUS THUNDER! 🏛️', `ORBITAL SMITE · +${rubbleCash}🪙 RUBBLE RECLAIMED · DIVINE PEGASUS ASCENT!`, 'gold', 2400);
-    await sleep(T(1400));
+    const b = banner('⚡ WRATH OF OLYMPUS: ZEUS THUNDER! 🏛️', `ORBITAL SMITE · +${rubbleCash}🪙 RUBBLE RECLAIMED · DIVINE PEGASUS ASCENT!`, 'gold', 2650);
+    await sleep(T(1650));
     await b;
   }
 
@@ -2455,6 +2480,11 @@
     shake('heavy');
 
     const smiteAnchor = safeMonumentAnchor(smiteP, 18);
+
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.spawnLightning(smiteAnchor.modelX, 0, smiteAnchor.modelX, smiteAnchor.modelY, { color: 0x38bdf8, coreColor: 0xffffff, glowWidth: 16, coreWidth: 4 });
+      window.SkyPixi.spawnShockwaveRing(smiteAnchor.modelX, smiteAnchor.modelY, 0x38bdf8, 160, 600);
+    }
 
     // 1. Crater
     const craterWrap = document.createElement('div');
@@ -2518,8 +2548,8 @@
     ring(smiteAnchor.modelX, smiteAnchor.modelY, 180, '#38bdf8', 650);
     ring(smiteAnchor.modelX, smiteAnchor.modelY, 300, '#fbbf24', 850);
 
-    const b = banner('⚡ ZEUS ORBITAL SMITE! 🏛️', `DEMOLISHED 1 LEVEL OFF RIVAL HOTEL · +${rubbleCash}🪙 RUBBLE CASH!`, 'gold', 1900);
-    await sleep(T(1000));
+    const b = banner('⚡ ZEUS ORBITAL SMITE! 🏛️', `DEMOLISHED 1 LEVEL OFF RIVAL HOTEL · +${rubbleCash}🪙 RUBBLE CASH!`, 'gold', 2150);
+    await sleep(T(1250));
     svg.remove();
     setTimeout(() => {
       masterboltWrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
@@ -2628,8 +2658,8 @@
 
     coins({ from: { role: toRole }, to: { role: ownerRole }, amount });
 
-    const b = banner('⚡ LIGHTNING ROD DISCHARGE! 🏛️', `TRESPASSER ZAPPED · -${amount}🪙 THUNDER TAX!`, 'gold', 1600);
-    await sleep(T(750));
+    const b = banner('⚡ LIGHTNING ROD DISCHARGE! 🏛️', `TRESPASSER ZAPPED · -${amount}🪙 THUNDER TAX!`, 'gold', 1850);
+    await sleep(T(1000));
     svg.remove();
     await b;
   }
@@ -2683,8 +2713,8 @@
 
     coins({ from: { role: toRole }, to: { role: fromRole }, amount });
 
-    const b = banner('⚡ ZEUS STORM SHOCK! 🏛️', `DIRECT LIGHTNING STRIKE · -${amount}🪙 ELECTRIC SHOCK (+10% ULT)!`, 'gold', 1800);
-    await sleep(T(800));
+    const b = banner('⚡ ZEUS STORM SHOCK! 🏛️', `DIRECT LIGHTNING STRIKE · -${amount}🪙 ELECTRIC SHOCK (+10% ULT)!`, 'gold', 2050);
+    await sleep(T(1050));
     svg.remove();
     await b;
   }
@@ -2826,8 +2856,8 @@
     burst({ x: p.x, y: p.y, name: 'sparkle', count: 24, spread: 200, up: 140, gravity: 0, life: 800, size: 18 });
     burst({ x: p.x, y: p.y, name: 'coin', count: 10, spread: 140, up: 90, life: 700, size: 15 });
 
-    const b = banner('🕯️ LIVING STAFF TORCH PARRY! 🛡️', 'HOSTILE TAKEOVER ARENA DUEL BLOCKED & DEFLECTED!', 'gold', 1800);
-    await sleep(T(1000));
+    const b = banner('🕯️ LIVING STAFF TORCH PARRY! 🛡️', 'HOSTILE TAKEOVER ARENA DUEL BLOCKED & DEFLECTED!', 'gold', 2050);
+    await sleep(T(1250));
     staffWrap.style.opacity = '0';
     staffWrap.style.transform = 'translate(-50%, -50%) scale(1.3)';
     staffWrap.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
@@ -3031,7 +3061,7 @@
       { transform: at(fromP.x, fromP.y, 'scale(1.7) rotate(180deg)'), opacity: 1, offset: 0.4 },
       { transform: at(fromP.x, fromP.y, 'scale(1.3) rotate(360deg)'), opacity: 1, offset: 0.7 },
       { transform: at(fromP.x, fromP.y, 'scale(2.4) rotate(540deg)'), opacity: 0 }
-    ], { duration: T(1350), easing: 'ease-out' });
+    ], { duration: T(1600), easing: 'ease-out' });
 
     burst({ x: fromP.x, y: fromP.y, name: 'supernova_core', count: 20, spread: 280, up: 160, life: 1200, size: 28 });
     burst({ x: fromP.x, y: fromP.y, name: 'vortex_nebula', count: 12, spread: 210, up: 120, life: 1100, size: 24 });
@@ -3039,8 +3069,8 @@
     burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 30, spread: 320, up: 200, gravity: 0, life: 1300, size: 24 });
 
     // 7. Heroic Banner Presentation
-    const b = banner('🪐 SUPERNOVA TITHE! ⚡', `+${totalSiphoned}🪙 AIRSPACE DRAIN · 2× SHIELDS! 🌌`, 'purple', 1600);
-    await sleep(T(1350));
+    const b = banner('🪐 SUPERNOVA TITHE! ⚡', `+${totalSiphoned}🪙 AIRSPACE DRAIN · 2× SHIELDS! 🌌`, 'purple', 1850);
+    await sleep(T(1600));
     snCore.remove();
     await b;
   }
@@ -3095,7 +3125,7 @@
       { transform: 'translate(-50%, -180%) scale(1.8) rotate(-20deg)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.1) rotate(5deg)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     // Floating Badge over Trident
     const tridentBadge = document.createElement('div');
@@ -3150,7 +3180,7 @@
     }
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       tridentWrap.remove();
       tridentBadge.remove();
@@ -3169,7 +3199,7 @@
     burst({ x: fromP.x, y: fromP.y, name: 'water', count: 26, spread: 260, up: 180, gravity: 240, life: 1100, size: 24 });
 
     const targetName = (targetP && targetP.name) ? targetP.name : (targetRole ? targetRole.toUpperCase() : 'RIVAL');
-    const b = banner('🔱 ABYSSAL CATACLYSM! 🌊', `TSUNAMI DRAGGED ${targetName} -3 TILES · PROPERTIES FLOODED!`, 'cyan', 1700);
+    const b = banner('🔱 ABYSSAL CATACLYSM! 🌊', `TSUNAMI DRAGGED ${targetName} -3 TILES · PROPERTIES FLOODED!`, 'cyan', 1950);
     await b;
   }
 
@@ -3267,7 +3297,7 @@
     sfx('playJackpot');
 
     try {
-      await sleep(T(1400));
+      await sleep(T(1650));
     } finally {
       wheel.remove();
       cardNodes.forEach(cn => cn.remove());
@@ -3280,7 +3310,7 @@
     // 6. Rings & Luxe Banner
     ring(pCoord.x, pCoord.y, 180, '#ffd700', 700);
     ring(pCoord.x, pCoord.y, 280, '#f59e0b', 950);
-    const b = banner('🎰 ROYAL GOLD RUSH! 👑', `+${amount}🪙 VIP JACKPOT · NEXT ROLL 6!`, 'gold', 1600);
+    const b = banner('🎰 ROYAL GOLD RUSH! 👑', `+${amount}🪙 VIP JACKPOT · NEXT ROLL 6!`, 'gold', 1850);
     await b;
   }
 
@@ -3328,7 +3358,7 @@
       { transform: 'translate(-50%, -160%) scale(1.6) rotate(-25deg)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.15) rotate(10deg)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     const nagaBadge = document.createElement('div');
     nagaBadge.className = 'fx-naga-surge-badge';
@@ -3378,7 +3408,7 @@
     burst({ x: pCoord.x, y: pCoord.y, name: 'water', count: 24, spread: 240, up: 160, life: 1000, size: 22 });
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       nagaWrap.remove();
       nagaBadge.remove();
@@ -3395,7 +3425,7 @@
     // Phase 4: Detonation & Banner
     ring(pCoord.x, pCoord.y, 190, '#10b981', 750);
     ring(pCoord.x, pCoord.y, 300, '#ffd700', 950);
-    const b = banner('🐉 EMERALD NAGA SURGE! 🪷', `+${amount}🪙 RIVER HOARD · SACRED MEKONG WATERWAYS!`, 'green', 1700);
+    const b = banner('🐉 EMERALD NAGA SURGE! 🪷', `+${amount}🪙 RIVER HOARD · SACRED MEKONG WATERWAYS!`, 'green', 1950);
     await b;
   }
 
@@ -3424,6 +3454,10 @@
     shake('heavy');
     vignette(5.0, 'inari-twilight');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.inariFoxfireMirage({ cX: pCoord.x, cY: pCoord.y, targetP: toP });
+    }
+
     if (targetEl) targetEl.classList.add('fx-token-kitsune-possessed');
 
     // Phase 2: Descend 3D Foxfire Torii Gate Prop
@@ -3440,7 +3474,7 @@
       { transform: 'translate(-50%, -170%) scale(1.6)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.15)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     const toriiBadge = document.createElement('div');
     toriiBadge.className = 'fx-inari-mirage-badge';
@@ -3464,7 +3498,7 @@
     }
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       toriiWrap.remove();
       toriiBadge.remove();
@@ -3475,7 +3509,7 @@
     // Phase 4: Detonation & Banner
     ring(pCoord.x, pCoord.y, 190, '#ec4899', 750);
     ring(pCoord.x, pCoord.y, 300, '#ffd700', 950);
-    const b = banner('🦊 INARI DIVINITY: NINE-TAIL MIRAGE! 🌸', '3 SPIRIT TAILS RESTORED · FOXFIRE CONFUSION ACTIVE!', 'magenta', 1700);
+    const b = banner('🦊 INARI DIVINITY: NINE-TAIL MIRAGE! 🌸', '3 SPIRIT TAILS RESTORED · FOXFIRE CONFUSION ACTIVE!', 'magenta', 1950);
     await b;
   }
 
@@ -3519,7 +3553,7 @@
       { transform: 'translate(-50%, -160%) scale(1.6) rotate(-30deg)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.15) rotate(15deg)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     const moonBadge = document.createElement('div');
     moonBadge.className = 'fx-eclipse-blackout-badge';
@@ -3564,7 +3598,7 @@
     });
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       moonWrap.remove();
       moonBadge.remove();
@@ -3580,7 +3614,7 @@
     // Phase 4: Detonation & Banner
     ring(c.x, c.y, 220, '#ffd700', 800);
     ring(c.x, c.y, 340, '#6366f1', 1100);
-    const b = banner('☀️ TOTAL ECLIPSE APOCALYPSE! 🌙', '0 RIVAL RENT FOR 1 ROUND · SOMNAMBULISM ACTIVE!', 'purple', 1700);
+    const b = banner('☀️ TOTAL ECLIPSE APOCALYPSE! 🌙', '0 RIVAL RENT FOR 1 ROUND · SOMNAMBULISM ACTIVE!', 'purple', 1950);
     await b;
   }
 
@@ -3625,7 +3659,7 @@
       { transform: 'translate(-50%, -150%) scale(1.6) rotate(-20deg)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.15) rotate(10deg)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     const wishBadge = document.createElement('div');
     wishBadge.className = 'fx-djinn-wish-badge';
@@ -3651,7 +3685,7 @@
     burst({ x: destPt.x, y: destPt.y, name: 'gem', count: 18, spread: 180, up: 120, life: 900, size: 20 });
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       lampWrap.remove();
       wishBadge.remove();
@@ -3662,7 +3696,7 @@
     // Phase 4: Detonation & Banner
     ring(destPt.x, destPt.y, 190, '#a855f7', 750);
     ring(destPt.x, destPt.y, 300, '#ffd700', 950);
-    const b = banner('🪔 COSMIC GENIE WISH! ✨', `+${amount}🪙 & REALITY WARPED · MIDAS TOUCH ACTIVE!`, 'purple', 1700);
+    const b = banner('🪔 COSMIC GENIE WISH! ✨', `+${amount}🪙 & REALITY WARPED · MIDAS TOUCH ACTIVE!`, 'purple', 1950);
     await b;
   }
 
@@ -3688,6 +3722,10 @@
     shake('heavy');
     vignette(5.0, 'phoenix-sunfire');
 
+    if (window.SkyPixi && window.SkyPixi.isReady) {
+      window.SkyPixi.ultimates.phoenixRebirthFlame({ cX: c.x, cY: c.y, casterP: pCoord });
+    }
+
     if (casterEl) casterEl.classList.add('fx-token-inferno-stance');
 
     // Phase 2: 3D Sunfire Crest Prop
@@ -3704,7 +3742,7 @@
       { transform: 'translate(-50%, -170%) scale(1.6) rotate(-25deg)', opacity: 0 },
       { transform: 'translate(-50%, -45%) scale(1.15) rotate(15deg)', opacity: 1, offset: 0.35 },
       { transform: 'translate(-50%, -50%) scale(1.0) rotate(0deg)', opacity: 1 }
-    ], { duration: T(1500), fill: 'forwards' });
+    ], { duration: T(1750), fill: 'forwards' });
 
     const fireBadge = document.createElement('div');
     fireBadge.className = 'fx-phoenix-rebirth-badge';
@@ -3742,7 +3780,7 @@
     }
 
     try {
-      await sleep(T(1500));
+      await sleep(T(1750));
     } finally {
       fireWrap.remove();
       fireBadge.remove();
@@ -3757,7 +3795,7 @@
     ring(c.x, c.y, 220, '#f97316', 750);
     ring(c.x, c.y, 340, '#ffd700', 950);
     burst({ x: c.x, y: c.y, name: 'fire', count: 32, spread: 280, up: 180, life: 1100, size: 24 });
-    const b = banner('🔥 PHOENIX REBIRTH: ASCENSION! 🪶', `DEBTS CONSUMED · SOAR TO START ×2 LAP (+${amount}🪙)!`, 'red', 1700);
+    const b = banner('🔥 PHOENIX REBIRTH: ASCENSION! 🪶', `DEBTS CONSUMED · SOAR TO START ×2 LAP (+${amount}🪙)!`, 'red', 1950);
     await b;
   }
 

@@ -1927,9 +1927,19 @@ function checkGameOver() {
 function declareByNetWorth() {
   const st = monopolyState;
   monopolyState.round = MONO_CFG.MAX_ROUNDS;
-  const roles = Object.keys(st.players || {}).filter((r) => !st.players[r].bankrupt);
-  const leader = roles.reduce((best, r) => (!best || netWorth(r) > netWorth(best)) ? r : best, roles[0]);
-  declareWinner(leader || 'bkk', 'cap');
+  const roles = Object.keys(st.players || {}).filter((r) => !st.players[r]?.bankrupt);
+  if (!roles.length) {
+    declareWinner(null, 'draw');
+    return;
+  }
+  const sorted = [...roles].sort((a, b) => netWorth(b) - netWorth(a));
+  const topNw = netWorth(sorted[0]);
+  const tiedTop = sorted.filter((r) => netWorth(r) === topNw);
+  if (tiedTop.length > 1) {
+    declareWinner(null, 'draw');
+  } else {
+    declareWinner(sorted[0] || 'bkk', 'cap');
+  }
 }
 
 // =========================================================
@@ -2901,10 +2911,12 @@ function openMonopolyGame(broadcast = true) {
 }
 
 function closeMonopolyGame(broadcast = true) {
-  const activeMatch = getActiveInFlightMatch();
-  if (activeMatch) {
-    handleMonopolyExitGame();
-    return;
+  if (!monopolyState?.gameOver) {
+    const activeMatch = getActiveInFlightMatch();
+    if (activeMatch) {
+      handleMonopolyExitGame();
+      return;
+    }
   }
   const modal = $m('monopolyModal');
   if (!modal) return;
@@ -5237,6 +5249,8 @@ function updateMonopolyHUD() {
       set(`monopoly${cap}Name`, defaultName);
       set(`monopoly${cap}Miles`, '—');
       set(`monopoly${cap}Nw`, '<span class="empty-seat-tag">OPEN</span>');
+      const ultWrap = $m(`monopoly${cap}UltWrap`);
+      if (ultWrap) ultWrap.style.display = 'none';
       return;
     }
     card.classList.remove('hidden');
@@ -5256,7 +5270,7 @@ function updateMonopolyHUD() {
       specialPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet">🪔 ${(p.carpetCharges || 0)}/3</span>`;
     }
     set(`monopoly${cap}Name`, `${p.name}${perkChip}${specialPill}${r === me ? ' <span class="you-tag">YOU</span>' : ''}`);
-    setTweened($m(`monopoly${cap}Miles`), p.miles, (v) => `${fmt(v)} 🪙`, card);
+    setTweened($m(`monopoly${cap}Miles`), p.miles, (v) => fmt(v), card);
     set(`monopoly${cap}Props`, `🏰 ${ownedTileIds(r).length}`);
     setTweened($m(`monopoly${cap}Nw`), netWorth(r), (v) => `NW ${fmt(v)}`, null);
     if ($m(`monopoly${cap}Passes`)) {
@@ -5265,12 +5279,19 @@ function updateMonopolyHUD() {
     }
     set(`monopoly${cap}Items`, (p.inventory || []).map((id) => ITEMS[id] ? ITEMS[id].icon : '').join(''));
     const ult = Math.round(p.ult || 0);
+    const ultWrap = $m(`monopoly${cap}UltWrap`);
     const ultTrack = $m(`monopoly${cap}UltTrack`);
     const ultFill = $m(`monopoly${cap}UltFill`);
     const ultLabel = $m(`monopoly${cap}UltLabel`);
+    if (ultWrap) {
+      ultWrap.style.display = 'flex';
+      ultWrap.classList.toggle('is-ready', ult >= 100);
+      ultWrap.title = `Ultimate Charge: ${ult}%${ult >= 100 ? ' (READY TO CAST!)' : ''}`;
+    }
     if (ultFill) ultFill.style.width = `${ult}%`;
-    if (ultLabel) ultLabel.textContent = `${ult}%`;
+    if (ultLabel) ultLabel.textContent = ult >= 100 ? 'MAX' : `${ult}%`;
     if (ultTrack) ultTrack.classList.toggle('is-ready', ult >= 100);
+    card.classList.toggle('ult-ready', ult >= 100);
 
     const thumb = $m(`monopoly${cap}Thumb`);
     if (thumb && p.sprite && thumb.getAttribute('src') !== p.sprite) thumb.src = p.sprite;
@@ -5280,15 +5301,17 @@ function updateMonopolyHUD() {
     card.classList.toggle('magnetized', !!(st.magnet && st.magnet.target === r) && !isBankrupt);
     card.classList.toggle('is-bankrupt', isBankrupt);
     if (isBankrupt) {
-      set(`monopoly${cap}Miles`, '<span style="color:#71717a;text-decoration:line-through;">0 🪙</span>');
+      set(`monopoly${cap}Miles`, '<span style="color:#71717a;text-decoration:line-through;">0</span>');
       set(`monopoly${cap}Props`, '<span style="color:#71717a;">🏰 0</span>');
       set(`monopoly${cap}Nw`, '<span class="bankrupt-label">💀 OUT</span>');
-      const ultTrack = $m(`monopoly${cap}UltTrack`);
+      if (ultWrap) {
+        ultWrap.classList.remove('is-ready');
+        ultWrap.style.opacity = '0.3';
+      }
       if (ultTrack) ultTrack.classList.remove('is-ready');
-      const ultFill = $m(`monopoly${cap}UltFill`);
       if (ultFill) ultFill.style.width = '0%';
-      const ultLabel = $m(`monopoly${cap}UltLabel`);
       if (ultLabel) ultLabel.textContent = '0%';
+      card.classList.remove('ult-ready');
     }
   });
 
@@ -5659,7 +5682,7 @@ function executeUltimate(role) {
     isAnimating = false;
     releaseRoleLocks(role);
     renderAll();
-  }, 2200);
+  }, 2650);
 
   triggerUltimateEffects(role, ultData, true);
 
@@ -10615,18 +10638,23 @@ function renderVictory() {
   if (ov.dataset.key === String(g.at) && ov.classList.contains('active')) return;
   ov.dataset.key = String(g.at);
 
-  const winner = g.winner ? st.players[g.winner] : null;
+  const isSpectator = !!isSpectatorMode || getMonopolyMyRole() === 'spectator';
+  const meRole = isSpectator ? 'spectator' : getMonopolyMyRole();
+  const isBot = st.mode === 'bot';
+  const winner = (g.winner && g.winner !== 'draw') ? st.players[g.winner] : null;
+  const isDraw = g.winner === 'draw' || g.reason === 'draw' || !winner;
+  const iWon = !isSpectator && g.winner === meRole;
+
+  // Reason text
   const bankruptP = g.bankruptRole ? st.players[g.bankruptRole] : (g.reason === 'bankrupt' ? Object.values(st.players || {}).find((p) => p.bankrupt) : null);
   const reasonText = {
-    bankrupt: bankruptP ? `${bankruptP.name} went bankrupt!` : 'Bankruptcy!',
+    bankrupt: bankruptP ? `${bankruptP.name} was bankrupted!` : 'Rival Bankrupted!',
     target: `Reached ${fmt(MONO_CFG.WIN_NET_WORTH)} net worth!`,
-    cap: `Richest after ${MONO_CFG.MAX_ROUNDS} rounds`,
-    draw: `Perfectly tied after ${MONO_CFG.MAX_ROUNDS} rounds`
+    cap: `Richest after ${MONO_CFG.MAX_ROUNDS} flight rounds`,
+    draw: `Perfect draw after ${MONO_CFG.MAX_ROUNDS} flight rounds`
   }[g.reason] || '';
-  const s = st.stats;
-  const isBot = st.mode === 'bot';
-  const meRole = getMonopolyMyRole();
-  const iWon = g.winner === meRole;
+
+  const s = st.stats || { matches: 0, misses: 0, takeovers: {}, rentPaid: {}, jackpots: 0, itemsUsed: 0 };
 
   // Rank all active players by net worth (non-bankrupt first)
   const allRoles = Object.keys(st.players || {});
@@ -10639,39 +10667,58 @@ function renderVictory() {
     const nwB = (g.netWorth && g.netWorth[b]) != null ? g.netWorth[b] : netWorth(b);
     return nwB - nwA;
   });
-  const placements = g.winner && g.winner !== 'draw' ? [g.winner, ...ranked.filter((r) => r !== g.winner)] : ranked;
+  const placements = winner ? [g.winner, ...ranked.filter((r) => r !== g.winner)] : ranked;
 
   // 💎 Vault reward calculation
   const C = window.NookCostumes;
   const is4p = st.mode === '4p' || allRoles.length > 2;
   const tierKey = C && C.getPartyThreatTier ? C.getPartyThreatTier(st.players) : (is4p ? 'extreme' : 'couple');
-  const payouts = C && C.computePartyPayouts ? C.computePartyPayouts(tierKey, placements, s.matches, st.stats.bounties) : null;
+  const payouts = (!isSpectator && C && C.computePartyPayouts) ? C.computePartyPayouts(tierKey, placements, s.matches, st.stats?.bounties) : null;
   const myPayout = payouts && payouts[meRole];
 
   let estDiamonds = myPayout ? myPayout.total : 0;
   let diamondsSubtitle = '';
 
-  if (isBot) {
+  if (isSpectator) {
+    estDiamonds = 0;
+    diamondsSubtitle = '👁️ Spectator Deck · Live Flight Observation';
+  } else if (isBot) {
     const bLevel = st.bot?.level || 'hard';
-    const isHard = bLevel === 'hard';
-    if (iWon) {
-      estDiamonds = isHard ? 450 : 80;
-      diamondsSubtitle = isHard ? '🔥 Hard Victory! +450💎 banked' : '🐣 Easy Victory! +80💎 banked';
+    if (bLevel === 'insane') {
+      estDiamonds = iWon ? 950 : 50;
+      diamondsSubtitle = iWon ? '⚡ Apex Victory! +950💎 banked' : '💀 Defeated by Apex Sovereign (+50💎 rebate)';
+    } else if (bLevel === 'hard') {
+      estDiamonds = iWon ? 450 : 0;
+      diamondsSubtitle = iWon ? '🔥 Hard Victory! +450💎 banked' : '💀 Defeated by Captain Whiskers (100💎 stake lost)';
     } else {
-      estDiamonds = isHard ? 0 : 30;
-      diamondsSubtitle = isHard ? '💀 Defeated by Captain Whiskers (100💎 stake lost)' : '🐣 Good game! +30💎 consolation banked';
+      estDiamonds = iWon ? 80 : 30;
+      diamondsSubtitle = iWon ? '🐣 Easy Victory! +80💎 banked' : '🐣 Good game! +30💎 consolation banked';
     }
   } else if (myPayout) {
-    diamondsSubtitle = myPayout.won ? '🏆 Winner reward · banked to Vault' : `Rank #${myPayout.rank || 2} · banked to Vault`;
+    diamondsSubtitle = myPayout.won ? '🏆 Squadron Ace Victory · Banked to Vault' : `Rank #${myPayout.rank || 2} · Banked to Vault`;
   }
 
-  const diamondsHtml = `
-      <div class="victory-diamonds" id="victoryDiamonds">
-        <span class="vd-gem">${isBot && !iWon && (st.bot?.level === 'hard') ? '💔' : '💎'}</span>
-        <div><b>${estDiamonds > 0 ? `+${fmt(estDiamonds)}` : '0💎'}</b><small>${diamondsSubtitle}</small></div>
-      </div>`;
+  // Diamond Banner Component (Properly inserted into DOM with #victoryDiamonds)
+  const diamondsHtml = isSpectator ? `
+    <div class="victory-diamonds spectator-deck" id="victoryDiamonds">
+      <span class="vd-gem">👁️</span>
+      <div class="vd-info">
+        <b>SPECTATING COMPLETE</b>
+        <small>Flight observation completed · 0💎</small>
+      </div>
+    </div>
+  ` : `
+    <div class="victory-diamonds ${estDiamonds === 0 && isBot ? 'lost-stake' : ''}" id="victoryDiamonds">
+      <span class="vd-gem">${isBot && !iWon && (st.bot?.level !== 'easy') ? '💔' : '💎'}</span>
+      <div class="vd-info">
+        <b>${estDiamonds > 0 ? `+${fmt(estDiamonds)}` : '0💎'}</b>
+        <small>${diamondsSubtitle}</small>
+      </div>
+    </div>
+  `;
 
-  if (!g._reported) {
+  // Server Reporting
+  if (!g._reported && !isSpectator) {
     g._reported = true;
     saveLocalMonopolyState();
     if (isBot) {
@@ -10702,7 +10749,7 @@ function renderVictory() {
             netWorth: (g.netWorth && g.netWorth[k]) || 0
           })),
           placements,
-          bounties: st.stats.bounties || { bkk: 0, dxb: 0 },
+          bounties: st.stats?.bounties || { bkk: 0, dxb: 0 },
           botConfig: {
             bot1: st.players.bot1 ? st.players.bot1.botLevel : 'closed',
             bot2: st.players.bot2 ? st.players.bot2.botLevel : 'closed'
@@ -10713,106 +10760,196 @@ function renderVictory() {
   }
 
   const confetti = Array.from({ length: 36 }, (_, i) => {
-    const e = ['🎉', '✨', '🪙', '💖', '👑', '🎊'][i % 6];
+    const e = ['✈️', '✨', '🪙', '💖', '👑', '🎊'][i % 6];
     return `<span class="confetti" style="left:${Math.random() * 100}%;animation-delay:${(Math.random() * 1.5).toFixed(2)}s;animation-duration:${(2.4 + Math.random() * 1.6).toFixed(2)}s">${e}</span>`;
   }).join('');
 
-  const statsHtml = isBot
-    ? `<span>🤖 Difficulty <strong>${(st.bot?.level || 'hard').toUpperCase()}</strong></span>
-       <span>🎲 Game rounds <strong>${g.round} / ${MONO_CFG.MAX_ROUNDS}</strong></span>
-       <span>🏴 Takeovers <strong>${s.takeovers.bkk || 0} / ${s.takeovers.dxb || 0}</strong></span>
-       <span>🪙 Rent paid <strong>${fmt(s.rentPaid.bkk || 0)}</strong></span>
-       <span>💎 Jackpots <strong>${s.jackpots || 0}</strong></span>
-       <span>🎒 Items used <strong>${s.itemsUsed || 0}</strong></span>`
-    : `<span>💖 Vibe matches <strong>${s.matches || 0}</strong></span>
-       <span>💸 Vibe misses <strong>${s.misses || 0}</strong></span>
-       <span>🏴 Takeovers <strong>${s.takeovers.bkk || 0} / ${s.takeovers.dxb || 0}</strong></span>
-       <span>🪙 Rent paid <strong>${fmt((s.rentPaid.bkk || 0) + (s.rentPaid.dxb || 0))}</strong></span>
-       <span>💎 Jackpots <strong>${s.jackpots || 0}</strong></span>
-       <span>🎒 Items used <strong>${s.itemsUsed || 0}</strong></span>`;
+  // Safe Stats Aggregator (Supports 2P, 3P, 4P + Bots)
+  const totalRent = Object.values(s.rentPaid || {}).reduce((sum, v) => sum + (Number(v) || 0), 0);
+  const totalTakeovers = Object.values(s.takeovers || {}).reduce((sum, v) => sum + (Number(v) || 0), 0);
 
-  const primaryBtn = isBot
-    ? `<button class="btn-buy-prop" data-act="rematch">😼 Rematch (${st.bot?.level ? st.bot.level.toUpperCase() : 'BOT'})</button>`
-    : `<button class="btn-buy-prop" data-act="again">🔄 Play again</button>`;
+  const statsHtml = `
+    <span>🎲 Flight Rounds <strong>${g.round} / ${MONO_CFG.MAX_ROUNDS}</strong></span>
+    <span>🪙 Total Rent Flow <strong>${fmt(totalRent)}</strong></span>
+    <span>⚔️ Zone Takeovers <strong>${totalTakeovers}</strong></span>
+    <span>💎 Jackpots Hit <strong>${s.jackpots || 0}</strong></span>
+    <span>🎒 Gadgets Used <strong>${s.itemsUsed || 0}</strong></span>
+    <span>💞 Vibe Chemistry <strong>${s.matches || 0}</strong></span>
+  `;
 
   const threatBadgeHtml = `
     <div class="victory-threat-badge ${tierKey === 'extreme' ? 'extreme' : tierKey === 'high' ? 'high' : 'standard'}">
       ${tierKey === 'extreme' ? '🔥 EXTREME THREAT · 2 HARD BOTS CLEARED' : tierKey === 'high' ? '⚔️ HIGH THREAT DEFEATED' : tierKey === 'standard' ? '🛫 4-PLAYER FLIGHT COMPLETE' : tierKey.includes('3p') ? '✈️ 3-PLAYER SQUADRON VICTORY' : '✈️ FIRST-CLASS COUPLE DUEL'}
     </div>`;
 
+  // NEORA Premium Placement Podium Cards
   const placementsHtml = `
-    <div class="victory-placements">
+    <div class="victory-placements neora-victory-podium" id="victoryPlacements">
       ${placements.map((r, idx) => {
         const pl = st.players[r];
         const isHuman = !pl?.isBot;
-        const medal = idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '🎗️';
-        const rankTitle = idx === 0 ? 'SQUADRON ACE' : idx === 1 ? 'CO-PILOT' : idx === 2 ? 'CREW' : 'CABIN';
+        const isSelf = (r === meRole);
+        const nw = (g.netWorth && g.netWorth[r]) != null ? g.netWorth[r] : netWorth(r);
+        const medal = isDraw ? '🤝' : (idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '🎗️');
+        const rankClass = isDraw ? 'rank-draw' : (idx === 0 ? 'rank-gold place-first' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : 'rank-crew');
+        const rankTitle = isDraw ? 'TIED CREW' : (idx === 0 ? 'SQUADRON ACE' : idx === 1 ? 'CO-PILOT' : idx === 2 ? 'FLIGHT CREW' : 'PASSENGER');
+
         return `
-          <div class="place-row ${isHuman ? 'human-row' : 'bot-row'} ${r === meRole ? 'me-row' : ''}">
-            <span class="place-medal">${medal}</span>
-            <img src="${pl?.sprite || ''}" class="place-sprite" alt="" />
-            <div class="place-info">
-              <b>${pl?.name || r}${r === meRole ? ' (You)' : ''} · <span style="color:#fde68a;">${rankTitle}</span></b>
-              <small>${pl?.bankrupt ? '💀 Bankrupt' : `${fmt((g.netWorth && g.netWorth[r]) || 0)} Net Worth`}</small>
+          <div class="place-row neora-podium-card ${rankClass} ${isHuman ? 'human-row' : 'bot-row'} ${isSelf ? 'is-self me-row' : ''}">
+            <span class="place-medal podium-rank-badge">${medal}</span>
+            <div class="place-avatar-wrap podium-avatar-wrap">
+              <img src="${pl?.sprite || ''}" class="place-sprite podium-avatar-img" alt="" />
+              ${idx === 0 && !isDraw ? '<span class="podium-crown-halo">👑</span>' : ''}
+            </div>
+            <div class="place-info podium-player-details">
+              <div class="place-name-line podium-name-row">
+                <b class="place-name podium-player-name">${pl?.name || r}</b>
+                ${isSelf ? '<span class="place-you-pill podium-you-pill">YOU</span>' : ''}
+                <span class="place-rank-badge podium-rank-title ${idx === 0 && !isDraw ? 'gold' : ''}">${rankTitle}</span>
+              </div>
+              <div class="place-meta podium-score-row">
+                ${pl?.bankrupt
+                  ? '<span class="place-bankrupt-tag podium-bankrupt-tag">💀 Bankrupt</span>'
+                  : `<span class="place-nw-tag podium-nw-badge">💰 ${fmt(nw)} NW</span><span class="podium-miles-badge">🪙 ${fmt(pl?.miles || 0)}</span>`
+                }
+              </div>
             </div>
           </div>
         `;
       }).join('')}
     </div>`;
 
+  // Dopamine Payout Terminal & Loot Box
   const lootBoxHtml = `
-    <div class="victory-loot-box" id="victoryLootBox">
-      <div class="victory-loot-header">
-        <span class="victory-loot-title">✨ First-Class Flight Payout</span>
-        ${myPayout?.syndicate > 0 ? `<span class="syndicate-dividend-badge">🤝 +${myPayout.syndicate}💎 Syndicate Dividend</span>` : ''}
+    <div class="victory-loot-box neora-payout-terminal" id="victoryLootBox">
+      <div class="victory-loot-header payout-terminal-header">
+        <span class="victory-loot-title payout-terminal-title">✨ ${isSpectator ? 'Flight Crew Payout Breakdown' : 'First-Class Flight Settlement'}</span>
+        ${myPayout?.syndicate > 0 ? `<span class="syndicate-dividend-badge">🤝 +${myPayout.syndicate}💎 Syndicate</span>` : ''}
+        <button class="btn-vault-mini" id="btnOpenVaultMini">🎰 Vault Gacha ➜</button>
       </div>
-      <div class="victory-loot-chips">
+      ${diamondsHtml}
+      <div class="victory-loot-chips payout-chips-grid">
         <div class="loot-chip diamonds">💎 <b>+${fmt(myPayout ? myPayout.total : estDiamonds)}</b> Diamonds</div>
         ${myPayout?.tickets > 0 ? `<div class="loot-chip tickets">🎟️ <b>+${myPayout.tickets}</b> Lucky Ticket${myPayout.tickets > 1 ? 's' : ''}</div>` : ''}
         ${myPayout?.fish > 0 ? `<div class="loot-chip salmon">🐟 <b>+${myPayout.fish}</b> King Salmon</div>` : ''}
         ${myPayout?.stardust > 0 ? `<div class="loot-chip stardust">✨ <b>+${myPayout.stardust}</b> Stardust</div>` : ''}
         ${myPayout?.bounty > 0 ? `<div class="loot-chip bounty">💥 <b>+${myPayout.bounty}</b> Demolition Bounty</div>` : ''}
-        ${s.matches > 0 ? `<div class="loot-chip" style="background:rgba(236,72,153,0.25);border-color:rgba(244,114,182,0.5);color:#fbcfe8;">💞 <b>${s.matches}</b> Vibe Matches</div>` : ''}
+        ${myPayout?.syndicate > 0 ? `<div class="loot-chip syndicate">🤝 <b>+${myPayout.syndicate}💎</b> Syndicate</div>` : ''}
+        ${s.matches > 0 ? `<div class="loot-chip vibes" style="background:rgba(236,72,153,0.25);border-color:rgba(244,114,182,0.5);color:#fbcfe8;">💞 <b>${s.matches}</b> Vibe Chemistry</div>` : ''}
+        <div class="loot-chip xp">📈 <b>+${isSpectator ? '50' : '150'}</b> Flight EXP</div>
       </div>
+      <div class="payout-daily-quest-note">📋 Daily Flight Log: +1 Monopoly Game Completed</div>
     </div>`;
+
+  // Modern Ergonomic 2-Tier Navigation Dock
+  let actionsHtml = '';
+  if (isSpectator) {
+    actionsHtml = `
+      <div class="neora-victory-dock neora-action-dock">
+        <div class="dock-primary-row single-btn">
+          <button class="neora-btn-primary" data-act="mode">
+            <span class="btn-icon">🏛️</span>
+            <span class="btn-text">RETURN TO DEPARTURES</span>
+          </button>
+        </div>
+        <div class="dock-secondary-row single-btn">
+          <button class="neora-btn-exit neora-btn-tertiary" data-act="close">
+            <span class="btn-icon">✕</span>
+            <span class="btn-text">LEAVE MATCH</span>
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    const isRoomClient = currentFlightRoom && typeof isCurrentUserHost === 'function' && !isCurrentUserHost();
+    let primaryBtnText = '🛫 NEXT FLIGHT';
+    let primaryAct = 'again';
+    if (isBot) {
+      primaryBtnText = `✈️ REMATCH (${(st.bot?.level || 'hard').toUpperCase()})`;
+      primaryAct = 'rematch';
+    } else if (isRoomClient) {
+      primaryBtnText = '🏛️ BACK TO WAITING ROOM';
+      primaryAct = 'mode';
+    }
+
+    actionsHtml = `
+      <div class="neora-victory-dock neora-action-dock">
+        <div class="dock-primary-row">
+          <button class="neora-btn-primary gold-glow" data-act="${primaryAct}">
+            <span class="btn-icon">${isBot ? '😼' : '🛫'}</span>
+            <span class="btn-text">${primaryBtnText}</span>
+          </button>
+          <button class="neora-btn-vault" id="btnOpenVaultTogether">
+            <span class="btn-icon">🎰</span>
+            <span class="btn-text">VAULT GACHA</span>
+          </button>
+        </div>
+        <div class="dock-secondary-row">
+          <button class="neora-btn-lobby neora-btn-secondary" data-act="mode">
+            <span class="btn-icon">🏛️</span>
+            <span class="btn-text">DEPARTURES</span>
+          </button>
+          <button class="neora-btn-exit neora-btn-tertiary" data-act="close">
+            <span class="btn-icon">✕</span>
+            <span class="btn-text">EXIT TO CABIN</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
 
   ov.innerHTML = `
     <div class="confetti-layer">${confetti}</div>
-    <div class="victory-card">
-      <div class="victory-crown">${winner ? '👑' : '🤝'}</div>
-      ${threatBadgeHtml}
-      ${winner ? `<img src="${winner.sprite}" class="victory-sprite" alt="" />` : ''}
-      <h2 class="victory-title">${winner ? `${winner.name} WINS!` : "IT'S A DRAW!"}</h2>
-      <div class="victory-reason">${reasonText} · Round ${g.round}</div>
-      ${placementsHtml}
-      <div class="victory-stats">
-        ${statsHtml}
+    <div class="victory-card neora-victory-modal neora-victory-card">
+      <button class="neora-card-close-x" data-act="close" title="Dismiss">✕</button>
+      <div class="neora-victory-header victory-header-fixed">
+        <div class="victory-crown">${winner ? '👑' : '🤝'}</div>
+        ${threatBadgeHtml}
+        ${winner ? `<div class="neora-victory-avatar-ring podium-avatar-wrap"><img src="${winner.sprite}" class="victory-sprite podium-avatar-img" alt="" /></div>` : ''}
+        <h2 class="victory-title victory-hero-title">${winner ? `${winner.name.toUpperCase()} WINS!` : "IT'S A PERFECT DRAW!"}</h2>
+        <div class="victory-reason victory-hero-subtitle">${reasonText} · Round ${g.round}</div>
       </div>
-      ${lootBoxHtml}
-      <div class="card-actions">
-        <button class="btn-vault-open" id="btnOpenVaultTogether">🎰 Open Vault Gacha Together</button>
-        ${primaryBtn}
-        <button class="btn-pass-prop" data-act="mode">🎮 Change mode</button>
-        <button class="btn-pass-prop" data-act="close">Close</button>
+
+      <div class="neora-victory-scroll victory-scroll-body">
+        <div class="neora-reward-banner">
+          ${lootBoxHtml}
+        </div>
+
+        <div class="neora-podium-section">
+          <div class="neora-section-label">✈️ FLIGHT CREW STANDINGS</div>
+          ${placementsHtml}
+        </div>
+
+        <div class="neora-stats-section neora-stats-accordion">
+          <div class="neora-section-label stats-accordion-title">📊 FLIGHT TELEMETRY</div>
+          <div class="victory-stats stats-telemetry-grid">
+            ${statsHtml}
+          </div>
+        </div>
       </div>
+
+      ${actionsHtml}
     </div>
   `;
   ov.classList.add('active');
-  AudioFX.playVictory();
+  if (AudioFX && AudioFX.playVictory) AudioFX.playVictory();
 
+  // Vault Buttons (Mini and Main)
+  const openVaultHandler = () => {
+    hideVictory();
+    if (monopolyState) monopolyState.gameOver = null;
+    saveLocalMonopolyState();
+    closeMonopolyGame(true);
+    if (window.NookVault && window.NookVault.open) {
+      window.NookVault.open('gacha');
+    }
+  };
   const vaultBtn = ov.querySelector('#btnOpenVaultTogether');
-  if (vaultBtn) {
-    vaultBtn.addEventListener('click', () => {
-      hideVictory();
-      if (monopolyState) monopolyState.gameOver = null;
-      saveLocalMonopolyState();
-      closeMonopolyGame(true);
-      if (window.NookVault && window.NookVault.open) {
-        window.NookVault.open('gacha');
-      }
-    });
-  }
+  if (vaultBtn) vaultBtn.addEventListener('click', openVaultHandler);
+  const miniVaultBtn = ov.querySelector('#btnOpenVaultMini');
+  if (miniVaultBtn) miniVaultBtn.addEventListener('click', openVaultHandler);
 
+  // Rematch / Next Flight
   if (isBot) {
     const rematch = ov.querySelector('[data-act="rematch"]');
     if (rematch) rematch.addEventListener('click', () => {
@@ -10828,17 +10965,23 @@ function renderVictory() {
       resetMonopolyGame();
     });
   }
-  const modeBtn = ov.querySelector('[data-act="mode"]');
-  if (modeBtn) modeBtn.addEventListener('click', () => {
-    hideVictory();
-    if (monopolyState) monopolyState.gameOver = null;
-    promptResetOrMode();
+
+  // Departures Lounge
+  ov.querySelectorAll('[data-act="mode"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      hideVictory();
+      if (monopolyState) monopolyState.gameOver = null;
+      promptResetOrMode();
+    });
   });
-  const closeBtn = ov.querySelector('[data-act="close"]');
-  if (closeBtn) closeBtn.addEventListener('click', () => {
-    hideVictory();
-    if (monopolyState) monopolyState.gameOver = null;
-    closeMonopolyGame(true);
+
+  // Exit / Close
+  ov.querySelectorAll('[data-act="close"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      hideVictory();
+      if (monopolyState) monopolyState.gameOver = null;
+      closeMonopolyGame(true);
+    });
   });
 }
 
@@ -10853,7 +10996,7 @@ window.addEventListener('vault:award', (e) => {
     if (b) b.textContent = `+${fmt(mine.total)}`;
     const sm = el.querySelector('small');
     if (sm) {
-      const parts = [`${mine.won ? '🏆 Winner' : `Rank #${mine.rank || 2}`}`];
+      const parts = [`${mine.won ? '🏆 Squadron Ace' : `Rank #${mine.rank || 2}`}`];
       if (mine.syndicate) parts.push(`+${mine.syndicate}💎 Syndicate`);
       if (mine.bounty) parts.push(`+${mine.bounty}💎 Bounty`);
       if (mine.daily) parts.push('☀️ Daily Bonus');
@@ -10871,12 +11014,18 @@ window.addEventListener('vault:award', (e) => {
 window.addEventListener('vault:bot_result', (e) => {
   const a = e.detail;
   const el = $m('victoryDiamonds');
-  if (!el || !a) return;
-  const b = el.querySelector('b');
-  if (b) b.textContent = a.payout > 0 ? `+${fmt(a.payout)}💎` : '0💎';
-  const sm = el.querySelector('small');
-  if (sm && a.breakdown) sm.textContent = a.breakdown;
-  el.classList.add('confirmed');
+  if (el && a) {
+    const b = el.querySelector('b');
+    if (b) b.textContent = a.payout > 0 ? `+${fmt(a.payout)}💎` : '0💎';
+    const sm = el.querySelector('small');
+    if (sm && a.breakdown) sm.textContent = a.breakdown;
+    el.classList.add('confirmed');
+  }
+  const lb = $m('victoryLootBox');
+  if (lb && a && a.payout != null) {
+    const dChip = lb.querySelector('.loot-chip.diamonds b');
+    if (dChip) dChip.textContent = `+${fmt(a.payout)}`;
+  }
 });
 
 function showRulesModal() {
