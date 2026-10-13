@@ -5044,7 +5044,7 @@ function ensureBoardBuilt() {
       ${isProp ? `<div class="tile-category-strip zone-${tile.zone}"><span class="category-name">${zoneLabel}</span></div>` : ''}
       ${isProp ? '<div class="tile-owner-ribbon unowned"></div>' : ''}
       <div class="tile-zone-bar zone-${tile.zone}"></div>
-      ${isProp ? '<div class="tile-monopoly-buildings"></div>' : ''}
+      <div class="tile-monopoly-buildings"></div>
       <div class="tile-content-body">
         <span class="tile-icon">${tile.icon}</span>
         <span class="tile-name">${tile.shortName}</span>
@@ -5067,6 +5067,10 @@ function updateBoardTiles({ animate = true } = {}) {
     el.classList.toggle('tile-wish-sanctuary', !!(st.wishSanctuaries && st.wishSanctuaries[tile.id]));
     const pill = el.querySelector('.tile-pill');
     if (tile.type !== 'property') {
+      const bld = el.querySelector('.tile-monopoly-buildings');
+      if (bld && typeof getTile25dLandmarkHtml === 'function') {
+        bld.innerHTML = getTile25dLandmarkHtml(tile.id, null, st);
+      }
       if (!el.dataset.sig) { pill.className = 'tile-pill tile-special-pill'; pill.textContent = tile.shortName; el.dataset.sig = 'x'; }
       return;
     }
@@ -5082,6 +5086,68 @@ function updateBoardTiles({ animate = true } = {}) {
   const anim = animate && boardHydrated && changed.length <= 3 && !!window.MonoFX;
   changed.forEach((c) => applyTileChange(c, anim));
   boardHydrated = true;
+}
+
+function getTile25dLandmarkHtml(tileId, prop, st) {
+  if (!st) return '';
+  const isPyramid = !!(prop && (prop.isGoldenPyramid || st.goldenPyramidTile === tileId));
+  const isCitadel = !!(prop && (prop.isGlacialCitadel || st.glacialCitadelTile === tileId));
+  const isOlympus = !!(prop && (prop.isOlympusTemple || st.olympusTempleTile === tileId));
+  const isTransmuted = !!(prop && prop.isTransmutedGold);
+  const isTorii = !!(st.inariToriiGates && st.inariToriiGates[tileId]);
+  const isHexMirror = !!(st.reverseRentHexTile === tileId);
+  const isCoralPalace = !!(st.floodedTiles && st.floodedTiles[tileId] && prop && prop.owner && typeof isAbyssalDrifter === 'function' && isAbyssalDrifter(prop.owner));
+  const isSunkenRuins = !!(st.floodedTiles && st.floodedTiles[tileId] && prop && prop.owner && typeof isAbyssalDrifter === 'function' && !isAbyssalDrifter(prop.owner));
+  const isRoseTurret = !!(prop && prop.enchantedTurret && !isPyramid && !isCitadel && !isOlympus);
+  const isDjinnOasis = !!(st.djinnOasisTiles && st.djinnOasisTiles[tileId] && !isPyramid && !isCitadel && !isOlympus);
+  const isPhoenixCrater = !!(st.phoenixEmbers && st.phoenixEmbers[tileId] && !isPyramid && !isCitadel && !isOlympus);
+  const isWishSanctuary = !!(st.wishSanctuaries && st.wishSanctuaries[tileId] && !isPyramid && !isCitadel && !isOlympus);
+
+  if (isPyramid) {
+    return '<div class="monument-25d-wrap landmark-pyramid" title="The Great Golden Pyramid"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><img src="assets/s9/golden_pyramid.png" class="monument-25d-img pyramid-img" alt="The Great Golden Pyramid" /><span class="monument-badge-gold">👑 2× RENT</span></div>';
+  }
+  if (isCitadel) {
+    return '<div class="monument-25d-wrap landmark-citadel" title="Glacial Ice Citadel"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-cyan"></div><img src="assets/s8/glacial_citadel.png" class="monument-25d-img citadel-img" alt="Glacial Ice Citadel" /><span class="monument-badge-ice">❄️ CITADEL</span></div>';
+  }
+  if (isOlympus) {
+    return '<div class="monument-25d-wrap landmark-olympus" title="Mount Olympus Temple"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-thunder"></div><img src="assets/s11/olympus_temple.png" class="monument-25d-img olympus-img" alt="Mount Olympus Temple" /><span class="olympus-lightning-rod">⚡</span><span class="monument-badge-thunder">⚡ TEMPLE</span></div>';
+  }
+  if (isTransmuted) {
+    return '<div class="monument-25d-wrap landmark-midas-gold" title="Midas Solid Gold Hotel (0 Rent · +80🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-midas"></div><img src="assets/props/midas_gold_hotel.png" class="monument-25d-img midas-img" alt="Solid Gold Hotel" /><span class="monument-badge-gold">⚱️ SOLID GOLD</span></div>';
+  }
+  if (isHexMirror) {
+    return '<div class="monument-25d-wrap landmark-hex-mirror" title="Venetian Reverse Rent Hex Mirror"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-mirror"></div><img src="assets/s10/venetian_mirror.png" class="monument-25d-img mirror-img" alt="Reverse Hex Mirror" /><span class="monument-badge-mirror">🪞 REVERSE HEX</span></div>';
+  }
+  if (isTorii) {
+    return '<div class="monument-25d-wrap landmark-inari-torii" title="Inari Sacred Torii Gate"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-torii"></div><img src="assets/s2/inari_torii_gate.png" class="monument-25d-img torii-img" alt="Inari Torii Gate" /><span class="monument-badge-torii">⛩️ TORII</span></div>';
+  }
+  if (isCoralPalace) {
+    return '<div class="monument-25d-wrap landmark-coral-palace" title="Abyssal Coral Palace (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-coral"></div><img src="assets/s5/abyssal_coral_reef.png" class="monument-25d-img coral-img" alt="Coral Palace" /><span class="monument-badge-coral">🪸 +30% RENT</span></div>';
+  }
+  if (isSunkenRuins) {
+    return '<div class="monument-25d-wrap landmark-sunken-ruin" title="Sunken Atlantis Ruins (0 Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-sunken"></div><img src="assets/s5/abyssal_coral_reef.png" class="monument-25d-img sunken-img" alt="Sunken Ruins" /><span class="monument-badge-sunken">🔱 0 RENT</span></div>';
+  }
+  if (isRoseTurret) {
+    return '<div class="monument-25d-wrap landmark-rose-turret" title="Enchanted Rose Cloche Turret (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-rose"></div><img src="assets/s7/enchanted_rose_cloche.png" class="monument-25d-img rose-img" alt="Enchanted Rose" /><span class="monument-badge-rose">🌹 TURRET</span></div>';
+  }
+  if (isDjinnOasis) {
+    return '<div class="monument-25d-wrap landmark-djinn-oasis" title="Mirage Oasis Portal"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-oasis"></div><img src="assets/s3/mirage_oasis_portal.png" class="monument-25d-img oasis-img" alt="Oasis Portal" /><span class="monument-badge-oasis">🪔 OASIS</span></div>';
+  }
+  if (isPhoenixCrater) {
+    return '<div class="monument-25d-wrap landmark-phoenix-crater" title="Phoenix Molten Crater (-40🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-fire"></div><img src="assets/s3/phoenix_molten_crater.png" class="monument-25d-img crater-img" alt="Molten Crater" /><span class="monument-badge-fire">🔥 -40🪙</span></div>';
+  }
+  if (isWishSanctuary) {
+    return '<div class="monument-25d-wrap landmark-wish-sanctuary" title="Lantern Wish Sanctuary (+150🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><span class="sanctuary-lantern-icon">🏮</span><span class="monument-badge-gold">🏮 WISH</span></div>';
+  }
+
+  // Standard houses / hotel
+  if (prop) {
+    if (prop.level >= 3) {
+      return '<span class="building-hotel" title="Grand Hotel">🏨</span>';
+    }
+    return '<span class="building-house">🏠</span>'.repeat(prop.level || 1);
+  }
+  return '';
 }
 
 function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
@@ -5132,36 +5198,32 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   el.classList.toggle('tile-atlantis-flooded', !!(st.floodedTiles && st.floodedTiles[tile.id]));
   el.classList.toggle('is-coral-palace', !!(st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && isAbyssalDrifter(prop.owner)));
   el.classList.toggle('is-sunken-ruin', !!(st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && !isAbyssalDrifter(prop.owner)));
+  el.classList.toggle('tile-transmuted-gold', !!(prop && prop.isTransmutedGold));
 
   const isCitadel = !!(prop && (prop.isGlacialCitadel || (st && st.glacialCitadelTile === tile.id)));
   const isCitadelAura = !isCitadel && (st && st.glacialCitadelTile != null) && (tile.id === (st.glacialCitadelTile - 1 + 20) % 20 || tile.id === (st.glacialCitadelTile + 1) % 20);
   const isPyramid = !!(prop && (prop.isGoldenPyramid || (st && st.goldenPyramidTile === tile.id)));
   const isOlympus = !!(prop && (prop.isOlympusTemple || (st && st.olympusTempleTile === tile.id)));
+  const isTransmuted = !!(prop && prop.isTransmutedGold);
   el.classList.toggle('tile-glacial-citadel', isCitadel);
   el.classList.toggle('tile-citadel-aura', isCitadelAura);
   el.classList.toggle('tile-golden-pyramid', isPyramid);
   el.classList.toggle('tile-olympus-temple', isOlympus);
+
+  const landmarkHtml = getTile25dLandmarkHtml(tile.id, prop, st);
 
   if (prop) {
     ribbon.className = 'tile-owner-ribbon';
     const ownerP = st.players[prop.owner];
     const emoji = prop.owner === 'bkk' ? '🐺' : prop.owner === 'dxb' ? '🐉' : prop.owner === 'bot1' ? '🐣' : '😈';
     ribbon.textContent = `${emoji} ${ownerP ? ownerP.badge : prop.owner}`;
-    bld.innerHTML = isPyramid
-      ? '<span class="building-golden-pyramid" title="The Great Golden Pyramid"><img src="assets/s9/golden_pyramid.png" class="pyramid-building-img" alt="Pyramid" /></span>'
-      : (isCitadel
-        ? '<span class="building-glacial-citadel" title="Glacial Ice Citadel"><img src="assets/s8/glacial_citadel.png" class="citadel-building-img" alt="Citadel" /><span class="citadel-aurora-glow"></span></span>'
-        : (isOlympus
-          ? '<span class="building-olympus-temple" title="Mount Olympus Temple"><img src="assets/s11/olympus_temple.png" class="olympus-temple-building-img" alt="Mount Olympus Temple" /><span class="olympus-lightning-rod">⚡</span></span>'
-          : (prop.level >= 3
-            ? '<span class="building-hotel" title="Grand Hotel">🏨</span>'
-            : '<span class="building-house">🏠</span>'.repeat(prop.level))));
+    if (bld) bld.innerHTML = landmarkHtml;
     pill.className = 'tile-pill tile-price-pill rent-pill';
-    pill.textContent = `${fmt(getTileRent(tile.id))}🪙`;
+    pill.textContent = isTransmuted ? '0🪙 (⚱️+80)' : `${fmt(getTileRent(tile.id))}🪙`;
   } else {
     ribbon.className = 'tile-owner-ribbon unowned';
     ribbon.textContent = ZONES[tile.zone].label;
-    bld.innerHTML = '';
+    if (bld) bld.innerHTML = landmarkHtml;
     pill.className = 'tile-pill tile-price-pill';
     pill.textContent = `${tile.price}🪙`;
   }
