@@ -1,0 +1,368 @@
+/* ==========================================================================
+   SKY PARTY — FIRST CLASS FULLSCREEN & PWA INSTALL BANNER
+   Art Directed Luxury Mobile Banner with Chibi Aviator Mascot & Safari Guides
+   ========================================================================== */
+
+.sky-pwa-banner-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 16, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sky-pwa-banner-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sky-pwa-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 120%);
+  width: calc(100% - 28px);
+  max-width: 440px;
+  background: linear-gradient(145deg, rgba(20, 30, 48, 0.96) 0%, rgba(10, 18, 32, 0.98) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  border-radius: 24px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8),
+              0 0 28px rgba(245, 158, 11, 0.22),
+              inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 18px 20px;
+  z-index: 9500;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              opacity 0.35s ease;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.sky-pwa-banner.visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Golden Ambient Header Trim */
+.sky-pwa-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent);
+  border-radius: 2px;
+}
+
+/* Close Button */
+.pwa-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.pwa-close-btn:hover,
+.pwa-close-btn:active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* Mascot & Brand Header */
+.pwa-header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding-right: 28px;
+}
+
+.pwa-mascot-pod {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1.5px solid rgba(245, 158, 11, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25);
+  animation: pwaMascotFloat 3.5s ease-in-out infinite;
+}
+
+@keyframes pwaMascotFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.pwa-mascot-img {
+  width: 44px;
+  height: auto;
+  max-height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+
+.pwa-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pwa-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #fef08a;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.pwa-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Fredoka', 'Outfit', sans-serif;
+  color: #fff;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pwa-title-accent {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pwa-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.88);
+  margin: 0 0 14px 0;
+}
+
+/* Step Guidance Card */
+.pwa-steps-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pwa-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #e2e8f0;
+}
+
+.pwa-step-num {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fef08a;
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-step-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.pwa-step-text strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Inline Graphic Badges */
+.pwa-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #fff;
+  font-size: 11.5px;
+  margin: 0 2px;
+}
+
+.pwa-share-svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pwa-add-icon {
+  color: #fbbf24;
+  font-weight: 800;
+}
+
+/* Bouncing Arrow Indicator for iOS Safari */
+.pwa-safari-arrow-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 0;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 700;
+  animation: pwaArrowBounce 1.6s ease-in-out infinite;
+}
+
+.pwa-safari-arrow-indicator svg {
+  width: 16px;
+  height: 16px;
+  stroke: #fbbf24;
+}
+
+@keyframes pwaArrowBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+/* Action Buttons Row */
+.pwa-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pwa-btn-primary {
+  flex: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #070b16;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+  transition: all 0.2s ease;
+}
+
+.pwa-btn-primary:hover,
+.pwa-btn-primary:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.55);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.pwa-btn-secondary {
+  flex: 0.9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: rgba(226, 232, 240, 0.85);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-btn-secondary:hover,
+.pwa-btn-secondary:active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Passport Settings Shortcut Button */
+.passport-pwa-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 12px;
+  color: #fef08a;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.passport-pwa-btn:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(59, 130, 246, 0.2));
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.passport-pwa-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.passport-pwa-arrow {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}

@@ -5,11 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/test_server_health.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_partner_presence_solo.js && node tests/test_gifting_and_friends.js && node tests/test_neora_lobby_interaction.js && node tests/test_neora_multiplayer_cases.js && node tests/test_neora_matchmaking_e2e.js && node tests/test_neora_master_e2e_suite.js",
+    "test": "node tests/test_server_health.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_partner_presence_solo.js && node tests/test_gifting_and_friends.js && node tests/test_neora_lobby_interaction.js && node tests/test_neora_multiplayer_cases.js && node tests/test_neora_matchmaking_e2e.js && node tests/test_neora_master_e2e_suite.js && node tests/test_pwa_fullscreen_e2e.js",
     "test:master": "node tests/test_neora_master_e2e_suite.js",
     "test:sim20": "node tests/test_neora_20_games_e2e.js",
     "test:swarm": "node tests/test_e2e_10_agents_swarm.js",
-    "test:all": "node tests/test_server_health.js && node tests/test_room_registry_logic.js && node tests/test_dynamic_slots_logic.js && node tests/test_pixi_engine_integrity.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_neora_matchmaking_e2e.js && node tests/test_neora_master_e2e_suite.js && node tests/test_neora_20_games_e2e.js && node scripts/test_monopoly_comprehensive.js && node scripts/test_monopoly_concurrency.js"
+    "test:all": "node tests/test_server_health.js && node tests/test_room_registry_logic.js && node tests/test_dynamic_slots_logic.js && node tests/test_pixi_engine_integrity.js && node tests/test_supabase_auth_rls.js && node tests/test_e2e_phase5_social_couple.js && node tests/test_neora_matchmaking_e2e.js && node tests/test_neora_master_e2e_suite.js && node tests/test_neora_20_games_e2e.js && node tests/test_pwa_fullscreen_e2e.js && node scripts/test_monopoly_comprehensive.js && node scripts/test_monopoly_concurrency.js"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -214,6 +214,18 @@
         });
       }
 
+      // Passport Fullscreen & App Installation Guide Button
+      const passportPwaBtn = $('passportPwaInstallBtn');
+      if (passportPwaBtn) {
+        passportPwaBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          Sound.tap();
+          if (window.SkyPWA && typeof window.SkyPWA.show === 'function') {
+            window.SkyPWA.show(true);
+          }
+        });
+      }
+
       // Passport Diamonds Plus Button -> Opens Gacha / Vault
       const passportDiamondsPlus = $('passportDiamondsPlusBtn');
       if (passportDiamondsPlus) {

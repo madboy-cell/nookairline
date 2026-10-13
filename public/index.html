@@ -9,6 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sky Party">
+  <link rel="apple-touch-icon" href="assets/ui/crest.png">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="assets/ui/sky_party_crest.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="index.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="avatar.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="monopoly.css?v=20261013_bot_insane">
@@ -20,6 +26,7 @@
   <link rel="stylesheet" href="skydash.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="social.css?v=20261013_friends_break">
   <link rel="stylesheet" href="neora_hud.css?v=20261013_tokenfix">
+  <link rel="stylesheet" href="pwa_prompt.css?v=20261013_pwa">
   <link rel="preload" as="image" href="assets/ui/lantern_rare.png">
 </head>
 <body>
@@ -2094,6 +2101,20 @@
               <span>Open Couple Sanctuary 💞</span>
             </button>
           </div>
+
+          <!-- CARD 5: Fullscreen & Home Screen Guide -->
+          <div class="dly-card passport-pwa-card">
+            <span class="dly-kicker kicker-gold">📲 FULLSCREEN IMMERSION</span>
+            <h3>App &amp; Home Screen</h3>
+            <p class="persona-card-desc">Play in borderless fullscreen mode with zero browser address bars by adding Sky Party to your Home Screen.</p>
+            <button type="button" class="passport-pwa-btn" id="passportPwaInstallBtn">
+              <span class="passport-pwa-left">
+                <span class="passport-pwa-icon">✨</span>
+                <span class="passport-pwa-text">View Fullscreen &amp; Install Guide</span>
+              </span>
+              <span class="passport-pwa-arrow">›</span>
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -2472,6 +2493,7 @@
   </script>
   <script src="supabase_client.js?v=20261013_friends_break"></script>
   <script src="social_ui.js?v=20261013_friends_break"></script>
+  <script src="pwa_prompt.js?v=20261013_pwa"></script>
   <script src="app.js?v=20261013_friends_break"></script>
 </body>
 </html>

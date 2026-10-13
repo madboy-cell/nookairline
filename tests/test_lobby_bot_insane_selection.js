@@ -258,3 +258,4 @@ runTest('3.1 submitNeoraCreateRoom correctly submits Bot Insane slots', () => {
 console.log('\n============================================================');
 console.log('🎉 ALL BOT INSANE SELECTION TESTS PASSED 100%!');
 console.log('============================================================');
+process.exit(0);
