@@ -140,6 +140,13 @@ class BotTakeoverManager {
   onTurnAdvance(room, nextRole) {
     if (!room || room.status !== 'in_flight' || !nextRole) return;
 
+    // Concurrency check: If any connected human is in the room, let the client host resolve bot turns.
+    // The server bot takeover is exclusively for when ALL human players are disconnected or away.
+    const connectedHumans = (room.slots || []).filter((s) => s.type === 'human' && s.occupiedBy && s.connected);
+    if (connectedHumans.length > 0) {
+      return;
+    }
+
     const slot = room.slots.find((s) => s.role === nextRole);
     if (!slot) return;
 
@@ -173,6 +180,12 @@ class BotTakeoverManager {
   executeBotAction(roomId, role) {
     const room = this.roomRegistry.getRoom(roomId);
     if (!room || room.status !== 'in_flight') return;
+
+    // Concurrency guard: if an active human is connected, abort server bot action to avoid dual resolution
+    const connectedHumans = (room.slots || []).filter((s) => s.type === 'human' && s.occupiedBy && s.connected);
+    if (connectedHumans.length > 0) {
+      return;
+    }
 
     const slot = room.slots.find((s) => s.role === role);
     if (!slot) return;

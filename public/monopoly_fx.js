@@ -633,7 +633,11 @@
         sfx('playHop', opts.stepIndex || 0);
         restartClass($(`boardTile_${toId}`), 'step-highlight', 320);
       }, dur * 0.8);
+      let done = false;
       const finish = () => {
+        if (done) return;
+        done = true;
+        if (hopTimer) clearTimeout(hopTimer);
         tok.shown[role] = toId;
         tok.busy[role] = false;
         el.classList.remove('hopping');
@@ -694,7 +698,13 @@
         placeAll();
         resolve();
       };
-      anim.finished.then(finish, finish);
+      const maxHopWait = Math.max(300, dur + 150);
+      const hopTimer = setTimeout(finish, maxHopWait);
+      if (anim && anim.finished) {
+        anim.finished.then(finish, finish);
+      } else {
+        setTimeout(finish, dur);
+      }
     });
   }
 

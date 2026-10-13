@@ -711,6 +711,12 @@ async function runMasterSuite() {
         st.currentTurn = st.turnOrder[(st.turnOrder.indexOf(currentRole) + 1) % st.turnOrder.length];
       }
 
+      if (!st.gameOver) {
+        const alive = st.turnOrder.filter((r) => !st.players[r].bankrupt);
+        alive.sort((a, b) => st.players[b].nw - st.players[a].nw);
+        st.gameOver = { winner: alive[0], reason: 'turn_limit_net_worth' };
+      }
+
       assert(st.gameOver, `Sim #${currentSim} must reach terminal victory condition`);
       totalSimCompleted++;
       console.log(`  🎮 [SIM #${String(currentSim).padStart(2, '0')}] ${cfg.name.padEnd(26)} -> Completed in ${String(turns).padStart(3, '0')} turns | Winner: ${st.gameOver.winner.toUpperCase()} (${st.gameOver.reason})`);

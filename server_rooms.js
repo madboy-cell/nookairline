@@ -36,7 +36,6 @@ class RoomRegistry {
       uid.startsWith('takeover_') ||
       uid.startsWith('host_') ||
       uid === 'u_host' ||
-      uid === 'player_alpha' ||
       uid.startsWith('user_eep') ||
       uid.startsWith('user_6ei') ||
       name.startsWith('Host F') ||

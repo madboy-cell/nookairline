@@ -1,1 +1,88 @@
-{}
+{
+  "flight_mv6l7ngp_93zl": {
+    "id": "flight_mv6l7ngp_93zl",
+    "code": "594925",
+    "flight_number": "SKY-594",
+    "name": "SKY-594 Express",
+    "host_uid": "user_host",
+    "host_name": "Flight Captain 🛫",
+    "host_avatar": "assets/bkk_warrior_idle.png",
+    "is_public": true,
+    "status": "lobby",
+    "description": "Relaxed game, make friends! All are welcome ♡",
+    "tags": [
+      "Casual",
+      "Make Friends",
+      "Voice Chat"
+    ],
+    "game": "monopoly",
+    "auto_fill": false,
+    "slots": [
+      {
+        "id": 1,
+        "role": "bkk",
+        "color": "ruby",
+        "type": "human",
+        "difficulty": null,
+        "ready": true,
+        "occupiedBy": "user_host",
+        "name": "Flight Captain 🛫",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "controller": "HUMAN",
+        "connected": true
+      },
+      {
+        "id": 2,
+        "role": "dxb",
+        "color": "cyan",
+        "type": "human",
+        "difficulty": null,
+        "ready": false,
+        "occupiedBy": null,
+        "name": "Open Slot",
+        "avatar": "",
+        "controller": "HUMAN",
+        "connected": false
+      },
+      {
+        "id": 3,
+        "role": "bot1",
+        "color": "emerald",
+        "type": "bot",
+        "difficulty": "hard",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Capt. Whiskers",
+        "avatar": "assets/bot.png",
+        "controller": "BOT_PERMANENT",
+        "connected": true
+      },
+      {
+        "id": 4,
+        "role": "bot2",
+        "color": "amber",
+        "type": "bot",
+        "difficulty": "easy",
+        "ready": true,
+        "occupiedBy": null,
+        "name": "Trainee Mochi",
+        "avatar": "assets/bot.png",
+        "controller": "BOT_PERMANENT",
+        "connected": true
+      }
+    ],
+    "game_state": null,
+    "messages": [
+      {
+        "id": "msg_init_1",
+        "uid": "user_host",
+        "name": "Flight Captain",
+        "avatar": "assets/bkk_warrior_idle.png",
+        "text": "Welcome! Let's play together! 🎲",
+        "time": "8:12 PM",
+        "timestamp": 1791890228521
+      }
+    ],
+    "updated_at": "2026-10-13T11:18:08.521Z"
+  }
+}
