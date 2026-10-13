@@ -1475,6 +1475,23 @@ function handleRoomMessage(ws, message) {
     }
 
     // 3. Minimum active participants check (>= 2 players or bots)
+    // If there are unoccupied open seats, auto-convert them to bots on takeoff
+    if (Array.isArray(room.slots)) {
+      room.slots.forEach((s, idx) => {
+        if (s.type === 'human' && !s.occupiedBy) {
+          const isSeat2 = (s.id === 2 || idx === 1);
+          const isSeat3 = (s.id === 3 || idx === 2);
+          s.type = 'bot';
+          s.controller = 'BOT_PERMANENT';
+          s.difficulty = s.difficulty || 'easy';
+          s.ready = true;
+          s.connected = true;
+          s.name = (s.name && s.name !== 'Open Slot') ? s.name : (isSeat2 ? 'Cadet Mochi 🐣' : (isSeat3 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾'));
+          s.avatar = s.avatar || 'assets/bot_mochi.jpg';
+        }
+      });
+    }
+
     const activeSlots = (room.slots || []).filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
     if (activeSlots.length < 2) {
       ws.send(JSON.stringify({
@@ -1489,10 +1506,18 @@ function handleRoomMessage(ws, message) {
     room.updatedAt = Date.now();
     if (message.state || message.initialState) {
       room.gameState = message.state || message.initialState;
+      if (room.gameState && room.gameState.players) {
+        room.slots.forEach((s) => {
+          if ((s.type === 'bot' || s.controller === 'BOT_PERMANENT') && room.gameState.players[s.role]) {
+            room.gameState.players[s.role].isBot = true;
+            room.gameState.players[s.role].botLevel = s.difficulty || 'easy';
+          }
+        });
+      }
     } else if (!room.gameState) {
       room.gameState = roomRegistry.createDefaultGameState(room.slots);
     }
-    roomRegistry.db.updateRoom(room.id, { status: 'in_flight', game_state: room.gameState }).catch(() => {});
+    roomRegistry.db.updateRoom(room.id, { status: 'in_flight', slots: room.slots, game_state: room.gameState }).catch(() => {});
     broadcastToRoom(room, {
       type: 'room_start',
       roomId: room.id,
@@ -1501,6 +1526,35 @@ function handleRoomMessage(ws, message) {
       state: room.gameState
     });
     broadcastDepartureBoard();
+    return;
+  }
+
+  if (message.type === 'room_terminate') {
+    const clientData = ws ? roomRegistry.getClientRoom(ws)?.clientData?.get(ws) : null;
+    const uid = message.uid || (clientData && clientData.uid);
+    const res = roomRegistry.terminateRoom(message.roomId, uid);
+    if (res && res.success) {
+      if (res.clients && res.clients.length > 0) {
+        res.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'room_terminated',
+              roomId: message.roomId,
+              reason: 'Flight was terminated by Captain.'
+            }));
+          }
+        });
+      }
+      broadcastDepartureBoard();
+    } else if (res && !res.success) {
+      ws.send(JSON.stringify({
+        type: 'room_error',
+        error: res.error || 'CANNOT_TERMINATE',
+        message: res.error === 'NOT_AUTHORIZED'
+          ? 'Only the flight Captain can terminate this room.'
+          : 'Failed to terminate flight room.'
+      }));
+    }
     return;
   }
 

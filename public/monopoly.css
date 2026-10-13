@@ -8079,6 +8079,28 @@ body.has-active-modal .vault-pill * {
   box-shadow: 0 12px 30px rgba(217, 70, 239, 0.6);
 }
 
+.room-footer-btn.btn-terminate {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+.room-footer-btn.btn-terminate:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+}
+
+.neora-nav-btn.neora-terminate-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+.neora-nav-btn.neora-terminate-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+}
+
 /* =========================================================
    SCREEN 3: CREATE ROOM (IDENTICAL SCREEN 3 FROM REFERENCE)
    ========================================================= */

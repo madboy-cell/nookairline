@@ -315,11 +315,30 @@ class RoomRegistry {
    * Generates a clean, authoritative Monopoly game state for a room's active slots.
    */
   createDefaultGameState(slots, startingMiles = 1200) {
-    const activeSlots = (slots || []).filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
-    const turnOrder = activeSlots.map((s) => s.role || (s.id === 1 ? 'bkk' : s.id === 2 ? 'dxb' : s.id === 3 ? 'bot1' : 'bot2'));
+    const normalizedSlots = (slots || []).map((s, idx) => {
+      // Auto-fill unoccupied open human seats with active bots at match start
+      if (s.type === 'human' && !s.occupiedBy) {
+        const isSeat2 = (s.id === 2 || idx === 1);
+        const isSeat3 = (s.id === 3 || idx === 2);
+        return {
+          ...s,
+          type: 'bot',
+          controller: 'BOT_PERMANENT',
+          difficulty: s.difficulty || 'easy',
+          ready: true,
+          connected: true,
+          name: s.name && s.name !== 'Open Slot' ? s.name : (isSeat2 ? 'Cadet Mochi 🐣' : (isSeat3 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾')),
+          avatar: s.avatar || 'assets/bot_mochi.jpg'
+        };
+      }
+      return s;
+    });
+
+    const activeSlots = normalizedSlots.filter((s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy));
+    const turnOrder = activeSlots.map((s, idx) => s.role || (s.id === 1 ? 'bkk' : s.id === 2 ? 'dxb' : s.id === 3 ? 'bot1' : s.id === 4 ? 'bot2' : (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2')));
     const players = {};
     activeSlots.forEach((s, idx) => {
-      const role = s.role || (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2');
+      const role = s.role || (s.id === 1 ? 'bkk' : s.id === 2 ? 'dxb' : s.id === 3 ? 'bot1' : s.id === 4 ? 'bot2' : (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2'));
       const isBot = s.type === 'bot' || s.controller === 'BOT_TEMPORARY' || s.controller === 'BOT_PERMANENT';
       const isEasy = (s.difficulty || 'easy') === 'easy';
       const isInsane = (s.difficulty || 'easy') === 'insane';
@@ -346,9 +365,9 @@ class RoomRegistry {
         ashPot: 0,
         carpetCharges: 0,
         ult: 0,
-        name: s.name || (isBot ? (idx === 2 ? (isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯') : (idx === 3 ? (isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁') : (isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼'))) : `Player ${role.toUpperCase()}`),
+        name: s.name || (isBot ? (s.id === 2 ? (isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯') : (s.id === 3 ? (isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁') : (isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼'))) : `Player ${role.toUpperCase()}`),
         sprite: s.avatar || (isBot ? (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg') : 'assets/bkk_warrior_idle.png'),
-        badge: isBot ? (isInsane ? 'SOV' : `BOT${idx > 1 ? idx - 1 : ''}`) : `P${idx + 1}`,
+        badge: isBot ? (isInsane ? 'SOV' : `BOT${s.id > 1 ? s.id - 1 : ''}`) : `P${s.id || (idx + 1)}`,
         color: isInsane ? '#a855f7' : (s.id === 1 ? '#ef4444' : (s.id === 2 ? '#06b6d4' : (s.id === 3 ? '#10b981' : '#f59e0b'))),
         isBot,
         botLevel: isBot ? (s.difficulty || 'easy') : null,
@@ -1069,6 +1088,21 @@ class RoomRegistry {
     room.clients.forEach((ws) => this.clientToRoomId.delete(ws));
     this.rooms.delete(roomId);
     this.db.deleteRoom(roomId).catch(() => {});
+  }
+
+  /**
+   * Terminates a flight room. Only the room Captain (hostUid or slot 1) is authorized.
+   */
+  terminateRoom(roomId, uid) {
+    const room = this.getRoom(roomId);
+    if (!room) return { success: false, error: 'ROOM_NOT_FOUND' };
+    const isHost = !uid || (room.hostUid && room.hostUid === uid) || (room.slots && room.slots[0]?.occupiedBy === uid);
+    if (!isHost) {
+      return { success: false, error: 'NOT_AUTHORIZED' };
+    }
+    const clients = Array.from(room.clients);
+    this.deleteRoom(roomId);
+    return { success: true, room, clients };
   }
 
   /**

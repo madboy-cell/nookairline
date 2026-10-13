@@ -1295,7 +1295,14 @@ function createDefaultMonopolyState() {
 }
 
 function isV2State(s) {
-  return !!(s && (s.version === MONO_CFG.VERSION || s.mode === 'bot' || s.mode === '4p') && s.players && s.players.bkk && s.players.dxb && s.properties);
+  return !!(
+    s &&
+    (s.version === MONO_CFG.VERSION || s.mode === 'bot' || s.mode === '4p' || s.mode === 'room') &&
+    s.players &&
+    typeof s.players === 'object' &&
+    Object.keys(s.players).length >= 2 &&
+    s.properties
+  );
 }
 
 function getTurnOrder() {
@@ -1305,14 +1312,17 @@ function getTurnOrder() {
     const valid = st.turnOrder.filter((r) => st.players[r] && !st.players[r].bankrupt);
     if (valid.length > 0) return valid;
   }
-  return ['bkk', 'dxb'];
+  const activeRoles = Object.keys(st.players).filter((r) => !st.players[r].bankrupt);
+  return activeRoles.length > 0 ? activeRoles : ['bkk', 'dxb'];
 }
 
 function getNextTurn(currentRole) {
   const order = getTurnOrder();
   const idx = order.indexOf(currentRole);
   if (idx === -1) {
-    const fullOrder = Array.isArray(monopolyState?.turnOrder) ? monopolyState.turnOrder : ['bkk', 'dxb'];
+    const fullOrder = Array.isArray(monopolyState?.turnOrder) && monopolyState.turnOrder.length > 0
+      ? monopolyState.turnOrder
+      : Object.keys(monopolyState?.players || { bkk: 1, dxb: 1 });
     const fullIdx = fullOrder.indexOf(currentRole);
     if (fullIdx !== -1) {
       for (let i = 1; i <= fullOrder.length; i++) {
@@ -1320,7 +1330,7 @@ function getNextTurn(currentRole) {
         if (order.includes(candidate)) return candidate;
       }
     }
-    return order[0];
+    return order[0] || 'bkk';
   }
   return order[(idx + 1) % order.length];
 }
@@ -2378,6 +2388,12 @@ function initMonopoly() {
 
   const neoraLeaveRoomBtn = $m('neoraLeaveRoomBtn');
   if (neoraLeaveRoomBtn) neoraLeaveRoomBtn.addEventListener('click', leaveFlightRoom);
+
+  const neoraTerminateRoomBtn = $m('neoraTerminateRoomBtn');
+  if (neoraTerminateRoomBtn) neoraTerminateRoomBtn.addEventListener('click', terminateFlightRoom);
+
+  const monopolyTerminateFlightBtn = $m('monopolyTerminateFlightBtn');
+  if (monopolyTerminateFlightBtn) monopolyTerminateFlightBtn.addEventListener('click', terminateFlightRoom);
 
   // Back from Create Room (Screen 3) -> return to Screen 1
   const neoraCreateBackBtn = $m('neoraCreateBackBtn');
@@ -4143,6 +4159,15 @@ function renderNeoraWaitingRoom() {
       startLabel.textContent = mySlot?.ready ? 'Cancel Ready' : '● Ready';
     }
   }
+
+  const terminateBtn = $m('neoraTerminateRoomBtn');
+  if (terminateBtn) {
+    terminateBtn.classList.toggle('hidden', !isHost);
+  }
+  const inGameTerminateBtn = $m('monopolyTerminateFlightBtn');
+  if (inGameTerminateBtn) {
+    inGameTerminateBtn.classList.toggle('hidden', !isHost);
+  }
 }
 
 function renderNeoraChatList() {
@@ -4594,6 +4619,30 @@ function leaveFlightRoom() {
   switchNeoraView('browser');
 }
 
+function terminateFlightRoom() {
+  const roomId = currentFlightRoom?.id || pendingActiveSession?.room?.id || (typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_room_id') : null);
+  if (!roomId) {
+    if (typeof showToast === 'function') showToast('⚠️ No active room to terminate.');
+    return;
+  }
+  const isHost = isCurrentUserHost() || currentFlightRoomIsHost || (currentFlightRoom?.hostUid === getPersistentPlayerUid());
+  if (!isHost) {
+    if (typeof showToast === 'function') showToast('⚠️ Only the flight Captain can terminate the room.');
+    return;
+  }
+  if (typeof confirm === 'function' && !confirm('Are you sure you want to terminate and disband this flight room for all passengers?')) {
+    return;
+  }
+  const uid = getPersistentPlayerUid();
+  if (typeof sendSignaling === 'function') {
+    sendSignaling({
+      type: 'room_terminate',
+      roomId,
+      uid
+    });
+  }
+}
+
 function minimizeFlightRoom() {
   if (!currentFlightRoom) return;
   const modal = $m('departureBoardModal');
@@ -4778,8 +4827,28 @@ function startPartyGame(config = {}) {
   if (!Array.isArray(slotsSource) || slotsSource.length !== 4) {
     lobbyState.slots = getDefaultLobbySlots(lobbyState.mode);
   }
-  const sourceToUse = (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) ? currentFlightRoom.slots : lobbyState.slots;
-  const activeSlots = (Array.isArray(sourceToUse) ? sourceToUse : []).filter(
+  const rawSlots = (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) ? currentFlightRoom.slots : lobbyState.slots;
+  const normalizedSlots = (Array.isArray(rawSlots) ? rawSlots : []).map((s, idx) => {
+    if (s.type === 'human' && !s.occupiedBy) {
+      const isSeat2 = (s.id === 2 || idx === 1);
+      const isSeat3 = (s.id === 3 || idx === 2);
+      return {
+        ...s,
+        type: 'bot',
+        controller: 'BOT_PERMANENT',
+        difficulty: s.difficulty || 'easy',
+        ready: true,
+        connected: true,
+        name: (s.name && s.name !== 'Open Slot') ? s.name : (isSeat2 ? 'Cadet Mochi 🐣' : (isSeat3 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾')),
+        avatar: s.avatar || 'assets/bot_mochi.jpg'
+      };
+    }
+    return s;
+  });
+  if (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) {
+    currentFlightRoom.slots = normalizedSlots;
+  }
+  const activeSlots = normalizedSlots.filter(
     (s) => s.type === 'bot' || (s.type === 'human' && s.occupiedBy)
   );
   if (activeSlots.length < 2) {
@@ -4816,21 +4885,21 @@ function startPartyGame(config = {}) {
   const partnerSprite = partnerAvatarData?.sprite || partnerVaultSprite() || 'assets/got_queen_idle.png';
 
   activeSlots.forEach((slot, idx) => {
-    const role = slot.role || (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2');
+    const role = slot.role || (slot.id === 1 ? 'bkk' : slot.id === 2 ? 'dxb' : slot.id === 3 ? 'bot1' : slot.id === 4 ? 'bot2' : (idx === 0 ? 'bkk' : idx === 1 ? 'dxb' : idx === 2 ? 'bot1' : 'bot2'));
     turnOrder.push(role);
     const p = makePlayer(role);
 
-    p.isBot = slot.type === 'bot';
+    p.isBot = slot.type === 'bot' || slot.controller === 'BOT_PERMANENT' || slot.controller === 'BOT_TEMPORARY';
     if (p.isBot) {
       p.botLevel = slot.difficulty || 'easy';
       const isEasy = p.botLevel === 'easy';
       const isInsane = p.botLevel === 'insane';
-      let defaultBotName = isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼';
-      if (idx === 2) defaultBotName = isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯';
-      if (idx === 3) defaultBotName = isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁';
+      let defaultBotName = (slot.id === 2 || idx === 1) ? (isEasy ? 'Cadet Mochi 🐣' : isInsane ? 'Astral Sovereign 🌌' : 'Major Whiskers 🐯')
+        : (slot.id === 3 || idx === 2) ? (isEasy ? 'Pilot Pip 🐱' : isInsane ? 'Chrono Sovereign ⏳' : 'Admiral Claw 🦁')
+        : (isEasy ? 'Trainee Mochi 🐾' : isInsane ? 'Apex Sovereign ⚡' : 'Capt. Whiskers 😼');
       p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : defaultBotName;
       p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isEasy ? 'assets/bot_mochi.jpg' : 'assets/bot_captain.jpg');
-      p.badge = isInsane ? 'SOV' : `BOT${idx > 1 ? idx - 1 : ''}`;
+      p.badge = isInsane ? 'SOV' : `BOT${slot.id > 1 ? slot.id - 1 : (idx > 0 ? idx : '')}`;
       p.color = isInsane ? '#a855f7' : (slot.id === 3 ? '#10b981' : (slot.id === 4 ? '#f59e0b' : '#06b6d4'));
 
       if (isInsane) {
@@ -4854,7 +4923,7 @@ function startPartyGame(config = {}) {
       p.name = (slot.name && slot.name !== 'Open Slot') ? slot.name : (isMe ? myName : (slot.id === 2 ? partnerName : `Guest ${slot.id} ✈️`));
       p.sprite = (slot.avatar && slot.avatar !== '') ? slot.avatar : (isMe ? mySprite : (slot.id === 2 ? partnerSprite : 'assets/bkk_warrior_idle.png'));
       p.color = slot.id === 1 ? '#ef4444' : (slot.id === 2 ? '#06b6d4' : (slot.id === 3 ? '#10b981' : '#f59e0b'));
-      p.badge = `P${idx + 1}`;
+      p.badge = `P${slot.id || (idx + 1)}`;
     }
     fresh.players[role] = p;
   });
@@ -5317,6 +5386,18 @@ function updateMonopolyHUD() {
     }
     card.classList.remove('hidden');
     card.classList.remove('is-empty-seat');
+
+    const seatTag = card.querySelector('.player-seat-tag');
+    if (seatTag) {
+      if (p.isBot) {
+        seatTag.textContent = p.badge || 'BOT';
+        seatTag.className = 'player-seat-tag bot-tag';
+      } else {
+        const defaultTag = r === 'bkk' ? 'P1' : r === 'dxb' ? 'P2' : r === 'bot1' ? 'P3' : 'P4';
+        seatTag.textContent = p.badge || defaultTag;
+        seatTag.className = `player-seat-tag p${r === 'bkk' ? '1' : r === 'dxb' ? '2' : r === 'bot1' ? '3' : '4'}-tag`;
+      }
+    }
 
     const set = (id, html) => { const el = $m(id); if (el) el.innerHTML = html; };
     const pinfo = perkInfo(r);
@@ -11430,6 +11511,33 @@ function handleMonopolyMessage(message) {
     switchNeoraView('browser');
     if (message.type === 'room_kicked' && typeof showToast === 'function') {
       showToast(message.reason || '👢 You were removed from the flight room by the captain.');
+    }
+    return;
+  }
+
+  if (message.type === 'room_terminated') {
+    hideFloatingRoomWidget();
+    currentFlightRoom = null;
+    currentFlightRoomIsHost = false;
+    currentFlightRoomSlot = null;
+    manualRoleOverride = null;
+    pendingActiveSession = null;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('sky_active_room_id');
+    hideNeoraRejoinModal();
+    const modal = $m('monopolyModal');
+    if (modal) {
+      document.body.classList.remove('has-active-modal');
+      modal.classList.remove('active');
+      modal.classList.add('hidden');
+    }
+    if (monopolyState) {
+      monopolyState.active = false;
+      monopolyState.gameOver = null;
+    }
+    saveLocalMonopolyState();
+    switchNeoraView('browser');
+    if (typeof showToast === 'function') {
+      showToast(message.reason || '🛑 Flight was terminated by Captain.');
     }
     return;
   }
