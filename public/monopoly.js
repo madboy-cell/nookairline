@@ -1481,19 +1481,42 @@ function isResolver() {
   const st = monopolyState;
   if (!st || isSpectatorMode) return false;
   if (st.mode === 'bot') return true;
+  const me = getMonopolyMyRole();
   const currentP = st.players && st.players[st.currentTurn];
   const isBotOrTakeover = currentP && (currentP.isBot || currentP.controller === 'BOT_TEMPORARY' || currentP.controller === 'BOT_PERMANENT');
   if (isBotOrTakeover) {
-    if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) return true;
-    const me = getMonopolyMyRole();
-    if (me === 'bkk') return true;
-    const firstHuman = Object.keys(st.players).find(r => !st.players[r].isBot && st.players[r].controller !== 'BOT_TEMPORARY' && st.players[r].controller !== 'BOT_PERMANENT');
-    if (firstHuman && me === firstHuman) return true;
-    if (partnerAway() || window.nookPartnerOnline === false) return true;
-    if (st.turnResolver === me) return true;
-    return false;
+    // 1. If a human turnResolver is already locked in for this bot's turn and still connected, honor it strictly
+    if (
+      st.turnResolver &&
+      st.players[st.turnResolver] &&
+      !st.players[st.turnResolver].isBot &&
+      st.players[st.turnResolver].controller !== 'BOT_TEMPORARY' &&
+      st.players[st.turnResolver].controller !== 'BOT_PERMANENT'
+    ) {
+      return st.turnResolver === me;
+    }
+    // 2. In Flight Room / 4P mode, strictly pick ONE canonical connected human (Host first, then first connected human)
+    if (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) {
+      const connectedHumanSlots = currentFlightRoom.slots.filter(
+        (s) => s.type === 'human' && s.occupiedBy && s.connected !== false && s.controller !== 'BOT_TEMPORARY' && s.controller !== 'BOT_PERMANENT'
+      );
+      if (connectedHumanSlots.length > 0) {
+        const hostSlot = connectedHumanSlots.find((s) => s.id === 1 || s.occupiedBy === currentFlightRoom.hostUid) || connectedHumanSlots[0];
+        if (hostSlot && hostSlot.role) {
+          return me === hostSlot.role;
+        }
+      }
+      if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) return true;
+    }
+    // 3. Fallback: first active non-bot human in st.players (usually 'bkk')
+    const firstHuman = Object.keys(st.players || {}).find(
+      (r) => !st.players[r].isBot && st.players[r].controller !== 'BOT_TEMPORARY' && st.players[r].controller !== 'BOT_PERMANENT'
+    );
+    if (firstHuman) return me === firstHuman;
+    if (!currentFlightRoom && st.mode !== '4p' && st.mode !== 'room' && partnerAway()) return true;
+    return me === 'bkk';
   }
-  return (st.turnResolver || st.currentTurn) === getMonopolyMyRole();
+  return (st.turnResolver || st.currentTurn) === me;
 }
 const isTurnResolver = isResolver;
 function isBlockingState() {
@@ -1612,19 +1635,31 @@ function getTileRent(tileId, levelOverride) {
     rent *= 1.35;
   }
 
-  // ❄️ S8 Glacial Ice Citadel: 2× Double Frostbite Rent on the Citadel Wonder
-  if (prop && (prop.isGlacialCitadel || (monopolyState && monopolyState.glacialCitadelTile === tileId))) {
-    rent *= 2.0;
-  }
-
-  // 🏛️ S9 Great Golden Pyramid: 2× Monumental Rent on Tier 4 Wonder
-  if (prop && (prop.isGoldenPyramid || (monopolyState && monopolyState.goldenPyramidTile === tileId))) {
-    rent *= 2.0;
-  }
-
-  // ⚡ S11 Mount Olympus Temple: +50% Divine Rent multiplier
-  if (prop && (prop.isOlympusTemple || (monopolyState && monopolyState.olympusTempleTile === tileId))) {
+  // 🎰 S4 Monaco Gold Rush: 1.5× VIP High-Roller Rent for 2 rounds after Ultimate
+  if (prop && prop.owner && monopolyState?.players?.[prop.owner]?.monacoGoldRushRounds > 0) {
     rent *= 1.5;
+  }
+
+  const isMonumentSuppressed = !!(prop && prop.monumentSuppressedRounds && prop.monumentSuppressedRounds > 0);
+
+  // ❄️ S8 Glacial Ice Citadel: 2× Double Frostbite Rent on the Citadel Wonder (unless Arcane Eclipsed)
+  if (!isMonumentSuppressed && prop && (prop.isGlacialCitadel || (monopolyState && monopolyState.glacialCitadelTile === tileId))) {
+    rent *= 2.0;
+  }
+
+  // 🏛️ S9 Great Golden Pyramid: 2× Monumental Rent on Tier 4 Wonder (unless Arcane Eclipsed)
+  if (!isMonumentSuppressed && prop && (prop.isGoldenPyramid || (monopolyState && monopolyState.goldenPyramidTile === tileId))) {
+    rent *= 2.0;
+  }
+
+  // ⚡ S11 Mount Olympus Temple: +50% Divine Rent multiplier (unless Arcane Eclipsed)
+  if (!isMonumentSuppressed && prop && (prop.isOlympusTemple || (monopolyState && monopolyState.olympusTempleTile === tileId))) {
+    rent *= 1.5;
+  }
+
+  // ☀️ S9 Solar Deity Obelisk (Ra & Sekhmet): +25% Heliopolis Sun Rent on Solar Obelisk / Level 3 Hotel
+  if (!isMonumentSuppressed && prop && (prop.isSolarObelisk || (monopolyState && monopolyState.solarObeliskTile === tileId) || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && (prop.level || 1) >= 3))) {
+    rent *= 1.25;
   }
 
   // ❄️ S8 Frosted Landmark: -30% rent debuff on rival property
@@ -2060,10 +2095,110 @@ function mergeIncomingState(incoming) {
   return true;
 }
 
+/** Converts 1024px sprite/prop paths to 300px Retina thumbnails for board/HUD elements (~90% GPU texture savings). */
+function toThumbSprite(url) {
+  if (!url) return '';
+  return String(url)
+    .replace(/^assets\/(s\d+\/[^?#]+\.png)$/, 'assets/thumbs/$1')
+    .replace(/^assets\/props\/(midas_gold_hotel|somnambulism_trance)\.png$/, 'assets/thumbs/props/$1.png')
+    .replace(/^assets\/(bkk_warrior_idle\.png)$/, 'assets/thumbs/$1');
+}
+
 /** When true, the next HUD update skips number tweens (used after sync/reset). */
 let hudInstantOnce = false;
+let lastRenderedGameId = null;
+
+/**
+ * Scrubs all leftover DOM/WebGL/CSS visual effects from a previous match
+ * so a new or restarted game starts on a 100% pristine board.
+ */
+function cleanBoardVisualsForNewGame() {
+  if (typeof clearBotTimer === 'function') clearBotTimer();
+  isAnimating = false;
+  releaseRoleLocks();
+  queuedMessages.length = 0;
+  outboundFx.length = 0;
+  outboundTicker = null;
+
+  if (window.SkyPixi && typeof window.SkyPixi.clearAll === 'function') {
+    window.SkyPixi.clearAll();
+  }
+  if (window.MonoFX) {
+    if (typeof MonoFX.clearDesat === 'function') MonoFX.clearDesat();
+    if (MonoFX.tokens && typeof MonoFX.tokens.reset === 'function') MonoFX.tokens.reset();
+  }
+
+  const momentLayer = $m('monopolyMomentLayer');
+  if (momentLayer) momentLayer.innerHTML = '';
+  const fxLayer = $m('monopolyFxLayer');
+  if (fxLayer) fxLayer.innerHTML = '';
+  const driftOv = $m('abyssDriftOverlay');
+  if (driftOv) {
+    driftOv.classList.add('hidden');
+    driftOv.innerHTML = '';
+  }
+  const tileInsp = $m('monopolyTileInspector');
+  if (tileInsp) {
+    tileInsp.classList.add('hidden');
+    tileInsp.innerHTML = '';
+  }
+
+  const centerHub = $m('monopolyCenterHub');
+  if (centerHub) {
+    centerHub.className = 'monopoly-center-hub';
+  }
+  const diceBox = $m('monopolyDiceBox');
+  if (diceBox) {
+    diceBox.className = 'monopoly-dice-box';
+  }
+  const shockwave = $m('diceShockwave');
+  if (shockwave) {
+    shockwave.className = 'dice-shockwave';
+  }
+  [
+    'monacoDiceOrbit', 'astralDiceOrbit', 'nagaDiceOrbit', 'inariDiceOrbit',
+    'eclipseDiceOrbit', 'djinnDiceOrbit', 'phoenixDiceOrbit', 'abyssDiceOrbit',
+    'fairytaleDiceOrbit', 'beastDiceOrbit', 'frostDiceOrbit', 'phantomDiceOrbit',
+    'olympusDiceOrbit'
+  ].forEach((id) => {
+    const orb = $m(id);
+    if (orb) {
+      orb.classList.remove('active');
+      orb.classList.add('hidden');
+    }
+  });
+
+  boardHydrated = false;
+  MONOPOLY_TILES.forEach((tile) => {
+    const el = $m(`boardTile_${tile.id}`);
+    if (!el) return;
+    el.className = `board-tile tile-type-${tile.type} tile-zone-${tile.zone}${tile.zone === 'corner' ? ' corner-tile' : ''}`;
+    delete el.dataset.sig;
+    const bld = el.querySelector('.tile-monopoly-buildings');
+    if (bld) bld.innerHTML = '';
+    const ribbon = el.querySelector('.tile-owner-ribbon');
+    if (ribbon && tile.type === 'property') {
+      ribbon.className = 'tile-owner-ribbon unowned';
+      ribbon.textContent = ZONES[tile.zone] ? ZONES[tile.zone].label : '';
+    }
+    const pill = el.querySelector('.tile-pill');
+    if (pill) {
+      if (tile.type === 'property') {
+        pill.className = 'tile-pill tile-price-pill';
+        pill.textContent = `${tile.price}🪙`;
+      } else {
+        pill.className = 'tile-pill tile-special-pill';
+        pill.textContent = tile.shortName;
+      }
+    }
+  });
+}
 
 function renderAll(opts = {}) {
+  if (monopolyState && monopolyState.gameId && monopolyState.gameId !== lastRenderedGameId) {
+    lastRenderedGameId = monopolyState.gameId;
+    cleanBoardVisualsForNewGame();
+  }
   if (opts.instant) hudInstantOnce = true;
   renderMonopolyBoard(opts);
   updateMonopolyHUD();
@@ -3099,7 +3234,7 @@ function startBotGame(level = 'hard') {
   hideModal();
   hideCardOverlay();
   hideVictory();
-  if (window.MonoFX) { MonoFX.clearDesat(); MonoFX.tokens.reset(); }
+  cleanBoardVisualsForNewGame();
   renderAll({ instant: true });
 
   const greeting = isEasy ? 'Purrrr! Ready for flight training!' : (window.NookMonoBot ? window.NookMonoBot.randomQuote(level, 'buy') : 'Ready for take-off!');
@@ -5014,10 +5149,7 @@ function startPartyGame(config = {}) {
     modal.classList.add('active');
   }
 
-  if (window.MonoFX) {
-    MonoFX.clearDesat();
-    MonoFX.tokens.reset();
-  }
+  cleanBoardVisualsForNewGame();
 
   renderAll({ instant: true });
   setMonopolyTicker(`🛫 <strong>All passengers boarded!</strong> Flight SKY-777 underway with ${turnOrder.length} players. First to <strong>${fmt(MONO_CFG.WIN_NET_WORTH)} net worth</strong> wins! Tap <strong>ROLL</strong>.`);
@@ -5109,7 +5241,7 @@ function resetMonopolyGame() {
   hideModal();
   hideCardOverlay();
   hideVictory();
-  if (window.MonoFX) { MonoFX.clearDesat(); MonoFX.tokens.reset(); }
+  cleanBoardVisualsForNewGame();
   renderAll({ instant: true });
   setMonopolyTicker(`🔄 New game! First to <strong>${fmt(MONO_CFG.WIN_NET_WORTH)} net worth</strong> wins.${perkNotes.length ? ` Perks: <strong>${perkNotes.join(' · ')}</strong>.` : ''} Tap <strong>ROLL</strong>!`);
   if (typeof sendSignaling === 'function') {
@@ -5162,10 +5294,34 @@ function updateBoardTiles({ animate = true } = {}) {
   MONOPOLY_TILES.forEach((tile) => {
     const el = $m(`boardTile_${tile.id}`);
     if (!el) return;
-    el.classList.toggle('tile-banana-trap', !!(st.bananaTraps && st.bananaTraps[tile.id] > 0));
-    el.classList.toggle('tile-wish-sanctuary', !!(st.wishSanctuaries && st.wishSanctuaries[tile.id]));
+    const hasBanana = !!(st.bananaTraps && st.bananaTraps[tile.id] > 0);
+    const hasWish = !!(st.wishSanctuaries && st.wishSanctuaries[tile.id]);
+    const hasSnowdrift = !!(st.snowdriftTraps && st.snowdriftTraps[tile.id] > 0);
+    const hasWaterway = !!(st.sacredWaterways && st.sacredWaterways[tile.id]);
+    const hasTorii = !!(st.inariToriiGates && st.inariToriiGates[tile.id]);
+    const hasEclipseShadow = !!(st.eclipseShadowTiles && st.eclipseShadowTiles[tile.id]);
+    const hasDjinnOasis = !!(st.djinnOasisTiles && st.djinnOasisTiles[tile.id]);
+    const hasPhoenixEmbers = !!(st.phoenixEmbers && st.phoenixEmbers[tile.id]);
+    const hasFlooded = !!(st.floodedTiles && st.floodedTiles[tile.id]);
+    const hasRevHex = !!(st.reverseRentHexTile === tile.id);
+    const isCitadelAuraNonProp = (st && st.glacialCitadelTile != null) && (tile.id === (st.glacialCitadelTile - 1 + 20) % 20 || tile.id === (st.glacialCitadelTile + 1) % 20);
+
+    el.classList.toggle('tile-banana-trap', hasBanana);
+    el.classList.toggle('tile-wish-sanctuary', hasWish);
+    el.classList.toggle('tile-snowdrift-trap', hasSnowdrift);
+    el.classList.toggle('tile-naga-waterway', hasWaterway);
+    el.classList.toggle('tile-inari-torii', hasTorii);
+    el.classList.toggle('tile-eclipse-shadow', hasEclipseShadow);
+    el.classList.toggle('tile-djinn-oasis', hasDjinnOasis);
+    el.classList.toggle('tile-phoenix-embers', hasPhoenixEmbers);
+    el.classList.toggle('tile-flooded', hasFlooded);
+    el.classList.toggle('tile-atlantis-flooded', hasFlooded);
+    el.classList.toggle('tile-reverse-hex', hasRevHex);
+
     const pill = el.querySelector('.tile-pill');
     if (tile.type !== 'property') {
+      el.classList.toggle('tile-citadel-aura', isCitadelAuraNonProp);
+      el.classList.remove('is-coral-palace', 'is-sunken-ruin', 'fx-midas-glow');
       const bld = el.querySelector('.tile-monopoly-buildings');
       if (bld && typeof getTile25dLandmarkHtml === 'function') {
         const landmarkHtml = getTile25dLandmarkHtml(tile.id, null, st);
@@ -5178,7 +5334,14 @@ function updateBoardTiles({ animate = true } = {}) {
     }
     const prop = st.properties[tile.id];
     const zoneMono = !!(prop && ownsZone(prop.owner, tile.zone));
-    const sig = prop ? `${prop.owner}|${prop.level}|${zoneMono ? 1 : 0}|${getTileRent(tile.id)}|${prop.shield || 0}|${prop.waterShield ? 1 : 0}|${prop.enchantedTurret ? 1 : 0}|${(st.wishSanctuaries && st.wishSanctuaries[tile.id]) ? 1 : 0}` : `-|0|0|${tile.price}|0|0|0|${(st.wishSanctuaries && st.wishSanctuaries[tile.id]) ? 1 : 0}`;
+    const trapFlags = `${hasWish ? 1 : 0}${hasSnowdrift ? 1 : 0}${hasWaterway ? 1 : 0}${hasTorii ? 1 : 0}${hasEclipseShadow ? 1 : 0}${hasDjinnOasis ? 1 : 0}${hasPhoenixEmbers ? 1 : 0}${hasFlooded ? 1 : 0}${hasRevHex ? 1 : 0}${hasBanana ? 1 : 0}`;
+    const ownerGoldRush = prop && prop.owner && st.players?.[prop.owner]?.monacoGoldRushRounds > 0 ? 1 : 0;
+    const propFlags = prop
+      ? `${prop.frosted || 0}:${prop.isTransmutedGold ? 1 : 0}:${prop.isGoldenPyramid || st.goldenPyramidTile === tile.id ? 1 : 0}:${prop.isGlacialCitadel || st.glacialCitadelTile === tile.id ? 1 : 0}:${prop.isOlympusTemple || st.olympusTempleTile === tile.id ? 1 : 0}:${prop.isSolarObelisk || st.solarObeliskTile === tile.id ? 1 : 0}:${prop.monumentSuppressedRounds || 0}:${ownerGoldRush}:${prop.frostShield ? 1 : 0}:${prop.torchShield ? 1 : 0}`
+      : '0:0:0:0:0:0:0:0:0:0';
+    const sig = prop
+      ? `${prop.owner}|${prop.level}|${zoneMono ? 1 : 0}|${getTileRent(tile.id)}|${prop.shield || 0}|${prop.waterShield ? 1 : 0}|${prop.enchantedTurret ? 1 : 0}|${trapFlags}|${propFlags}`
+      : `-|0|0|${tile.price}|0|0|0|${trapFlags}|${propFlags}`;
     if (el.dataset.sig === sig) return;
     const prev = el.dataset.sig ? el.dataset.sig.split('|') : null;
     el.dataset.sig = sig;
@@ -5192,54 +5355,97 @@ function updateBoardTiles({ animate = true } = {}) {
 
 function getTile25dLandmarkHtml(tileId, prop, st) {
   if (!st) return '';
+  const isSuppressed = !!(prop && prop.monumentSuppressedRounds && prop.monumentSuppressedRounds > 0);
   const isPyramid = !!(prop && (prop.isGoldenPyramid || st.goldenPyramidTile === tileId));
   const isCitadel = !!(prop && (prop.isGlacialCitadel || st.glacialCitadelTile === tileId));
   const isOlympus = !!(prop && (prop.isOlympusTemple || st.olympusTempleTile === tileId));
+  const isSolarObelisk = !!(prop && (prop.isSolarObelisk || st.solarObeliskTile === tileId || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && (prop.level || 1) >= 3)));
+  const isWonder = isPyramid || isCitadel || isOlympus || isSolarObelisk;
   const isTransmuted = !!(prop && prop.isTransmutedGold);
   const isTorii = !!(st.inariToriiGates && st.inariToriiGates[tileId]);
   const isHexMirror = !!(st.reverseRentHexTile === tileId);
   const isCoralPalace = !!(st.floodedTiles && st.floodedTiles[tileId] && prop && prop.owner && typeof isAbyssalDrifter === 'function' && isAbyssalDrifter(prop.owner));
   const isSunkenRuins = !!(st.floodedTiles && st.floodedTiles[tileId] && prop && prop.owner && typeof isAbyssalDrifter === 'function' && !isAbyssalDrifter(prop.owner));
-  const isRoseTurret = !!(prop && prop.enchantedTurret && !isPyramid && !isCitadel && !isOlympus);
-  const isDjinnOasis = !!(st.djinnOasisTiles && st.djinnOasisTiles[tileId] && !isPyramid && !isCitadel && !isOlympus);
-  const isPhoenixCrater = !!(st.phoenixEmbers && st.phoenixEmbers[tileId] && !isPyramid && !isCitadel && !isOlympus);
-  const isWishSanctuary = !!(st.wishSanctuaries && st.wishSanctuaries[tileId] && !isPyramid && !isCitadel && !isOlympus);
+  const isNagaShrine = !!(!isWonder && ((st.sacredWaterways && st.sacredWaterways[tileId]) || (prop && prop.waterShield)));
+  const isEclipseDisk = !!(!isWonder && ((st.eclipseShadowTiles && st.eclipseShadowTiles[tileId]) || (prop && prop.owner && typeof isCelestialEclipse === 'function' && isCelestialEclipse(prop.owner) && (prop.level || 1) >= 3)));
+  const isRoseTurret = !!(prop && prop.enchantedTurret && !isWonder);
+  const isDjinnOasis = !!(st.djinnOasisTiles && st.djinnOasisTiles[tileId] && !isWonder);
+  const isPhoenixCrater = !!(st.phoenixEmbers && st.phoenixEmbers[tileId] && !isWonder);
+  const isWishSanctuary = !!(st.wishSanctuaries && st.wishSanctuaries[tileId] && !isWonder);
+  const isMonacoPenthouse = !!(!isWonder && prop && prop.owner && typeof isMonacoHighRoller === 'function' && isMonacoHighRoller(prop.owner) && ((prop.level || 1) >= 3 || st.players?.[prop.owner]?.monacoGoldRushRounds > 0));
+  const isAstralCore = !!(!isWonder && prop && prop.owner && typeof isAstralSovereign === 'function' && isAstralSovereign(prop.owner) && ((prop.shield || 0) > 0 || (prop.level || 1) >= 3));
+  const isClockworkPalace = !!(!isWonder && prop && prop.owner && typeof isClockworkSovereign === 'function' && isClockworkSovereign(prop.owner) && (prop.level || 1) >= 3);
+  const isPhantomOpera = !!(!isWonder && !isHexMirror && prop && prop.owner && typeof isPhantomRoyalty === 'function' && isPhantomRoyalty(prop.owner) && (prop.level || 1) >= 3);
+  const isPhoenixPyre = !!(!isWonder && !isPhoenixCrater && prop && prop.owner && typeof isPhoenixAscendant === 'function' && isPhoenixAscendant(prop.owner) && (prop.level || 1) >= 3);
+  const isRapunzelTower = !!(!isWonder && !isWishSanctuary && prop && prop.owner && typeof isSundropTower === 'function' && isSundropTower(prop.owner) && (prop.level || 1) >= 3);
 
   if (isPyramid) {
-    return '<div class="monument-25d-wrap landmark-pyramid" title="The Great Golden Pyramid"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><img src="assets/s9/golden_pyramid.png" class="monument-25d-img pyramid-img" alt="The Great Golden Pyramid" /><span class="monument-badge-gold">👑 2× RENT</span></div>';
+    const badge = isSuppressed ? '<span class="monument-badge-mirror">🎭 ECLIPSED</span>' : '<span class="monument-badge-gold">👑 2× RENT</span>';
+    return `<div class="monument-25d-wrap landmark-pyramid ${isSuppressed ? 'monument-suppressed' : ''}" title="The Great Golden Pyramid"><div class="monument-25d-shadow"></div><div class="monument-25d-aura ${isSuppressed ? 'aura-mirror' : 'aura-gold'}"></div><img src="assets/thumbs/s9/golden_pyramid.png" decoding="async" class="monument-25d-img pyramid-img" alt="The Great Golden Pyramid" />${badge}</div>`;
   }
   if (isCitadel) {
-    return '<div class="monument-25d-wrap landmark-citadel" title="Glacial Ice Citadel"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-cyan"></div><img src="assets/s8/glacial_citadel.png" class="monument-25d-img citadel-img" alt="Glacial Ice Citadel" /><span class="monument-badge-ice">❄️ CITADEL</span></div>';
+    const badge = isSuppressed ? '<span class="monument-badge-mirror">🎭 ECLIPSED</span>' : '<span class="monument-badge-ice">❄️ CITADEL</span>';
+    return `<div class="monument-25d-wrap landmark-citadel ${isSuppressed ? 'monument-suppressed' : ''}" title="Glacial Ice Citadel"><div class="monument-25d-shadow"></div><div class="monument-25d-aura ${isSuppressed ? 'aura-mirror' : 'aura-cyan'}"></div><img src="assets/thumbs/s8/glacial_citadel.png" decoding="async" class="monument-25d-img citadel-img" alt="Glacial Ice Citadel" />${badge}</div>`;
   }
   if (isOlympus) {
-    return '<div class="monument-25d-wrap landmark-olympus" title="Mount Olympus Temple"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-thunder"></div><img src="assets/s11/olympus_temple.png" class="monument-25d-img olympus-img" alt="Mount Olympus Temple" /><span class="olympus-lightning-rod">⚡</span><span class="monument-badge-thunder">⚡ TEMPLE</span></div>';
+    const badge = isSuppressed ? '<span class="monument-badge-mirror">🎭 ECLIPSED</span>' : '<span class="monument-badge-thunder">⚡ TEMPLE</span>';
+    return `<div class="monument-25d-wrap landmark-olympus ${isSuppressed ? 'monument-suppressed' : ''}" title="Mount Olympus Temple"><div class="monument-25d-shadow"></div><div class="monument-25d-aura ${isSuppressed ? 'aura-mirror' : 'aura-thunder'}"></div><img src="assets/thumbs/s11/olympus_temple.png" decoding="async" class="monument-25d-img olympus-img" alt="Mount Olympus Temple" /><span class="olympus-lightning-rod">⚡</span>${badge}</div>`;
+  }
+  if (isSolarObelisk) {
+    const badge = isSuppressed ? '<span class="monument-badge-mirror">🎭 ECLIPSED</span>' : '<span class="monument-badge-gold">☀️ +25% RA</span>';
+    return `<div class="monument-25d-wrap landmark-solar-obelisk ${isSuppressed ? 'monument-suppressed' : ''}" title="Heliopolis Sun Disk Obelisk (+25% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura ${isSuppressed ? 'aura-mirror' : 'aura-fire'}"></div><img src="assets/thumbs/s3/phoenix_sunfire_crest.png" decoding="async" class="monument-25d-img pyramid-img" alt="Sun Disk Obelisk" />${badge}</div>`;
   }
   if (isTransmuted) {
-    return '<div class="monument-25d-wrap landmark-midas-gold" title="Midas Solid Gold Hotel (0 Rent · +80🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-midas"></div><img src="assets/props/midas_gold_hotel.png" class="monument-25d-img midas-img" alt="Solid Gold Hotel" /><span class="monument-badge-gold">⚱️ SOLID GOLD</span></div>';
+    return '<div class="monument-25d-wrap landmark-midas-gold" title="Midas Solid Gold Hotel (0 Rent · +80🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-midas"></div><img src="assets/thumbs/props/midas_gold_hotel.png" decoding="async" class="monument-25d-img midas-img" alt="Solid Gold Hotel" /><span class="monument-badge-gold">⚱️ SOLID GOLD</span></div>';
   }
   if (isHexMirror) {
-    return '<div class="monument-25d-wrap landmark-hex-mirror" title="Venetian Reverse Rent Hex Mirror"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-mirror"></div><img src="assets/s10/venetian_mirror.png" class="monument-25d-img mirror-img" alt="Reverse Hex Mirror" /><span class="monument-badge-mirror">🪞 REVERSE HEX</span></div>';
+    return '<div class="monument-25d-wrap landmark-hex-mirror" title="Venetian Reverse Rent Hex Mirror"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-mirror"></div><img src="assets/thumbs/s10/venetian_mirror.png" decoding="async" class="monument-25d-img mirror-img" alt="Reverse Hex Mirror" /><span class="monument-badge-mirror">🪞 REVERSE HEX</span></div>';
   }
   if (isTorii) {
-    return '<div class="monument-25d-wrap landmark-inari-torii" title="Inari Sacred Torii Gate"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-torii"></div><img src="assets/s2/inari_torii_gate.png" class="monument-25d-img torii-img" alt="Inari Torii Gate" /><span class="monument-badge-torii">⛩️ TORII</span></div>';
+    return '<div class="monument-25d-wrap landmark-inari-torii" title="Inari Sacred Torii Gate"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-torii"></div><img src="assets/thumbs/s2/inari_torii_gate.png" decoding="async" class="monument-25d-img torii-img" alt="Inari Torii Gate" /><span class="monument-badge-torii">⛩️ TORII</span></div>';
   }
   if (isCoralPalace) {
-    return '<div class="monument-25d-wrap landmark-coral-palace" title="Abyssal Coral Palace (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-coral"></div><img src="assets/s5/abyssal_coral_reef.png" class="monument-25d-img coral-img" alt="Coral Palace" /><span class="monument-badge-coral">🪸 +30% RENT</span></div>';
+    return '<div class="monument-25d-wrap landmark-coral-palace" title="Abyssal Coral Palace (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-coral"></div><img src="assets/thumbs/s5/abyssal_coral_reef.png" decoding="async" class="monument-25d-img coral-img" alt="Coral Palace" /><span class="monument-badge-coral">🪸 +30% RENT</span></div>';
   }
   if (isSunkenRuins) {
-    return '<div class="monument-25d-wrap landmark-sunken-ruin" title="Sunken Atlantis Ruins (0 Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-sunken"></div><img src="assets/s5/abyssal_coral_reef.png" class="monument-25d-img sunken-img" alt="Sunken Ruins" /><span class="monument-badge-sunken">🔱 0 RENT</span></div>';
+    return '<div class="monument-25d-wrap landmark-sunken-ruin" title="Sunken Atlantis Ruins (0 Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-sunken"></div><img src="assets/thumbs/s5/abyssal_coral_reef.png" decoding="async" class="monument-25d-img sunken-img" alt="Sunken Ruins" /><span class="monument-badge-sunken">🔱 0 RENT</span></div>';
+  }
+  if (isNagaShrine) {
+    return '<div class="monument-25d-wrap landmark-naga-shrine" title="Sacred Mekong Naga Shrine (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-coral"></div><img src="assets/thumbs/s1/naga_emerald_crest.png" decoding="async" class="monument-25d-img coral-img" alt="Sacred Naga Shrine" /><span class="monument-badge-coral">🐉 NAGA</span></div>';
+  }
+  if (isEclipseDisk) {
+    return '<div class="monument-25d-wrap landmark-eclipse-disk" title="Celestial Eclipse Astrolabe (1.5× Nightmare Toll)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-oasis"></div><img src="assets/thumbs/s2/eclipse_moon_disk.png" decoding="async" class="monument-25d-img oasis-img" alt="Eclipse Astrolabe" /><span class="monument-badge-oasis">🌓 ECLIPSE</span></div>';
   }
   if (isRoseTurret) {
-    return '<div class="monument-25d-wrap landmark-rose-turret" title="Enchanted Rose Cloche Turret (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-rose"></div><img src="assets/s7/enchanted_rose_cloche.png" class="monument-25d-img rose-img" alt="Enchanted Rose" /><span class="monument-badge-rose">🌹 TURRET</span></div>';
+    return '<div class="monument-25d-wrap landmark-rose-turret" title="Enchanted Rose Cloche Turret (+30% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-rose"></div><img src="assets/thumbs/s7/enchanted_rose_cloche.png" decoding="async" class="monument-25d-img rose-img" alt="Enchanted Rose" /><span class="monument-badge-rose">🌹 TURRET</span></div>';
   }
   if (isDjinnOasis) {
-    return '<div class="monument-25d-wrap landmark-djinn-oasis" title="Mirage Oasis Portal"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-oasis"></div><img src="assets/s3/mirage_oasis_portal.png" class="monument-25d-img oasis-img" alt="Oasis Portal" /><span class="monument-badge-oasis">🪔 OASIS</span></div>';
+    return '<div class="monument-25d-wrap landmark-djinn-oasis" title="Mirage Oasis Portal"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-oasis"></div><img src="assets/thumbs/s3/mirage_oasis_portal.png" decoding="async" class="monument-25d-img oasis-img" alt="Oasis Portal" /><span class="monument-badge-oasis">🪔 OASIS</span></div>';
   }
   if (isPhoenixCrater) {
-    return '<div class="monument-25d-wrap landmark-phoenix-crater" title="Phoenix Molten Crater (-40🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-fire"></div><img src="assets/s3/phoenix_molten_crater.png" class="monument-25d-img crater-img" alt="Molten Crater" /><span class="monument-badge-fire">🔥 -40🪙</span></div>';
+    return '<div class="monument-25d-wrap landmark-phoenix-crater" title="Phoenix Molten Crater (-40🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-fire"></div><img src="assets/thumbs/s3/phoenix_molten_crater.png" decoding="async" class="monument-25d-img crater-img" alt="Molten Crater" /><span class="monument-badge-fire">🔥 -40🪙</span></div>';
   }
   if (isWishSanctuary) {
-    return '<div class="monument-25d-wrap landmark-wish-sanctuary" title="Lantern Wish Sanctuary (+150🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><span class="sanctuary-lantern-icon">🏮</span><span class="monument-badge-gold">🏮 WISH</span></div>';
+    return '<div class="monument-25d-wrap landmark-wish-sanctuary" title="Lantern Wish Sanctuary (+150🪙)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><img src="assets/ui/lantern_mythic.png" decoding="async" class="monument-25d-img pyramid-img" alt="Wish Lantern" /><span class="monument-badge-gold">🏮 WISH</span></div>';
+  }
+  if (isMonacoPenthouse) {
+    const isRush = !!(st.players?.[prop.owner]?.monacoGoldRushRounds > 0);
+    return `<div class="monument-25d-wrap landmark-monaco-royale" title="Casino Royale Roulette Penthouse"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><svg viewBox="0 0 100 100" class="monument-25d-img pyramid-img"><circle cx="50" cy="50" r="46" fill="#b45309" stroke="#fde047" stroke-width="4"/><circle cx="50" cy="50" r="36" fill="#0f172a" stroke="#ffd700" stroke-width="2"/><circle cx="50" cy="50" r="32" fill="none" stroke="#dc2626" stroke-width="6" stroke-dasharray="6.28 6.28"/><polygon points="50,24 54,46 50,50 46,46" fill="#ffd700"/><polygon points="50,76 54,54 50,50 46,54" fill="#ffd700"/><polygon points="24,50 46,46 50,50 46,54" fill="#ffd700"/><polygon points="76,50 54,46 50,50 54,54" fill="#ffd700"/><circle cx="50" cy="50" r="8" fill="#ffffff"/></svg><span class="monument-badge-gold">${isRush ? '🎰 1.5× RUSH' : '🎰 VIP +15%'}</span></div>`;
+  }
+  if (isAstralCore) {
+    return '<div class="monument-25d-wrap landmark-astral-core" title="Supernova Celestial Core (+25% Rent)"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-oasis"></div><svg viewBox="0 0 100 100" class="monument-25d-img oasis-img"><circle cx="50" cy="50" r="42" fill="rgba(168,85,247,0.45)" stroke="#e879f9" stroke-width="3" stroke-dasharray="8 4"/><path d="M50 4 L57 43 L96 50 L57 57 L50 96 L43 57 L4 50 L43 43 Z" fill="#ffffff"/><path d="M50 16 L55 45 L84 50 L55 55 L50 84 L45 55 L16 50 L45 45 Z" fill="#fde047" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="12" fill="#38bdf8"/></svg><span class="monument-badge-oasis">🪐 +25% AEGIS</span></div>';
+  }
+  if (isClockworkPalace) {
+    return '<div class="monument-25d-wrap landmark-clockwork-palace" title="Clockwork Diamond Palace"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-cyan"></div><svg viewBox="0 0 100 100" class="monument-25d-img citadel-img"><circle cx="50" cy="50" r="44" fill="#0f172a" stroke="#7dd3fc" stroke-width="4"/><circle cx="50" cy="50" r="36" fill="none" stroke="#fde047" stroke-width="3" stroke-dasharray="5 5"/><line x1="50" y1="50" x2="50" y2="20" stroke="#fde047" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="72" y2="50" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="50" r="7" fill="#ffffff"/></svg><span class="monument-badge-ice">⏳ PALACE</span></div>';
+  }
+  if (isPhantomOpera) {
+    return '<div class="monument-25d-wrap landmark-phantom-opera" title="Venetian Grand Opera House"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-mirror"></div><img src="assets/thumbs/s10/venetian_mask.png" decoding="async" class="monument-25d-img mirror-img" alt="Venetian Opera Mask" /><span class="monument-badge-mirror">🎭 OPERA</span></div>';
+  }
+  if (isPhoenixPyre) {
+    return '<div class="monument-25d-wrap landmark-phoenix-pyre" title="Sacred Sunfire Pyre"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-fire"></div><img src="assets/thumbs/s3/phoenix_sunfire_crest.png" decoding="async" class="monument-25d-img crater-img" alt="Phoenix Sunfire Crest" /><span class="monument-badge-fire">🔥 PYRE</span></div>';
+  }
+  if (isRapunzelTower) {
+    return '<div class="monument-25d-wrap landmark-rapunzel-tower" title="Sundrop Lantern Spire"><div class="monument-25d-shadow"></div><div class="monument-25d-aura aura-gold"></div><img src="assets/ui/lantern_mythic.png" decoding="async" class="monument-25d-img pyramid-img" alt="Sundrop Lantern" /><span class="monument-badge-gold">🏮 SPIRE</span></div>';
   }
 
   // Standard houses / hotel
@@ -5449,14 +5655,50 @@ function updateMonopolyHUD() {
     const perkChip = pinfo
       ? ` <span class="mono-perk-chip pc-${pinfo.costume.rarity}" title="${pinfo.perk.name}: ${pinfo.perk.desc}">${pinfo.perk.icon}${pinfo.resonance ? '💞' : ''}</span>`
       : '';
-    let specialPill = '';
-    if (isInariFoxfire(r)) {
-      specialPill = ` <span class="mono-hud-status-pill inari" title="Foxfire Spirit Tails">🦊 ${(p.foxfireTails != null ? p.foxfireTails : 3)}/3</span>`;
+    let buffPill = '';
+    if (p.phoenixGraceActive) {
+      buffPill = ` <span class="mono-hud-status-pill phoenix" title="Sunfire Armor: Next Rent is 0">🔥 GRACE</span>`;
+    } else if ((p.bankruptcyImmunity || 0) > 0) {
+      buffPill = ` <span class="mono-hud-status-pill gold" title="Lantern Bankruptcy Immunity">🏮 IMMUNE</span>`;
+    } else if ((p.monacoGoldRushRounds || 0) > 0) {
+      buffPill = ` <span class="mono-hud-status-pill gold" title="Monaco Gold Rush: 1.5× Rent (${p.monacoGoldRushRounds}R)">🎰 1.5×</span>`;
+    } else if ((p.zeroRentIceBridge || 0) > 0) {
+      buffPill = ` <span class="mono-hud-status-pill cyan" title="Empress Ice Bridge: Next Rent is 0">❄️ BRIDGE</span>`;
+    } else if (p.carpetGlideActive) {
+      buffPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet Flight: Next Rent is 0">🪔 GLIDE</span>`;
+    } else if ((p.phantomRentReversals || 0) > 0 && isPhantomRoyalty(r)) {
+      buffPill = ` <span class="mono-hud-status-pill rose" title="Phantom Masquerade: Reverse Rent Charges">🎭 ×${p.phantomRentReversals}</span>`;
+    } else if (p.hasOlympusPegasusWings) {
+      buffPill = ` <span class="mono-hud-status-pill cyan" title="Pegasus Wings: Hazard Immunity">🪽 WINGS</span>`;
+    } else if (isInariFoxfire(r)) {
+      buffPill = ` <span class="mono-hud-status-pill inari" title="Foxfire Spirit Tails">🦊 ${(p.foxfireTails != null ? p.foxfireTails : 3)}/3</span>`;
     } else if (isPhoenixAscendant(r) && (p.ashPot || 0) > 0) {
-      specialPill = ` <span class="mono-hud-status-pill phoenix" title="Ash Pot">🔥 ${fmt(p.ashPot)}🪙</span>`;
+      buffPill = ` <span class="mono-hud-status-pill phoenix" title="Ash Pot (Refunded at START)">🔥 ${fmt(p.ashPot)}🪙</span>`;
     } else if (isDjinnMirage(r) && (p.carpetCharges || 0) > 0) {
-      specialPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet">🪔 ${(p.carpetCharges || 0)}/3</span>`;
+      buffPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet">🪔 ${(p.carpetCharges || 0)}/3</span>`;
+    } else if (isCelestialEclipse(r)) {
+      const isOdd = ((st.roundCount || st.round || 1) % 2 === 1);
+      buffPill = isOdd
+        ? ` <span class="mono-hud-status-pill gold" title="Sun Stance: +20% Rent Collected">☀️ +20%</span>`
+        : ` <span class="mono-hud-status-pill purple" title="Moon Stance: -25% Rent Paid">🌙 -25%</span>`;
+    } else if (isNagaWarden(r) && (st.mekongHoard || 0) > 0) {
+      buffPill = ` <span class="mono-hud-status-pill emerald" title="Mekong River Hoard at START">🐉 ${fmt(st.mekongHoard)}🪙</span>`;
     }
+
+    let debuffPill = '';
+    if ((p.cryoStasis || 0) > 0 || p.frozenTurn) {
+      debuffPill = ` <span class="mono-hud-status-pill debuff-ice" title="Subzero Chill: Crippled Roll / Frozen">🧊 CRYO</span>`;
+    } else if ((p.marionetteStasisRounds || 0) > 0) {
+      debuffPill = ` <span class="mono-hud-status-pill debuff-rose" title="Marionette Stasis: Roll Capped at 1-3">🎭 1-3</span>`;
+    } else if ((p.somnambulismSteps || 0) > 0) {
+      debuffPill = ` <span class="mono-hud-status-pill debuff-purple" title="Somnambulism Trance: Pulled +3 Tiles">🌑 SLEEP</span>`;
+    } else if (p.invertDirectionNext) {
+      debuffPill = ` <span class="mono-hud-status-pill inari" title="Foxfire Confusion: Next Roll Reversed">🦊 REV</span>`;
+    } else if (p.waterlogged) {
+      debuffPill = ` <span class="mono-hud-status-pill debuff-ice" title="Waterlogged: -1 Roll Speed">🌊 SLOW</span>`;
+    }
+
+    const specialPill = `${buffPill}${debuffPill}`;
     set(`monopoly${cap}Name`, `${p.name}${perkChip}${specialPill}${r === me ? ' <span class="you-tag">YOU</span>' : ''}`);
     setTweened($m(`monopoly${cap}Miles`), p.miles, (v) => fmt(v), card);
     set(`monopoly${cap}Props`, `🏰 ${ownedTileIds(r).length}`);
@@ -5482,7 +5724,11 @@ function updateMonopolyHUD() {
     card.classList.toggle('ult-ready', ult >= 100);
 
     const thumb = $m(`monopoly${cap}Thumb`);
-    if (thumb && p.sprite && thumb.getAttribute('src') !== p.sprite) thumb.src = p.sprite;
+    const thumbSrc = toThumbSprite(p.sprite);
+    if (thumb && thumbSrc && thumb.getAttribute('src') !== thumbSrc) {
+      thumb.decoding = 'async';
+      thumb.src = thumbSrc;
+    }
     const isBankrupt = !!p.bankrupt;
     card.classList.toggle('active-turn', turn === r && !st.gameOver && !isBankrupt);
     card.classList.toggle('is-me', r === me);
@@ -5504,7 +5750,17 @@ function updateMonopolyHUD() {
   });
 
   const roundPill = $m('monopolyRoundPill');
-  if (roundPill) roundPill.textContent = `ROUND ${Math.min(st.round || 1, MONO_CFG.MAX_ROUNDS)} / ${MONO_CFG.MAX_ROUNDS}`;
+  if (roundPill) {
+    let weatherSuffix = '';
+    if ((st.midnightReverseRounds || 0) > 0) weatherSuffix = ` · ⏳ REV ${st.midnightReverseRounds}R`;
+    else if ((st.eclipseInvertRounds || 0) > 0) weatherSuffix = ` · 🌑 ECLIPSE`;
+    roundPill.textContent = `ROUND ${Math.min(st.round || 1, MONO_CFG.MAX_ROUNDS)} / ${MONO_CFG.MAX_ROUNDS}${weatherSuffix}`;
+  }
+  const centerHub = $m('monopolyCenterHub');
+  if (centerHub) {
+    centerHub.classList.toggle('hub-time-reversed', (st.midnightReverseRounds || 0) > 0);
+    centerHub.classList.toggle('hub-eclipse-blackout', (st.eclipseInvertRounds || 0) > 0);
+  }
   const goalPill = $m('monopolyGoalPill');
   if (goalPill) goalPill.textContent = `🏆 ${fmt(MONO_CFG.WIN_NET_WORTH)} NW`;
   const fb = $m('monopolyFinalBoarding');
@@ -5521,8 +5777,12 @@ function updateMonopolyHUD() {
     const p = st.players && st.players[turn];
     const avatarEl = $m('monopolyTurnAvatarMini');
     const textEl = $m('monopolyTurnText');
-    if (avatarEl && p && p.sprite) {
-      if (avatarEl.getAttribute('src') !== p.sprite) avatarEl.src = p.sprite;
+    const turnThumb = toThumbSprite(p?.sprite || 'assets/bkk_warrior_idle.png');
+    if (avatarEl && turnThumb) {
+      if (avatarEl.getAttribute('src') !== turnThumb) {
+        avatarEl.decoding = 'async';
+        avatarEl.src = turnThumb;
+      }
     }
     const label = st.gameOver
       ? 'Game over'
@@ -5530,7 +5790,7 @@ function updateMonopolyHUD() {
     if (textEl) {
       textEl.textContent = label;
     } else {
-      turnBadge.innerHTML = `<span class="turn-avatar-mini-wrap"><img id="monopolyTurnAvatarMini" src="${p?.sprite || 'assets/bkk_warrior_idle.png'}" class="turn-avatar-mini" alt="Turn" /></span><span id="monopolyTurnText">${label}</span>`;
+      turnBadge.innerHTML = `<span class="turn-avatar-mini-wrap"><img id="monopolyTurnAvatarMini" src="${turnThumb}" decoding="async" class="turn-avatar-mini" alt="Turn" /></span><span id="monopolyTurnText">${label}</span>`;
     }
   }
 
@@ -5607,13 +5867,132 @@ function canUseItemsNow() {
   return st.currentTurn === getMonopolyMyRole() && !st.isRolling && !isAnimating && !isBlockingState();
 }
 
+function getTileActiveEffectsInfo(tile, prop, st) {
+  const effects = [];
+  if (prop) {
+    if ((prop.phoenixCrater || 0) > 0) {
+      effects.push({ badge: `🔥 Solar Crater (${prop.phoenixCrater}T)`, counter: '❄️ Frost / 🌊 Abyss / 🐉 Leviathan' });
+    }
+    if ((prop.frostCitadel || 0) > 0) {
+      effects.push({ badge: `❄️ Frost Citadel (${prop.frostCitadel}R)`, counter: '🔥 Phoenix / ☀️ Solar / 👑 Midas' });
+    }
+    if (prop.pyramid) {
+      effects.push({ badge: '🔺 Golden Pyramid (×2)', counter: '⚡ Olympus / 🌊 Abyss / 🐉 Leviathan' });
+    }
+    if (prop.olympusMonument) {
+      effects.push({ badge: '⚡ Olympus Monument (×2.5)', counter: '⏳ Chronos / 🌑 Eclipse' });
+    }
+    if (prop.midasGold) {
+      effects.push({ badge: '👑 Midas Gold (×3)', counter: '🌑 Eclipse / ⏳ Chronos' });
+    }
+    if (prop.coralPalace) {
+      effects.push({ badge: '🐚 Coral Palace', counter: '⚡ Olympus / ☀️ Solar' });
+    }
+    if ((prop.sunkenRuin || 0) > 0) {
+      effects.push({ badge: `🌊 Sunken Ruin (${prop.sunkenRuin}R)`, counter: '☀️ Solar / 🔥 Phoenix' });
+    }
+    if (prop.hexMirror) {
+      effects.push({ badge: '🪞 Hex Mirror (50% Siphon)', counter: '⛩️ Inari / 🦊 Kitsune' });
+    }
+    if (prop.inariShrine) {
+      effects.push({ badge: '⛩️ Inari Shrine (+25% Aura)', counter: '🪞 Hex / 🌑 Eclipse' });
+    }
+    if ((prop.blackHole || 0) > 0) {
+      effects.push({ badge: `🕳️ Gravity Well (${prop.blackHole}R)`, counter: '🛡️ Astral Shield' });
+    }
+    if ((prop.boostTurns || 0) > 0) {
+      effects.push({ badge: `📈 Surge ×${prop.boostMult || 2} (${prop.boostTurns}T)`, counter: '' });
+    }
+  }
+  if (st && Array.isArray(st.traps) && st.traps.some((t) => t.tile === tile.id)) {
+    effects.push({ badge: '🪤 Spike Trap', counter: '🛡️ Shield / 🪽 Winged Boots' });
+  }
+  return effects;
+}
+
+function showTileInspectorPopup(tile, prop, st) {
+  const hub = $m('monopolyCenterHub');
+  if (!hub) return;
+  let popup = $m('monopolyTileInspector');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'monopolyTileInspector';
+    popup.className = 'monopoly-tile-inspector hidden';
+    popup.addEventListener('click', () => {
+      if (tileInspectorTimer) { clearTimeout(tileInspectorTimer); tileInspectorTimer = null; }
+      popup.classList.add('hidden');
+      document.querySelectorAll('.board-tile.tile-inspected-pulse').forEach((el) => el.classList.remove('tile-inspected-pulse'));
+    });
+    hub.appendChild(popup);
+  }
+
+  document.querySelectorAll('.board-tile.tile-inspected-pulse').forEach((el) => el.classList.remove('tile-inspected-pulse'));
+  const tileEl = $m(`monoTile_${tile.id}`);
+  if (tileEl) tileEl.classList.add('tile-inspected-pulse');
+
+  const zone = tile.zone && ZONES[tile.zone] ? ZONES[tile.zone] : null;
+  const zoneBadge = zone
+    ? `<span class="ti-zone-pill" style="background:${zone.color}22;border-color:${zone.color};color:${zone.color}">${zone.label}</span>`
+    : `<span class="ti-zone-pill">${tile.type.toUpperCase()}</span>`;
+
+  let bodyHtml = '';
+  if (tile.type !== 'property') {
+    bodyHtml = `<div class="ti-desc">${tile.desc || 'Special destination tile'}</div>`;
+  } else if (!prop) {
+    bodyHtml = `
+      <div class="ti-stat-row">
+        <span class="ti-stat-chip">🏷️ Buy <strong>${fmt(tile.price)}🪙</strong></span>
+        <span class="ti-stat-chip">🏠 <strong>${fmt(getTileRent(tile.id, 1))}</strong></span>
+        <span class="ti-stat-chip">🏠🏠 <strong>${fmt(getTileRent(tile.id, 2))}</strong></span>
+        <span class="ti-stat-chip">🏨 <strong>${fmt(getTileRent(tile.id, 3))}</strong></span>
+      </div>`;
+  } else {
+    const ownerName = st.players?.[prop.owner]?.name || prop.owner.toUpperCase();
+    const building = prop.level >= 3 ? '🏨 Hotel' : `🏠 Lv.${prop.level}`;
+    const zoneBonus = ownsZone(prop.owner, tile.zone) ? ' <span class="ti-crown">👑×2</span>' : '';
+    bodyHtml = `
+      <div class="ti-stat-row">
+        <span class="ti-stat-chip ti-owner-${prop.owner}">👤 <strong>${ownerName}</strong> · ${building}${zoneBonus}</span>
+        <span class="ti-stat-chip ti-rent-highlight">💸 Rent <strong>${fmt(getTileRent(tile.id))}🪙</strong></span>
+        <span class="ti-stat-chip">💎 Val <strong>${fmt(propValue(tile.id))}🪙</strong></span>
+      </div>`;
+  }
+
+  const effects = getTileActiveEffectsInfo(tile, prop, st);
+  const effectsHtml = effects.length > 0
+    ? `<div class="ti-effects-list">${effects.map((e) => `
+        <div class="ti-effect-item">
+          <span class="ti-effect-badge">${e.badge}</span>
+          ${e.counter ? `<span class="ti-effect-counter">⚔️ Counter: ${e.counter}</span>` : ''}
+        </div>`).join('')}</div>`
+    : '';
+
+  popup.innerHTML = `
+    <div class="ti-header">
+      <span class="ti-title">${tile.icon || '📍'} <strong>${tile.name}</strong></span>
+      ${zoneBadge}
+    </div>
+    ${bodyHtml}
+    ${effectsHtml}
+  `;
+  popup.classList.remove('hidden');
+
+  if (tileInspectorTimer) clearTimeout(tileInspectorTimer);
+  tileInspectorTimer = setTimeout(() => {
+    popup.classList.add('hidden');
+    if (tileEl) tileEl.classList.remove('tile-inspected-pulse');
+    tileInspectorTimer = null;
+  }, 3200);
+}
+
 function inspectTile(tile) {
   const st = monopolyState;
+  const prop = tile.type === 'property' ? st.properties[tile.id] : null;
+  showTileInspectorPopup(tile, prop, st);
   if (tile.type !== 'property') {
     setMonopolyTicker(`${tile.icon} <strong>${tile.name}</strong> — ${tile.desc}`);
     return;
   }
-  const prop = st.properties[tile.id];
   if (!prop) {
     setMonopolyTicker(`📍 <strong>${tile.name}</strong> (${ZONES[tile.zone].label}) — ${tile.price}🪙 · rent 🏠 ${fmt(getTileRent(tile.id, 1))} / 🏠🏠 ${fmt(getTileRent(tile.id, 2))} / 🏨 ${fmt(getTileRent(tile.id, 3))}`);
     return;
@@ -5794,7 +6173,7 @@ function getRoleUltimate(role) {
       id: 'phoenix_rebirth',
       badge: '🔥 S3 MYTHIC ULTIMATE',
       title: 'SUPERNOVA CREMATION & ASH ASCENSION',
-      desc: 'Incinerates all rival shields across the board! Rises from the ashes with +600🪙 surge, carpets 4 tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with Triple Lap Bonus!',
+      desc: 'Incinerates all rival shields across the board! Rises from the ashes with +300🪙 surge, carpets 4 tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with Lap Bonus (+500🪙 total)!',
       haloColor: '#f97316'
     };
   }
@@ -5869,7 +6248,11 @@ function executeUltimate(role) {
   setTimeout(() => {
     isAnimating = false;
     releaseRoleLocks(role);
+    flushQueuedMessages();
     renderAll();
+    if (!monopolyState.gameOver && monopolyState.players[monopolyState.currentTurn]?.isBot) {
+      checkBotTurn();
+    }
   }, 2650);
 
   triggerUltimateEffects(role, ultData, true);
@@ -6051,6 +6434,16 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         p.loadedRoll = 6;
         p.goldenRollNext = true;
         p.hasSolarFalconWings = true;
+
+        // ☀️ Consecrate Heliopolis Sun Disk Obelisk on Ra's highest property (+25% Rent)
+        const myProps = ownedTileIds(role);
+        if (myProps.length > 0) {
+          myProps.sort((a, b) => ((st.properties[b]?.level || 1) - (st.properties[a]?.level || 1)) || ((MONOPOLY_TILES[b]?.price || 0) - (MONOPOLY_TILES[a]?.price || 0)));
+          const obeliskTile = myProps[0];
+          st.properties[obeliskTile].level = Math.max(3, st.properties[obeliskTile].level || 1);
+          st.properties[obeliskTile].isSolarObelisk = true;
+          st.solarObeliskTile = obeliskTile;
+        }
 
         Object.keys(st.properties).forEach(tid => {
           const pr = st.properties[tid];
@@ -6353,6 +6746,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         p.miles += 800;
         p.loadedRoll = 6;
         p.goldenRollNext = true;
+        p.monacoGoldRushRounds = 2; // 1.5× VIP Gold Rush rent on Monaco's properties for 2 rounds
       }
       break;
     }
@@ -6371,7 +6765,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           targetP.waterlogged = true;
           p.miles += tidalDmg;
         }
-        // Permanently flood 3 strategic tiles into Coral Palaces (+30% rent) / Sunken Ruins (0 rent)
+        // Flood 3 strategic tiles into Coral Palaces (+30% rent) / Sunken Ruins (0 rent for 3 rounds or until drained/evaporated)
         st.floodedTiles = st.floodedTiles || {};
         const floodCandidates = [
           targetP ? targetP.pos : (p.pos + 4) % 20,
@@ -6379,7 +6773,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           (p.pos + 3) % 20
         ];
         floodCandidates.forEach(tid => {
-          st.floodedTiles[tid] = { floodedBy: role };
+          st.floodedTiles[tid] = { floodedBy: role, rounds: 3 };
           floodedTiles.push(tid);
         });
       }
@@ -6409,7 +6803,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           .map(Number);
         const candidates = topProps.length >= 3 ? topProps : [1, 2, 3];
         candidates.forEach(tid => {
-          st.sacredWaterways[tid] = { creator: role, bonusRent: 0.30 };
+          st.sacredWaterways[tid] = { creator: role, bonusRent: 0.30, rounds: 2 };
           nagaTiles.push(tid);
         });
 
@@ -6469,7 +6863,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         // Mark rival properties as Eclipse Shadow Tiles (1.5× Nightmare Toll)
         st.eclipseShadowTiles = st.eclipseShadowTiles || {};
         rivalTiles.forEach(tid => {
-          st.eclipseShadowTiles[tid] = { caster: role };
+          st.eclipseShadowTiles[tid] = { caster: role, rounds: 1 };
         });
 
         // Inflict Somnambulism on rivals: pulled 3 tiles forward on next turn
@@ -6533,9 +6927,9 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       const targetP = targetR ? st.players[targetR] : null;
 
       if (isInitiator) {
-        p.miles += 600;
+        p.miles += 300;
         p.pos = 0;
-        grantMiles(role, MONO_CFG.LAP_BONUS * 3); // Triple Lap Bonus
+        grantMiles(role, MONO_CFG.LAP_BONUS); // +200🪙 Lap Bonus (+500🪙 total)
         p.phoenixGraceActive = true; // Invincible Sunfire Armor
 
         // Incinerate all rival shields across the board
@@ -6591,6 +6985,140 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       tacticalSummary = { targetTileId };
       break;
     }
+  }
+
+  // ⚔️ MYTHIC ELEMENTAL COUNTER-MATRIX (Ultimate Clashes)
+  let elementalClashMsg = '';
+  const ultId = ultData.id;
+  if (['phoenix_rebirth', 'solar_wrath', 'nile_seduction', 'djinn_wish'].includes(ultId)) {
+    // 🔥☀️ Fire / Solar / Desert Ultimates melt Ice/Snowdrifts and evaporate Sunken Ruin floods
+    let melted = 0;
+    let evaporated = 0;
+    if (st.snowdriftTraps) {
+      Object.keys(st.snowdriftTraps).forEach(tid => {
+        if (st.snowdriftTraps[tid] > 0) {
+          if (isInitiator) delete st.snowdriftTraps[tid];
+          melted++;
+        }
+      });
+    }
+    Object.keys(st.properties || {}).forEach(tid => {
+      const pr = st.properties[tid];
+      if (pr && pr.frosted > 0) {
+        if (isInitiator) delete pr.frosted;
+        melted++;
+      }
+      if (st.floodedTiles && st.floodedTiles[tid] && pr && pr.owner && !isAbyssalDrifter(pr.owner)) {
+        if (isInitiator) delete st.floodedTiles[tid];
+        evaporated++;
+      }
+    });
+    if (isInitiator) {
+      delete p.cryoStasis;
+      delete p.frozenTurn;
+      delete p.waterlogged;
+      if (melted + evaporated > 0) {
+        p.miles += (melted + evaporated) * 45;
+      }
+    }
+    if (melted + evaporated > 0) {
+      const bonus = (melted + evaporated) * 45;
+      elementalClashMsg = `🔥❄️ <strong>ELEMENTAL CLASH — THERMAL VAPORIZATION!</strong> ${p.name}'s blazing solar surge melted ${melted} frost hazard(s) & evaporated ${evaporated} flood zone(s) for <strong>+${bonus}🪙 Steam Gold</strong>!`;
+    }
+  } else if (['absolute_zero', 'abyss_cataclysm', 'naga_surge'].includes(ultId)) {
+    // ❄️🌊 Ice / Water Ultimates quench rival Phoenix Embers and Torch Shields
+    let quenched = 0;
+    if (st.phoenixEmbers) {
+      Object.keys(st.phoenixEmbers).forEach(tid => {
+        if (st.phoenixEmbers[tid] && st.phoenixEmbers[tid].creator !== role) {
+          if (isInitiator) delete st.phoenixEmbers[tid];
+          quenched++;
+        }
+      });
+    }
+    Object.keys(st.properties || {}).forEach(tid => {
+      const pr = st.properties[tid];
+      if (pr && pr.owner && pr.owner !== role && pr.torchShield) {
+        if (isInitiator) delete pr.torchShield;
+        quenched++;
+      }
+    });
+    if (quenched > 0) {
+      const bonus = quenched * 45;
+      if (isInitiator) p.miles += bonus;
+      elementalClashMsg = `🌊🔥 <strong>ELEMENTAL CLASH — CRYO-TIDAL QUENCH!</strong> ${p.name} extinguished ${quenched} rival fire hazard(s) and harvested <strong>+${bonus}🪙 Obsidian Frost</strong>!`;
+    }
+  } else if (['olympus_wrath', 'astral_tithe'].includes(ultId)) {
+    // ⚡🪐 Thunder / Cosmic Ultimates trigger Superconductor Overload on flooded/waterway rivals & shatter shadow curses
+    let conductiveBonus = 0;
+    let purgedCurses = 0;
+    if (st.eclipseShadowTiles) {
+      Object.keys(st.eclipseShadowTiles).forEach(tid => {
+        if (st.eclipseShadowTiles[tid]?.caster !== role) {
+          if (isInitiator) delete st.eclipseShadowTiles[tid];
+          purgedCurses++;
+        }
+      });
+    }
+    Object.keys(st.properties || {}).forEach(tid => {
+      const pr = st.properties[tid];
+      if (pr && pr.owner === role && pr.foxfireCursedBy) {
+        if (isInitiator) delete pr.foxfireCursedBy;
+        purgedCurses++;
+      }
+    });
+    Object.keys(st.players || {}).forEach(r => {
+      if (r === role || st.players[r]?.bankrupt) return;
+      const rp = st.players[r];
+      const onWater = !!(st.floodedTiles?.[rp.pos] || st.sacredWaterways?.[rp.pos] || isAbyssalDrifter(r) || isNagaWarden(r));
+      if (onWater) {
+        const extraZap = Math.min(rp.miles || 0, 50);
+        if (extraZap > 0) {
+          if (isInitiator) {
+            rp.miles -= extraZap;
+            p.miles += extraZap;
+          }
+          conductiveBonus += extraZap;
+        }
+      }
+    });
+    if (conductiveBonus > 0 || purgedCurses > 0) {
+      elementalClashMsg = `⚡🌊 <strong>ELEMENTAL CLASH — SUPERCONDUCTOR OVERLOAD!</strong> Celestial plasma arced through water/shadow domains (${purgedCurses} curse(s) shattered, <strong>+${conductiveBonus}🪙 Conductive Shock</strong>)!`;
+    }
+  } else if (['phantom_curtain_call', 'midnight_paradox', 'inari_mirage', 'eclipse_convergence'].includes(ultId)) {
+    // 🎭⏳🦊🌑 Arcane / Trickster Ultimates eclipse rival Tier-4 Monuments for 2 rounds
+    let eclipsedMonuments = 0;
+    Object.keys(st.properties || {}).forEach(tid => {
+      const pr = st.properties[tid];
+      if (!pr || !pr.owner || pr.owner === role) return;
+      const numTid = Number(tid);
+      const isWonder = pr.isGlacialCitadel || pr.isGoldenPyramid || pr.isOlympusTemple || pr.isSolarObelisk ||
+        st.glacialCitadelTile === numTid || st.goldenPyramidTile === numTid || st.olympusTempleTile === numTid || st.solarObeliskTile === numTid;
+      if (isWonder) {
+        if (isInitiator) pr.monumentSuppressedRounds = 2;
+        eclipsedMonuments++;
+      }
+    });
+    if (eclipsedMonuments > 0) {
+      elementalClashMsg = `🎭🌑 <strong>ELEMENTAL CLASH — MONUMENT ECLIPSE!</strong> ${p.name}'s arcane illusion shrouded ${eclipsedMonuments} rival Tier-4 Wonder(s), suppressing their monumental rent aura for <strong>2 rounds</strong>!`;
+    }
+  } else if (['monaco_gold_rush', 'breaking_the_curse', 'lantern_festival'].includes(ultId)) {
+    // 🎰🌹🏮 Royal / Fairytale Ultimates cleanse movement/stasis curses on caster
+    const hadCurse = !!(p.marionetteStasisRounds || p.somnambulismSteps || p.invertDirectionNext || p.waterlogged || p.frozenTurn || p.cryoStasis);
+    if (isInitiator && hadCurse) {
+      delete p.marionetteStasisRounds;
+      delete p.somnambulismSteps;
+      delete p.invertDirectionNext;
+      delete p.waterlogged;
+      delete p.frozenTurn;
+      delete p.cryoStasis;
+    }
+    if (hadCurse) {
+      elementalClashMsg = `👑✨ <strong>ELEMENTAL CLASH — ROYAL DECREE CLEANSE!</strong> ${p.name} shattered all active movement & stasis curses!`;
+    }
+  }
+  if (elementalClashMsg) {
+    announce(elementalClashMsg);
   }
 
   if (isInitiator) {
@@ -7009,20 +7537,20 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       AudioFX.playPhoenixRebirth();
       AudioFX.playBoom();
       if (window.MonoFX && typeof MonoFX.phoenixRebirthFlame === 'function') {
-        MonoFX.phoenixRebirthFlame({ casterRole: role, targetRole: targetR, heatBurn, emberTiles });
+        MonoFX.phoenixRebirthFlame({ casterRole: role, role, amount: 500, targetRole: targetR, heatBurn, emberTiles });
       } else if (window.MonoFX) {
-        if (MonoFX.banner) MonoFX.banner('🔥 SUPERNOVA CREMATION & ASH ASCENSION!', 'SOAR TO START · ×3 LAP BONUS (+600🪙)!', 'red', 1800);
+        if (MonoFX.banner) MonoFX.banner('🔥 SUPERNOVA CREMATION & ASH ASCENSION!', 'SOAR TO START · +500🪙 REBIRTH SURGE!', 'red', 1800);
         if (MonoFX.tokens && MonoFX.tokens.teleport) MonoFX.tokens.teleport(role, 0);
         MonoFX.ring(c.x, c.y, 250, '#ef4444', 900);
         MonoFX.ring(c.x, c.y, 360, '#f97316', 1100);
         MonoFX.burst({ x: c.x, y: c.y, name: 'phoenix_pyre_crest', count: 26, spread: 280, up: 180, life: 1200 });
         MonoFX.burst({ x: c.x, y: c.y, name: 'fire', count: 22, spread: 240, up: 160, life: 1000 });
       }
-      floatText(0, '🔥 PHOENIX REBIRTH ×3 LAP! 🪶', 'pos fx-big');
+      floatText(0, '🔥 PHOENIX REBIRTH (+500🪙)! 🪶', 'pos fx-big');
       if (targetP && heatBurn > 0) {
         floatText(targetP.pos, `🔥 -${heatBurn}🪙 HEAT BURN!`, 'neg fx-big');
       }
-      announce(`🔥🪶 <strong>SUPERNOVA CREMATION & ASH ASCENSION!</strong> Sacred solar fire vaporized ALL rival shields across the board! ${p.name} rose from the ashes with <strong>+600🪙</strong> cash surge, carpeted 4 runway tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with a <strong>Triple Lap Bonus</strong>!`);
+      announce(`🔥🪶 <strong>SUPERNOVA CREMATION & ASH ASCENSION!</strong> Sacred solar fire vaporized ALL rival shields across the board! ${p.name} rose from the ashes with <strong>+300🪙</strong> cash surge, carpeted 4 runway tiles in Sacred Golden Embers (+40🪙 heat damage), and teleports to START with a <strong>+200🪙 Lap Bonus (+500🪙 total)</strong>!`);
       break;
     }
 
@@ -7066,6 +7594,7 @@ function handleUserRollRequest(e) {
     monopolyState.isRolling = false;
     isAnimating = false;
     releaseRoleLocks();
+    flushQueuedMessages();
   }
   if (now - rollStartedAt < 800) return;
   AudioFX.init();
@@ -8058,14 +8587,20 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
         : (startPos + (i + 1)) % numTiles;
       p.pos = nextPos;
 
-      // 🔥 S3 Phoenix Underdog Inferno Stance (leaves scorched footprints if behind on Net Worth):
-      if (isPhoenixAscendant(playerKey)) {
+      // 🔥 S3 Phoenix Underdog Inferno Stance (leaves 1 scorched footprint per roll if behind on Net Worth, max 2 active trail embers):
+      if (isPhoenixAscendant(playerKey) && i === 0) {
         const myNw = netWorth(playerKey);
         const rivals = Object.keys(monopolyState.players || {}).filter(r => r !== playerKey && !monopolyState.players[r]?.bankrupt);
         const maxRivalNw = rivals.length > 0 ? Math.max(...rivals.map(r => netWorth(r))) : 0;
         if (myNw < maxRivalNw) {
           monopolyState.phoenixEmbers = monopolyState.phoenixEmbers || {};
-          monopolyState.phoenixEmbers[nextPos] = { creator: playerKey, damage: 40, rounds: 2 };
+          const existingCreatorEmbers = Object.keys(monopolyState.phoenixEmbers).filter(
+            tid => monopolyState.phoenixEmbers[tid] && monopolyState.phoenixEmbers[tid].creator === playerKey
+          );
+          while (existingCreatorEmbers.length >= 2) {
+            delete monopolyState.phoenixEmbers[existingCreatorEmbers.shift()];
+          }
+          monopolyState.phoenixEmbers[from] = { creator: playerKey, damage: 40, rounds: 2 };
         }
       }
 
@@ -8259,11 +8794,87 @@ function setDecision(decision) {
   reconcileOverlays();
 }
 
-function resolveLanding(playerKey, tile) {
+function resolveMythicElementalClash(playerKey, tile) {
+  const st = monopolyState;
+  if (!st || !tile || tile.id == null) return;
+  const p = st.players && st.players[playerKey];
+  if (!p || p.bankrupt) return;
+  const prop = st.properties && st.properties[tile.id];
+
+  const isFireSolar = isPhoenixAscendant(playerKey) || (typeof isSolarDivinity === 'function' && isSolarDivinity(playerKey));
+  const isDesertSolar = isFireSolar || (typeof isGildedSovereign === 'function' && isGildedSovereign(playerKey)) || isDjinnMirage(playerKey);
+  const isIce = typeof isFrostSovereign === 'function' && isFrostSovereign(playerKey);
+  const isWater = isAbyssalDrifter(playerKey) || isNagaWarden(playerKey);
+  const isThunderCosmic = (typeof isOlympusDivinity === 'function' && isOlympusDivinity(playerKey)) || isAstralSovereign(playerKey);
+
+  // 1. 🔥 Fire / Solar melts ❄️ Snowdrift Traps & Frosted Landmarks
+  const hasSnowdrift = !!(st.snowdriftTraps && st.snowdriftTraps[tile.id] > 0);
+  const hasFrost = !!(prop && prop.frosted && prop.frosted > 0);
+  if (isFireSolar && (hasSnowdrift || hasFrost)) {
+    if (hasSnowdrift) delete st.snowdriftTraps[tile.id];
+    if (hasFrost) delete prop.frosted;
+    grantMiles(playerKey, 60);
+    if (AudioFX.playPhoenixFlames) AudioFX.playPhoenixFlames();
+    floatText(tile.id, '🔥❄️ STEAM MELT! +60🪙', 'pos fx-big');
+    announce(`🔥❄️ <strong>ELEMENTAL CLASH — THERMAL STEAM MELT!</strong> ${p.name}'s blazing solar heat vaporized the Arctic ice at ${tile.name} and condensed <strong>+60🪙 Steam Surge</strong>!`);
+    renderMonopolyBoard();
+  }
+
+  // 2. ❄️ Ice or 🌊 Water quenches 🔥 Phoenix Embers (0 burn damage taken + +50🪙)
+  if ((isIce || isWater) && st.phoenixEmbers && st.phoenixEmbers[tile.id] && st.phoenixEmbers[tile.id].creator !== playerKey) {
+    delete st.phoenixEmbers[tile.id];
+    grantMiles(playerKey, 50);
+    if (isIce && AudioFX.playCryoNova) AudioFX.playCryoNova();
+    else if (AudioFX.playAbyssalSplash) AudioFX.playAbyssalSplash();
+    floatText(tile.id, isIce ? '❄️🔥 CRYO QUENCH! +50🪙' : '🌊🔥 TIDAL DOUSE! +50🪙', 'pos fx-big');
+    announce(isIce
+      ? `❄️🔥 <strong>ELEMENTAL CLASH — CRYO EXTINGUISH!</strong> ${p.name}'s sub-zero aura froze the molten embers at ${tile.name} solid (0 damage taken) and forged <strong>+50🪙 Permafrost Gold</strong>!`
+      : `🌊🔥 <strong>ELEMENTAL CLASH — TIDAL DOUSE!</strong> ${p.name}'s surging waters quenched the phoenix embers at ${tile.name} (0 damage taken) into <strong>+50🪙 Obsidian Pearl</strong>!`);
+    renderMonopolyBoard();
+  }
+
+  // 3. ☀️ Desert / Solar / Fire evaporates S5 Sunken Ruins OR Owner pays 60🪙 Drainage
+  if (st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && !isAbyssalDrifter(prop.owner)) {
+    if (isDesertSolar) {
+      delete st.floodedTiles[tile.id];
+      delete p.waterlogged;
+      grantMiles(playerKey, 80);
+      if (AudioFX.playSolarImpact) AudioFX.playSolarImpact();
+      floatText(tile.id, '☀️🌊 EVAPORATED! +80🪙', 'pos fx-big');
+      announce(`☀️🌊 <strong>ELEMENTAL CLASH — SOLAR EVAPORATION!</strong> ${p.name}'s desert sun boiled away the floodwaters at ${tile.name}, restoring the landmark and crystallizing <strong>+80🪙 Brine Gold</strong>!`);
+      renderMonopolyBoard();
+    } else if (prop.owner === playerKey && p.miles >= 60) {
+      p.miles -= 60;
+      delete st.floodedTiles[tile.id];
+      delete p.waterlogged;
+      floatText(tile.id, '🛠️ FLOOD DRAINED (-60🪙)!', 'pos fx-big');
+      announce(`🛠️🌊 <strong>SUNKEN RUIN DRAINED!</strong> ${p.name} paid <strong>60🪙</strong> emergency drainage to pump out the floodwaters and restore <strong>${tile.name}</strong> to full rent!`);
+      renderMonopolyBoard();
+    }
+  }
+
+  // 4. ⚡ Thunder / Cosmic shatters 🌑 Eclipse Shadows & 🦊 Foxfire Curses
+  const hasShadow = !!(st.eclipseShadowTiles && st.eclipseShadowTiles[tile.id] && st.eclipseShadowTiles[tile.id].caster !== playerKey);
+  const hasFoxCurse = !!(prop && prop.owner === playerKey && prop.foxfireCursedBy);
+  if (isThunderCosmic && (hasShadow || hasFoxCurse)) {
+    if (hasShadow) delete st.eclipseShadowTiles[tile.id];
+    if (hasFoxCurse) delete prop.foxfireCursedBy;
+    grantMiles(playerKey, 55);
+    if (AudioFX.playOlympusThunder) AudioFX.playOlympusThunder();
+    floatText(tile.id, '⚡🌑 CURSE SHATTERED! +55🪙', 'pos fx-big');
+    announce(`⚡✨ <strong>ELEMENTAL CLASH — CELESTIAL PURGE!</strong> ${p.name}'s divine lightning shattered the shadow hex on ${tile.name} and harvested <strong>+55🪙 Astral Ether</strong>!`);
+    renderMonopolyBoard();
+  }
+}
+
+function resolveLanding(playerKey, tile, chainDepth = 0) {
   const st = monopolyState;
   const p = st.players[playerKey];
   const opp = otherRole(playerKey);
   const prop = (st && st.properties && tile && tile.id != null) ? st.properties[tile.id] : null;
+
+  // ⚔️ Trigger Mythic Elemental Counter-Matrix on Landing
+  resolveMythicElementalClash(playerKey, tile);
 
   // 🏮 S7 Mythic: Wish Upon a Lantern Festival Sanctuary trigger
   if (st.wishSanctuaries && st.wishSanctuaries[tile.id]) {
@@ -8301,7 +8912,7 @@ function resolveLanding(playerKey, tile) {
   }
 
   // 🍌 Banana Peel Trap trigger!
-  if (st.bananaTraps && st.bananaTraps[tile.id] > 0) {
+  if (st.bananaTraps && st.bananaTraps[tile.id] > 0 && chainDepth < 2) {
     if (p.hasOlympusPegasusWings) {
       floatText(tile.id, '🪽 PEGASUS SOAR! 🍌', 'pos');
       announce(`⚡🪽 <strong>PEGASUS DIVINE SOAR!</strong> ${p.name} glided over the banana peel at ${tile.name} without slipping!`);
@@ -8315,13 +8926,13 @@ function resolveLanding(playerKey, tile) {
       floatText(tile.id, '🍌 WHOA! SLIPPED! 🍌', 'neg');
       announce(`🍌😵 <strong>WHOA! BANANA SLIP!</strong> ${p.name} slipped on a banana peel at ${tile.name} and slid forward to <strong>${MONOPOLY_TILES[p.pos].name}</strong>!`);
       renderMonopolyBoard();
-      resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+      resolveLanding(playerKey, MONOPOLY_TILES[p.pos], chainDepth + 1);
       return;
     }
   }
 
   // 🐉 S1 Sacred Waterways & Mekong Rapids:
-  if (st.sacredWaterways && st.sacredWaterways[tile.id] && !isNagaWarden(playerKey) && !p.bankrupt && !p._inWaterwayPush) {
+  if (st.sacredWaterways && st.sacredWaterways[tile.id] && !isNagaWarden(playerKey) && !p.bankrupt && !p._inWaterwayPush && chainDepth < 2) {
     p._inWaterwayPush = true;
     const nagaCreator = st.sacredWaterways[tile.id].creator;
     const waterwayRentBonus = 40;
@@ -8333,7 +8944,7 @@ function resolveLanding(playerKey, tile) {
     p.pos = (p.pos + pushDownstream) % MONOPOLY_TILES.length;
     announce(`🐉🌊 <strong>MEKONG RAPIDS PUSH!</strong> ${p.name} was caught in the roaring emerald currents of ${st.players[nagaCreator]?.name || 'Naga'}'s Sacred Waterway! Paid <strong>${waterwayRentBonus}🪙</strong> waterway toll and was washed <strong>+${pushDownstream} tiles downstream</strong> to ${MONOPOLY_TILES[p.pos].name}!`);
     renderMonopolyBoard();
-    resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+    resolveLanding(playerKey, MONOPOLY_TILES[p.pos], chainDepth + 1);
     return;
   }
 
@@ -8348,10 +8959,11 @@ function resolveLanding(playerKey, tile) {
     renderMonopolyBoard();
   }
 
-  // 🔥 S3 Phoenix Golden Embers: Heat Burn
+  // 🔥 S3 Phoenix Golden Embers: Heat Burn (consumes the ember on trigger)
   if (st.phoenixEmbers && st.phoenixEmbers[tile.id] && !isPhoenixAscendant(playerKey) && !p.bankrupt) {
     const emberCreator = st.phoenixEmbers[tile.id].creator;
     const emberDmg = Math.min(p.miles, st.phoenixEmbers[tile.id].damage || 40);
+    delete st.phoenixEmbers[tile.id];
     if (emberDmg > 0) {
       p.miles -= emberDmg;
       if (st.players[emberCreator]) st.players[emberCreator].miles += emberDmg;
@@ -8359,6 +8971,7 @@ function resolveLanding(playerKey, tile) {
       floatText(tile.id, `🔥 -${emberDmg}🪙 HEAT BURN!`, 'neg fx-big');
       announce(`🔥☀️ <strong>SACRED GOLDEN EMBERS!</strong> ${p.name} stepped into scorching phoenix fire at ${tile.name}! Took <strong>-${emberDmg}🪙</strong> heat damage siphoned to ${st.players[emberCreator]?.name || 'Phoenix'}!`);
     }
+    renderMonopolyBoard();
   }
 
   // 🪔 S3 Djinn Oasis Portal: Starlight Wish Gold
@@ -8379,7 +8992,7 @@ function resolveLanding(playerKey, tile) {
   // 🔱 S5 Atlantis Ocean Trench Surf / Nitrogen Decompression:
   if (st.floodedTiles && st.floodedTiles[tile.id]) {
     if (isAbyssalDrifter(playerKey)) {
-      if (!p._inTrenchWarp) {
+      if (!p._inTrenchWarp && chainDepth < 2) {
         p._inTrenchWarp = true;
         const allFlooded = Object.keys(st.floodedTiles).map(Number).filter(tid => tid !== tile.id);
         if (allFlooded.length > 0) {
@@ -8389,7 +9002,7 @@ function resolveLanding(playerKey, tile) {
           floatText(tile.id, '🔱 OCEAN TRENCH WARP! 🌊', 'pos fx-big');
           announce(`🔱🌊 <strong>OCEAN TRENCH WARP!</strong> ${p.name} dove into the abyssal current and surfed through the trench to <strong>${MONOPOLY_TILES[destTile].name}</strong>!`);
           renderMonopolyBoard();
-          resolveLanding(playerKey, MONOPOLY_TILES[p.pos]);
+          resolveLanding(playerKey, MONOPOLY_TILES[p.pos], chainDepth + 1);
           return;
         }
       }
@@ -8399,12 +9012,13 @@ function resolveLanding(playerKey, tile) {
     }
   }
 
-  // ❄️ S8 Glacial Ice Citadel: ±1 Tile AoE Blizzard Tithe (3-tile wide aura)
+  // ❄️ S8 Glacial Ice Citadel: ±1 Tile AoE Blizzard Tithe (3-tile wide aura, unless Monument Eclipsed)
   if (st.glacialCitadelTile != null && st.glacialCitadelOwner && st.glacialCitadelOwner !== playerKey && !p.bankrupt) {
     const isAdjacentToCitadel = tile.id === (st.glacialCitadelTile - 1 + 20) % 20 || tile.id === (st.glacialCitadelTile + 1) % 20;
-    if (isAdjacentToCitadel && tile.id !== st.glacialCitadelTile) {
+    const citadelProp = st.properties[st.glacialCitadelTile];
+    const isCitadelSuppressed = !!(citadelProp && citadelProp.monumentSuppressedRounds && citadelProp.monumentSuppressedRounds > 0);
+    if (isAdjacentToCitadel && tile.id !== st.glacialCitadelTile && !isCitadelSuppressed) {
       const cOwner = st.glacialCitadelOwner;
-      const citadelProp = st.properties[st.glacialCitadelTile];
       const baseCitRent = citadelProp ? getTileRent(st.glacialCitadelTile) : 120;
       const titheAmt = Math.min(p.miles, Math.max(40, Math.round(baseCitRent * 0.75)));
       if (titheAmt > 0) {
@@ -8418,9 +9032,9 @@ function resolveLanding(playerKey, tile) {
     }
   }
 
-  // ☀️ S9 Desert Mirage (Perk of Ra / Sekhmet): 50% chance to incinerate an item
+  // ☀️ S9 Desert Mirage (Perk of Ra / Sekhmet): deterministic 50% chance to incinerate an item
   if (prop && prop.owner && prop.owner !== playerKey && !p.bankrupt && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner)) {
-    if (p.inventory && p.inventory.length > 0 && Math.random() < 0.5) {
+    if (p.inventory && p.inventory.length > 0 && (((st.round || 1) + tile.id + p.inventory.length) % 2 === 0)) {
       const burnedItem = p.inventory.pop();
       if (AudioFX.playSolarImpact) AudioFX.playSolarImpact();
       announce(`☀️🔥 <strong>DESERT MIRAGE HEATWAVE!</strong> The scorching heat of ${st.players[prop.owner].name}'s solar domain incinerated ${p.name}'s <strong>${burnedItem}</strong>!`);
@@ -8492,13 +9106,13 @@ function resolveLanding(playerKey, tile) {
       return;
 
     case 'bridge': {
-      if (isNagaWarden(playerKey)) {
+      if (isNagaWarden(playerKey) && chainDepth < 2) {
         p.pos = 0;
         AudioFX.playNagaWave();
         emitFx({ kind: 'moment', id: 'naga_bridge_surf', role: playerKey, text: `${p.name} River Surf!` });
         announce(`🐉🌊 <strong>MEKONG RIVER SURF!</strong> ${p.name} rode the river current on the Sky Bridge directly to <strong>START (Departure Gate)</strong>! 🪷`);
         renderMonopolyBoard();
-        resolveLanding(playerKey, MONOPOLY_TILES[0]);
+        resolveLanding(playerKey, MONOPOLY_TILES[0], chainDepth + 1);
         return;
       }
       const bridgeRivals = Object.keys(st.players || {}).filter((r) => r !== playerKey && !st.players[r]?.bankrupt);
@@ -8782,14 +9396,70 @@ function endTurn() {
         st.midnightCaster = null;
       }
     }
-    // Decrement property permafrost debuffs
+    // Decrement property permafrost, Midas transmutation, and Monument Eclipse debuffs
     Object.keys(st.properties).forEach(tid => {
       const pr = st.properties[tid];
-      if (pr && pr.frosted && pr.frosted > 0) {
+      if (!pr) return;
+      if (pr.frosted && pr.frosted > 0) {
         pr.frosted--;
         if (pr.frosted <= 0) delete pr.frosted;
       }
+      if (pr.transmutedRounds && pr.transmutedRounds > 0) {
+        pr.transmutedRounds--;
+        if (pr.transmutedRounds <= 0) {
+          delete pr.transmutedRounds;
+          delete pr.isTransmutedGold;
+        }
+      }
+      if (pr.monumentSuppressedRounds && pr.monumentSuppressedRounds > 0) {
+        pr.monumentSuppressedRounds--;
+        if (pr.monumentSuppressedRounds <= 0) delete pr.monumentSuppressedRounds;
+      }
     });
+    // Decrement player-scoped round buffs (Monaco Gold Rush)
+    Object.keys(st.players || {}).forEach(r => {
+      const pl = st.players[r];
+      if (pl && pl.monacoGoldRushRounds && pl.monacoGoldRushRounds > 0) {
+        pl.monacoGoldRushRounds--;
+        if (pl.monacoGoldRushRounds <= 0) delete pl.monacoGoldRushRounds;
+      }
+    });
+    // Decrement round-limited board traps (Phoenix Embers, Sacred Waterways, Eclipse Shadow Tiles, Sunken Ruin Floods)
+    if (st.phoenixEmbers) {
+      Object.keys(st.phoenixEmbers).forEach(tid => {
+        const em = st.phoenixEmbers[tid];
+        if (!em) return;
+        em.rounds = (em.rounds != null ? em.rounds : 2) - 1;
+        if (em.rounds <= 0) delete st.phoenixEmbers[tid];
+      });
+    }
+    if (st.sacredWaterways) {
+      Object.keys(st.sacredWaterways).forEach(tid => {
+        const ww = st.sacredWaterways[tid];
+        if (!ww) return;
+        ww.rounds = (ww.rounds != null ? ww.rounds : 2) - 1;
+        if (ww.rounds <= 0) delete st.sacredWaterways[tid];
+      });
+    }
+    if (st.eclipseShadowTiles) {
+      Object.keys(st.eclipseShadowTiles).forEach(tid => {
+        const es = st.eclipseShadowTiles[tid];
+        if (!es) return;
+        es.rounds = (es.rounds != null ? es.rounds : 1) - 1;
+        if (es.rounds <= 0) delete st.eclipseShadowTiles[tid];
+      });
+    }
+    if (st.floodedTiles) {
+      Object.keys(st.floodedTiles).forEach(tid => {
+        const fl = st.floodedTiles[tid];
+        const pr = st.properties && st.properties[tid];
+        // Coral Palaces on Atlantis's own properties stay permanently; Sunken Ruins on rival properties recede after 3 rounds
+        if (fl && pr && pr.owner && !isAbyssalDrifter(pr.owner)) {
+          fl.rounds = (fl.rounds != null ? fl.rounds : 3) - 1;
+          if (fl.rounds <= 0) delete st.floodedTiles[tid];
+        }
+      });
+    }
     if (st.round > MONO_CFG.MAX_ROUNDS) {
       declareByNetWorth();
     } else {
@@ -8805,6 +9475,7 @@ function endTurn() {
   }
   pushState();
   renderAll();
+  flushQueuedMessages();
   if (!st.gameOver && (st.players[st.currentTurn]?.isBot || (window.isMonopolyPlayerAway && st.currentTurn === getMonopolyMyRole()))) {
     checkBotTurn();
   }
@@ -9236,7 +9907,7 @@ function actSpinCasino(tileId) {
   pushState();
   if (p.isBot) {
     setMonopolyTicker(`🎰 ${p.name} spun: ${out.reels.join('')} — ${label}`);
-    setTimeout(() => { finishTurn(); }, 1500);
+    scheduleBotDecision(st.pendingDecision);
   } else {
     openDecisionModal(st.pendingDecision);
   }
@@ -9372,6 +10043,7 @@ function armBotWatchdog(phase = 'turn') {
       s.isRolling = false;
       isAnimating = false;
       releaseRoleLocks();
+      flushQueuedMessages();
       updateMonopolyHUD();
     }
 
@@ -9422,6 +10094,7 @@ function checkBotTurn() {
       st.isRolling = false;
       isAnimating = false;
       releaseRoleLocks();
+      flushQueuedMessages();
       updateMonopolyHUD();
     } else {
       setTimeout(() => { checkBotTurn(); }, 400);
@@ -9468,6 +10141,7 @@ function scheduleBotRoll() {
         st.isRolling = false;
         isAnimating = false;
         releaseRoleLocks();
+        flushQueuedMessages();
       } else {
         setTimeout(() => { scheduleBotRoll(); }, 400);
         return;
@@ -9491,7 +10165,7 @@ function scheduleBotRoll() {
         executeUltimate(botRole);
         setTimeout(() => {
           scheduleBotRoll();
-        }, 2400);
+        }, 2700);
         return;
       }
     }
@@ -10203,9 +10877,9 @@ function renderDuelOverlay() {
         <span>${win ? `Paid ${fmt(d.paid)}🪙 to ${def.name}.` : d.kind === 'takeover' ? `${att.name} pays ${fmt(d.paid)}🪙.` : 'No harm done.'}${soldNote(d.sold)}</span>
       </div>`;
     }
-    footer += isResolver()
+    footer += (isResolver() || isParticipant)
       ? '<button class="btn-balance-done" data-act="continue">Continue ✈️</button>'
-      : `<div class="waiting-note">Waiting for ${st.players[st.turnResolver || st.currentTurn].name} to continue…</div>`;
+      : `<div class="waiting-note">Waiting for ${st.players[st.turnResolver || st.currentTurn]?.name || 'player'} to continue…</div>`;
   } else {
     if (isParticipant) {
       if (myRoll == null) {
@@ -10279,21 +10953,29 @@ function renderDuelOverlay() {
     if (targetBot) duelRoll(targetBot);
   });
   const cont = ov.querySelector('[data-act="continue"]');
-  if (cont) cont.addEventListener('click', () => { cont.disabled = true; finishDuel(); });
+  if (cont) cont.addEventListener('click', () => {
+    cont.disabled = true;
+    if (isResolver()) {
+      finishDuel();
+    } else {
+      sendPick('duel_done', d.id, me, true);
+      hideCardOverlay();
+    }
+  });
 
   if (!d.settled && isResolver()) {
     const unrolledBot = [d.attacker, d.defender].find((r) => st.players[r]?.isBot && d.rolls[r] == null);
     if (unrolledBot && !botActionTimer) {
       scheduleBotDuelRoll();
     }
-  } else if (d.settled && isResolver() && st.players[d.attacker]?.isBot && st.players[d.defender]?.isBot) {
+  } else if (d.settled && isResolver() && (st.players[st.currentTurn]?.isBot || (st.players[d.attacker]?.isBot && st.players[d.defender]?.isBot))) {
     if (!botActionTimer) {
       botActionTimer = setTimeout(() => {
         botActionTimer = null;
         if (monopolyState && monopolyState.activeDuel && monopolyState.activeDuel.settled) {
           finishDuel();
         }
-      }, 2500);
+      }, 2200);
     }
   }
 }
@@ -10430,6 +11112,8 @@ function trySettleDuel() {
 }
 
 function finishDuel() {
+  if (!monopolyState.activeDuel) return;
+  clearBotTimer();
   monopolyState.activeDuel = null;
   hideCardOverlay();
   finishTurn();
@@ -10437,6 +11121,12 @@ function finishDuel() {
 
 function applyRemotePick(msg) {
   const st = monopolyState;
+  if (msg.target === 'duel_done') {
+    if (st.activeDuel && st.activeDuel.id === msg.id && isResolver()) {
+      finishDuel();
+    }
+    return;
+  }
   const obj = msg.target === 'duel' ? st.activeDuel : st.activeChallenge;
   if (!obj || obj.id !== msg.id) {
     if (msg.state && mergeIncomingState(msg.state)) renderAll();
@@ -10445,8 +11135,15 @@ function applyRemotePick(msg) {
   const bucket = msg.target === 'duel' ? obj.rolls : obj.picks;
   if (bucket[msg.role] == null) bucket[msg.role] = msg.value;
   if (isResolver()) {
-    if (msg.target === 'duel') trySettleDuel();
-    else trySettleChallenge();
+    if (msg.target === 'duel') {
+      trySettleDuel();
+      if (!obj.settled) {
+        const nextBot = [obj.attacker, obj.defender].find((r) => st.players[r]?.isBot && obj.rolls[r] == null);
+        if (nextBot && !botActionTimer) scheduleBotDuelRoll();
+      }
+    } else {
+      trySettleChallenge();
+    }
     pushState();
   } else {
     saveLocalMonopolyState();
@@ -11824,6 +12521,21 @@ function handleMonopolyMessage(message) {
     return;
   }
 
+  if (message.type === 'monopoly_action_rejected') {
+    console.warn('[Monopoly] Action rejected by server:', message.error, message.message);
+    if (monopolyState) {
+      monopolyState.isRolling = false;
+    }
+    isAnimating = false;
+    releaseRoleLocks();
+    flushQueuedMessages();
+    if (currentFlightRoom && currentFlightRoom.id && typeof sendSignaling === 'function') {
+      sendSignaling({ type: 'room_rejoin', roomId: currentFlightRoom.id, uid: getPersistentPlayerUid() });
+    }
+    renderAll();
+    return;
+  }
+
   if (message.type !== 'monopoly_action') return;
 
   switch (message.action) {
@@ -11874,6 +12586,7 @@ function handleMonopolyMessage(message) {
       hideModal();
       hideCardOverlay();
       hideVictory();
+      cleanBoardVisualsForNewGame();
       if (window.MonoFX) { MonoFX.clearDesat(); MonoFX.tokens.reset(); }
       renderAll({ instant: true });
       setMonopolyTicker(`🔄 Partner started a new game! First to <strong>${fmt(MONO_CFG.WIN_NET_WORTH)} net worth</strong> wins.`);

@@ -397,7 +397,7 @@
         const colorClass = r === 'bkk' ? 'token-color-ruby' : r === 'dxb' ? 'token-color-cyan' : r === 'bot1' ? 'token-color-emerald' : 'token-color-amber';
         el.className = `board-token token-${r} ${colorClass}`;
         el.id = `${r}Token`;
-        el.innerHTML = '<span class="token-name-tag"></span><span class="token-ring"></span><span class="token-shadow"></span><span class="token-body"><img class="token-sprite" alt="" draggable="false"></span>';
+        el.innerHTML = '<span class="token-name-tag"></span><span class="token-ring"></span><span class="token-shadow"></span><span class="token-body"><img class="token-sprite" alt="" decoding="async" draggable="false"></span>';
         L.tokens.appendChild(el);
         tok.el[r] = el;
       }
@@ -408,17 +408,19 @@
         nameTag.textContent = shortName;
       }
       const img = el.querySelector('.token-sprite');
-      const src = state.players[r] && state.players[r].sprite;
+      const rawSrc = state.players[r] && state.players[r].sprite;
+      const src = rawSrc
+        ? String(rawSrc)
+            .replace(/^assets\/(s\d+\/[^?#]+\.png)$/, 'assets/thumbs/$1')
+            .replace(/^assets\/(bkk_warrior_idle\.png)$/, 'assets/thumbs/$1')
+        : '';
       if (src && img.getAttribute('src') !== src) img.src = src;
 
-      // Auto-apply S6 Mythic subtle board auras
+      // Auto-apply S6 Mythic subtle board auras (toggled cleanly so costume changes/resets never leak)
       const cid = state.players[r] && (state.players[r].costume || '');
-      if (cid.includes('supernova') || cid.includes('s6_supernova')) {
-        el.classList.add('token-supernova-ready');
-      }
-      if (cid.includes('aegis') || cid.includes('s6_aegis')) {
-        el.classList.add('token-astral-shield');
-      }
+      el.classList.toggle('token-supernova-ready', !!(cid.includes('supernova') || cid.includes('s6_supernova')));
+      el.classList.toggle('token-astral-shield', !!(cid.includes('aegis') || cid.includes('s6_aegis')));
+
       // S8 Glacial Empress / Blizzard Warden: Ice Dragon Wings & Diamond-Dust Wake
       const pData = state.players[r];
       const isFrostEmpress = (cid.includes('empress') || cid.includes('s8_empress') || cid.includes('warden') || cid.includes('s8_warden') || (typeof isFrostSovereign === 'function' && isFrostSovereign(r)));
@@ -435,6 +437,16 @@
       const hasSolarWings = isSolar && (pData && (pData.ult >= 100 || pData.goldenRollNext || pData.hasSolarFalconWings || state.hadBonusRoll));
       el.classList.toggle('token-solar-falcon-wings', !!hasSolarWings);
 
+      // S10 Phantom Masquerade: Waltz Wings
+      const isPhantom = (cid.includes('phantom') || cid.includes('masquerade') || cid.includes('s10_') || (typeof isPhantomRoyalty === 'function' && isPhantomRoyalty(r)));
+      const hasPhantomWings = isPhantom && (pData && (pData.ult >= 100 || pData.hasPhantomWaltzWings || (pData.phantomRentReversals || 0) > 0));
+      el.classList.toggle('token-phantom-waltz-wings', !!hasPhantomWings);
+
+      // S11 Olympus Pantheon: Pegasus Wings
+      const isOlympus = (cid.includes('zeus') || cid.includes('athena') || cid.includes('olympus') || cid.includes('s11_') || (typeof isOlympusDivinity === 'function' && isOlympusDivinity(r)));
+      const hasPegasusWings = isOlympus && (pData && (pData.ult >= 100 || pData.hasOlympusPegasusWings));
+      el.classList.toggle('token-olympus-pegasus-wings', !!hasPegasusWings);
+
       // S2 Celestial Eclipse: Somnambulism Sleepwalk Trance
       const isSleepwalking = !!(pData && pData.somnambulismSteps > 0);
       el.classList.toggle('fx-token-somnambulism', isSleepwalking);
@@ -443,7 +455,7 @@
         if (!sleepCrown) {
           sleepCrown = document.createElement('div');
           sleepCrown.className = 'token-somnambulism-crown';
-          sleepCrown.innerHTML = '<img src="assets/thumbs/props/somnambulism_trance.png" class="sleepwalk-moon-img" alt="Sleepwalking" /><span class="sleepwalk-zzz">z<sup>z<sup>z</sup></sup></span>';
+          sleepCrown.innerHTML = '<img src="assets/thumbs/props/somnambulism_trance.png" class="sleepwalk-moon-img" alt="Sleepwalking" decoding="async" /><span class="sleepwalk-zzz">z<sup>z<sup>z</sup></sup></span>';
           el.appendChild(sleepCrown);
         }
       } else if (sleepCrown) {
@@ -788,9 +800,29 @@
   }
 
   function resetTokens() {
+    refs();
+    if (L.moment) L.moment.innerHTML = '';
+    const fxLayer = $('monopolyFxLayer');
+    if (fxLayer) fxLayer.innerHTML = '';
+    queue.length = 0;
+    deferred.length = 0;
+    holds = 0;
+    running = false;
     Object.keys(tok.el).forEach((r) => {
       tok.lock[r] = false;
-      if (tok.el[r]) tok.el[r].getAnimations().forEach((a) => a.cancel());
+      tok.busy[r] = false;
+      tok.shown[r] = null;
+      const el = tok.el[r];
+      if (el) {
+        if (typeof el.getAnimations === 'function') {
+          el.getAnimations().forEach((a) => a.cancel());
+        }
+        const colorClass = r === 'bkk' ? 'token-color-ruby' : r === 'dxb' ? 'token-color-cyan' : r === 'bot1' ? 'token-color-emerald' : 'token-color-amber';
+        el.className = `board-token token-${r} ${colorClass}`;
+        el.style.opacity = '1';
+        const crown = el.querySelector('.token-somnambulism-crown');
+        if (crown) crown.remove();
+      }
     });
   }
 
@@ -3732,8 +3764,8 @@
    */
   async function phoenixRebirthFlame(d = {}) {
     if (!refs()) return;
-    const role = d.role || 'dxb';
-    const amount = d.amount || 600;
+    const role = d.casterRole || d.role || 'dxb';
+    const amount = d.amount || 500;
 
     const casterEl = tok.el[role] || $(`${role}Token`);
     const pCoord = casterEl ? relRect(casterEl, L.moment) : (point({ token: role }) || center());
@@ -3771,7 +3803,7 @@
 
     const fireBadge = document.createElement('div');
     fireBadge.className = 'fx-phoenix-rebirth-badge';
-    fireBadge.innerHTML = `🔥 PHOENIX ASCENSION! 🪶<br><small style="font-size:9.5px;opacity:0.95;">ALL DEBTS INCINERATED · SOAR TO START ×2 LAP (+${amount}🪙)</small>`;
+    fireBadge.innerHTML = `🔥 PHOENIX ASCENSION! 🪶<br><small style="font-size:9.5px;opacity:0.95;">ALL SHIELDS INCINERATED · SOAR TO START (+${amount}🪙 REBIRTH SURGE)</small>`;
     fireBadge.style.left = `${fireAnchor.badgeX}px`;
     fireBadge.style.top = `${fireAnchor.badgeY}px`;
     L.moment.appendChild(fireBadge);
@@ -3820,7 +3852,7 @@
     ring(c.x, c.y, 220, '#f97316', 750);
     ring(c.x, c.y, 340, '#ffd700', 950);
     burst({ x: c.x, y: c.y, name: 'fire', count: 32, spread: 280, up: 180, life: 1100, size: 24 });
-    const b = banner('🔥 PHOENIX REBIRTH: ASCENSION! 🪶', `DEBTS CONSUMED · SOAR TO START ×2 LAP (+${amount}🪙)!`, 'red', 1950);
+    const b = banner('🔥 PHOENIX REBIRTH: ASCENSION! 🪶', `SHIELDS INCINERATED · SOAR TO START (+${amount}🪙)!`, 'red', 1950);
     await b;
   }
 

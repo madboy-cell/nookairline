@@ -1,5 +1,6 @@
-// Sky Party PWA Service Worker (v1.0.2)
-const CACHE_NAME = 'sky-party-cache-v3';
+// Sky Party PWA Service Worker (v1.1.0)
+const CACHE_NAME = 'sky-party-cache-v4';
+const ASSET_CACHE_NAME = 'sky-party-assets-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -21,19 +22,20 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const validCaches = new Set([CACHE_NAME, ASSET_CACHE_NAME]);
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
       caches.keys().then((keys) => {
         return Promise.all(
-          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+          keys.filter((key) => !validCaches.has(key)).map((key) => caches.delete(key))
         );
       })
     ])
   );
 });
 
-// Network-first fetch handler for maximum real-time multiplayer freshness
+// Stale-while-revalidate for static assets/vendor, Network-first for HTML/JS/CSS
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -43,12 +45,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy with cache fallback
+  const isStaticAsset = url.pathname.includes('/assets/') || url.pathname.includes('/vendor/');
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.open(ASSET_CACHE_NAME).then((cache) => {
+        return cache.match(req).then((cached) => {
+          const networkFetch = fetch(req)
+            .then((res) => {
+              if (res && res.status === 200) {
+                cache.put(req, res.clone()).catch(() => {});
+              }
+              return res;
+            })
+            .catch(() => cached);
+          return cached || networkFetch;
+        });
+      })
+    );
+    return;
+  }
+
+  // Network-first strategy with cache fallback for HTML/JS/CSS
   event.respondWith(
-    fetch(req).catch(() => {
-      return caches.match(req).then((cached) => {
-        return cached || new Response('Network unavailable', { status: 503, statusText: 'Service Unavailable' });
-      });
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone)).catch(() => {});
+        }
+        return res;
+      })
+      .catch(() => {
+        return caches.match(req).then((cached) => {
+          return cached || new Response('Network unavailable', { status: 503, statusText: 'Service Unavailable' });
+        });
+      })
   );
 });
+

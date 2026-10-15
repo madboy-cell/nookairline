@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public.couples (
 );
 
 CREATE INDEX IF NOT EXISTS idx_couples_users ON public.couples(user1_id, user2_id);
+CREATE INDEX IF NOT EXISTS idx_couples_user2 ON public.couples(user2_id);
 
 -- 3. FRIENDSHIPS TABLE
 CREATE TABLE IF NOT EXISTS public.friendships (
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS public.friendships (
 );
 
 CREATE INDEX IF NOT EXISTS idx_friendships_user_friend ON public.friendships(user_id, friend_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_friend ON public.friendships(friend_id);
 
 -- 4. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -65,48 +67,48 @@ CREATE POLICY "Public profiles are readable by authenticated users"
 
 CREATE POLICY "Users can insert their own profile"
     ON public.profiles FOR INSERT
-    WITH CHECK (auth.uid() = id);
+    WITH CHECK ((select auth.uid()) = id);
 
 CREATE POLICY "Users can update their own profile"
     ON public.profiles FOR UPDATE
-    USING (auth.uid() = id)
-    WITH CHECK (auth.uid() = id);
+    USING ((select auth.uid()) = id)
+    WITH CHECK ((select auth.uid()) = id);
 
 -- Couples Policies
 CREATE POLICY "Couples are viewable by participants"
     ON public.couples FOR SELECT
-    USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+    USING ((select auth.uid()) = user1_id OR (select auth.uid()) = user2_id);
 
 CREATE POLICY "Users can create couple invites"
     ON public.couples FOR INSERT
-    WITH CHECK (auth.uid() = user1_id);
+    WITH CHECK ((select auth.uid()) = user1_id);
 
 CREATE POLICY "Participants can update couple state"
     ON public.couples FOR UPDATE
-    USING (auth.uid() = user1_id OR auth.uid() = user2_id)
-    WITH CHECK (auth.uid() = user1_id OR auth.uid() = user2_id);
+    USING ((select auth.uid()) = user1_id OR (select auth.uid()) = user2_id)
+    WITH CHECK ((select auth.uid()) = user1_id OR (select auth.uid()) = user2_id);
 
 CREATE POLICY "Participants can dissolve couple connection"
     ON public.couples FOR DELETE
-    USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+    USING ((select auth.uid()) = user1_id OR (select auth.uid()) = user2_id);
 
 -- Friendships Policies
 CREATE POLICY "Friendships are viewable by participants"
     ON public.friendships FOR SELECT
-    USING (auth.uid() = user_id OR auth.uid() = friend_id);
+    USING ((select auth.uid()) = user_id OR (select auth.uid()) = friend_id);
 
 CREATE POLICY "Users can initiate friend requests"
     ON public.friendships FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Participants can update friendship status"
     ON public.friendships FOR UPDATE
-    USING (auth.uid() = user_id OR auth.uid() = friend_id)
-    WITH CHECK (auth.uid() = user_id OR auth.uid() = friend_id);
+    USING ((select auth.uid()) = user_id OR (select auth.uid()) = friend_id)
+    WITH CHECK ((select auth.uid()) = user_id OR (select auth.uid()) = friend_id);
 
 CREATE POLICY "Participants can delete friendships"
     ON public.friendships FOR DELETE
-    USING (auth.uid() = user_id OR auth.uid() = friend_id);
+    USING ((select auth.uid()) = user_id OR (select auth.uid()) = friend_id);
 
 -- 5. AUTOMATIC PROFILE CREATION TRIGGER ON SIGNUP
 CREATE OR REPLACE FUNCTION public.handle_new_user()
