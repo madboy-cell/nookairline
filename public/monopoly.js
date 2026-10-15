@@ -3127,6 +3127,8 @@ function closeMonopolyGame(broadcast = true) {
 
 function startBotGame(level = 'hard') {
   manualRoleOverride = null;
+  window.isMonopolyPlayerAway = false;
+  if (typeof clearBotTimer === 'function') clearBotTimer();
   const myRole = getMonopolyMyRole();
   const botRole = otherRole(myRole);
   const isEasy = (level === 'easy');
@@ -3916,6 +3918,13 @@ function hideMonopolyLobby() {
   if (modal) modal.classList.add('hidden');
   const screen = $m('monopolyLobbyScreen');
   if (screen) screen.classList.add('hidden');
+  const boardModal = $m('monopolyModal');
+  if (boardModal && !boardModal.classList.contains('hidden')) {
+    window.isMonopolyPlayerAway = false;
+    if (monopolyState && monopolyState.currentTurn === getMonopolyMyRole() && typeof clearBotTimer === 'function') {
+      clearBotTimer();
+    }
+  }
   if (typeof sendSignaling === 'function') {
     sendSignaling({ type: 'room_browse_stop' });
   }
@@ -4998,6 +5007,8 @@ function updateLobbyFlightRoomUI() {
 
 function startPartyGame(config = {}) {
   manualRoleOverride = null;
+  window.isMonopolyPlayerAway = false;
+  if (typeof clearBotTimer === 'function') clearBotTimer();
   const slotsSource = (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) ? currentFlightRoom.slots : lobbyState.slots;
   if (!Array.isArray(slotsSource) || slotsSource.length !== 4) {
     lobbyState.slots = getDefaultLobbySlots(lobbyState.mode);
@@ -5005,6 +5016,15 @@ function startPartyGame(config = {}) {
   const rawSlots = (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) ? currentFlightRoom.slots : lobbyState.slots;
   const normalizedSlots = (Array.isArray(rawSlots) ? rawSlots : []).map((s, idx) => {
     if (s.type === 'human' && !s.occupiedBy) {
+      if (!currentFlightRoom || s.id === 1 || idx === 0) {
+        return {
+          ...s,
+          occupiedBy: s.occupiedBy || `user_${s.role || (idx === 0 ? 'bkk' : 'dxb')}`,
+          controller: 'HUMAN',
+          ready: true,
+          connected: true
+        };
+      }
       const isSeat2 = (s.id === 2 || idx === 1);
       const isSeat3 = (s.id === 3 || idx === 2);
       return {
@@ -5017,6 +5037,9 @@ function startPartyGame(config = {}) {
         name: (s.name && s.name !== 'Open Slot') ? s.name : (isSeat2 ? 'Cadet Mochi 🐣' : (isSeat3 ? 'Pilot Pip 🐱' : 'Trainee Mochi 🐾')),
         avatar: s.avatar || 'assets/bot_mochi.jpg'
       };
+    }
+    if (s.type === 'human' && s.controller === 'BOT_TEMPORARY') {
+      return { ...s, controller: 'HUMAN', connected: true };
     }
     return s;
   });
@@ -5065,7 +5088,7 @@ function startPartyGame(config = {}) {
     turnOrder.push(role);
     const p = makePlayer(role);
 
-    p.isBot = slot.type === 'bot' || slot.controller === 'BOT_PERMANENT' || slot.controller === 'BOT_TEMPORARY';
+    p.isBot = slot.type === 'bot' || slot.controller === 'BOT_PERMANENT';
     if (p.isBot) {
       p.botLevel = slot.difficulty || 'easy';
       const isEasy = p.botLevel === 'easy';
@@ -5187,6 +5210,8 @@ function promptResetOrMode() {
 }
 
 function resetMonopolyGame() {
+  window.isMonopolyPlayerAway = false;
+  if (typeof clearBotTimer === 'function') clearBotTimer();
   if (currentFlightRoom && Array.isArray(currentFlightRoom.slots) && currentFlightRoom.slots.length > 0) {
     startPartyGame(currentFlightRoom);
     return;
@@ -5635,26 +5660,61 @@ function updateMonopolyHUD() {
   const bar = $m('monopolyPlayersBar');
   if (bar) bar.classList.toggle('party-4p', !!is4P);
 
+  // Determine current Net Worth leader for dynamic crown badge
+  let leaderRole = null;
+  let maxNw = -1;
+  allRoles.forEach((r) => {
+    const pl = st.players && st.players[r];
+    if (!pl || pl.bankrupt) return;
+    const nw = netWorth(r);
+    if (nw > maxNw) {
+      maxNw = nw;
+      leaderRole = r;
+    }
+  });
+
   allRoles.forEach((r) => {
     const cap = r === 'bkk' ? 'Bkk' : r === 'dxb' ? 'Dxb' : r === 'bot1' ? 'Bot1' : 'Bot2';
     const card = $m(`monopolyPlayerCard${cap}`);
     if (!card) return;
     const p = st.players[r];
+    const crownEl = $m(`monopoly${cap}Crown`);
+    const sigEl = $m(`monopoly${cap}Signal`);
     if (!p) {
       card.classList.remove('hidden');
       card.classList.add('is-empty-seat');
-      card.classList.remove('active-turn', 'is-me', 'magnetized', 'is-bankrupt');
+      card.classList.remove('active-turn', 'is-me', 'magnetized', 'is-bankrupt', 'ult-ready');
       const set = (id, html) => { const el = $m(id); if (el) el.innerHTML = html; };
       const defaultName = r === 'bot1' ? 'Zero' : r === 'bot2' ? 'Luna' : 'Open';
       set(`monopoly${cap}Name`, defaultName);
       set(`monopoly${cap}Miles`, '—');
+      set(`monopoly${cap}Props`, '🏰 0');
       set(`monopoly${cap}Nw`, '<span class="empty-seat-tag">OPEN</span>');
+      set(`monopoly${cap}Items`, '');
+      if (crownEl) crownEl.classList.add('hidden');
+      if (sigEl) sigEl.style.display = 'none';
       const ultWrap = $m(`monopoly${cap}UltWrap`);
-      if (ultWrap) ultWrap.style.display = 'none';
+      if (ultWrap) ultWrap.classList.add('hidden');
       return;
     }
     card.classList.remove('hidden');
     card.classList.remove('is-empty-seat');
+
+    if (crownEl) {
+      crownEl.classList.toggle('hidden', r !== leaderRole || !!p.bankrupt);
+    }
+
+    if (sigEl) {
+      sigEl.style.display = 'inline-block';
+      if (p.isBot) {
+        sigEl.textContent = '🤖';
+        sigEl.title = `AI Bot (${(p.botLevel || 'hard').toUpperCase()})`;
+      } else {
+        const isAway = (r === me && window.isMonopolyPlayerAway) || (r !== me && partnerAway());
+        sigEl.textContent = isAway ? '⚠️' : '📶';
+        sigEl.title = isAway ? 'Stepped Away' : 'Connected';
+      }
+    }
 
     const seatTag = card.querySelector('.player-seat-tag');
     if (seatTag) {
@@ -5671,53 +5731,54 @@ function updateMonopolyHUD() {
     const set = (id, html) => { const el = $m(id); if (el) el.innerHTML = html; };
     const pinfo = perkInfo(r);
     const perkChip = pinfo
-      ? ` <span class="mono-perk-chip pc-${pinfo.costume.rarity}" title="${pinfo.perk.name}: ${pinfo.perk.desc}">${pinfo.perk.icon}${pinfo.resonance ? '💞' : ''}</span>`
+      ? `<span class="mono-perk-chip pc-${pinfo.costume.rarity}" title="${pinfo.perk.name}: ${pinfo.perk.desc}">${pinfo.perk.icon}${pinfo.resonance ? '💞' : ''}</span>`
       : '';
     let buffPill = '';
     if (p.phoenixGraceActive) {
-      buffPill = ` <span class="mono-hud-status-pill phoenix" title="Sunfire Armor: Next Rent is 0">🔥 GRACE</span>`;
+      buffPill = `<span class="mono-hud-status-pill phoenix" title="Sunfire Armor: Next Rent is 0">🔥 GRACE</span>`;
     } else if ((p.bankruptcyImmunity || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill gold" title="Lantern Bankruptcy Immunity">🏮 IMMUNE</span>`;
+      buffPill = `<span class="mono-hud-status-pill gold" title="Lantern Bankruptcy Immunity">🏮 IMMUNE</span>`;
     } else if ((p.monacoGoldRushRounds || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill gold" title="Monaco Gold Rush: 1.5× Rent (${p.monacoGoldRushRounds}R)">🎰 1.5×</span>`;
+      buffPill = `<span class="mono-hud-status-pill gold" title="Monaco Gold Rush: 1.5× Rent (${p.monacoGoldRushRounds}R)">🎰 1.5×</span>`;
     } else if ((p.zeroRentIceBridge || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill cyan" title="Empress Ice Bridge: Next Rent is 0">❄️ BRIDGE</span>`;
+      buffPill = `<span class="mono-hud-status-pill cyan" title="Empress Ice Bridge: Next Rent is 0">❄️ BRIDGE</span>`;
     } else if (p.carpetGlideActive) {
-      buffPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet Flight: Next Rent is 0">🪔 GLIDE</span>`;
+      buffPill = `<span class="mono-hud-status-pill djinn" title="Magic Carpet Flight: Next Rent is 0">🪔 GLIDE</span>`;
     } else if ((p.phantomRentReversals || 0) > 0 && isPhantomRoyalty(r)) {
-      buffPill = ` <span class="mono-hud-status-pill rose" title="Phantom Masquerade: Reverse Rent Charges">🎭 ×${p.phantomRentReversals}</span>`;
+      buffPill = `<span class="mono-hud-status-pill rose" title="Phantom Masquerade: Reverse Rent Charges">🎭 ×${p.phantomRentReversals}</span>`;
     } else if (p.hasOlympusPegasusWings) {
-      buffPill = ` <span class="mono-hud-status-pill cyan" title="Pegasus Wings: Hazard Immunity">🪽 WINGS</span>`;
+      buffPill = `<span class="mono-hud-status-pill cyan" title="Pegasus Wings: Hazard Immunity">🪽 WINGS</span>`;
     } else if (isInariFoxfire(r)) {
-      buffPill = ` <span class="mono-hud-status-pill inari" title="Foxfire Spirit Tails">🦊 ${(p.foxfireTails != null ? p.foxfireTails : 3)}/3</span>`;
+      buffPill = `<span class="mono-hud-status-pill inari" title="Foxfire Spirit Tails">🦊 ${(p.foxfireTails != null ? p.foxfireTails : 3)}/3</span>`;
     } else if (isPhoenixAscendant(r) && (p.ashPot || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill phoenix" title="Ash Pot (Refunded at START)">🔥 ${fmt(p.ashPot)}🪙</span>`;
+      buffPill = `<span class="mono-hud-status-pill phoenix" title="Ash Pot (Refunded at START)">🔥 ${fmt(p.ashPot)}🪙</span>`;
     } else if (isDjinnMirage(r) && (p.carpetCharges || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill djinn" title="Magic Carpet">🪔 ${(p.carpetCharges || 0)}/3</span>`;
+      buffPill = `<span class="mono-hud-status-pill djinn" title="Magic Carpet">🪔 ${(p.carpetCharges || 0)}/3</span>`;
     } else if (isCelestialEclipse(r)) {
       const isOdd = ((st.roundCount || st.round || 1) % 2 === 1);
       buffPill = isOdd
-        ? ` <span class="mono-hud-status-pill gold" title="Sun Stance: +20% Rent Collected">☀️ +20%</span>`
-        : ` <span class="mono-hud-status-pill purple" title="Moon Stance: -25% Rent Paid">🌙 -25%</span>`;
+        ? `<span class="mono-hud-status-pill gold" title="Sun Stance: +20% Rent Collected">☀️ +20%</span>`
+        : `<span class="mono-hud-status-pill purple" title="Moon Stance: -25% Rent Paid">🌙 -25%</span>`;
     } else if (isNagaWarden(r) && (st.mekongHoard || 0) > 0) {
-      buffPill = ` <span class="mono-hud-status-pill emerald" title="Mekong River Hoard at START">🐉 ${fmt(st.mekongHoard)}🪙</span>`;
+      buffPill = `<span class="mono-hud-status-pill emerald" title="Mekong River Hoard at START">🐉 ${fmt(st.mekongHoard)}🪙</span>`;
     }
 
     let debuffPill = '';
     if ((p.cryoStasis || 0) > 0 || p.frozenTurn) {
-      debuffPill = ` <span class="mono-hud-status-pill debuff-ice" title="Subzero Chill: Crippled Roll / Frozen">🧊 CRYO</span>`;
+      debuffPill = `<span class="mono-hud-status-pill debuff-ice" title="Subzero Chill: Crippled Roll / Frozen">🧊 CRYO</span>`;
     } else if ((p.marionetteStasisRounds || 0) > 0) {
-      debuffPill = ` <span class="mono-hud-status-pill debuff-rose" title="Marionette Stasis: Roll Capped at 1-3">🎭 1-3</span>`;
+      debuffPill = `<span class="mono-hud-status-pill debuff-rose" title="Marionette Stasis: Roll Capped at 1-3">🎭 1-3</span>`;
     } else if ((p.somnambulismSteps || 0) > 0) {
-      debuffPill = ` <span class="mono-hud-status-pill debuff-purple" title="Somnambulism Trance: Pulled +3 Tiles">🌑 SLEEP</span>`;
+      debuffPill = `<span class="mono-hud-status-pill debuff-purple" title="Somnambulism Trance: Pulled +3 Tiles">🌑 SLEEP</span>`;
     } else if (p.invertDirectionNext) {
-      debuffPill = ` <span class="mono-hud-status-pill inari" title="Foxfire Confusion: Next Roll Reversed">🦊 REV</span>`;
+      debuffPill = `<span class="mono-hud-status-pill inari" title="Foxfire Confusion: Next Roll Reversed">🦊 REV</span>`;
     } else if (p.waterlogged) {
-      debuffPill = ` <span class="mono-hud-status-pill debuff-ice" title="Waterlogged: -1 Roll Speed">🌊 SLOW</span>`;
+      debuffPill = `<span class="mono-hud-status-pill debuff-ice" title="Waterlogged: -1 Roll Speed">🌊 SLOW</span>`;
     }
 
-    const specialPill = `${buffPill}${debuffPill}`;
-    set(`monopoly${cap}Name`, `${p.name}${perkChip}${specialPill}${r === me ? ' <span class="you-tag">YOU</span>' : ''}`);
+    const itemsHtml = (p.inventory || []).map((id) => ITEMS[id] ? `<span class="player-item-chip" title="${ITEMS[id].name}">${ITEMS[id].icon}</span>` : '').join('');
+    set(`monopoly${cap}Name`, `${p.name}${r === me ? ' <span class="you-tag">YOU</span>' : ''}`);
+    set(`monopoly${cap}Items`, `${perkChip}${buffPill}${debuffPill}${itemsHtml}`);
     setTweened($m(`monopoly${cap}Miles`), p.miles, (v) => fmt(v), card);
     set(`monopoly${cap}Props`, `🏰 ${ownedTileIds(r).length}`);
     setTweened($m(`monopoly${cap}Nw`), netWorth(r), (v) => `NW ${fmt(v)}`, null);
@@ -5725,21 +5786,25 @@ function updateMonopolyHUD() {
       const tokens = p.clashTokens != null ? p.clashTokens : (p.vibePasses || 0);
       set(`monopoly${cap}Passes`, tokens > 0 ? '🍸'.repeat(tokens) : '<span class="no-passes">0🍸</span>');
     }
-    set(`monopoly${cap}Items`, (p.inventory || []).map((id) => ITEMS[id] ? ITEMS[id].icon : '').join(''));
-    const ult = Math.round(p.ult || 0);
+
+    const ult = Math.max(0, Math.min(100, Math.round(p.ult || 0)));
+    const canCastUlt = !p.isBot || p.botLevel === 'insane';
     const ultWrap = $m(`monopoly${cap}UltWrap`);
     const ultTrack = $m(`monopoly${cap}UltTrack`);
     const ultFill = $m(`monopoly${cap}UltFill`);
     const ultLabel = $m(`monopoly${cap}UltLabel`);
     if (ultWrap) {
-      ultWrap.style.display = 'flex';
-      ultWrap.classList.toggle('is-ready', ult >= 100);
-      ultWrap.title = `Ultimate Charge: ${ult}%${ult >= 100 ? ' (READY TO CAST!)' : ''}`;
+      ultWrap.classList.toggle('hidden', !canCastUlt);
+      ultWrap.style.opacity = '1';
+      ultWrap.classList.toggle('is-ready', canCastUlt && ult >= 100);
+      ultWrap.title = canCastUlt
+        ? `Ultimate Charge: ${ult}%${ult >= 100 ? ' (READY TO CAST!)' : ''}`
+        : 'Standard AI Bots do not cast Ultimate skills';
     }
-    if (ultFill) ultFill.style.width = `${ult}%`;
+    if (ultFill) ultFill.style.width = `${canCastUlt ? ult : 0}%`;
     if (ultLabel) ultLabel.textContent = ult >= 100 ? 'MAX' : `${ult}%`;
-    if (ultTrack) ultTrack.classList.toggle('is-ready', ult >= 100);
-    card.classList.toggle('ult-ready', ult >= 100);
+    if (ultTrack) ultTrack.classList.toggle('is-ready', canCastUlt && ult >= 100);
+    card.classList.toggle('ult-ready', canCastUlt && ult >= 100);
 
     const thumb = $m(`monopoly${cap}Thumb`);
     const thumbSrc = toThumbSprite(p.sprite);
@@ -5888,42 +5953,86 @@ function canUseItemsNow() {
 function getTileActiveEffectsInfo(tile, prop, st) {
   const effects = [];
   if (prop) {
-    if ((prop.phoenixCrater || 0) > 0) {
-      effects.push({ badge: `🔥 Solar Crater (${prop.phoenixCrater}T)`, counter: '❄️ Frost / 🌊 Abyss / 🐉 Leviathan' });
+    if (prop.isGlacialCitadel) {
+      effects.push({ badge: '❄️ Glacial Citadel (2.5× Rent + Freeze)', counter: '☀️ Solar Flare / 🔥 Phoenix / 👑 Midas' });
     }
-    if ((prop.frostCitadel || 0) > 0) {
-      effects.push({ badge: `❄️ Frost Citadel (${prop.frostCitadel}R)`, counter: '🔥 Phoenix / ☀️ Solar / 👑 Midas' });
+    if (prop.isGoldenPyramid) {
+      effects.push({ badge: '🔺 Golden Pyramid (2× Rent + Siphon)', counter: '⚡ Olympus / 🌊 Abyss / 🐉 Leviathan' });
     }
-    if (prop.pyramid) {
-      effects.push({ badge: '🔺 Golden Pyramid (×2)', counter: '⚡ Olympus / 🌊 Abyss / 🐉 Leviathan' });
+    if (prop.isOlympusTemple) {
+      effects.push({ badge: '⚡ Olympus Temple (2× Rent + Toll)', counter: '⏳ Chronos / 🌑 Eclipse' });
     }
-    if (prop.olympusMonument) {
-      effects.push({ badge: '⚡ Olympus Monument (×2.5)', counter: '⏳ Chronos / 🌑 Eclipse' });
+    if (prop.isSolarObelisk) {
+      effects.push({ badge: '☀️ Solar Obelisk (2.5× Rent + Burn)', counter: '❄️ Frost / 🌊 Abyss / 🐉 Leviathan' });
     }
-    if (prop.midasGold) {
-      effects.push({ badge: '👑 Midas Gold (×3)', counter: '🌑 Eclipse / ⏳ Chronos' });
+    if (prop.isTransmutedGold) {
+      effects.push({ badge: `👑 Midas Gold (1.5× Tribute · ${prop.transmutedRounds || 1}R)`, counter: '🌑 Eclipse / ⏳ Chronos' });
     }
-    if (prop.coralPalace) {
-      effects.push({ badge: '🐚 Coral Palace', counter: '⚡ Olympus / ☀️ Solar' });
+    if ((prop.monumentSuppressedRounds || 0) > 0) {
+      effects.push({ badge: `🌑 Monument Eclipsed (${prop.monumentSuppressedRounds}R)`, counter: '☀️ Solar / 👑 Midas' });
     }
-    if ((prop.sunkenRuin || 0) > 0) {
-      effects.push({ badge: `🌊 Sunken Ruin (${prop.sunkenRuin}R)`, counter: '☀️ Solar / 🔥 Phoenix' });
+    if ((prop.frosted || 0) > 0) {
+      effects.push({ badge: `🥶 Permafrost (${prop.frosted}R · 50% Rent)`, counter: '🔥 Phoenix / ☀️ Solar' });
     }
-    if (prop.hexMirror) {
-      effects.push({ badge: '🪞 Hex Mirror (50% Siphon)', counter: '⛩️ Inari / 🦊 Kitsune' });
+    if (prop.frostShield) {
+      effects.push({ badge: '🧊 Frost Shield (Takeover Ward)', counter: '☀️ Solar / 🔥 Phoenix' });
     }
-    if (prop.inariShrine) {
-      effects.push({ badge: '⛩️ Inari Shrine (+25% Aura)', counter: '🪞 Hex / 🌑 Eclipse' });
+    if (prop.torchShield) {
+      effects.push({ badge: '🔥 Torch Shield (Takeover Ward)', counter: '🌊 Abyss / ❄️ Frost' });
     }
-    if ((prop.blackHole || 0) > 0) {
-      effects.push({ badge: `🕳️ Gravity Well (${prop.blackHole}R)`, counter: '🛡️ Astral Shield' });
+    if (prop.waterShield) {
+      effects.push({ badge: '🌊 Water Shield (Takeover Ward)', counter: '⚡ Olympus / ☀️ Solar' });
+    }
+    if ((prop.shield || 0) > 0) {
+      effects.push({ badge: `🪐 Celestial Shield (×${prop.shield})`, counter: '' });
     }
     if ((prop.boostTurns || 0) > 0) {
       effects.push({ badge: `📈 Surge ×${prop.boostMult || 2} (${prop.boostTurns}T)`, counter: '' });
     }
   }
-  if (st && Array.isArray(st.traps) && st.traps.some((t) => t.tile === tile.id)) {
-    effects.push({ badge: '🪤 Spike Trap', counter: '🛡️ Shield / 🪽 Winged Boots' });
+  if (st) {
+    const tid = tile.id;
+    if (st.snowdriftTraps && st.snowdriftTraps[tid]) {
+      effects.push({ badge: '🌨️ Snowdrift Trap (-250🪙 + Freeze)', counter: '🔥 Phoenix / ☀️ Solar' });
+    }
+    if (st.bananaTraps && st.bananaTraps[tid] > 0) {
+      effects.push({ badge: `🍌 Banana Trap (×${st.bananaTraps[tid]})`, counter: '🛡️ Shield / 🪽 Wings' });
+    }
+    if (st.floodedTiles && st.floodedTiles[tid]) {
+      const fl = st.floodedTiles[tid];
+      const isCoral = !!(prop && prop.owner && isAbyssalDrifter(prop.owner));
+      effects.push({
+        badge: isCoral ? '🐚 Coral Palace (+35% Rent)' : `🌊 Sunken Ruin (${fl.rounds || 1}R · -50% Rent)`,
+        counter: '☀️ Solar / 🔥 Phoenix'
+      });
+    }
+    if (st.inariToriiGates && st.inariToriiGates[tid]) {
+      effects.push({ badge: `⛩️ Inari Torii Gate (${st.inariToriiGates[tid].rounds || 1}R · 25% Toll)`, counter: '🌑 Eclipse' });
+    }
+    if (st.djinnOasisTiles && st.djinnOasisTiles[tid]) {
+      effects.push({ badge: `🌴 Mirage Oasis (${st.djinnOasisTiles[tid].rounds || 1}R · 350🪙 Tribute)`, counter: '❄️ Frost / 🌊 Abyss' });
+    }
+    if (st.wishSanctuaries && st.wishSanctuaries[tid]) {
+      effects.push({ badge: `🪔 Wish Sanctuary (${st.wishSanctuaries[tid].rounds || 1}R · +350🪙)`, counter: '' });
+    }
+    if (st.solarScorchedTiles && st.solarScorchedTiles[tid]) {
+      effects.push({ badge: '☀️ Solar Scorch (350🪙 Burn)', counter: '🌊 Abyss / ❄️ Frost' });
+    }
+    if (st.phoenixEmbers && st.phoenixEmbers[tid]) {
+      effects.push({ badge: `🔥 Phoenix Ember (${st.phoenixEmbers[tid].rounds || 1}R · 220🪙 Burn)`, counter: '🌊 Abyss / ❄️ Frost' });
+    }
+    if (st.sacredWaterways && st.sacredWaterways[tid]) {
+      effects.push({ badge: `🐉 Sacred Waterway (${st.sacredWaterways[tid].rounds || 1}R)`, counter: '⚡ Olympus' });
+    }
+    if (st.reverseRentHexTile === tid) {
+      effects.push({ badge: '🪞 Reverse Rent Hex', counter: '⛩️ Inari / 🛡️ Shield' });
+    }
+    if (st.enchantedRoseTile === tid) {
+      effects.push({ badge: '🌹 Enchanted Rose (+40% Rent)', counter: '❄️ Frost / 🔥 Phoenix' });
+    }
+    if (st.c4 && st.c4.tileId === tid) {
+      effects.push({ badge: '💣 Planted C4 Charge', counter: '🛡️ Shield / 🌊 Water Shield' });
+    }
   }
   return effects;
 }
@@ -5945,7 +6054,7 @@ function showTileInspectorPopup(tile, prop, st) {
   }
 
   document.querySelectorAll('.board-tile.tile-inspected-pulse').forEach((el) => el.classList.remove('tile-inspected-pulse'));
-  const tileEl = $m(`monoTile_${tile.id}`);
+  const tileEl = $m(`boardTile_${tile.id}`);
   if (tileEl) tileEl.classList.add('tile-inspected-pulse');
 
   const zone = tile.zone && ZONES[tile.zone] ? ZONES[tile.zone] : null;
@@ -7682,6 +7791,7 @@ function startRoll(rollVal, viaGolden) {
   const playerKey = st.currentTurn;
   const pl = st.players[playerKey];
   if (!pl) return;
+  if (typeof clearBotTimer === 'function') clearBotTimer();
 
   if (activeRollLocks[playerKey] || activeMoveLocks[playerKey] || st.isRolling || isAnimating) {
     const elapsed = Date.now() - (rollStartedAt || 0);
@@ -9419,7 +9529,7 @@ function finishTurn() {
       emitFx({ kind: 'sound', name: 'fanfare' });
       pushState();
       renderAll();
-      if (monopolyState.players[bonusPlayer]?.isBot || (window.isMonopolyPlayerAway && bonusPlayer === getMonopolyMyRole())) {
+      if (monopolyState.players[bonusPlayer]?.isBot || isLocalPlayerAutoPilot(bonusPlayer)) {
         checkBotTurn();
       }
       return;
@@ -9580,7 +9690,7 @@ function endTurn() {
   pushState();
   renderAll();
   flushQueuedMessages();
-  if (!st.gameOver && (st.players[st.currentTurn]?.isBot || (window.isMonopolyPlayerAway && st.currentTurn === getMonopolyMyRole()))) {
+  if (!st.gameOver && (st.players[st.currentTurn]?.isBot || isLocalPlayerAutoPilot(st.currentTurn))) {
     checkBotTurn();
   }
 }
@@ -10131,6 +10241,18 @@ function clearBotTimer() {
   }
 }
 
+function isLocalPlayerAutoPilot(role) {
+  if (!window.isMonopolyPlayerAway) return false;
+  if (role !== getMonopolyMyRole()) return false;
+  const modal = $m('monopolyModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    // Player is actively viewing the Monopoly board — never auto-play their turn!
+    window.isMonopolyPlayerAway = false;
+    return false;
+  }
+  return true;
+}
+
 function armBotWatchdog(phase = 'turn') {
   if (botWatchdogTimer) clearTimeout(botWatchdogTimer);
   const st = monopolyState;
@@ -10138,7 +10260,7 @@ function armBotWatchdog(phase = 'turn') {
   const botRole = st.currentTurn;
   const curP = st.players && st.players[botRole];
   const duelBot = st.activeDuel && !st.activeDuel.settled && [st.activeDuel.attacker, st.activeDuel.defender].find((r) => st.players[r]?.isBot && st.activeDuel.rolls[r] == null);
-  if (!curP?.isBot && !duelBot) return;
+  if (!curP?.isBot && !isLocalPlayerAutoPilot(botRole) && !duelBot) return;
 
   const timeoutMs = phase === 'decision' ? 4500 : 6500;
 
@@ -10169,7 +10291,7 @@ function armBotWatchdog(phase = 'turn') {
 
     if (s.currentTurn !== botRole) return;
     const p = s.players && s.players[botRole];
-    if (!p || !p.isBot) return;
+    if (!p || (!p.isBot && !isLocalPlayerAutoPilot(botRole))) return;
     if (!isResolver()) return;
 
     console.warn(`[Monopoly] Bot ${botRole} watchdog triggered (${phase})! Auto-progressing move...`);
@@ -10194,7 +10316,7 @@ function checkBotTurn() {
     if (isResolver()) endTurn();
     return;
   }
-  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  const isAutoPilot = isLocalPlayerAutoPilot(botRole);
   if (!botP.isBot && !isAutoPilot) return;
 
   // Auto-recovery for stuck animation / roll locks:
@@ -10235,7 +10357,7 @@ function scheduleBotRoll() {
   const st = monopolyState;
   const botRole = st.currentTurn;
   const botP = st.players && st.players[botRole];
-  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  const isAutoPilot = isLocalPlayerAutoPilot(botRole);
   if (!botP || (!botP.isBot && !isAutoPilot)) return;
   const level = botP.botLevel || 'hard';
 
@@ -10245,6 +10367,7 @@ function scheduleBotRoll() {
   botActionTimer = setTimeout(() => {
     botActionTimer = null;
     if (!st.active || st.currentTurn !== botRole) return;
+    if (!botP.isBot && !isLocalPlayerAutoPilot(botRole)) return;
     if (st.isRolling || isAnimating || isRoleLocked(botRole)) {
       const elapsed = Date.now() - (rollStartedAt || 0);
       if (elapsed > 7500) {
@@ -10276,7 +10399,7 @@ function scheduleBotRoll() {
         executeUltimate(botRole);
         setTimeout(() => {
           scheduleBotRoll();
-        }, 2700);
+        }, 2400);
         return;
       }
     }
@@ -10294,7 +10417,7 @@ function scheduleBotRoll() {
     }
 
     startRoll(d6(), false);
-  }, 900 + Math.floor(Math.random() * 400));
+  }, 650 + Math.floor(Math.random() * 250));
 }
 
 function applyBotItem(action) {
@@ -10417,7 +10540,7 @@ function scheduleBotDecision(d) {
   const st = monopolyState;
   const botRole = st.currentTurn;
   const botP = st.players && st.players[botRole];
-  const isAutoPilot = !!(window.isMonopolyPlayerAway && botRole === getMonopolyMyRole());
+  const isAutoPilot = isLocalPlayerAutoPilot(botRole);
   if (!botP || (!botP.isBot && !isAutoPilot)) return;
   const level = botP.botLevel || 'hard';
 
@@ -10428,6 +10551,7 @@ function scheduleBotDecision(d) {
   botActionTimer = setTimeout(() => {
     botActionTimer = null;
     if (!st.active || st.currentTurn !== botRole) return;
+    if (!botP.isBot && !isLocalPlayerAutoPilot(botRole)) return;
     let decision = { act: 'pass' };
     if (window.NookMonoBot && typeof window.NookMonoBot.decide === 'function') {
       try {
@@ -10437,7 +10561,7 @@ function scheduleBotDecision(d) {
       }
     }
     applyBotDecision(d, decision, level);
-  }, 900 + Math.floor(Math.random() * 400));
+  }, 650 + Math.floor(Math.random() * 250));
 }
 
 function applyBotDecision(d, dec, level) {
@@ -12352,6 +12476,8 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_rejoined') {
+    window.isMonopolyPlayerAway = false;
+    if (typeof clearBotTimer === 'function') clearBotTimer();
     currentFlightRoom = message.room;
     currentFlightRoomSlot = message.slot;
     currentFlightRoomIsHost = message.slot && message.slot.id === 1;
@@ -12493,6 +12619,8 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'room_start') {
+    window.isMonopolyPlayerAway = false;
+    if (typeof clearBotTimer === 'function') clearBotTimer();
     hideFloatingRoomWidget();
     if (message.room) {
       currentFlightRoom = message.room;
@@ -12598,6 +12726,8 @@ function handleMonopolyMessage(message) {
   }
 
   if (message.type === 'monopoly_start_party') {
+    window.isMonopolyPlayerAway = false;
+    if (typeof clearBotTimer === 'function') clearBotTimer();
     if (message.state) {
       monopolyState = message.state;
       saveLocalMonopolyState();

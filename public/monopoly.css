@@ -9464,7 +9464,7 @@ body.has-active-modal .vault-pill * {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 2px !important;
+  gap: 3px !important;
   line-height: 1 !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -9484,6 +9484,17 @@ body.has-active-modal .vault-pill * {
   letter-spacing: -0.2px !important;
   line-height: 1 !important;
 }
+.player-balance-row .player-prop-badge {
+  font-size: 7.2px !important;
+  font-weight: 800 !important;
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 4px !important;
+  padding: 0.5px 3px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
 .player-nw-badge {
   font-size: 7.2px !important;
   font-weight: 800 !important;
@@ -9498,10 +9509,29 @@ body.has-active-modal .vault-pill * {
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+.player-status-strip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: nowrap !important;
+  gap: 2px !important;
+  width: 100% !important;
+  min-height: 12px !important;
+  overflow: hidden !important;
+}
+.player-status-strip:empty {
+  display: none !important;
+}
+.player-status-strip .player-items-mini {
+  font-size: 8px !important;
+  line-height: 1 !important;
+  letter-spacing: -1px !important;
+  flex-shrink: 0 !important;
+}
 
 /* Ultimate Gauge Compact Track */
 .player-ult-wrap {
-  display: flex !important;
+  display: flex;
   align-items: center !important;
   justify-content: center !important;
   gap: 2px !important;
@@ -9510,6 +9540,9 @@ body.has-active-modal .vault-pill * {
   margin-top: 1.5px !important;
   padding: 0 1px !important;
   box-sizing: border-box !important;
+}
+.player-ult-wrap.hidden {
+  display: none !important;
 }
 .player-ult-bolt {
   font-size: 6.5px !important;
@@ -9532,7 +9565,7 @@ body.has-active-modal .vault-pill * {
 }
 .player-ult-fill {
   height: 100% !important;
-  width: 0% !important;
+  width: 0%;
   background: linear-gradient(90deg, #0284c7, #38bdf8, #818cf8) !important;
   border-radius: 999px !important;
   transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -9551,7 +9584,6 @@ body.has-active-modal .vault-pill * {
 /* Ult Ready State */
 .player-ult-wrap.is-ready .player-ult-bolt {
   color: #f59e0b !important;
-  animation: ultBoltPulse 0.8s infinite alternate !important;
 }
 .player-ult-wrap.is-ready .player-ult-track {
   border-color: rgba(245, 158, 11, 0.6) !important;
@@ -9798,11 +9830,6 @@ body.has-active-modal .vault-pill * {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%);
   border-color: #f59e0b;
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
-  animation: turnPulseGlow 1.8s infinite;
-}
-@keyframes turnPulseGlow {
-  0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
-  50% { box-shadow: 0 0 22px rgba(245, 158, 11, 0.8); }
 }
 .turn-avatar-mini-wrap {
   width: 18px;
@@ -9837,12 +9864,12 @@ body.has-active-modal .vault-pill * {
   border: 1px solid rgba(245, 158, 11, 0.3);
   box-shadow: 0 0 24px rgba(245, 158, 11, 0.25), inset 0 0 16px rgba(245, 158, 11, 0.15);
   pointer-events: none;
-  animation: daisSpinGlow 8s linear infinite;
+  will-change: transform, opacity;
+  animation: daisSpinGlow 6s ease-in-out infinite;
 }
 @keyframes daisSpinGlow {
-  0% { transform: scale(1) rotate(0deg); opacity: 0.85; }
-  50% { transform: scale(1.05) rotate(180deg); opacity: 1; }
-  100% { transform: scale(1) rotate(360deg); opacity: 0.85; }
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.03); opacity: 1; }
 }
 
 /* --- 5. Bottom Action Bar --- */

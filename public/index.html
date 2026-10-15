@@ -17,7 +17,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="index.css?v=20261013_tokenfix">
   <link rel="stylesheet" href="avatar.css?v=20261013_tokenfix">
-  <link rel="stylesheet" href="monopoly.css?v=20261015_lategame60fps">
+  <link rel="stylesheet" href="monopoly.css?v=20261015_uxperf2">
   <link rel="stylesheet" href="monopoly_fx.css?v=20261013_bot_insane">
   <link rel="stylesheet" href="vault.css?v=20261013_stardustfix">
   <link rel="stylesheet" href="lounge.css?v=20261013_tokenfix">
@@ -268,9 +268,9 @@
         <div class="monopoly-players-bar neora-players-bar" id="monopolyPlayersBar">
           <!-- Card 1: P1 (Host / You) -->
           <div class="monopoly-player-card neora-player-card player-bkk" id="monopolyPlayerCardBkk" data-seat="1">
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <span class="player-signal-bars" id="monopolyBkkSignal" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
-              <span class="player-crown-icon" aria-hidden="true">👑</span>
+              <span class="player-crown-icon" id="monopolyBkkCrown" aria-hidden="true">👑</span>
               <img src="assets/thumbs/bkk_warrior_idle.png" loading="lazy" decoding="async" class="player-thumb-mini" id="monopolyBkkThumb" alt="P1" />
             </div>
             <div class="player-info-mini">
@@ -281,8 +281,12 @@
               <div class="player-balance-row">
                 <span class="coin-icon">🪙</span>
                 <span class="player-miles-pill" id="monopolyBkkMiles">1,200</span>
+                <span class="player-prop-badge" id="monopolyBkkProps">🏰 0</span>
               </div>
               <div class="player-nw-badge" id="monopolyBkkNw">NW 1,200</div>
+              <div class="player-status-strip" id="monopolyBkkStatusStrip">
+                <span class="player-items-mini" id="monopolyBkkItems"></span>
+              </div>
               <div class="player-ult-wrap" id="monopolyBkkUltWrap" title="Ultimate Charge: 0%">
                 <span class="player-ult-bolt" aria-hidden="true">⚡</span>
                 <div class="player-ult-track" id="monopolyBkkUltTrack">
@@ -292,15 +296,14 @@
               </div>
             </div>
             <!-- Hidden compatibility hooks -->
-            <span class="player-prop-badge hidden" id="monopolyBkkProps">🏰 0</span>
             <span class="player-passes hidden" id="monopolyBkkPasses"></span>
-            <span class="player-items-mini hidden" id="monopolyBkkItems"></span>
           </div>
 
           <!-- Card 2: P2 (Co-Pilot / Rival) -->
           <div class="monopoly-player-card neora-player-card player-dxb" id="monopolyPlayerCardDxb" data-seat="2">
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <span class="player-signal-bars" id="monopolyDxbSignal" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
+              <span class="player-crown-icon hidden" id="monopolyDxbCrown" aria-hidden="true">👑</span>
               <img src="assets/thumbs/got_queen_idle.png" loading="lazy" decoding="async" class="player-thumb-mini" id="monopolyDxbThumb" alt="P2" />
             </div>
             <div class="player-info-mini">
@@ -311,8 +314,12 @@
               <div class="player-balance-row">
                 <span class="coin-icon">🪙</span>
                 <span class="player-miles-pill" id="monopolyDxbMiles">1,200</span>
+                <span class="player-prop-badge" id="monopolyDxbProps">🏰 0</span>
               </div>
               <div class="player-nw-badge" id="monopolyDxbNw">NW 1,200</div>
+              <div class="player-status-strip" id="monopolyDxbStatusStrip">
+                <span class="player-items-mini" id="monopolyDxbItems"></span>
+              </div>
               <div class="player-ult-wrap" id="monopolyDxbUltWrap" title="Ultimate Charge: 0%">
                 <span class="player-ult-bolt" aria-hidden="true">⚡</span>
                 <div class="player-ult-track" id="monopolyDxbUltTrack">
@@ -322,15 +329,14 @@
               </div>
             </div>
             <!-- Hidden compatibility hooks -->
-            <span class="player-prop-badge hidden" id="monopolyDxbProps">🏰 0</span>
             <span class="player-passes hidden" id="monopolyDxbPasses"></span>
-            <span class="player-items-mini hidden" id="monopolyDxbItems"></span>
           </div>
 
           <!-- Card 3: P3 (Bot 1 / Guest 3) -->
           <div class="monopoly-player-card neora-player-card player-bot1" id="monopolyPlayerCardBot1" data-seat="3">
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <span class="player-signal-bars" id="monopolyBot1Signal" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
+              <span class="player-crown-icon hidden" id="monopolyBot1Crown" aria-hidden="true">👑</span>
               <img src="assets/thumbs/bot_mochi.jpg" loading="lazy" decoding="async" class="player-thumb-mini" id="monopolyBot1Thumb" alt="P3" />
             </div>
             <div class="player-info-mini">
@@ -341,8 +347,12 @@
               <div class="player-balance-row">
                 <span class="coin-icon">🪙</span>
                 <span class="player-miles-pill" id="monopolyBot1Miles">1,200</span>
+                <span class="player-prop-badge" id="monopolyBot1Props">🏰 0</span>
               </div>
               <div class="player-nw-badge" id="monopolyBot1Nw">NW 1,200</div>
+              <div class="player-status-strip" id="monopolyBot1StatusStrip">
+                <span class="player-items-mini" id="monopolyBot1Items"></span>
+              </div>
               <div class="player-ult-wrap" id="monopolyBot1UltWrap" title="Ultimate Charge: 0%">
                 <span class="player-ult-bolt" aria-hidden="true">⚡</span>
                 <div class="player-ult-track" id="monopolyBot1UltTrack">
@@ -351,15 +361,13 @@
                 <span class="player-ult-label" id="monopolyBot1UltLabel">0%</span>
               </div>
             </div>
-            <!-- Hidden compatibility hooks -->
-            <span class="player-prop-badge hidden" id="monopolyBot1Props">🏰 0</span>
-            <span class="player-items-mini hidden" id="monopolyBot1Items"></span>
           </div>
 
           <!-- Card 4: P4 (Bot 2 / Guest 4) -->
           <div class="monopoly-player-card neora-player-card player-bot2" id="monopolyPlayerCardBot2" data-seat="4">
-            <span class="player-signal-bars" aria-hidden="true">📶</span>
+            <span class="player-signal-bars" id="monopolyBot2Signal" aria-hidden="true">📶</span>
             <div class="player-card-avatar-wrap">
+              <span class="player-crown-icon hidden" id="monopolyBot2Crown" aria-hidden="true">👑</span>
               <img src="assets/thumbs/bot_captain.jpg" loading="lazy" decoding="async" class="player-thumb-mini" id="monopolyBot2Thumb" alt="P4" />
             </div>
             <div class="player-info-mini">
@@ -370,8 +378,12 @@
               <div class="player-balance-row">
                 <span class="coin-icon">🪙</span>
                 <span class="player-miles-pill" id="monopolyBot2Miles">1,200</span>
+                <span class="player-prop-badge" id="monopolyBot2Props">🏰 0</span>
               </div>
               <div class="player-nw-badge" id="monopolyBot2Nw">NW 1,200</div>
+              <div class="player-status-strip" id="monopolyBot2StatusStrip">
+                <span class="player-items-mini" id="monopolyBot2Items"></span>
+              </div>
               <div class="player-ult-wrap" id="monopolyBot2UltWrap" title="Ultimate Charge: 0%">
                 <span class="player-ult-bolt" aria-hidden="true">⚡</span>
                 <div class="player-ult-track" id="monopolyBot2UltTrack">
@@ -380,9 +392,6 @@
                 <span class="player-ult-label" id="monopolyBot2UltLabel">0%</span>
               </div>
             </div>
-            <!-- Hidden compatibility hooks -->
-            <span class="player-prop-badge hidden" id="monopolyBot2Props">🏰 0</span>
-            <span class="player-items-mini hidden" id="monopolyBot2Items"></span>
           </div>
         </div>
 
@@ -469,7 +478,7 @@
                 <div class="seat-status-pill ready" id="lobbySeatDxbStatus">
                   <span>🟢 Online & Ready</span>
                 </div>
-                <button class="seat-cycle-btn" id="lobbySlotCycleBtn2" title="Tap to cycle: Open ➔ Bot Easy ➔ Bot Hard ➔ Closed">
+                <button class="seat-cycle-btn" id="lobbySlotCycleBtn2" title="Tap to cycle: Open ➔ Bot Easy ➔ Bot Hard ➔ Bot Insane ➔ Closed">
                   <span>🔁 Tap to Cycle</span>
                 </button>
               </div>
@@ -481,7 +490,7 @@
                   <span class="seat-role-pill bot-pill-easy" id="lobbySeatBot1RolePill">🐣 Co-Pilot</span>
                 </div>
                 <div class="seat-avatar-wrap">
-                  <img src="assets/thumbs/bot_mochi.jpg" loading="lazy" decoding="async" class="seat-avatar" id="lobbySeatBot1Img" alt="Seat 3 Avatar" />
+                  <img src="assets/thumbs/bot_mochi.jpg" loading="lazy" decoding="async" class="player-thumb-mini seat-avatar" id="lobbySeatBot1Img" alt="Seat 3 Avatar" />
                   <span class="seat-glow-ring ring-emerald"></span>
                 </div>
                 <div class="seat-info">
@@ -492,10 +501,11 @@
                   <select class="seat-diff-select" id="lobbyBot1DiffSelect" style="display:none;">
                     <option value="easy" selected>🟢 Easy Bot</option>
                     <option value="hard">🔴 Hard Bot</option>
+                    <option value="insane">⚡ Insane Bot</option>
                     <option value="closed">❌ Closed</option>
                   </select>
                 </div>
-                <button class="seat-cycle-btn" id="lobbySlotCycleBtn3" title="Tap to cycle: Bot Easy ➔ Bot Hard ➔ Closed ➔ Open">
+                <button class="seat-cycle-btn" id="lobbySlotCycleBtn3" title="Tap to cycle: Bot Easy ➔ Bot Hard ➔ Bot Insane ➔ Closed ➔ Open">
                   <span>🔁 Tap to Cycle</span>
                 </button>
               </div>
@@ -507,7 +517,7 @@
                   <span class="seat-role-pill bot-pill-hard" id="lobbySeatBot2RolePill">😈 Rival Captain</span>
                 </div>
                 <div class="seat-avatar-wrap">
-                  <img src="assets/thumbs/bot_captain.jpg" loading="lazy" decoding="async" class="seat-avatar" id="lobbySeatBot2Img" alt="Seat 4 Avatar" />
+                  <img src="assets/thumbs/bot_captain.jpg" loading="lazy" decoding="async" class="player-thumb-mini seat-avatar" id="lobbySeatBot2Img" alt="Seat 4 Avatar" />
                   <span class="seat-glow-ring ring-amber"></span>
                 </div>
                 <div class="seat-info">
@@ -518,10 +528,11 @@
                   <select class="seat-diff-select" id="lobbyBot2DiffSelect" style="display:none;">
                     <option value="hard" selected>🔴 Hard Bot</option>
                     <option value="easy">🟢 Easy Bot</option>
+                    <option value="insane">⚡ Insane Bot</option>
                     <option value="closed">❌ Closed</option>
                   </select>
                 </div>
-                <button class="seat-cycle-btn" id="lobbySlotCycleBtn4" title="Tap to cycle: Bot Hard ➔ Closed ➔ Open ➔ Bot Easy">
+                <button class="seat-cycle-btn" id="lobbySlotCycleBtn4" title="Tap to cycle: Bot Hard ➔ Bot Insane ➔ Closed ➔ Open ➔ Bot Easy">
                   <span>🔁 Tap to Cycle</span>
                 </button>
               </div>
@@ -698,7 +709,8 @@
                     <div style="grid-column: 2; grid-row: 2;" class="dice-pip pip-center-red"></div>
                   </div>
                 </div>
-              </div>
+                </div> <!-- /monopolyDiceContainer -->
+              </div> <!-- /dicePlatformWrap -->
 
               <!-- Live Ticker -->
               <div class="monopoly-ticker" id="monopolyTicker">
@@ -706,15 +718,14 @@
               </div>
 
               <div class="monopoly-pause-banner hidden" id="monopolyPauseBanner"></div>
-            </div>
-          </div> <!-- /monopolyCenterHub -->
-        </div> <!-- /monopolyBoardGrid -->
+            </div> <!-- /monopolyCenterHub -->
+          </div> <!-- /monopolyBoardGrid -->
 
-        <!-- Player tokens (persistent, glide between tiles) -->
-        <div class="monopoly-token-layer" id="monopolyTokenLayer"></div>
-        <!-- Floating FX layer (coins, explosions) -->
-        <div class="monopoly-fx-layer" id="monopolyFxLayer"></div>
-      </div> <!-- /monopolyBoardWrap -->
+          <!-- Player tokens (persistent, glide between tiles) -->
+          <div class="monopoly-token-layer" id="monopolyTokenLayer"></div>
+          <!-- Floating FX layer (coins, explosions) -->
+          <div class="monopoly-fx-layer" id="monopolyFxLayer"></div>
+        </div> <!-- /monopolyBoardWrap -->
 
       <!-- Bottom Action Bar (Matches reference_crops/11_bottom_controls.png) -->
         <div class="monopoly-dock neora-bottom-dock" id="monopolyDock">
@@ -2330,7 +2341,7 @@
   <script src="monopoly_rules.js?v=20261013_perfopt"></script>
   <script src="monopoly_bot.js?v=20261013_perfopt"></script>
   <script src="monopoly_fx.js?v=20261015_lategame60fps"></script>
-  <script src="monopoly.js?v=20261015_lategame60fps"></script>
+  <script src="monopoly.js?v=20261015_uxperf2"></script>
   <!-- Phase 5 Supabase & Social SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>

@@ -1914,6 +1914,14 @@ wss.on('connection', (ws, req) => {
       daily.observe(ws.terminal, message);
       const currentRoom = roomRegistry.getClientRoom(ws);
       if (currentRoom) {
+        const senderData = currentRoom.clientData.get(ws);
+        if (senderData && !senderData.spectator && Array.isArray(currentRoom.slots)) {
+          const senderSlot = currentRoom.slots.find((s) => s.id === senderData.slotId || (senderData.uid && s.occupiedBy === senderData.uid));
+          if (senderSlot && senderSlot.controller === 'BOT_TEMPORARY') {
+            senderSlot.connected = true;
+            botTakeoverManager.onPlayerReconnected(currentRoom, senderSlot, senderData.uid);
+          }
+        }
         if (message.type === 'monopoly_action') {
           const clientData = currentRoom.clientData.get(ws);
           if (clientData && clientData.spectator) {
