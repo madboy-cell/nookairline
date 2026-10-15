@@ -308,7 +308,7 @@
                        (name === 'coin') ? 'coin' :
                        (name === 'heart') ? 'heart' :
                        (name === 'chip' || name === 'monaco_chip' || name === 'monaco_chip_stack') ? 'chip' : 'spark';
-      window.SkyPixi.spawnRadialBurst(x, y, pixiKind, count * 2, { additive: true });
+      window.SkyPixi.spawnRadialBurst(x, y, pixiKind, Math.min(count, 16), { additive: true });
       return Promise.resolve();
     }
     if (!refs()) return Promise.resolve();
@@ -594,52 +594,16 @@
       }
       if (opts.drift) {
         sfx('playWhoosh');
-        ring(B.x, B.y, 95, '#06b6d4', 550);
-        burst({ x: B.x, y: B.y, name: 'sparkle', count: 12, spread: 100, up: 60, gravity: -20, life: 750, size: 14 });
+        ring(B.x, B.y, 85, '#06b6d4', 450);
+        burst({ x: B.x, y: B.y, name: 'sparkle', count: 8, spread: 90, up: 50, gravity: -20, life: 600, size: 14 });
       }
-      if (opts.supernova) {
-        ring(mid.x, mid.y, 55, '#fde047', 350);
-        burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 12, spread: 85, up: 60, gravity: 0, life: 650, size: 14 });
-      }
-      if (opts.frostWake) {
-        if (opts.first || opts.final) {
-          ring(mid.x, mid.y, 65, '#38bdf8', 350);
-          burst({ x: mid.x, y: mid.y, name: 'cryo_shatter_crystal', count: 6, spread: 80, up: 45, gravity: -10, life: 550, size: 14 });
-        } else {
-          burst({ x: mid.x, y: mid.y, name: 'frost', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
-        }
-      }
-      if (opts.gildedWake) {
-        if (opts.first || opts.final) {
-          ring(mid.x, mid.y, 65, '#fbbf24', 350);
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 90, up: 60, gravity: -20, life: 650, size: 16 });
-        } else {
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
-        }
-      }
-      if (opts.solarWake) {
-        if (opts.first || opts.final) {
-          ring(mid.x, mid.y, 70, '#ff4500', 350);
-          burst({ x: mid.x, y: mid.y, name: 'fire', count: 8, spread: 85, up: 55, gravity: -30, life: 600, size: 16 });
-        } else {
-          burst({ x: mid.x, y: mid.y, name: 'fire', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
-        }
-      }
-      if (opts.phantomWake) {
-        if (opts.first || opts.final) {
-          ring(mid.x, mid.y, 70, '#a855f7', 350);
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 85, up: 55, gravity: -20, life: 600, size: 16 });
-        } else {
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
-        }
-      }
-      if (opts.olympusWake) {
-        if (opts.first || opts.final) {
-          ring(mid.x, mid.y, 75, '#38bdf8', 350);
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 8, spread: 90, up: 60, gravity: -20, life: 650, size: 18 });
-        } else {
-          burst({ x: mid.x, y: mid.y, name: 'sparkle', count: 2, spread: 40, up: 20, gravity: 0, life: 350, size: 12 });
-        }
+      if (opts.first) {
+        if (opts.supernova) ring(mid.x, mid.y, 55, '#fde047', 320);
+        if (opts.frostWake) ring(mid.x, mid.y, 60, '#38bdf8', 320);
+        if (opts.gildedWake) ring(mid.x, mid.y, 60, '#fbbf24', 320);
+        if (opts.solarWake) ring(mid.x, mid.y, 65, '#ff4500', 320);
+        if (opts.phantomWake) ring(mid.x, mid.y, 65, '#a855f7', 320);
+        if (opts.olympusWake) ring(mid.x, mid.y, 65, '#38bdf8', 320);
       }
       setTimeout(() => {
         sfx('playHop', opts.stepIndex || 0);
@@ -650,61 +614,51 @@
         if (done) return;
         done = true;
         if (hopTimer) clearTimeout(hopTimer);
+        if (anim && typeof anim.cancel === 'function') {
+          try { anim.cancel(); } catch (e) {}
+        }
         tok.shown[role] = toId;
         tok.busy[role] = false;
         el.classList.remove('hopping');
         if (opts.final) {
           landFx(toId);
-          if (window.gsap) {
-            try {
-              gsap.fromTo(el, 
-                { scaleX: 1.25, scaleY: 0.78 },
-                { scaleX: 1, scaleY: 1, duration: 0.35, ease: 'elastic.out(1.2, 0.4)' }
-              );
-            } catch (e) {}
+          const bodyEl = el.querySelector('.token-body');
+          if (bodyEl && typeof bodyEl.animate === 'function') {
+            bodyEl.animate([
+              { transform: 'scale(1.22, 0.80)' },
+              { transform: 'scale(0.94, 1.06)', offset: 0.55 },
+              { transform: 'scale(1, 1)' }
+            ], { duration: 280, easing: 'ease-out' });
           }
           if (opts.supernova) {
             sfx('fanfare');
-            ring(B.x, B.y, 160, '#ffd700', 700);
-            ring(B.x, B.y, 250, '#c084fc', 950);
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 28, spread: 240, up: 180, gravity: 120, life: 1100, size: 18 });
-            burst({ x: B.x, y: B.y, name: 'coin', count: 10, spread: 160, up: 140, gravity: 280, life: 900, size: 16 });
+            ring(B.x, B.y, 140, '#ffd700', 600);
+            burst({ x: B.x, y: B.y, name: 'sparkle', count: 12, spread: 180, up: 130, gravity: 120, life: 800, size: 16 });
           }
           if (opts.frostWake) {
             sfx('playFrostShimmer');
-            ring(B.x, B.y, 160, '#38bdf8', 700);
-            ring(B.x, B.y, 250, '#e0f2fe', 950);
-            burst({ x: B.x, y: B.y, name: 'cryo_shatter_crystal', count: 18, spread: 220, up: 160, gravity: 50, life: 1000, size: 18 });
-            burst({ x: B.x, y: B.y, name: 'glacial_frost_crest', count: 5, spread: 180, up: 120, gravity: 30, life: 900, size: 24 });
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 24, spread: 260, up: 180, gravity: -30, life: 1100, size: 20 });
+            ring(B.x, B.y, 140, '#38bdf8', 600);
+            burst({ x: B.x, y: B.y, name: 'cryo_shatter_crystal', count: 10, spread: 180, up: 120, gravity: 40, life: 750, size: 16 });
           }
           if (opts.gildedWake) {
             sfx('playPassStart');
-            ring(B.x, B.y, 160, '#fbbf24', 700);
-            ring(B.x, B.y, 250, '#fef08a', 950);
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 26, spread: 250, up: 180, gravity: -20, life: 1100, size: 20 });
-            burst({ x: B.x, y: B.y, name: 'coin', count: 8, spread: 180, up: 140, gravity: 260, life: 950, size: 16 });
+            ring(B.x, B.y, 140, '#fbbf24', 600);
+            burst({ x: B.x, y: B.y, name: 'sparkle', count: 12, spread: 180, up: 130, gravity: -10, life: 800, size: 16 });
           }
           if (opts.solarWake) {
             sfx('playBoom');
-            ring(B.x, B.y, 170, '#ff4500', 700);
-            ring(B.x, B.y, 260, '#fbbf24', 950);
-            burst({ x: B.x, y: B.y, name: 'fire', count: 22, spread: 260, up: 180, gravity: -40, life: 1050, size: 20 });
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 20, spread: 220, up: 150, gravity: 0, life: 950, size: 18 });
+            ring(B.x, B.y, 145, '#ff4500', 600);
+            burst({ x: B.x, y: B.y, name: 'fire', count: 12, spread: 180, up: 130, gravity: -20, life: 800, size: 16 });
           }
           if (opts.phantomWake) {
             sfx('playPhantomImpact');
-            ring(B.x, B.y, 170, '#a855f7', 700);
-            ring(B.x, B.y, 260, '#f43f5e', 950);
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 28, spread: 250, up: 180, gravity: -30, life: 1100, size: 22 });
-            burst({ x: B.x, y: B.y, name: 'coin', count: 8, spread: 180, up: 140, gravity: 260, life: 950, size: 16 });
+            ring(B.x, B.y, 145, '#a855f7', 600);
+            burst({ x: B.x, y: B.y, name: 'sparkle', count: 12, spread: 180, up: 130, gravity: -20, life: 800, size: 16 });
           }
           if (opts.olympusWake) {
             sfx('playBoom');
-            ring(B.x, B.y, 180, '#38bdf8', 700);
-            ring(B.x, B.y, 270, '#fbbf24', 950);
-            burst({ x: B.x, y: B.y, name: 'sparkle', count: 28, spread: 260, up: 180, gravity: -20, life: 1100, size: 22 });
-            burst({ x: B.x, y: B.y, name: 'coin', count: 10, spread: 200, up: 160, gravity: 280, life: 950, size: 18 });
+            ring(B.x, B.y, 150, '#38bdf8', 600);
+            burst({ x: B.x, y: B.y, name: 'sparkle', count: 12, spread: 180, up: 130, gravity: -10, life: 800, size: 16 });
           }
         }
         placeAll();

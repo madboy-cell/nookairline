@@ -78,7 +78,8 @@
       }
       SkyPixi.canvas = canvas;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const isMobileDevice = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test((navigator && navigator.userAgent) || ''));
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2);
 
       // Initialize PixiJS v8 Application
       const app = new PIXI.Application();
@@ -87,7 +88,7 @@
           canvas: canvas,
           backgroundAlpha: 0,
           resizeTo: boardWrap,
-          antialias: true,
+          antialias: !isMobileDevice,
           resolution: dpr,
           autoDensity: true
         });
@@ -97,7 +98,7 @@
           view: canvas,
           backgroundAlpha: 0,
           resizeTo: boardWrap,
-          antialias: true,
+          antialias: !isMobileDevice,
           resolution: dpr,
           autoDensity: true
         });
@@ -135,18 +136,17 @@
       }
       SkyPixi.wakeTicker = wakeTicker;
 
-      // Start high-refresh ticker loop with demand-driven power saving
+      // Start high-refresh ticker loop with strict demand-driven power saving:
+      // Only runs while active event particles or meshes exist, then sleeps at 0% CPU/GPU.
       app.ticker.add((time) => {
         const delta = (time && time.deltaTime) ? time.deltaTime : 1;
         try { updateParticles(delta); } catch (e) { console.warn('[SkyPixi] updateParticles notice:', e.message); }
         try { updateMeshes(delta); } catch (e) { console.warn('[SkyPixi] updateMeshes notice:', e.message); }
-        try { updateAmbient(delta); } catch (e) { console.warn('[SkyPixi] updateAmbient notice:', e.message); }
-        try { updateTileAuras(delta); } catch (e) { console.warn('[SkyPixi] updateTileAuras notice:', e.message); }
 
-        // Demand-driven sleeper: if no active particles and no active meshes, sleep after 35 frames (~0.5s)
+        // Demand-driven sleeper: if no active particles and no active meshes, sleep after 20 frames (~0.3s)
         if (SkyPixi.activeParticles.length === 0 && SkyPixi.activeMeshes.length === 0) {
           idleTickerFrames++;
-          if (idleTickerFrames > 35) {
+          if (idleTickerFrames > 20) {
             tickerRunning = false;
             try { SkyPixi.app.ticker.stop(); } catch (e) {}
           }
@@ -163,8 +163,10 @@
             tickerRunning = false;
             SkyPixi.app.ticker.stop();
           } else {
-            wakeTicker();
             resize();
+            if (SkyPixi.activeParticles.length > 0 || SkyPixi.activeMeshes.length > 0) {
+              wakeTicker();
+            }
           }
         });
       }
@@ -190,321 +192,11 @@
     }
   }
 
-  let ambientTimer = 0;
-  function updateAmbient(delta) {
-    if (!SkyPixi.isReady || !SkyPixi.canvas) return;
-    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
-    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(ua));
-    if (isMobile && !tickerRunning) return;
-    ambientTimer += delta;
-    if (ambientTimer >= (isMobile ? 180 : 70)) {
-      ambientTimer = 0;
-      if (SkyPixi.activeParticles.length < (isMobile ? 12 : 24)) {
-        const dpr = window.devicePixelRatio || 1;
-        const cX = (SkyPixi.canvas.width / dpr) / 2;
-        const cY = (SkyPixi.canvas.height / dpr) / 2;
-        const spawnX = cX + rand(-90, 90);
-        const spawnY = cY + rand(-110, 110);
-        spawnRadialBurst(spawnX, spawnY, 'stardust', 1, {
-          minSpeed: 0.15,
-          maxSpeed: 0.65,
-          gravity: -0.015,
-          additive: true
-        });
-      }
-    }
-  }
-
-  let tileAuraTimer = 0;
-  let cachedTileCenters = null;
-  let cachedTileCenterTime = 0;
-
-  function updateTileAuras(delta) {
-    if (!SkyPixi.isReady || !SkyPixi.canvas) return;
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-    const st = window.monopolyState;
-    if (!st) return;
-
-    // 🚀 Yield 100% GPU/CPU to avatar hops & rolls to eliminate frame drops & lag
-    if (window.isAnimating || st.isRolling) return;
-
-    tileAuraTimer += delta;
-    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
-    const isMobile = (window.innerWidth && window.innerWidth < 768) || /iPhone|iPad|iPod|Android/i.test(ua);
-    const interval = isMobile ? 36 : 18;
-    if (tileAuraTimer < interval) return;
-    tileAuraTimer = 0;
-
-    if (SkyPixi.activeParticles.length >= (isMobile ? 25 : 60)) return;
-
-    const wrap = document.getElementById('monopolyBoardWrap') || SkyPixi.canvas;
-    const bRect = (wrap && wrap.getBoundingClientRect) ? wrap.getBoundingClientRect() : null;
-    if (!bRect || !bRect.width) return;
-
-    // Cache tile center coordinates once every 3s instead of forced layout reflow every frame
-    const now = Date.now();
-    if (!cachedTileCenters || (now - cachedTileCenterTime > 3000)) {
-      cachedTileCenters = {};
-      cachedTileCenterTime = now;
-      for (let i = 0; i < 20; i++) {
-        const el = document.getElementById(`boardTile_${i}`);
-        if (el && el.getBoundingClientRect) {
-          const tRect = el.getBoundingClientRect();
-          if (tRect.width && tRect.height) {
-            cachedTileCenters[i] = {
-              x: tRect.left - bRect.left + tRect.width / 2,
-              y: tRect.top - bRect.top + tRect.height / 2
-            };
-          }
-        }
-      }
-    }
-
-    const getTileCenter = (tileId) => (cachedTileCenters ? cachedTileCenters[tileId] : null);
-
-    // 1. 🔥 Phoenix Molten Embers / Flames
-    if (st.phoenixEmbers) {
-      Object.keys(st.phoenixEmbers).forEach((tid) => {
-        const pt = getTileCenter(tid);
-        if (!pt) return;
-        SkyPixi.spawnParticle({
-          textureName: 'sunflame',
-          x: pt.x + (Math.random() * 22 - 11),
-          y: pt.y + 4,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: -(Math.random() * 0.9 + 0.6),
-          life: 0,
-          maxLife: 42,
-          scaleStart: 0.26,
-          scaleEnd: 0.08,
-          alphaStart: 0.85,
-          alphaEnd: 0,
-          color: Math.random() > 0.4 ? 0xf97316 : 0xef4444,
-          blendMode: 'add'
-        });
-      });
-    }
-
-    // 2. 🌊 Sacred Mekong Waterways
-    if (st.sacredWaterways) {
-      Object.keys(st.sacredWaterways).forEach((tid) => {
-        const pt = getTileCenter(tid);
-        if (!pt) return;
-        SkyPixi.spawnParticle({
-          textureName: 'bubble',
-          x: pt.x + (Math.random() * 24 - 12),
-          y: pt.y + 6,
-          vx: (Math.random() - 0.5) * 0.6,
-          vy: -(Math.random() * 0.7 + 0.4),
-          life: 0,
-          maxLife: 45,
-          scaleStart: 0.2,
-          scaleEnd: 0.32,
-          alphaStart: 0.75,
-          alphaEnd: 0,
-          color: 0x10b981,
-          blendMode: 'add'
-        });
-      });
-    }
-
-    // 3. ⛩️ Inari Torii Gate (Sacred Sakura Petals & Lantern Sparks)
-    if (st.inariToriiGates) {
-      Object.keys(st.inariToriiGates).forEach((tid) => {
-        const pt = getTileCenter(tid);
-        if (!pt) return;
-        SkyPixi.spawnParticle({
-          textureName: Math.random() > 0.35 ? 'petal' : 'spark',
-          x: pt.x + (Math.random() * 24 - 12),
-          y: pt.y - 10 + (Math.random() * 6),
-          vx: (Math.random() - 0.4) * 0.6,
-          vy: (Math.random() * 0.5 + 0.3),
-          life: 0,
-          maxLife: 48,
-          scaleStart: 0.25,
-          scaleEnd: 0.18,
-          alphaStart: 0.85,
-          alphaEnd: 0,
-          color: Math.random() > 0.5 ? 0xec4899 : 0xfbbf24,
-          blendMode: 'normal'
-        });
-      });
-    }
-
-    // 4. 🔱 Atlantis Flooded Properties (Coral Palace vs Sunken Ruins)
-    if (st.floodedTiles) {
-      Object.keys(st.floodedTiles).forEach((tid) => {
-        const pt = getTileCenter(tid);
-        if (!pt) return;
-        const prop = st.properties && st.properties[tid];
-        const isCoral = prop && prop.owner && (prop.owner === 'dxb' || prop.owner === 'bkk');
-        SkyPixi.spawnParticle({
-          textureName: 'bubble',
-          x: pt.x + (Math.random() * 26 - 13),
-          y: pt.y + (Math.random() * 10),
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: -(Math.random() * 0.8 + 0.5),
-          life: 0,
-          maxLife: 44,
-          scaleStart: 0.18,
-          scaleEnd: 0.32,
-          alphaStart: 0.8,
-          alphaEnd: 0,
-          color: isCoral ? 0x06b6d4 : 0x0284c7,
-          blendMode: 'add'
-        });
-      });
-    }
-
-    // 5. 🪞 Venetian Reverse Hex Mirror (Crystal Shards & Rose Petals)
-    if (st.reverseRentHexTile != null) {
-      const pt = getTileCenter(st.reverseRentHexTile);
-      if (pt) {
-        SkyPixi.spawnParticle({
-          textureName: Math.random() > 0.45 ? 'crystal' : 'petal',
-          x: pt.x + (Math.random() * 22 - 11),
-          y: pt.y + (Math.random() * 8 - 4),
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: -(Math.random() * 0.6 + 0.3),
-          life: 0,
-          maxLife: 46,
-          scaleStart: 0.24,
-          scaleEnd: 0.14,
-          alphaStart: 0.9,
-          alphaEnd: 0,
-          color: Math.random() > 0.5 ? 0xf43f5e : 0xfbbf24,
-          blendMode: 'add'
-        });
-      }
-    }
-
-    // 6. ⚱️ Midas Transmuted Solid Gold Hotel
-    if (st.properties) {
-      Object.keys(st.properties).forEach((tid) => {
-        const pr = st.properties[tid];
-        if (pr && pr.isTransmutedGold) {
-          const pt = getTileCenter(tid);
-          if (!pt) return;
-          SkyPixi.spawnParticle({
-            textureName: 'coin',
-            x: pt.x + (Math.random() * 22 - 11),
-            y: pt.y - 8,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: -(Math.random() * 0.7 + 0.4),
-            life: 0,
-            maxLife: 42,
-            scaleStart: 0.26,
-            scaleEnd: 0.15,
-            alphaStart: 0.9,
-            alphaEnd: 0,
-            color: 0xfde047,
-            blendMode: 'normal'
-          });
-        }
-      });
-    }
-
-    // 7. 🏺 The Great Golden Pyramid
-    const pyrTile = st.goldenPyramidTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isGoldenPyramid));
-    if (pyrTile != null) {
-      const pt = getTileCenter(pyrTile);
-      if (pt) {
-        SkyPixi.spawnParticle({
-          textureName: 'sunflame',
-          x: pt.x + (Math.random() * 20 - 10),
-          y: pt.y - 12,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: -(Math.random() * 0.8 + 0.4),
-          life: 0,
-          maxLife: 44,
-          scaleStart: 0.24,
-          scaleEnd: 0.12,
-          alphaStart: 0.85,
-          alphaEnd: 0,
-          color: 0xfbbf24,
-          blendMode: 'add'
-        });
-      }
-    }
-
-    // 8. 🏰 Glacial Ice Citadel
-    const citTile = st.glacialCitadelTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isGlacialCitadel));
-    if (citTile != null) {
-      const pt = getTileCenter(citTile);
-      if (pt) {
-        SkyPixi.spawnParticle({
-          textureName: 'crystal',
-          x: pt.x + (Math.random() * 20 - 10),
-          y: pt.y - 10,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: -(Math.random() * 0.6 + 0.3),
-          life: 0,
-          maxLife: 46,
-          scaleStart: 0.24,
-          scaleEnd: 0.12,
-          alphaStart: 0.9,
-          alphaEnd: 0,
-          color: 0x38bdf8,
-          blendMode: 'add'
-        });
-      }
-    }
-
-    // 9. 🏛️ Mount Olympus Temple
-    const olTile = st.olympusTempleTile ?? (st.properties && Object.keys(st.properties).find(id => st.properties[id]?.isOlympusTemple));
-    if (olTile != null) {
-      const pt = getTileCenter(olTile);
-      if (pt) {
-        SkyPixi.spawnParticle({
-          textureName: 'spark',
-          x: pt.x + 8 + (Math.random() * 6 - 3),
-          y: pt.y - 16 + (Math.random() * 6 - 3),
-          vx: (Math.random() - 0.5) * 1.0,
-          vy: (Math.random() - 0.5) * 1.0,
-          life: 0,
-          maxLife: 22,
-          scaleStart: 0.32,
-          scaleEnd: 0.1,
-          alphaStart: 1.0,
-          alphaEnd: 0,
-          color: Math.random() > 0.5 ? 0x38bdf8 : 0xfde047,
-          blendMode: 'add'
-        });
-      }
-    }
-
-    // 10. 😴 Somnambulism Sleepwalk Tokens
-    if (st.players) {
-      Object.keys(st.players).forEach((r) => {
-        const pl = st.players[r];
-        if (pl && pl.somnambulismSteps > 0 && pl.pos != null) {
-          const pt = getTileCenter(pl.pos);
-          if (!pt) return;
-          SkyPixi.spawnParticle({
-            textureName: Math.random() > 0.4 ? 'crescent' : 'spark',
-            x: pt.x + (Math.random() * 18 - 9),
-            y: pt.y - 14 + (Math.random() * 4 - 2),
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: -(Math.random() * 0.6 + 0.3),
-            life: 0,
-            maxLife: 42,
-            scaleStart: 0.26,
-            scaleEnd: 0.12,
-            alphaStart: 0.85,
-            alphaEnd: 0,
-            color: 0xc084fc,
-            blendMode: 'add'
-          });
-        }
-      });
-    }
-  }
-
   function spawnTileLanding(x, y) {
     if (!SkyPixi.isReady) return false;
     if (SkyPixi.wakeTicker) SkyPixi.wakeTicker();
     spawnShockwaveRing(x, y, 0xfde047, 36, 260);
-    spawnRadialBurst(x, y, 'spark', 7, { minSpeed: 1, maxSpeed: 4, additive: true });
+    spawnRadialBurst(x, y, 'spark', 6, { minSpeed: 1, maxSpeed: 4, additive: true });
     return true;
   }
 
@@ -516,7 +208,7 @@
     const targetY = y != null ? y : ((SkyPixi.canvas ? SkyPixi.canvas.height / dpr : 532) / 2);
     spawnShockwaveRing(targetX, targetY, 0xf59e0b, 65, 340);
     spawnShockwaveRing(targetX, targetY, 0x38bdf8, 95, 440);
-    spawnRadialBurst(targetX, targetY, 'spark', 15, { minSpeed: 2, maxSpeed: 6.5, additive: true });
+    spawnRadialBurst(targetX, targetY, 'spark', 10, { minSpeed: 2, maxSpeed: 6.5, additive: true });
     return true;
   }
 
@@ -624,7 +316,7 @@
   // CORE PARTICLE & MOTION EMITTERS (120 FPS)
   // =========================================================
 
-  const MAX_PARTICLES = 350;
+  const MAX_PARTICLES = 150;
 
   /**
    * Updates all active GPU particles each animation frame.
@@ -632,7 +324,7 @@
   function updateParticles(delta) {
     const list = SkyPixi.activeParticles;
 
-    // Mobile efficiency cap: prune oldest particles if burst volume exceeds 350 to ensure 120 FPS
+    // Mobile efficiency cap: prune oldest particles if burst volume exceeds 150 to ensure smooth 60/120 FPS
     while (list.length > MAX_PARTICLES) {
       const old = list.shift();
       if (old.parent) old.parent.removeChild(old);

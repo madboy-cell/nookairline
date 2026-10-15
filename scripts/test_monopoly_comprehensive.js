@@ -392,11 +392,11 @@ async function main() {
           slots: [
             { id: 1, role: 'bkk', type: 'human', occupiedBy: 'user_bkk', name: 'Nook ✈️' },
             { id: 2, role: 'dxb', type: 'human', occupiedBy: 'user_dxb', name: 'Luna 🌸' },
-            { id: 3, role: 'bot1', type: 'bot', difficulty: 'hard', name: 'Capt. Whiskers 😼' },
-            { id: 4, role: 'bot2', type: 'bot', difficulty: 'hard', name: 'Trainee Mochi 🐾' }
+            { id: 3, role: 'bot1', type: 'bot', difficulty: 'insane', name: 'Capt. Whiskers 😼' },
+            { id: 4, role: 'bot2', type: 'bot', difficulty: 'insane', name: 'Trainee Mochi 🐾' }
           ]
         };
-        startPartyGame({ mode: '4p', bot1: 'hard', bot2: 'hard' });
+        startPartyGame({ mode: '4p', bot1: 'insane', bot2: 'insane' });
         const st = monopolyState;
 
         const loadouts = customLoadouts || {

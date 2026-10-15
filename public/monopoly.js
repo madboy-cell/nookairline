@@ -715,9 +715,10 @@ function makePlayer(id) {
 
 /** Costume perk effects locked in for the current game (see costumes.js / vault.js). */
 function perkOf(role) {
+  const ps = monopolyState && monopolyState.perks;
+  if (ps && ps[role] && Object.keys(ps[role]).length > 0) return ps[role];
   const pl = monopolyState?.players && monopolyState.players[role];
   if (pl && pl.isBot && pl.botLevel !== 'insane') return {};
-  const ps = monopolyState && monopolyState.perks;
   return (ps && ps[role]) || {};
 }
 
@@ -742,12 +743,9 @@ function activeCostumeId(role) {
   const myRole = getMonopolyMyRole();
   const pl = monopolyState?.players && monopolyState.players[role];
 
-  // 1. If player is a bot, only insane bot has a mythic costume identity (easy and hard have none)
+  // 1. If player is a bot, only use explicit pl.costume / pl.activeCostume (never inherit human Vault or partner avatar)
   if (pl?.isBot) {
-    if (pl.botLevel === 'insane') {
-      return pl.costume || pl.activeCostume || '';
-    }
-    return '';
+    return pl.costume || pl.activeCostume || '';
   }
 
   // 2. Check explicit player costume or activeCostume override
@@ -1643,22 +1641,22 @@ function getTileRent(tileId, levelOverride) {
   const isMonumentSuppressed = !!(prop && prop.monumentSuppressedRounds && prop.monumentSuppressedRounds > 0);
 
   // ❄️ S8 Glacial Ice Citadel: 2× Double Frostbite Rent on the Citadel Wonder (unless Arcane Eclipsed)
-  if (!isMonumentSuppressed && prop && (prop.isGlacialCitadel || (monopolyState && monopolyState.glacialCitadelTile === tileId))) {
+  if (!isMonumentSuppressed && prop && (prop.isGlacialCitadel || (monopolyState && monopolyState.glacialCitadelTile === tileId && (!monopolyState.glacialCitadelOwner || prop.owner === monopolyState.glacialCitadelOwner)))) {
     rent *= 2.0;
   }
 
   // 🏛️ S9 Great Golden Pyramid: 2× Monumental Rent on Tier 4 Wonder (unless Arcane Eclipsed)
-  if (!isMonumentSuppressed && prop && (prop.isGoldenPyramid || (monopolyState && monopolyState.goldenPyramidTile === tileId))) {
+  if (!isMonumentSuppressed && prop && (prop.isGoldenPyramid || (monopolyState && monopolyState.goldenPyramidTile === tileId && (!monopolyState.goldenPyramidOwner || prop.owner === monopolyState.goldenPyramidOwner)))) {
     rent *= 2.0;
   }
 
   // ⚡ S11 Mount Olympus Temple: +50% Divine Rent multiplier (unless Arcane Eclipsed)
-  if (!isMonumentSuppressed && prop && (prop.isOlympusTemple || (monopolyState && monopolyState.olympusTempleTile === tileId))) {
+  if (!isMonumentSuppressed && prop && (prop.isOlympusTemple || (monopolyState && monopolyState.olympusTempleTile === tileId && (!monopolyState.olympusTempleOwner || prop.owner === monopolyState.olympusTempleOwner)))) {
     rent *= 1.5;
   }
 
   // ☀️ S9 Solar Deity Obelisk (Ra & Sekhmet): +25% Heliopolis Sun Rent on Solar Obelisk / Level 3 Hotel
-  if (!isMonumentSuppressed && prop && (prop.isSolarObelisk || (monopolyState && monopolyState.solarObeliskTile === tileId) || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && (prop.level || 1) >= 3))) {
+  if (!isMonumentSuppressed && prop && (prop.isSolarObelisk || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && ((monopolyState && monopolyState.solarObeliskTile === tileId) || (prop.level || 1) >= 3)))) {
     rent *= 1.25;
   }
 
@@ -1668,6 +1666,15 @@ function getTileRent(tileId, levelOverride) {
   }
 
   return Math.round(rent);
+}
+
+function clearMonumentPointersForTile(st, tileId) {
+  if (!st) return;
+  const tid = Number(tileId);
+  if (st.glacialCitadelTile === tid) { st.glacialCitadelTile = null; st.glacialCitadelOwner = null; }
+  if (st.goldenPyramidTile === tid) { st.goldenPyramidTile = null; st.goldenPyramidOwner = null; }
+  if (st.olympusTempleTile === tid) { st.olympusTempleTile = null; st.olympusTempleOwner = null; }
+  if (st.solarObeliskTile === tid) { st.solarObeliskTile = null; }
 }
 
 function netWorth(role) {
@@ -1759,6 +1766,7 @@ function chargePlayer(payerKey, amount, receiverKey) {
     const id = mine[0];
     payer.miles += Math.round(propValue(id) * MONO_CFG.LIQUIDATION_RATE);
     delete st.properties[id];
+    clearMonumentPointersForTile(st, id);
     sold.push(MONOPOLY_TILES[id].shortName);
     soldIds.push(id);
   }
@@ -1826,6 +1834,7 @@ function chargePlayer(payerKey, amount, receiverKey) {
     Object.keys(st.properties || {}).forEach((tid) => {
       if (st.properties[tid].owner === payerKey) {
         delete st.properties[tid];
+        clearMonumentPointersForTile(st, tid);
       }
     });
 
@@ -2175,7 +2184,10 @@ function cleanBoardVisualsForNewGame() {
     el.className = `board-tile tile-type-${tile.type} tile-zone-${tile.zone}${tile.zone === 'corner' ? ' corner-tile' : ''}`;
     delete el.dataset.sig;
     const bld = el.querySelector('.tile-monopoly-buildings');
-    if (bld) bld.innerHTML = '';
+    if (bld) {
+      bld.innerHTML = '';
+      delete bld.dataset.lm;
+    }
     const ribbon = el.querySelector('.tile-owner-ribbon');
     if (ribbon && tile.type === 'property') {
       ribbon.className = 'tile-owner-ribbon unowned';
@@ -3026,7 +3038,7 @@ function openMonopolyGame(broadcast = true) {
   const modal = $m('monopolyModal');
   if (!modal) return;
 
-  document.body.classList.add('has-active-modal');
+  document.body?.classList.add('has-active-modal');
   modal.classList.remove('hidden');
   void modal.offsetWidth;
   modal.classList.add('active');
@@ -3088,7 +3100,7 @@ function closeMonopolyGame(broadcast = true) {
   }
   const modal = $m('monopolyModal');
   if (!modal) return;
-  document.body.classList.remove('has-active-modal');
+  document.body?.classList.remove('has-active-modal');
   modal.classList.remove('active');
   setTimeout(() => modal.classList.add('hidden'), 300);
   monopolyState.active = false;
@@ -3227,7 +3239,7 @@ function startBotGame(level = 'hard') {
   hideMonopolyLobby();
   const modal = $m('monopolyModal');
   if (modal) {
-    document.body.classList.add('has-active-modal');
+    document.body?.classList.add('has-active-modal');
     modal.classList.remove('hidden');
     modal.classList.add('active');
   }
@@ -3809,7 +3821,7 @@ function handleRejoinActiveFlight(targetFlight = null) {
   if (modal) {
     modal.classList.remove('hidden');
     modal.classList.add('active');
-    document.body.classList.add('has-active-modal');
+    document.body?.classList.add('has-active-modal');
   }
   if (typeof showToast === 'function') {
     showToast('🚀 Welcome back! Manual control restored.');
@@ -3844,7 +3856,7 @@ window.abandonActiveFlight = abandonActiveFlight;
 function handleMonopolyExitGame() {
   const modal = $m('monopolyModal');
   if (modal) {
-    document.body.classList.remove('has-active-modal');
+    document.body?.classList.remove('has-active-modal');
     modal.classList.remove('active');
     setTimeout(() => modal.classList.add('hidden'), 250);
   }
@@ -5144,7 +5156,7 @@ function startPartyGame(config = {}) {
 
   const modal = $m('monopolyModal');
   if (modal) {
-    document.body.classList.add('has-active-modal');
+    document.body?.classList.add('has-active-modal');
     modal.classList.remove('hidden');
     modal.classList.add('active');
   }
@@ -5325,7 +5337,10 @@ function updateBoardTiles({ animate = true } = {}) {
       const bld = el.querySelector('.tile-monopoly-buildings');
       if (bld && typeof getTile25dLandmarkHtml === 'function') {
         const landmarkHtml = getTile25dLandmarkHtml(tile.id, null, st);
-        bld.innerHTML = landmarkHtml;
+        if (bld.dataset.lm !== landmarkHtml) {
+          bld.innerHTML = landmarkHtml;
+          bld.dataset.lm = landmarkHtml;
+        }
         const hasMonument = landmarkHtml.includes('monument-25d-wrap');
         el.classList.toggle('has-monument', hasMonument);
       }
@@ -5337,7 +5352,7 @@ function updateBoardTiles({ animate = true } = {}) {
     const trapFlags = `${hasWish ? 1 : 0}${hasSnowdrift ? 1 : 0}${hasWaterway ? 1 : 0}${hasTorii ? 1 : 0}${hasEclipseShadow ? 1 : 0}${hasDjinnOasis ? 1 : 0}${hasPhoenixEmbers ? 1 : 0}${hasFlooded ? 1 : 0}${hasRevHex ? 1 : 0}${hasBanana ? 1 : 0}`;
     const ownerGoldRush = prop && prop.owner && st.players?.[prop.owner]?.monacoGoldRushRounds > 0 ? 1 : 0;
     const propFlags = prop
-      ? `${prop.frosted || 0}:${prop.isTransmutedGold ? 1 : 0}:${prop.isGoldenPyramid || st.goldenPyramidTile === tile.id ? 1 : 0}:${prop.isGlacialCitadel || st.glacialCitadelTile === tile.id ? 1 : 0}:${prop.isOlympusTemple || st.olympusTempleTile === tile.id ? 1 : 0}:${prop.isSolarObelisk || st.solarObeliskTile === tile.id ? 1 : 0}:${prop.monumentSuppressedRounds || 0}:${ownerGoldRush}:${prop.frostShield ? 1 : 0}:${prop.torchShield ? 1 : 0}`
+      ? `${prop.frosted || 0}:${prop.isTransmutedGold ? 1 : 0}:${prop.isGoldenPyramid || (st.goldenPyramidTile === tile.id && (!st.goldenPyramidOwner || prop.owner === st.goldenPyramidOwner)) ? 1 : 0}:${prop.isGlacialCitadel || (st.glacialCitadelTile === tile.id && (!st.glacialCitadelOwner || prop.owner === st.glacialCitadelOwner)) ? 1 : 0}:${prop.isOlympusTemple || (st.olympusTempleTile === tile.id && (!st.olympusTempleOwner || prop.owner === st.olympusTempleOwner)) ? 1 : 0}:${prop.isSolarObelisk || (st.solarObeliskTile === tile.id && prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner)) ? 1 : 0}:${prop.monumentSuppressedRounds || 0}:${ownerGoldRush}:${prop.frostShield ? 1 : 0}:${prop.torchShield ? 1 : 0}`
       : '0:0:0:0:0:0:0:0:0:0';
     const sig = prop
       ? `${prop.owner}|${prop.level}|${zoneMono ? 1 : 0}|${getTileRent(tile.id)}|${prop.shield || 0}|${prop.waterShield ? 1 : 0}|${prop.enchantedTurret ? 1 : 0}|${trapFlags}|${propFlags}`
@@ -5356,10 +5371,10 @@ function updateBoardTiles({ animate = true } = {}) {
 function getTile25dLandmarkHtml(tileId, prop, st) {
   if (!st) return '';
   const isSuppressed = !!(prop && prop.monumentSuppressedRounds && prop.monumentSuppressedRounds > 0);
-  const isPyramid = !!(prop && (prop.isGoldenPyramid || st.goldenPyramidTile === tileId));
-  const isCitadel = !!(prop && (prop.isGlacialCitadel || st.glacialCitadelTile === tileId));
-  const isOlympus = !!(prop && (prop.isOlympusTemple || st.olympusTempleTile === tileId));
-  const isSolarObelisk = !!(prop && (prop.isSolarObelisk || st.solarObeliskTile === tileId || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && (prop.level || 1) >= 3)));
+  const isPyramid = !!(prop && (prop.isGoldenPyramid || (st.goldenPyramidTile === tileId && (!st.goldenPyramidOwner || prop.owner === st.goldenPyramidOwner))));
+  const isCitadel = !!(prop && (prop.isGlacialCitadel || (st.glacialCitadelTile === tileId && (!st.glacialCitadelOwner || prop.owner === st.glacialCitadelOwner))));
+  const isOlympus = !!(prop && (prop.isOlympusTemple || (st.olympusTempleTile === tileId && (!st.olympusTempleOwner || prop.owner === st.olympusTempleOwner))));
+  const isSolarObelisk = !!(prop && (prop.isSolarObelisk || (prop.owner && typeof isSolarDivinity === 'function' && isSolarDivinity(prop.owner) && (st.solarObeliskTile === tileId || (prop.level || 1) >= 3))));
   const isWonder = isPyramid || isCitadel || isOlympus || isSolarObelisk;
   const isTransmuted = !!(prop && prop.isTransmutedGold);
   const isTorii = !!(st.inariToriiGates && st.inariToriiGates[tileId]);
@@ -5508,10 +5523,10 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   el.classList.toggle('is-sunken-ruin', !!(st.floodedTiles && st.floodedTiles[tile.id] && prop && prop.owner && !isAbyssalDrifter(prop.owner)));
   el.classList.toggle('tile-transmuted-gold', !!(prop && prop.isTransmutedGold));
 
-  const isCitadel = !!(prop && (prop.isGlacialCitadel || (st && st.glacialCitadelTile === tile.id)));
+  const isCitadel = !!(prop && (prop.isGlacialCitadel || (st && st.glacialCitadelTile === tile.id && (!st.glacialCitadelOwner || prop.owner === st.glacialCitadelOwner))));
   const isCitadelAura = !isCitadel && (st && st.glacialCitadelTile != null) && (tile.id === (st.glacialCitadelTile - 1 + 20) % 20 || tile.id === (st.glacialCitadelTile + 1) % 20);
-  const isPyramid = !!(prop && (prop.isGoldenPyramid || (st && st.goldenPyramidTile === tile.id)));
-  const isOlympus = !!(prop && (prop.isOlympusTemple || (st && st.olympusTempleTile === tile.id)));
+  const isPyramid = !!(prop && (prop.isGoldenPyramid || (st && st.goldenPyramidTile === tile.id && (!st.goldenPyramidOwner || prop.owner === st.goldenPyramidOwner))));
+  const isOlympus = !!(prop && (prop.isOlympusTemple || (st && st.olympusTempleTile === tile.id && (!st.olympusTempleOwner || prop.owner === st.olympusTempleOwner))));
   const isTransmuted = !!(prop && prop.isTransmutedGold);
   el.classList.toggle('tile-glacial-citadel', isCitadel);
   el.classList.toggle('tile-citadel-aura', isCitadelAura);
@@ -5522,18 +5537,21 @@ function applyTileChange({ tile, el, prev, prop, zoneMono }, anim) {
   const hasMonument = landmarkHtml.includes('monument-25d-wrap');
   el.classList.toggle('has-monument', hasMonument);
 
+  if (bld && bld.dataset.lm !== landmarkHtml) {
+    bld.innerHTML = landmarkHtml;
+    bld.dataset.lm = landmarkHtml;
+  }
+
   if (prop) {
     ribbon.className = 'tile-owner-ribbon';
     const ownerP = st.players[prop.owner];
     const emoji = prop.owner === 'bkk' ? '🐺' : prop.owner === 'dxb' ? '🐉' : prop.owner === 'bot1' ? '🐣' : '😈';
     ribbon.textContent = `${emoji} ${ownerP ? ownerP.badge : prop.owner}`;
-    if (bld) bld.innerHTML = landmarkHtml;
     pill.className = 'tile-pill tile-price-pill rent-pill';
     pill.textContent = isTransmuted ? '0🪙 (⚱️+80)' : `${fmt(getTileRent(tile.id))}🪙`;
   } else {
     ribbon.className = 'tile-owner-ribbon unowned';
     ribbon.textContent = ZONES[tile.zone].label;
-    if (bld) bld.innerHTML = landmarkHtml;
     pill.className = 'tile-pill tile-price-pill';
     pill.textContent = `${tile.price}🪙`;
   }
@@ -6301,6 +6319,17 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         victimSiphons.push({ role: r, name: targetP.name || r, amount: siphonAmt });
       });
 
+      const findNearestPropertyTile = (fromPos, preferRival = false) => {
+        const propTiles = MONOPOLY_TILES.filter(t => t.type === 'property');
+        propTiles.sort((a, b) => ((a.id - fromPos + 20) % 20) - ((b.id - fromPos + 20) % 20));
+        if (preferRival) {
+          const rivalTile = propTiles.find(t => st.properties[t.id]?.owner && st.properties[t.id].owner !== role);
+          if (rivalTile) return rivalTile.id;
+        }
+        const unshielded = propTiles.find(t => !st.properties[t.id]?.shield && !st.properties[t.id]?.frostShield && !st.properties[t.id]?.waterShield && !st.properties[t.id]?.torchShield);
+        return (unshielded || propTiles[0]).id;
+      };
+
       if (isInitiator) {
         p.miles += totalSiphoned;
         p.loadedRoll = 6;
@@ -6339,7 +6368,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
             });
             citadelTile = vacantTiles[0].id;
           } else {
-            citadelTile = (p.pos + 3) % 20;
+            citadelTile = findNearestPropertyTile((p.pos + 3) % 20);
           }
           st.properties[citadelTile] = {
             owner: role,
@@ -6356,7 +6385,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       tacticalSummary = {
         victimSiphons,
         totalSiphoned,
-        citadelTile: st.glacialCitadelTile != null ? st.glacialCitadelTile : 0
+        citadelTile: st.glacialCitadelTile != null ? st.glacialCitadelTile : 1
       };
       break;
     }
@@ -6403,7 +6432,9 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
             vacant.sort((a, b) => ((a.id - p.pos + 20) % 20) - ((b.id - p.pos + 20) % 20));
             pyramidTile = vacant[0].id;
           } else {
-            pyramidTile = (p.pos + 3) % 20;
+            const propTiles = MONOPOLY_TILES.filter(t => t.type === 'property');
+            propTiles.sort((a, b) => ((a.id - p.pos + 20) % 20) - ((b.id - p.pos + 20) % 20));
+            pyramidTile = propTiles[0].id;
           }
           st.properties[pyramidTile] = {
             owner: role,
@@ -6419,7 +6450,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       tacticalSummary = {
         victimExtortions,
         extortedMiles,
-        pyramidTile: st.goldenPyramidTile != null ? st.goldenPyramidTile : 0
+        pyramidTile: st.goldenPyramidTile != null ? st.goldenPyramidTile : 1
       };
       break;
     }
@@ -6452,15 +6483,20 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
             downgradedTiles.push(Number(tid));
           }
         });
+      }
 
-        rivals.forEach(r => {
-          const rp = st.players[r];
-          if (!rp) return;
-          const scorchAmt = Math.min(rp.miles, 120);
+      rivals.forEach(r => {
+        const rp = st.players[r];
+        if (!rp) return;
+        const scorchAmt = isInitiator ? Math.min(rp.miles, 120) : 120;
+        if (isInitiator) {
           rp.miles = Math.max(0, rp.miles - scorchAmt);
-          scorchedMiles += scorchAmt;
-          victimScorches.push({ role: r, name: rp.name || r, amount: scorchAmt });
-        });
+        }
+        scorchedMiles += scorchAmt;
+        victimScorches.push({ role: r, name: rp.name || r, amount: scorchAmt });
+      });
+
+      if (isInitiator) {
         p.miles += scorchedMiles;
       }
 
@@ -6483,25 +6519,34 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         p.hasPhantomWaltzWings = true;
         p.phantomRentReversals = (p.phantomRentReversals || 0) + 2;
 
-        st.reverseRentHexTile = (p.pos + 3) % 20;
+        // Place Reverse Rent Hex Mirror on nearest rival property (or nearest property tile)
+        const propTiles = MONOPOLY_TILES.filter(t => t.type === 'property');
+        propTiles.sort((a, b) => ((a.id - p.pos + 20) % 20) - ((b.id - p.pos + 20) % 20));
+        const rivalProp = propTiles.find(t => st.properties[t.id]?.owner && st.properties[t.id].owner !== role);
+        st.reverseRentHexTile = rivalProp ? rivalProp.id : propTiles[0].id;
         st.reverseRentHexOwner = role;
+      }
 
-        rivals.forEach(r => {
-          const rp = st.players[r];
-          if (!rp) return;
+      rivals.forEach(r => {
+        const rp = st.players[r];
+        if (!rp) return;
+        const siphAmt = isInitiator ? Math.min(rp.miles, 150) : 150;
+        if (isInitiator) {
           rp.marionetteStasisRounds = 2; // Next 2 rolls capped at 3
-          const siphAmt = Math.min(rp.miles, 150);
           rp.miles = Math.max(0, rp.miles - siphAmt);
-          siphonedMiles += siphAmt;
-          victimStasis.push({ role: r, name: rp.name || r, amount: siphAmt });
-        });
+        }
+        siphonedMiles += siphAmt;
+        victimStasis.push({ role: r, name: rp.name || r, amount: siphAmt });
+      });
+
+      if (isInitiator) {
         p.miles += siphonedMiles;
       }
 
       tacticalSummary = {
         victimStasis,
         siphonedMiles,
-        hexTile: st.reverseRentHexTile != null ? st.reverseRentHexTile : 0
+        hexTile: st.reverseRentHexTile != null ? st.reverseRentHexTile : 1
       };
       break;
     }
@@ -6510,7 +6555,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       let totalStrikes = 0;
       const victimStrikes = [];
       let rubbleCash = 120;
-      let smiteTile = 0;
+      let smiteTile = st.olympusTempleTile || 1;
       const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
 
       if (isInitiator) {
@@ -6544,7 +6589,9 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
             });
             templeTile = vacantTiles[0].id;
           } else {
-            templeTile = (p.pos + 3) % 20;
+            const propTiles = MONOPOLY_TILES.filter(t => t.type === 'property');
+            propTiles.sort((a, b) => ((a.id - p.pos + 20) % 20) - ((b.id - p.pos + 20) % 20));
+            templeTile = propTiles[0].id;
           }
           st.properties[templeTile] = {
             owner: role,
@@ -6569,16 +6616,20 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
         } else {
           smiteTile = templeTile;
         }
+      }
 
-        rivals.forEach(r => {
-          const rp = st.players[r];
-          if (!rp) return;
-          const strikeAmt = Math.min(rp.miles, 150);
+      rivals.forEach(r => {
+        const rp = st.players[r];
+        if (!rp) return;
+        const strikeAmt = isInitiator ? Math.min(rp.miles, 150) : 150;
+        if (isInitiator) {
           rp.miles = Math.max(0, rp.miles - strikeAmt);
-          totalStrikes += strikeAmt;
-          victimStrikes.push({ role: r, name: rp.name || r, amount: strikeAmt });
-        });
+        }
+        totalStrikes += strikeAmt;
+        victimStrikes.push({ role: r, name: rp.name || r, amount: strikeAmt });
+      });
 
+      if (isInitiator) {
         p.miles += totalStrikes + rubbleCash;
       }
 
@@ -6592,17 +6643,18 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
     }
 
     case 'lantern_festival': {
+      const wishCandidates = [(p.pos + 3) % 20, (p.pos + 7) % 20, (p.pos + 12) % 20];
       if (isInitiator) {
-        p.bankruptcyImmunity = 1;
+        p.bankruptcyImmunity = 2; // Lasts for 2 rounds
         p.loadedRoll = 6;
         p.goldenRollNext = true;
         p.miles += 300;
         st.wishSanctuaries = st.wishSanctuaries || {};
-        [(p.pos + 3) % 20, (p.pos + 7) % 20, (p.pos + 12) % 20].forEach(tid => {
-          st.wishSanctuaries[tid] = { reward: 150, creator: role };
+        wishCandidates.forEach(tid => {
+          st.wishSanctuaries[tid] = { reward: 150, creator: role, rounds: 3 };
         });
       }
-      tacticalSummary = { wishTiles: [(p.pos + 3) % 20, (p.pos + 7) % 20, (p.pos + 12) % 20] };
+      tacticalSummary = { wishTiles: wishCandidates };
       break;
     }
 
@@ -6649,9 +6701,10 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
             st.properties[smashedHotelTile].level = Math.max(1, (st.properties[smashedHotelTile].level || 1) - 1);
           } else {
             // If rival has no upgraded hotels, deal an extra -100 coins direct damage
-            rivalP.miles = Math.max(0, rivalP.miles - 100);
-            p.miles += 100;
-            shockDamage += 100;
+            const extraDmg = Math.min(100, rivalP.miles);
+            rivalP.miles = Math.max(0, rivalP.miles - extraDmg);
+            p.miles += extraDmg;
+            shockDamage += extraDmg;
           }
         }
 
@@ -6710,7 +6763,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       tacticalSummary = {
         smashedHotelTile,
         shockDamage,
-        upgradedTiles,
+        upgradedTiles: upgradedTiles.length ? upgradedTiles : ownedTileIds(role).slice(0, 2),
         claimedTile,
         cashGranted,
         rivalKey
@@ -6776,6 +6829,8 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           st.floodedTiles[tid] = { floodedBy: role, rounds: 3 };
           floodedTiles.push(tid);
         });
+      } else if (st.floodedTiles) {
+        Object.keys(st.floodedTiles).slice(0, 3).forEach(tid => floodedTiles.push(Number(tid)));
       }
       tacticalSummary = { targetR, targetP, tidalDmg, floodedTiles };
       break;
@@ -6785,6 +6840,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       let floodTribute = 0;
       const victims = [];
       const nagaTiles = [];
+      const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
       if (isInitiator) {
         p.miles += 500;
         p.clashTokens = Math.min(4, (p.clashTokens || 0) + 1);
@@ -6806,17 +6862,22 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           st.sacredWaterways[tid] = { creator: role, bonusRent: 0.30, rounds: 2 };
           nagaTiles.push(tid);
         });
+      } else if (st.sacredWaterways) {
+        Object.keys(st.sacredWaterways).forEach(tid => nagaTiles.push(Number(tid)));
+      }
 
-        // Siphon 60🪙 flood relief tribute from all rivals
-        const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
-        rivals.forEach(r => {
-          const rp = st.players[r];
-          if (!rp) return;
-          const siph = Math.min(rp.miles, 60);
+      // Siphon 60🪙 flood relief tribute from all rivals
+      rivals.forEach(r => {
+        const rp = st.players[r];
+        if (!rp) return;
+        const siph = isInitiator ? Math.min(rp.miles, 60) : 60;
+        if (isInitiator) {
           rp.miles = Math.max(0, rp.miles - siph);
-          floodTribute += siph;
-          victims.push({ role: r, amount: siph });
-        });
+        }
+        floodTribute += siph;
+        victims.push({ role: r, amount: siph });
+      });
+      if (isInitiator) {
         p.miles += floodTribute;
       }
       tacticalSummary = { siphonedTotal: floodTribute, nagaTiles, victims };
@@ -6833,9 +6894,9 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
       if (isInitiator) {
         p.foxfireTails = 3;
 
-        // Erect Inari Torii Gate
+        // Erect Inari Torii Gate (expires after 3 rounds if unconsumed)
         st.inariToriiGates = st.inariToriiGates || {};
-        st.inariToriiGates[toriiTile] = { creator: role };
+        st.inariToriiGates[toriiTile] = { creator: role, rounds: 3 };
 
         if (targetP) {
           siphonedRent = Math.min(350, Math.max(80, Math.round(targetP.miles * 0.25)));
@@ -6879,7 +6940,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
 
     case 'djinn_wish': {
       const myTiles = ownedTileIds(role);
-      let upgradedTileId = null;
+      let upgradedTileId = myTiles[0] != null ? myTiles[0] : null;
       let transmutedTileId = null;
 
       if (isInitiator) {
@@ -6909,10 +6970,10 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
           st.properties[transmutedTileId].transmutedRounds = 2;
         }
 
-        // Manifest Oasis Portal on 2 tiles
+        // Manifest Oasis Portal on 2 tiles (expires after 3 rounds if unconsumed)
         st.djinnOasisTiles = st.djinnOasisTiles || {};
         [(p.pos + 3) % 20, (p.pos + 7) % 20].forEach(tid => {
-          st.djinnOasisTiles[tid] = { creator: role, bonusReward: 75 };
+          st.djinnOasisTiles[tid] = { creator: role, bonusReward: 75, rounds: 3 };
         });
       }
       tacticalSummary = { upgradedTileId, transmutedTileId, wishType: 'empire' };
@@ -6920,7 +6981,7 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
     }
 
     case 'phoenix_rebirth': {
-      let heatBurn = 0;
+      let heatBurn = 80;
       const emberTiles = [(p.pos + 2) % 20, (p.pos + 5) % 20, (p.pos + 9) % 20, (p.pos + 14) % 20];
       const rivals = Object.keys(st.players).filter(r => r !== role && !st.players[r].bankrupt);
       const targetR = rivals.length > 0 ? rivals.sort((a, b) => netWorth(b) - netWorth(a))[0] : null;
@@ -7677,7 +7738,7 @@ function startRoll(rollVal, viaGolden) {
 
   let isVipCasino = false;
   if (!viaGolden && perkOf(playerKey).firstRollCasino && (!st.perkUsed || !st.perkUsed[playerKey] || !st.perkUsed[playerKey].firstRollCasino)) {
-    if (pl && pl.position === 0) {
+    if (pl && pl.pos === 0) {
       rollVal = 4; // lands straight on Tile 4: Sky Casino
       isVipCasino = true;
       st.perkUsed = st.perkUsed || {};
@@ -7819,7 +7880,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       eclipseOrbitEl.classList.remove('hidden');
       eclipseOrbitEl.classList.add('active');
     }
-    const isSun = (monopolyState.roundCount || 1) % 2 === 1;
+    const isSun = (monopolyState.round || monopolyState.roundCount || 1) % 2 === 1;
     AudioFX.playEclipseStance(isSun);
     setMonopolyTicker(isSun
       ? `☀️ <strong>Solar Stance!</strong> ${player.name} channels radiant solar power (+20% Rent)! 👑`
@@ -8040,7 +8101,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         announce(`🦊✨ <strong>INARI SPIRIT RECHARGE!</strong> Rolling a 6 restored a Spirit Tail for ${player.name} (${player.foxfireTails}/3)! 🌸`);
       }
     } else if (isEclipse) {
-      const isSun = (monopolyState.roundCount || 1) % 2 === 1;
+      const isSun = (monopolyState.round || monopolyState.roundCount || 1) % 2 === 1;
       AudioFX.playEclipseImpact(isSun);
       shakeBoard('light');
       if (shockwave) {
@@ -8087,7 +8148,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         } else if (wishType === 'oasis') {
           const oasisTile = (player.pos + 3) % MONOPOLY_TILES.length;
           monopolyState.djinnOasisTiles = monopolyState.djinnOasisTiles || {};
-          monopolyState.djinnOasisTiles[oasisTile] = { creator: playerKey, bonusReward: 75 };
+          monopolyState.djinnOasisTiles[oasisTile] = { creator: playerKey, bonusReward: 75, rounds: 3 };
           AudioFX.playDjinnWish();
           grantMiles(playerKey, 75);
           floatText(player.pos, '🪔 WISH 2: OASIS PORTAL (+75🪙)', 'pos');
@@ -8357,7 +8418,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         .map(Number);
       const smiteList = targetProps.length >= 3 ? targetProps : [1, 2, 3];
       smiteList.forEach(tid => {
-        monopolyState.sacredWaterways[tid] = { creator: playerKey, bonusRent: 0.30 };
+        monopolyState.sacredWaterways[tid] = { creator: playerKey, bonusRent: 0.30, rounds: 2 };
       });
       grantMiles(playerKey, 90);
       chargeUlt(playerKey, 15, 'Naga Fireballs');
@@ -8370,7 +8431,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     // 🦊 S2 Inari Torii Gate on Rolling 6:
     if (rollVal === 6 && (isInari || (perkOf(playerKey) && perkOf(playerKey).mirageTorii))) {
       monopolyState.inariToriiGates = monopolyState.inariToriiGates || {};
-      monopolyState.inariToriiGates[player.pos] = { creator: playerKey };
+      monopolyState.inariToriiGates[player.pos] = { creator: playerKey, rounds: 3 };
       floatText(player.pos, '🦊 TORII GATE SET! 🌸', 'pos');
       announce(`🦊🌸 <strong>INARI ILLUSION GATE!</strong> Rolling a 6 planted a mystical Torii Gate at ${MONOPOLY_TILES[player.pos]?.name || 'tile'}! Next rival stepping through suffers Foxfire Confusion (Inverted Roll Direction)!`);
     }
@@ -8405,7 +8466,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     // 🔱 S5 Atlantis Tidal Surge on Rolling 6:
     if (rollVal === 6 && (isAbyss || (perkOf(playerKey) && perkOf(playerKey).claimedTileFlooding))) {
       monopolyState.floodedTiles = monopolyState.floodedTiles || {};
-      monopolyState.floodedTiles[player.pos] = { floodedBy: playerKey };
+      monopolyState.floodedTiles[player.pos] = { floodedBy: playerKey, rounds: 3 };
       grantMiles(playerKey, 80);
       chargeUlt(playerKey, 15, 'Tidal Surge');
       floatText(player.pos, '🔱 TILE FLOODED: OCEAN TRENCH! 🌊', 'pos');
@@ -8423,7 +8484,10 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           clearTimeout(rollCycleWatchdog);
           activeMoveLocks[playerKey] = false;
           activeRollLocks[playerKey] = false;
+          monopolyState.isRolling = false;
+          isAnimating = false;
           onTileLanded(playerKey);
+          flushQueuedMessages();
         });
       }, 160);
       return;
@@ -8569,7 +8633,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
   if (p.invertDirectionNext) {
     delete p.invertDirectionNext;
   }
-  const isSupernova = typeof isAstralSovereign === 'function' ? isAstralSovereign(playerKey) : false;
+  const isSupernova = (typeof isAstralSovereign === 'function' && isAstralSovereign(playerKey)) && ((p.ult || 0) >= 100 || !!p.goldenRollNext || steps >= 6);
 
   const startPos = Number(p.pos) || 0;
   const numTiles = MONOPOLY_TILES.length;
@@ -9373,6 +9437,15 @@ function endTurn() {
   st.hadBonusRoll = false;
   const prev = st.currentTurn;
   if (st.magnet && st.magnet.target === prev) st.magnet = null;
+  // Expire 1-turn post-ultimate wing flight buffs at the end of the caster's turn
+  const prevP = prev && st.players ? st.players[prev] : null;
+  if (prevP) {
+    delete prevP.hasFrostDragonWings;
+    delete prevP.hasGildedScarabWings;
+    delete prevP.hasSolarFalconWings;
+    delete prevP.hasPhantomWaltzWings;
+    delete prevP.hasOlympusPegasusWings;
+  }
   st.pendingDecision = null;
   st.turnResolver = null;
   const order = getTurnOrder();
@@ -9416,15 +9489,20 @@ function endTurn() {
         if (pr.monumentSuppressedRounds <= 0) delete pr.monumentSuppressedRounds;
       }
     });
-    // Decrement player-scoped round buffs (Monaco Gold Rush)
+    // Decrement player-scoped round buffs (Monaco Gold Rush, Lantern Bankruptcy Immunity)
     Object.keys(st.players || {}).forEach(r => {
       const pl = st.players[r];
-      if (pl && pl.monacoGoldRushRounds && pl.monacoGoldRushRounds > 0) {
+      if (!pl) return;
+      if (pl.monacoGoldRushRounds && pl.monacoGoldRushRounds > 0) {
         pl.monacoGoldRushRounds--;
         if (pl.monacoGoldRushRounds <= 0) delete pl.monacoGoldRushRounds;
       }
+      if (pl.bankruptcyImmunity && pl.bankruptcyImmunity > 0) {
+        pl.bankruptcyImmunity--;
+        if (pl.bankruptcyImmunity <= 0) delete pl.bankruptcyImmunity;
+      }
     });
-    // Decrement round-limited board traps (Phoenix Embers, Sacred Waterways, Eclipse Shadow Tiles, Sunken Ruin Floods)
+    // Decrement round-limited board traps (Phoenix Embers, Sacred Waterways, Eclipse Shadow Tiles, Torii Gates, Djinn Oases, Wish Sanctuaries, Sunken Ruin Floods)
     if (st.phoenixEmbers) {
       Object.keys(st.phoenixEmbers).forEach(tid => {
         const em = st.phoenixEmbers[tid];
@@ -9449,12 +9527,38 @@ function endTurn() {
         if (es.rounds <= 0) delete st.eclipseShadowTiles[tid];
       });
     }
+    if (st.inariToriiGates) {
+      Object.keys(st.inariToriiGates).forEach(tid => {
+        const tg = st.inariToriiGates[tid];
+        if (!tg) return;
+        tg.rounds = (tg.rounds != null ? tg.rounds : 3) - 1;
+        if (tg.rounds <= 0) delete st.inariToriiGates[tid];
+      });
+    }
+    if (st.djinnOasisTiles) {
+      Object.keys(st.djinnOasisTiles).forEach(tid => {
+        const oa = st.djinnOasisTiles[tid];
+        if (!oa) return;
+        oa.rounds = (oa.rounds != null ? oa.rounds : 3) - 1;
+        if (oa.rounds <= 0) delete st.djinnOasisTiles[tid];
+      });
+    }
+    if (st.wishSanctuaries) {
+      Object.keys(st.wishSanctuaries).forEach(tid => {
+        const ws = st.wishSanctuaries[tid];
+        if (!ws) return;
+        ws.rounds = (ws.rounds != null ? ws.rounds : 3) - 1;
+        if (ws.rounds <= 0) delete st.wishSanctuaries[tid];
+      });
+    }
     if (st.floodedTiles) {
       Object.keys(st.floodedTiles).forEach(tid => {
         const fl = st.floodedTiles[tid];
+        if (!fl) return;
         const pr = st.properties && st.properties[tid];
-        // Coral Palaces on Atlantis's own properties stay permanently; Sunken Ruins on rival properties recede after 3 rounds
-        if (fl && pr && pr.owner && !isAbyssalDrifter(pr.owner)) {
+        const isPermanentCoral = !!(pr && pr.owner && isAbyssalDrifter(pr.owner));
+        // Coral Palaces on Atlantis's own properties stay permanently; Sunken Ruins on rival/unowned tiles recede after 3 rounds
+        if (!isPermanentCoral) {
           fl.rounds = (fl.rounds != null ? fl.rounds : 3) - 1;
           if (fl.rounds <= 0) delete st.floodedTiles[tid];
         }
@@ -9702,9 +9806,11 @@ function actPayRent(tileId) {
     const r = chargePlayer(ownerKey, rent, pk);
     st.stats.rentPaid[ownerKey] = (st.stats.rentPaid[ownerKey] || 0) + r.paid;
     emitFx({ kind: 'moment', id: 'phantom_reverse_hex', role: pk, owner: ownerKey, amount: r.paid, tileId: tile.id });
-    emitFx({ kind: 'coins', from: { role: ownerKey }, to: { role: pk }, amount: r.paid });
-    emitFx({ kind: 'sound', name: 'coin' });
-    emitFx({ kind: 'float', tileId: tile.id, text: `🎭 REVERSED +${fmt(r.paid)}!`, cls: 'pos fx-big' });
+    if (r.paid > 0) {
+      emitFx({ kind: 'coins', from: { role: ownerKey }, to: { role: pk }, amount: r.paid });
+      emitFx({ kind: 'sound', name: 'coin' });
+      emitFx({ kind: 'float', tileId: tile.id, text: `🎭 REVERSED +${fmt(r.paid)}!`, cls: 'pos fx-big' });
+    }
     announce(r.bankrupt
       ? `🎭🪞 <strong>REVERSE RENT HEX DISASTER!</strong> ${o.name} was forced to pay <strong>${fmt(rent)}🪙</strong> to ${p.name} and went <strong>BANKRUPT</strong>!`
       : `🎭🪞 <strong>REVERSE RENT HEX!</strong> The Phantom's mirror illusion inverted the deed! ${o.name} was forced to pay <strong>+${fmt(r.paid)}🪙</strong> rent to ${p.name}!`);
@@ -9763,11 +9869,12 @@ function actPayRent(tileId) {
 
   // 🌓 S2-B Eclipse Balance:
   // Sun Stance (Odd round): +20% rent collected by owner
-  if (isCelestialEclipse(ownerKey) && ((st.roundCount || 1) % 2 === 1)) {
+  const curRound = st.round || st.roundCount || 1;
+  if (isCelestialEclipse(ownerKey) && (curRound % 2 === 1)) {
     rent = Math.round(rent * 1.2);
   }
   // Moon Stance (Even round): -25% rent paid by tenant
-  if (isCelestialEclipse(pk) && ((st.roundCount || 1) % 2 === 0)) {
+  if (isCelestialEclipse(pk) && (curRound % 2 === 0)) {
     rent = Math.round(rent * 0.75);
   }
 
@@ -9789,12 +9896,16 @@ function actPayRent(tileId) {
     st.mekongHoard = (st.mekongHoard || 0) + hoardCut;
   }
 
-  emitFx({ kind: 'coins', from: { role: pk }, to: { role: ownerKey }, amount: r.paid });
-  emitFx({ kind: 'sound', name: 'coin' });
-  emitFx({ kind: 'float', tileId: tile.id, text: `-${fmt(r.paid)}`, cls: 'neg' });
-  announce(r.bankrupt
-    ? `💀 ${p.name} couldn't cover ${fmt(rent)}🪙 and went <strong>BANKRUPT</strong>!`
-    : `💸 ${p.name} paid <strong>${fmt(r.paid)}🪙</strong> rent to ${o.name}.${soldNote(r.sold)}`);
+  if (r.paid > 0) {
+    emitFx({ kind: 'coins', from: { role: pk }, to: { role: ownerKey }, amount: r.paid });
+    emitFx({ kind: 'sound', name: 'coin' });
+    emitFx({ kind: 'float', tileId: tile.id, text: `-${fmt(r.paid)}`, cls: 'neg' });
+  }
+  if (r.bankrupt) {
+    announce(`💀 ${p.name} couldn't cover ${fmt(rent)}🪙 and went <strong>BANKRUPT</strong>!`);
+  } else if (r.paid > 0) {
+    announce(`💸 ${p.name} paid <strong>${fmt(r.paid)}🪙</strong> rent to ${o.name}.${soldNote(r.sold)}`);
+  }
   renderMonopolyBoard();
   finishTurn();
 }
@@ -12442,7 +12553,7 @@ function handleMonopolyMessage(message) {
     hideNeoraRejoinModal();
     const modal = $m('monopolyModal');
     if (modal) {
-      document.body.classList.remove('has-active-modal');
+      document.body?.classList.remove('has-active-modal');
       modal.classList.remove('active');
       modal.classList.add('hidden');
     }
