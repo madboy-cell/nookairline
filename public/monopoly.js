@@ -1483,17 +1483,7 @@ function isResolver() {
   const currentP = st.players && st.players[st.currentTurn];
   const isBotOrTakeover = currentP && (currentP.isBot || currentP.controller === 'BOT_TEMPORARY' || currentP.controller === 'BOT_PERMANENT');
   if (isBotOrTakeover) {
-    // 1. If a human turnResolver is already locked in for this bot's turn and still connected, honor it strictly
-    if (
-      st.turnResolver &&
-      st.players[st.turnResolver] &&
-      !st.players[st.turnResolver].isBot &&
-      st.players[st.turnResolver].controller !== 'BOT_TEMPORARY' &&
-      st.players[st.turnResolver].controller !== 'BOT_PERMANENT'
-    ) {
-      return st.turnResolver === me;
-    }
-    // 2. In Flight Room / 4P mode, strictly pick ONE canonical connected human (Host first, then first connected human)
+    // 1. In Flight Room / 4P mode, strictly pick ONE canonical connected human (Host first, then first connected human)
     if (currentFlightRoom && Array.isArray(currentFlightRoom.slots)) {
       const connectedHumanSlots = currentFlightRoom.slots.filter(
         (s) => s.type === 'human' && s.occupiedBy && s.connected !== false && s.controller !== 'BOT_TEMPORARY' && s.controller !== 'BOT_PERMANENT'
@@ -1505,6 +1495,16 @@ function isResolver() {
         }
       }
       if (typeof isCurrentUserHost === 'function' && isCurrentUserHost()) return true;
+    }
+    // 2. If a human turnResolver is locked in for this bot's turn and still connected, honor it
+    if (
+      st.turnResolver &&
+      st.players[st.turnResolver] &&
+      !st.players[st.turnResolver].isBot &&
+      st.players[st.turnResolver].controller !== 'BOT_TEMPORARY' &&
+      st.players[st.turnResolver].controller !== 'BOT_PERMANENT'
+    ) {
+      return st.turnResolver === me;
     }
     // 3. Fallback: first active non-bot human in st.players (usually 'bkk')
     const firstHuman = Object.keys(st.players || {}).find(
@@ -2100,6 +2100,10 @@ function mergeIncomingState(incoming) {
     merged.cardDeck = incoming.cardDeck.map(Number).filter((id) => isValidCardId(id) && !playedSet.has(id));
   }
   monopolyState = merged;
+  if (!isResolver()) {
+    outboundFx = [];
+    outboundTicker = null;
+  }
   saveLocalMonopolyState();
   return true;
 }
@@ -6049,6 +6053,7 @@ function getTileActiveEffectsInfo(tile, prop, st) {
   return effects;
 }
 
+let tileInspectorTimer = null;
 function showTileInspectorPopup(tile, prop, st) {
   const hub = $m('monopolyCenterHub');
   if (!hub) return;
@@ -6382,19 +6387,22 @@ function executeUltimate(role) {
   const ultData = getRoleUltimate(role);
   AudioFX.init();
 
+  rollStartedAt = Date.now();
   isAnimating = true;
   activeRollLocks[role] = true;
   setTimeout(() => {
     isAnimating = false;
     releaseRoleLocks(role);
     flushQueuedMessages();
-    renderAll();
+    updateMonopolyHUD();
     if (!monopolyState.gameOver && monopolyState.players[monopolyState.currentTurn]?.isBot) {
       checkBotTurn();
     }
-  }, 2650);
+  }, 1850);
 
   triggerUltimateEffects(role, ultData, true);
+  outboundFx = [];
+  outboundTicker = null;
 
   if (st.mode !== 'bot' && typeof sendSignaling === 'function') {
     sendSignaling({
@@ -6405,9 +6413,8 @@ function executeUltimate(role) {
       state: st
     });
   }
-
-  renderAll();
-  pushState();
+  saveLocalMonopolyState();
+  markActivity();
 }
 
 function triggerUltimateEffects(role, ultData, isInitiator = false) {
@@ -7752,9 +7759,9 @@ function triggerUltimateEffects(role, ultData, isInitiator = false) {
     }
   }
 
+  outboundTicker = null;
   updateMonopolyHUD();
   renderMonopolyBoard();
-  if (isInitiator) pushState();
 }
 
 // =========================================================
@@ -8148,7 +8155,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       triggerShockwave('monaco-shockwave', 700);
       if (isBigRoll) {
         shakeBoard();
-        emitFx({ kind: 'moment', id: 'monaco_highroller_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'monaco_highroller_throw', role: playerKey, rollVal, text: player.name });
       }
       highlightRunwayTiles(player.pos, rollVal);
     } else if (isAbyss) {
@@ -8156,33 +8163,39 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       triggerShockwave('abyss-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'abyssal_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'abyssal_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
     } else if (isAstral) {
       AudioFX.playAstralImpact();
       triggerShockwave('astral-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'astral_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        if (rollVal !== 6 || !perkOf(playerKey).supernova6 || monopolyState.hadBonusRoll) {
+          playFx({ kind: 'moment', id: 'astral_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
     } else if (isNaga) {
       AudioFX.playNagaImpact();
       triggerShockwave('naga-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'naga_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        if (rollVal !== 6) {
+          playFx({ kind: 'moment', id: 'naga_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
     } else if (isInari) {
       AudioFX.playInariImpact();
       triggerShockwave('inari-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('light');
-        emitFx({ kind: 'moment', id: 'inari_foxfire_throw', role: playerKey, rollVal, text: player.name });
+        if (rollVal !== 6) {
+          playFx({ kind: 'moment', id: 'inari_foxfire_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
       if (rollVal === 6) {
         player.foxfireTails = Math.min(3, (player.foxfireTails == null ? 3 : player.foxfireTails) + 1);
         AudioFX.playInariFoxfire();
-        emitFx({ kind: 'moment', id: 'inari_tail_recharge', role: playerKey, text: `${player.name} +1 Foxfire Tail!` });
+        playFx({ kind: 'moment', id: 'inari_tail_recharge', role: playerKey, text: `${player.name} +1 Foxfire Tail!` });
         floatText(player.pos, `🦊 +1 TAIL (${player.foxfireTails}/3)`, 'pos');
         announce(`🦊✨ <strong>INARI SPIRIT RECHARGE!</strong> Rolling a 6 restored a Spirit Tail for ${player.name} (${player.foxfireTails}/3)! 🌸`);
       }
@@ -8192,14 +8205,13 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       triggerShockwave('eclipse-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('light');
-        emitFx({ kind: 'moment', id: 'eclipse_stance_shift', role: playerKey, stance: isSun ? 'sun' : 'moon', rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'eclipse_stance_shift', role: playerKey, stance: isSun ? 'sun' : 'moon', rollVal, text: player.name });
       }
     } else if (isDjinn) {
       AudioFX.playDjinnImpact();
       triggerShockwave('djinn-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('light');
-        emitFx({ kind: 'moment', id: 'djinn_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
       if (rollVal >= 5) {
         // Cosmic Djinn 3 Wishes on Roll 5–6 (Carpet Flight, Oasis Portal, or Midas Gold)
@@ -8209,7 +8221,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           player.carpetGlideActive = true;
           AudioFX.playDjinnCarpet();
           grantMiles(playerKey, 60);
-          emitFx({ kind: 'moment', id: 'djinn_carpet_glide', role: playerKey, text: `${player.name} Carpet Flight!` });
+          playFx({ kind: 'moment', id: 'djinn_carpet_glide', role: playerKey, text: `${player.name} Carpet Flight!` });
           floatText(player.pos, '🧞 WISH 1: CARPET FLIGHT (+60🪙 🪔)', 'pos');
           announce(`🪔✨ <strong>GENIE'S WISH: MAGIC CARPET!</strong> ${player.name} soared on a Magic Carpet (0 rent on next landing + 60🪙)!`);
         } else if (wishType === 'oasis') {
@@ -8218,9 +8230,11 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           monopolyState.djinnOasisTiles[oasisTile] = { creator: playerKey, bonusReward: 75, rounds: 3 };
           AudioFX.playDjinnWish();
           grantMiles(playerKey, 75);
+          playFx({ kind: 'moment', id: 'djinn_sovereign_throw', role: playerKey, rollVal, text: player.name });
           floatText(player.pos, '🪔 WISH 2: OASIS PORTAL (+75🪙)', 'pos');
           announce(`🪔✨ <strong>GENIE'S WISH: OASIS PORTAL!</strong> ${player.name} manifested a Mirage Oasis at ${MONOPOLY_TILES[oasisTile].name} and harvested +75🪙 celestial water!`);
         } else {
+          playFx({ kind: 'moment', id: 'djinn_sovereign_throw', role: playerKey, rollVal, text: player.name });
           const rivalProps = Object.keys(monopolyState.properties || {})
             .filter(tid => monopolyState.properties[tid]?.owner && monopolyState.properties[tid].owner !== playerKey);
           if (rivalProps.length > 0) {
@@ -8241,49 +8255,55 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       triggerShockwave('phoenix-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'phoenix_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'phoenix_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
     } else if (isSundrop || isClockwork || isBeast) {
       AudioFX.playBoom();
       triggerShockwave('fairytale-shockwave', 650);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'fairytale_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        if (!(rollVal === 6 && (isBeast || perkOf(playerKey).beastPounce))) {
+          playFx({ kind: 'moment', id: 'fairytale_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
     } else if (isFrost) {
       AudioFX.playGlacialImpact();
       triggerShockwave('frost-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'glacial_royalty_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'glacial_royalty_throw', role: playerKey, rollVal, text: player.name });
       }
     } else if (typeof isGildedSovereign === 'function' && isGildedSovereign(playerKey)) {
       AudioFX.playSolarImpact();
       triggerShockwave('solar-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'gilded_sovereign_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'gilded_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
     } else if (typeof isSolarDivinity === 'function' && isSolarDivinity(playerKey)) {
       AudioFX.playSolarImpact();
       triggerShockwave('solar-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'solar_divinity_throw', role: playerKey, rollVal, text: player.name });
+        playFx({ kind: 'moment', id: 'solar_divinity_throw', role: playerKey, rollVal, text: player.name });
       }
     } else if (typeof isPhantomRoyalty === 'function' && isPhantomRoyalty(playerKey)) {
       AudioFX.playPhantomImpact();
       triggerShockwave('phantom-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('medium');
-        emitFx({ kind: 'moment', id: 'phantom_throw', role: playerKey, rollVal, text: player.name });
+        if (rollVal !== 6) {
+          playFx({ kind: 'moment', id: 'phantom_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
     } else if (typeof isOlympusDivinity === 'function' && isOlympusDivinity(playerKey)) {
       AudioFX.playZeusBolt();
       triggerShockwave('olympus-shockwave', 700);
       if (isBigRoll) {
         shakeBoard('heavy');
-        emitFx({ kind: 'moment', id: 'olympus_throw', role: playerKey, rollVal, text: player.name });
+        if (rollVal !== 6) {
+          playFx({ kind: 'moment', id: 'olympus_throw', role: playerKey, rollVal, text: player.name });
+        }
       }
     } else {
       AudioFX.playDiceImpact();
@@ -8295,7 +8315,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     }
 
     if (isVipCasino) {
-      emitFx({ kind: 'moment', id: 'vip_casino', role: playerKey, text: `${player.name} High-Roller Express!` });
+      playFx({ kind: 'moment', id: 'vip_casino', role: playerKey, text: `${player.name} High-Roller Express!` });
     }
     if (rollVal === 6 && perkOf(playerKey).supernova6 && !monopolyState.hadBonusRoll) {
       monopolyState.bonusRoll = playerKey;
@@ -8304,7 +8324,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         diceBox.classList.add('dice-supernova-flare');
         setTimeout(() => diceBox.classList.remove('dice-supernova-flare'), 1600);
       }
-      emitFx({ kind: 'moment', id: 'supernova_leap', role: playerKey, text: `${player.name} Supernova Overdrive!` });
+      playFx({ kind: 'moment', id: 'supernova_leap', role: playerKey, text: `${player.name} Supernova Overdrive!` });
     }
 
     // ⚡ S11 Zeus Lightning Smite on Rolling 6:
@@ -8320,7 +8340,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         targetProp.level = Math.max(1, (targetProp.level || 1) - 1);
         grantMiles(playerKey, 120);
         if (AudioFX.playZeusBolt) AudioFX.playZeusBolt();
-        emitFx({ kind: 'moment', id: 'zeus_lightning_smite', role: playerKey, tileId: targetTileId, amount: 120 });
+        playFx({ kind: 'moment', id: 'zeus_lightning_smite', role: playerKey, tileId: targetTileId, amount: 120 });
         floatText(targetTileId, '⚡ ZEUS SMITE! -1 LVL', 'neg fx-big');
         floatText(player.pos, '+120🪙 Rubble Cash ⚡', 'pos');
         announce(`⚡🏛️ <strong>ZEUS ORBITAL SMITE!</strong> Rolling a 6 summoned Zeus's lightning bolt! Demolished 1 level off ${monopolyState.players[targetProp.owner]?.name || 'rival'}'s hotel at <strong>${MONOPOLY_TILES[targetTileId]?.name}</strong> and scavenged <strong>+120🪙</strong> rubble cash!`);
@@ -8337,7 +8357,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
             grantMiles(playerKey, shockDmg);
             chargeUlt(playerKey, 10, 'Zeus Storm Shock');
             if (AudioFX.playZeusBolt) AudioFX.playZeusBolt();
-            emitFx({ kind: 'moment', id: 'zeus_storm_shock', fromRole: playerKey, toRole: targetRole, amount: shockDmg });
+            playFx({ kind: 'moment', id: 'zeus_storm_shock', fromRole: playerKey, toRole: targetRole, amount: shockDmg });
             floatText(targetPlayer.pos != null ? targetPlayer.pos : 0, `⚡ -${shockDmg}🪙 SHOCK`, 'neg fx-big');
             floatText(player.pos, `+${shockDmg}🪙 +10% ULT ⚡`, 'pos');
             announce(`⚡🏛️ <strong>ZEUS STORM SHOCK!</strong> Rolling a 6 summoned a divine lightning bolt! Struck ${targetPlayer.name} for <strong>-${shockDmg}🪙</strong> electric shock (+${shockDmg}🪙 thunder bounty & +10% Ult energy)!`);
@@ -8346,6 +8366,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
             grantMiles(playerKey, 80);
             chargeUlt(playerKey, 15, 'Zeus Divine Surge');
             if (AudioFX.playZeusBolt) AudioFX.playZeusBolt();
+            playFx({ kind: 'moment', id: 'olympus_throw', role: playerKey, rollVal, text: player.name });
             floatText(player.pos, '+80🪙 Divine Surge ⚡', 'pos');
             announce(`⚡🏛️ <strong>ZEUS DIVINE SURGE!</strong> Rolling a 6 summoned heavenly lightning: +80🪙 divine bounty & +15% Ult energy!`);
           }
@@ -8366,7 +8387,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           grantMiles(playerKey, tributeDmg);
           chargeUlt(playerKey, 10, 'Phantom Gala Tribute');
           if (AudioFX.playPhantomImpact) AudioFX.playPhantomImpact();
-          emitFx({ kind: 'moment', id: 'phantom_throw', role: playerKey, targetRole, amount: tributeDmg });
+          playFx({ kind: 'moment', id: 'phantom_throw', role: playerKey, targetRole, amount: tributeDmg });
           floatText(targetPlayer.pos != null ? targetPlayer.pos : 0, `🎭 -${tributeDmg}🪙 GALA TRIBUTE`, 'neg fx-big');
           floatText(player.pos, `+${tributeDmg}🪙 +10% ULT 🎭`, 'pos');
           announce(`🎭🥀 <strong>WALTZ OF FATE: OPERA GALA!</strong> Rolling a 6 conducted the crescendo! Siphoned <strong>${tributeDmg}🪙</strong> gala tribute from ${targetPlayer.name} (+10% Ult energy)!`);
@@ -8374,7 +8395,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           grantMiles(playerKey, 60);
           chargeUlt(playerKey, 15, 'Phantom Gala Applause');
           if (AudioFX.playPhantomImpact) AudioFX.playPhantomImpact();
-          emitFx({ kind: 'moment', id: 'phantom_throw', role: playerKey });
+          playFx({ kind: 'moment', id: 'phantom_throw', role: playerKey });
           floatText(player.pos, '+60🪙 Gala Applause 🎭', 'pos');
           announce(`🎭🥀 <strong>WALTZ OF FATE!</strong> Rolling a 6 commanded the grand opera hall: +60🪙 gala applause & +15% Ult energy!`);
         }
@@ -8393,14 +8414,14 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
           targetPlayer.miles = Math.max(0, targetPlayer.miles - pounceDmg);
           grantMiles(playerKey, pounceDmg);
           chargeUlt(playerKey, 10, 'Beast Claw Strike');
-          emitFx({ kind: 'moment', id: 'beast_pounce', role: playerKey, targetRole, amount: pounceDmg });
+          playFx({ kind: 'moment', id: 'beast_pounce', role: playerKey, targetRole, amount: pounceDmg });
           floatText(targetPlayer.pos != null ? targetPlayer.pos : 0, `🦁 -${pounceDmg}🪙 BEAST CLAW`, 'neg fx-big');
           floatText(player.pos, `+${pounceDmg}🪙 +10% ULT 🦁`, 'pos');
           announce(`🦁🌹 <strong>BEAST UNLEASHED: CLAW POUNCE!</strong> Rolling a 6 unleashed raw beast fury! Pounced upon ${targetPlayer.name} for <strong>-${pounceDmg}🪙</strong> claw damage (+${pounceDmg}🪙 gold scavenged & +10% Ult energy)!`);
         } else {
           grantMiles(playerKey, 70);
           chargeUlt(playerKey, 15, 'Beast Roar');
-          emitFx({ kind: 'moment', id: 'beast_pounce', role: playerKey, amount: 70 });
+          playFx({ kind: 'moment', id: 'beast_pounce', role: playerKey, amount: 70 });
           floatText(player.pos, '+70🪙 Beast Roar 🦁', 'pos');
           announce(`🦁🌹 <strong>BEAST ROAR!</strong> Rolling a 6 echoed through the grand ballroom: +70🪙 sovereign bounty & +15% Ult energy!`);
         }
@@ -8422,7 +8443,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       grantMiles(playerKey, 90);
       chargeUlt(playerKey, 15, 'Naga Fireballs');
       if (AudioFX.playNagaWave) AudioFX.playNagaWave();
-      emitFx({ kind: 'moment', id: 'naga_river_surge', role: playerKey, tiles: smiteList });
+      playFx({ kind: 'moment', id: 'naga_river_surge', role: playerKey, tiles: smiteList });
       floatText(player.pos, '🐉 NAGA FIREBALLS SMITE! +90🪙', 'pos fx-big');
       announce(`🐉🌊 <strong>NAGA FIREBALLS SMITE!</strong> Rolling a 6 launched 3 sacred fireballs into the sky! Smote 3 luxury properties into <strong>Sacred Waterways (+30% Rent, Mekong Rapids downstream)</strong> and gathered <strong>+90🪙</strong> river treasure!`);
     }
@@ -8504,7 +8525,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         if (choseDrift) {
           AudioFX.playAbyssalWave();
           AudioFX.playAbyssalSplash();
-          emitFx({ kind: 'moment', id: 'abyssal_wave_surge', role: playerKey, player: player.name });
+          playFx({ kind: 'moment', id: 'abyssal_wave_surge', role: playerKey, player: player.name });
           setMonopolyTicker(`🌊 <strong>Abyssal Tidal Drift!</strong> ${player.name} surged +1 extra tile to <strong>${targetTile ? targetTile.name : 'Destination'}</strong>! 🪼✨`);
         } else {
           setMonopolyTicker(`⚓ ${player.name} anchored at <strong>${targetTile ? targetTile.name : 'Destination'}</strong> (${rollVal} steps).`);
@@ -8708,7 +8729,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
             }
           });
           AudioFX.playNagaWave();
-          emitFx({ kind: 'moment', id: 'naga_river_surge', role: playerKey, text: `${p.name} River Surge!` });
+          playFx({ kind: 'moment', id: 'naga_river_surge', role: playerKey, text: `${p.name} River Surge!` });
           announce(`🐉🌊 <strong>BANGKOK RIVER SURGE!</strong> Emerald tides swept Bangkok — ${p.name}'s properties received Water Shields! 🪷`);
           floatText(1, '🌊 Water Shield', 'pos');
 
@@ -8717,7 +8738,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
             monopolyState.mekongHoard = 0;
             grantMiles(playerKey, hoardAmt);
             AudioFX.playNagaHoardCollect();
-            emitFx({ kind: 'moment', id: 'naga_hoard_claim', role: playerKey, amount: hoardAmt });
+            playFx({ kind: 'moment', id: 'naga_hoard_claim', role: playerKey, amount: hoardAmt });
             announce(`🐉🌊 <strong>MEKONG RIVER HOARD HARVESTED!</strong> ${p.name} claimed the entire river pot: <strong>+${fmt(hoardAmt)} miles</strong>! 🪷`);
             floatText(0, `+${fmt(hoardAmt)} Mekong Hoard 🐉`, 'pos');
           }
@@ -8729,7 +8750,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
           p.ashPot = 0;
           grantMiles(playerKey, refund);
           AudioFX.playPhoenixRebirth();
-          emitFx({ kind: 'moment', id: 'phoenix_ash_refund', role: playerKey, amount: refund });
+          playFx({ kind: 'moment', id: 'phoenix_ash_refund', role: playerKey, amount: refund });
           announce(`🔥☀️ <strong>PHOENIX ASH REBOUND!</strong> Sacred flames ignited the Ash Pot and refunded <strong>+${fmt(refund)} miles</strong> to ${p.name}! 🪶`);
           floatText(0, `+${fmt(refund)} Ash Refund 🔥`, 'pos');
         }
@@ -8741,7 +8762,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
           p.foxfireTails = Math.min(3, (p.foxfireTails || 0) + 1);
           p.rechargedTokyoThisLap = true;
           AudioFX.playInariFoxfire();
-          emitFx({ kind: 'moment', id: 'inari_tail_recharge', role: playerKey, text: `${p.name} +1 Foxfire Tail!` });
+          playFx({ kind: 'moment', id: 'inari_tail_recharge', role: playerKey, text: `${p.name} +1 Foxfire Tail!` });
           floatText(p.pos, `🦊 +1 TAIL (${p.foxfireTails}/3)`, 'pos');
           announce(`🦊✨ <strong>TOKYO SHRINE BLESSING:</strong> ${p.name} entered Tokyo and restored a Spirit Tail (${p.foxfireTails}/3)! 🌸`);
         }
@@ -8755,7 +8776,7 @@ async function animateAvatarMove(playerKey, steps, onComplete, wasDrifted = fals
           p.miles -= arcTax;
           if (monopolyState.players[ownerRole]) monopolyState.players[ownerRole].miles += arcTax;
           if (AudioFX.playZeusBolt) AudioFX.playZeusBolt();
-          emitFx({ kind: 'moment', id: 'lightning_rod_zap', fromTile: p.pos, toRole: playerKey, ownerRole, amount: arcTax });
+          playFx({ kind: 'moment', id: 'lightning_rod_zap', fromTile: p.pos, toRole: playerKey, ownerRole, amount: arcTax });
           floatText(p.pos, `⚡ ARC STATIC! -${arcTax}🪙`, 'neg');
           announce(`⚡💨 <strong>LIGHTNING ROD STATIC!</strong> ${p.name} sped past Mount Olympus and was shocked by the spire for <strong>-${arcTax}🪙</strong> tribute to ${monopolyState.players[ownerRole]?.name || 'Zeus'}!`);
           updateMonopolyHUD();
@@ -10287,9 +10308,6 @@ function scheduleBotRoll() {
         : true;
       if (shouldUse) {
         executeUltimate(botRole);
-        setTimeout(() => {
-          scheduleBotRoll();
-        }, 2400);
         return;
       }
     }
@@ -12654,16 +12672,15 @@ function handleMonopolyMessage(message) {
 
   if (message.type === 'monopoly_action_rejected') {
     console.warn('[Monopoly] Action rejected by server:', message.error, message.message);
+    if (typeof clearBotTimer === 'function') clearBotTimer();
     if (monopolyState) {
       monopolyState.isRolling = false;
+      monopolyState.turnResolver = null;
     }
     isAnimating = false;
     releaseRoleLocks();
     flushQueuedMessages();
-    if (currentFlightRoom && currentFlightRoom.id && typeof sendSignaling === 'function') {
-      sendSignaling({ type: 'room_rejoin', roomId: currentFlightRoom.id, uid: getPersistentPlayerUid() });
-    }
-    renderAll();
+    updateMonopolyHUD();
     return;
   }
 
@@ -12736,8 +12753,16 @@ function handleMonopolyMessage(message) {
 
     case 'cast_ultimate':
       if (message.state) mergeIncomingState(message.state);
+      rollStartedAt = Date.now();
+      isAnimating = true;
+      if (message.role) activeRollLocks[message.role] = true;
+      setTimeout(() => {
+        isAnimating = false;
+        releaseRoleLocks(message.role);
+        flushQueuedMessages();
+        updateMonopolyHUD();
+      }, 1850);
       triggerUltimateEffects(message.role, message.ultimateType, false);
-      renderAll();
       break;
 
     case 'drift_choice':

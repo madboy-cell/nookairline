@@ -974,36 +974,30 @@
           <stop offset="80%" stop-color="#f59e0b" />
           <stop offset="100%" stop-color="rgba(217, 119, 6, 0)" />
         </radialGradient>
-        <filter id="lantern-blur" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
       </defs>
     `;
     L.moment.appendChild(svg);
 
-    const lanterns = [];
     const W = L.moment.clientWidth || 800;
     const H = L.moment.clientHeight || 800;
-    for (let i = 0; i < 14; i++) {
+    const duration = T(1200);
+    for (let i = 0; i < 10; i++) {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('filter', 'url(#lantern-blur)');
-      const baseX = (W * 0.1) + Math.random() * (W * 0.8);
-      const startY = H + 20 + Math.random() * 80;
-      const speed = 0.55 + Math.random() * 0.45;
-      const swayAmp = 15 + Math.random() * 20;
-      const swayFreq = 0.003 + Math.random() * 0.002;
-      const scale = 0.7 + Math.random() * 0.6;
+      const baseX = (W * 0.12) + Math.random() * (W * 0.76);
+      const startY = H + 10 + Math.random() * 60;
+      const endY = startY - (180 + Math.random() * 140);
+      const swayX = (Math.random() - 0.5) * 36;
+      const scale = (0.75 + Math.random() * 0.45).toFixed(2);
       g.innerHTML = `
         <ellipse cx="0" cy="0" rx="14" ry="18" fill="url(#lantern-core-grad)" />
         <rect x="-8" y="14" width="16" height="4" rx="2" fill="#78350f" opacity="0.8" />
         <circle cx="0" cy="4" r="5" fill="#ffffff" opacity="0.9" />
       `;
       svg.appendChild(g);
-      lanterns.push({ el: g, baseX, y: startY, speed, swayAmp, swayFreq, scale, seed: Math.random() * 100 });
+      g.animate([
+        { transform: `translate(${baseX.toFixed(1)}px, ${startY.toFixed(1)}px) scale(${scale})`, opacity: 0.95 },
+        { transform: `translate(${(baseX + swayX).toFixed(1)}px, ${endY.toFixed(1)}px) scale(${scale})`, opacity: 0.2 }
+      ], { duration, fill: 'forwards', easing: 'ease-out' });
     }
 
     // 3. Floating Wish Badges on board
@@ -1025,25 +1019,8 @@
       ring(tCoord.x, tCoord.y, 80, '#fde047', 700);
     });
 
-    const startTime = performance.now();
-    const duration = T(1200);
-
     try {
-      while (performance.now() - startTime < duration) {
-        const elapsed = performance.now() - startTime;
-        lanterns.forEach(lt => {
-          lt.y -= lt.speed * 8;
-          const swayX = lt.baseX + Math.sin((elapsed + lt.seed * 50) * lt.swayFreq) * lt.swayAmp;
-          lt.el.setAttribute('transform', `translate(${swayX.toFixed(1)}, ${lt.y.toFixed(1)}) scale(${lt.scale})`);
-        });
-        if (Math.random() < 0.35) {
-          const randLt = lanterns[Math.floor(Math.random() * lanterns.length)];
-          if (randLt && randLt.y < H && randLt.y > 0) {
-            burst({ x: randLt.baseX, y: randLt.y, name: 'sparkle', count: 3, spread: 40, up: 20, life: 400, size: 12 });
-          }
-        }
-        await sleep(35);
-      }
+      await sleep(duration);
     } finally {
       svg.remove();
       badges.forEach(b => {
@@ -1112,28 +1089,21 @@
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
     svg.innerHTML = `
       <defs>
-        <filter id="chrono-glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
         <radialGradient id="clock-face-grad" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="rgba(56, 189, 248, 0.25)" />
           <stop offset="70%" stop-color="rgba(14, 165, 233, 0.15)" />
           <stop offset="100%" stop-color="rgba(8, 47, 73, 0)" />
         </radialGradient>
       </defs>
-      <g id="chrono-clock-group" filter="url(#chrono-glow)">
+      <g id="chrono-clock-group">
         <circle cx="${c.x}" cy="${c.y}" r="110" fill="url(#clock-face-grad)" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6,4" />
         <circle cx="${c.x}" cy="${c.y}" r="92" fill="none" stroke="#818cf8" stroke-width="1.5" />
         <text x="${c.x}" y="${c.y - 75}" text-anchor="middle" fill="#bae6fd" font-size="16" font-weight="900" font-family="serif">XII</text>
         <text x="${c.x + 80}" y="${c.y + 6}" text-anchor="middle" fill="#bae6fd" font-size="16" font-weight="900" font-family="serif">III</text>
         <text x="${c.x}" y="${c.y + 86}" text-anchor="middle" fill="#bae6fd" font-size="16" font-weight="900" font-family="serif">VI</text>
         <text x="${c.x - 80}" y="${c.y + 6}" text-anchor="middle" fill="#bae6fd" font-size="16" font-weight="900" font-family="serif">IX</text>
-        <line id="chrono-hour-hand" x1="${c.x}" y1="${c.y}" x2="${c.x}" y2="${c.y - 45}" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
-        <line id="chrono-minute-hand" x1="${c.x}" y1="${c.y}" x2="${c.x}" y2="${c.y - 70}" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+        <line id="chrono-hour-hand" x1="${c.x}" y1="${c.y}" x2="${c.x}" y2="${c.y - 45}" stroke="#ffffff" stroke-width="4" stroke-linecap="round" style="transform-origin:${c.x}px ${c.y}px" />
+        <line id="chrono-minute-hand" x1="${c.x}" y1="${c.y}" x2="${c.x}" y2="${c.y - 70}" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" style="transform-origin:${c.x}px ${c.y}px" />
         <circle cx="${c.x}" cy="${c.y}" r="6" fill="#ffffff" />
       </g>
     `;
@@ -1158,22 +1128,12 @@
       badges.push(badge);
     });
 
-    const startTime = performance.now();
     const duration = T(950);
+    if (minHand) minHand.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(-720deg)' }], { duration, fill: 'forwards' });
+    if (hourHand) hourHand.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(-120deg)' }], { duration, fill: 'forwards' });
 
     try {
-      while (performance.now() - startTime < duration) {
-        const elapsed = performance.now() - startTime;
-        const minAngle = -(elapsed * 0.95);
-        const hourAngle = -(elapsed * 0.15);
-        if (minHand) minHand.setAttribute('transform', `rotate(${minAngle}, ${c.x}, ${c.y})`);
-        if (hourHand) hourHand.setAttribute('transform', `rotate(${hourAngle}, ${c.x}, ${c.y})`);
-
-        if (Math.random() < 0.3) {
-          burst({ x: c.x + (Math.random() - 0.5) * 160, y: c.y + (Math.random() - 0.5) * 160, name: 'sparkle', count: 4, spread: 50, up: 20, life: 400, size: 12 });
-        }
-        await sleep(35);
-      }
+      await sleep(duration);
     } finally {
       svg.remove();
       badges.forEach(b => {
@@ -1235,7 +1195,7 @@
     clocheWrap.style.top = `${c.y}px`;
     clocheWrap.innerHTML = `
       <div class="fx-cloche-halo-ring"></div>
-      <img src="assets/s7/enchanted_rose_cloche.png?v=20261012v5" class="fx-enchanted-rose-cloche-img" alt="Enchanted Rose Cloche" />
+      <img src="assets/thumbs/s7/enchanted_rose_cloche.png" decoding="async" class="fx-enchanted-rose-cloche-img" alt="Enchanted Rose Cloche" />
     `;
     L.moment.appendChild(clocheWrap);
 
@@ -1311,17 +1271,12 @@
     });
     badges.push(badge);
 
-    const startTime = performance.now();
     const duration = T(1100);
+    burst({ x: c.x, y: c.y, name: 'gem', count: 14, spread: 110, up: 40, life: 700, size: 14 });
+    burst({ x: c.x, y: c.y, name: 'sparkle', count: 18, spread: 120, up: 50, gravity: 50, life: 750, size: 14 });
 
     try {
-      while (performance.now() - startTime < duration) {
-        if (Math.random() < 0.45) {
-          burst({ x: c.x + (Math.random() - 0.5) * 120, y: c.y + (Math.random() - 0.5) * 120, name: 'gem', count: 3, spread: 45, up: 20, life: 450, size: 14 });
-          burst({ x: c.x + (Math.random() - 0.5) * 100, y: c.y + (Math.random() - 0.5) * 100, name: 'sparkle', count: 4, spread: 60, up: 30, gravity: 50, life: 500, size: 12 });
-        }
-        await sleep(35);
-      }
+      await sleep(duration);
     } finally {
       if (clocheWrap) clocheWrap.remove();
       badges.forEach(b => {
@@ -1351,22 +1306,7 @@
   }
 
   /**
-   * ❄️ S8 Mythic: ABSOLUTE ZERO: CRYO-STASIS
-   * 4-Phase Cinematic Sequence:
-   * 1. Subzero blizzard atmospheric shift: Deep ice vignette, flash, tremor & caster pre-charge.
-   * 2. Procedural Glacial Ice Fissures branching across the board from caster to target with SVG plasma glow & snowflake runes.
-   * 3. Target token encased in 3D translucent ice cube block (.fx-token-frozen-block), shivering animation,
-   *    floating [❄️ CRYO-STASIS! 🧊] badge (-150🪙 DEFROST / SKIP TURN), frost & stardust siphon conduits.
-   * 4. Detonation shockwaves (triple cyan, frost white, and blizzard blue rings), core frost burst,
-   *    and high-prestige Glacial Empress / Blizzard Warden banner.
-   */
-  /**
    * ❄️ S8 Mythic Ultimate: Absolute Zero — Rise of the Glacial Citadel
-   * 1. Atmospheric shift: screen flash, subzero vignette, Starlight Scepter eruption
-   * 2. Multi-target procedural branching ice fissures connecting to ALL rivals & Citadel tile
-   * 3. ALL rivals encased in 3D translucent ice blocks (.fx-token-frozen-block) + multi-coin siphon
-   * 4. Erection of the 3D Glacial Ice Citadel on target tile with ascending aura & beacon
-   * 5. Detonation shockwaves, frost crest burst, and high-prestige Glacial Empress banner.
    */
   async function absoluteZero(d = {}) {
     if (!refs()) return;
@@ -1419,15 +1359,6 @@
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
     svg.innerHTML = `
       <defs>
-        <filter id="frost-plasma-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="3" result="blur1" />
-          <feGaussianBlur stdDeviation="8" result="blur2" />
-          <feMerge>
-            <feMergeNode in="blur2" />
-            <feMergeNode in="blur1" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
         <linearGradient id="frost-ice-grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="30%" stop-color="#e0f2fe" />
@@ -1468,7 +1399,6 @@
     }
 
     const gFissures = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    gFissures.setAttribute('filter', 'url(#frost-plasma-glow)');
     svg.appendChild(gFissures);
 
     // Phase 3: Encase ALL victims in 3D Translucent Ice Blocks & Siphon Coins
@@ -1500,7 +1430,7 @@
     citadelWrap.className = 'fx-citadel-rising-wrap';
     citadelWrap.innerHTML = `
       <div class="fx-citadel-beacon"></div>
-      <img src="assets/s8/glacial_citadel.png" class="fx-citadel-hero-img" alt="Citadel" />
+      <img src="assets/thumbs/s8/glacial_citadel.png" decoding="async" class="fx-citadel-hero-img" alt="Citadel" />
       <div class="fx-citadel-frost-crown">❄️👑❄️</div>
     `;
     citadelWrap.style.left = `${citAnchor.modelX}px`;
@@ -1525,39 +1455,32 @@
     ring(citAnchor.modelX, citAnchor.modelY, 140, '#38bdf8', 600);
     ring(citAnchor.modelX, citAnchor.modelY, 220, '#bae6fd', 850);
 
-    const startTime = performance.now();
-    const duration = T(950);
-
     try {
-      while (performance.now() - startTime < duration) {
-        let html = '';
-        // Multi-target fissures to all victims
-        victimEntries.forEach(ve => {
-          const f = generateFissurePath(fromP.x, fromP.y, ve.p.x, ve.p.y, 12, 22);
-          html += `
-            <polyline points="${f.trunk}" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" opacity="0.75" />
-            <polyline points="${f.trunk}" fill="none" stroke="url(#frost-ice-grad)" stroke-width="3" stroke-linecap="round" />
-            <polyline points="${f.trunk}" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
-          `;
-          f.branches.forEach(bPts => {
-            html += `<polyline points="${bPts}" fill="none" stroke="#e0f2fe" stroke-width="1.8" stroke-linecap="round" opacity="0.85" />`;
-          });
-        });
-
-        // Fissure to Citadel tile
-        const fCit = generateFissurePath(fromP.x, fromP.y, citAnchor.modelX, citAnchor.modelY, 14, 26);
+      let html = '';
+      victimEntries.forEach(ve => {
+        const f = generateFissurePath(fromP.x, fromP.y, ve.p.x, ve.p.y, 12, 22);
         html += `
-          <polyline points="${fCit.trunk}" fill="none" stroke="#0284c7" stroke-width="7" stroke-linecap="round" opacity="0.85" />
-          <polyline points="${fCit.trunk}" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
-          <polyline points="${fCit.trunk}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+          <polyline points="${f.trunk}" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" opacity="0.75" />
+          <polyline points="${f.trunk}" fill="none" stroke="url(#frost-ice-grad)" stroke-width="3" stroke-linecap="round" />
+          <polyline points="${f.trunk}" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
         `;
-        fCit.branches.forEach(bPts => {
-          html += `<polyline points="${bPts}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9" />`;
+        f.branches.forEach(bPts => {
+          html += `<polyline points="${bPts}" fill="none" stroke="#e0f2fe" stroke-width="1.8" stroke-linecap="round" opacity="0.85" />`;
         });
+      });
 
-        gFissures.innerHTML = html;
-        await sleep(40);
-      }
+      const fCit = generateFissurePath(fromP.x, fromP.y, citAnchor.modelX, citAnchor.modelY, 14, 26);
+      html += `
+        <polyline points="${fCit.trunk}" fill="none" stroke="#0284c7" stroke-width="7" stroke-linecap="round" opacity="0.85" />
+        <polyline points="${fCit.trunk}" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+        <polyline points="${fCit.trunk}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+      `;
+      fCit.branches.forEach(bPts => {
+        html += `<polyline points="${bPts}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9" />`;
+      });
+
+      gFissures.innerHTML = html;
+      await sleep(T(950));
     } finally {
       svg.remove();
       scepter.remove();
@@ -1674,7 +1597,7 @@
     pyrWrap.innerHTML = `
       <div class="fx-pyramid-beacon"></div>
       <div class="fx-pyramid-capstone-glow">✨🏛️✨</div>
-      <img src="assets/s9/golden_pyramid.png" class="fx-pyramid-hero-img" alt="Great Golden Pyramid" />
+      <img src="assets/thumbs/s9/golden_pyramid.png" decoding="async" class="fx-pyramid-hero-img" alt="Great Golden Pyramid" />
     `;
     L.moment.appendChild(pyrWrap);
 
@@ -1754,10 +1677,6 @@
 
   /**
    * ☀️ S9 Mythic Ultimate: Solar Wrath & Eye of Ra
-   * 1. Sun God Ra / Sekhmet manifests Solar Falcon Wings & blazing Eye of Ra
-   * 2. Cataclysmic solar ray strikes all rivals and strips levels from rival properties
-   * 3. Siphoning scorched tribute coins + fire explosions
-   * 4. Multi-ring solar shockwaves and grand banner.
    */
   async function solarWrath(d = {}) {
     if (!refs()) return;
@@ -1876,13 +1795,6 @@
   }
 
   /**
-   * 🎭 S10 Mythic Ultimate: Phantom Masquerade: The Grand Curtain Call
-   * 1. Pipe organ chord, deep crimson/obsidian vignette, camera tremor & falling rose petals.
-   * 2. 3D Venetian Harlequin Mask rises on marked hex tile (safeMonumentAnchor clamped).
-   * 3. Velvet ribbon SVG rays connect caster to all victims, marionette stasis shaking on victims, gala tribute coins siphon.
-   * 4. Cymbal impact, Venetian gold/rose rings, heroic banner.
-   */
-  /**
    * Helper: Generate a procedural jagged lightning SVG path with random sub-branches
    */
   function generateOlympusLightning(x1, y1, x2, y2, segments = 16, maxOffset = 36) {
@@ -1957,8 +1869,8 @@
     const curtainStage = document.createElement('div');
     curtainStage.className = 'fx-opera-stage-overlay';
     curtainStage.innerHTML = `
-      <img src="assets/s10/opera_curtain_left.png?v=20261012v4" class="fx-opera-curtain-half fx-opera-curtain-left" alt="Left Velvet Curtain" />
-      <img src="assets/s10/opera_curtain_right.png?v=20261012v4" class="fx-opera-curtain-half fx-opera-curtain-right" alt="Right Velvet Curtain" />
+      <img src="assets/thumbs/s10/opera_curtain_left.png" decoding="async" class="fx-opera-curtain-half fx-opera-curtain-left" alt="Left Velvet Curtain" />
+      <img src="assets/thumbs/s10/opera_curtain_right.png" decoding="async" class="fx-opera-curtain-half fx-opera-curtain-right" alt="Right Velvet Curtain" />
     `;
     L.moment.appendChild(curtainStage);
 
@@ -1993,13 +1905,6 @@
           <stop offset="65%" stop-color="#f43f5e" />
           <stop offset="100%" stop-color="#fbbf24" />
         </linearGradient>
-        <filter id="phantom-velvet-glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
       </defs>
       <g id="fxPhantomRibbons"></g>
     `;
@@ -2015,8 +1920,8 @@
     maskWrap.innerHTML = `
       <div class="fx-mask-beacon"></div>
       <div class="fx-mask-rose-glow">🥀🎭✨</div>
-      <img src="assets/s10/phantom_crest.png?v=20261012v4" class="fx-phantom-crest-img" style="position:absolute;width:115px;height:115px;opacity:0.85;animation:fxCitadelHover 2s infinite alternate;" alt="Opera Crest" />
-      <img src="assets/s10/venetian_mask.png?v=20261012v4" class="fx-mask-hero-img" alt="Venetian Harlequin Mask" />
+      <img src="assets/thumbs/s10/phantom_crest.png" decoding="async" class="fx-phantom-crest-img" style="position:absolute;width:115px;height:115px;opacity:0.85;animation:fxCitadelHover 2s infinite alternate;" alt="Opera Crest" />
+      <img src="assets/thumbs/s10/venetian_mask.png" decoding="async" class="fx-mask-hero-img" alt="Venetian Harlequin Mask" />
     `;
     L.moment.appendChild(maskWrap);
 
@@ -2042,7 +1947,7 @@
       crossWrap.style.left = `${ve.p.x}px`;
       crossWrap.style.top = `${Math.max(45, ve.p.y - 70)}px`;
       crossWrap.innerHTML = `
-        <img src="assets/s10/marionette_cross.png?v=20261012v4" class="fx-marionette-cross-img" alt="Marionette Control Cross" />
+        <img src="assets/thumbs/s10/marionette_cross.png" decoding="async" class="fx-marionette-cross-img" alt="Marionette Control Cross" />
       `;
       L.moment.appendChild(crossWrap);
       crossElements.push(crossWrap);
@@ -2066,7 +1971,7 @@
           <line x1="${ve.p.x - 24}" y1="${crossY}" x2="${ve.p.x - 14}" y2="${ve.p.y}" stroke="#f43f5e" stroke-width="2" opacity="0.85" />
           <line x1="${ve.p.x + 24}" y1="${crossY}" x2="${ve.p.x + 14}" y2="${ve.p.y}" stroke="#f43f5e" stroke-width="2" opacity="0.85" />
           <line x1="${ve.p.x}" y1="${crossY - 18}" x2="${ve.p.x}" y2="${ve.p.y - 12}" stroke="#fbbf24" stroke-width="2.5" opacity="0.9" />
-          <path d="M ${fromP.x} ${fromP.y} Q ${midX} ${midY} ${ve.p.x} ${ve.p.y}" stroke="#f43f5e" stroke-width="8" opacity="0.45" filter="url(#phantom-velvet-glow)" fill="none" />
+          <path d="M ${fromP.x} ${fromP.y} Q ${midX} ${midY} ${ve.p.x} ${ve.p.y}" stroke="#f43f5e" stroke-width="8" opacity="0.4" fill="none" />
           <path d="M ${fromP.x} ${fromP.y} Q ${midX} ${midY} ${ve.p.x} ${ve.p.y}" stroke="url(#phantom-ribbon-grad)" stroke-width="3.5" stroke-linecap="round" opacity="0.95" fill="none" />
           <text x="${midX - 12}" y="${midY - 12}" fill="#fbbf24" font-size="16" opacity="0.95">♪</text>
           <text x="${midX + 10}" y="${midY + 12}" fill="#fda4af" font-size="14" opacity="0.95">♫</text>
@@ -2075,7 +1980,7 @@
       const tMidX = (fromP.x + maskAnchor.modelX) / 2;
       const tMidY = (fromP.y + maskAnchor.modelY) / 2 - 55;
       ribbonHtml += `
-        <path d="M ${fromP.x} ${fromP.y} Q ${tMidX} ${tMidY} ${maskAnchor.modelX} ${maskAnchor.modelY}" stroke="#fbbf24" stroke-width="9" opacity="0.5" filter="url(#phantom-velvet-glow)" fill="none" />
+        <path d="M ${fromP.x} ${fromP.y} Q ${tMidX} ${tMidY} ${maskAnchor.modelX} ${maskAnchor.modelY}" stroke="#fbbf24" stroke-width="9" opacity="0.45" fill="none" />
         <path d="M ${fromP.x} ${fromP.y} Q ${tMidX} ${tMidY} ${maskAnchor.modelX} ${maskAnchor.modelY}" stroke="url(#phantom-ribbon-grad)" stroke-width="4.5" stroke-linecap="round" opacity="1" fill="none" />
         <text x="${tMidX}" y="${tMidY - 14}" fill="#ffffff" font-size="18" opacity="0.95">🎭</text>
       `;
@@ -2141,13 +2046,6 @@
 
   /**
    * 🎭 S10 Phantom Masquerade: Reverse Rent Hex Inversion
-   * Triggered when a tenant inverts a rent payment onto the landlord!
-   * 1. Heavy playPhantomImpact audio & gothic velvet flash.
-   * 2. 3D Venetian Gilded Mirror rises on the hexed tile with smokey rose aura.
-   * 3. Radial mirror shockwave fractures outward with crystalline glass particles.
-   * 4. Inverted crimson/gold light rays strike the landlord avatar.
-   * 5. Siphoned coins erupt from the landlord directly into the tenant's purse.
-   * 6. Heroic victory banner.
    */
   async function phantomReverseHex(d = {}) {
     if (!refs()) return;
@@ -2185,7 +2083,7 @@
     mirrorWrap.innerHTML = `
       <div class="fx-mask-beacon" style="background: radial-gradient(circle, rgba(244, 63, 94, 0.6) 0%, rgba(251, 191, 36, 0.25) 50%, transparent 75%);"></div>
       <div class="fx-mask-rose-glow">🥀🪞✨</div>
-      <img src="assets/s10/venetian_mirror.png?v=20261012v4" class="fx-phantom-mirror-img" alt="Venetian Gilded Mirror" />
+      <img src="assets/thumbs/s10/venetian_mirror.png" decoding="async" class="fx-phantom-mirror-img" alt="Venetian Gilded Mirror" />
     `;
     L.moment.appendChild(mirrorWrap);
 
@@ -2207,10 +2105,6 @@
           <stop offset="70%" stop-color="#f43f5e" />
           <stop offset="100%" stop-color="#fbbf24" />
         </linearGradient>
-        <filter id="mirror-inversion-glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="4.5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
       </defs>
       <g id="fxReverseRays"></g>
     `;
@@ -2222,7 +2116,7 @@
     const midY = (mirrorAnchor.modelY + pLandlord.y) / 2 - 40;
     if (gRays) {
       gRays.innerHTML = `
-        <path d="M ${mirrorAnchor.modelX} ${mirrorAnchor.modelY} Q ${midX} ${midY} ${pLandlord.x} ${pLandlord.y}" stroke="#f43f5e" stroke-width="10" opacity="0.6" filter="url(#mirror-inversion-glow)" fill="none" />
+        <path d="M ${mirrorAnchor.modelX} ${mirrorAnchor.modelY} Q ${midX} ${midY} ${pLandlord.x} ${pLandlord.y}" stroke="#f43f5e" stroke-width="10" opacity="0.45" fill="none" />
         <path d="M ${mirrorAnchor.modelX} ${mirrorAnchor.modelY} Q ${midX} ${midY} ${pLandlord.x} ${pLandlord.y}" stroke="url(#reverse-ray-grad)" stroke-width="4.5" stroke-linecap="round" opacity="1" fill="none" />
       `;
     }
@@ -2321,7 +2215,7 @@
     craterWrap.style.left = `${templeAnchor.modelX}px`;
     craterWrap.style.top = `${templeAnchor.modelY}px`;
     craterWrap.innerHTML = `
-      <img src="assets/s11/lightning_crater.png?v=20261012v3" class="fx-lightning-crater-img" alt="Scorched Lightning Crater" />
+      <img src="assets/thumbs/s11/lightning_crater.png" decoding="async" class="fx-lightning-crater-img" alt="Scorched Lightning Crater" />
     `;
     L.moment.appendChild(craterWrap);
     craterWrap.animate([
@@ -2336,7 +2230,7 @@
     masterboltWrap.style.left = `${templeAnchor.modelX}px`;
     masterboltWrap.style.top = `${templeAnchor.modelY}px`;
     masterboltWrap.innerHTML = `
-      <img src="assets/s11/zeus_masterbolt.png?v=20261012v3" class="fx-zeus-masterbolt-img" alt="Zeus Masterbolt Spear" />
+      <img src="assets/thumbs/s11/zeus_masterbolt.png" decoding="async" class="fx-zeus-masterbolt-img" alt="Zeus Masterbolt Spear" />
     `;
     L.moment.appendChild(masterboltWrap);
     masterboltWrap.animate([
@@ -2353,7 +2247,7 @@
     templeWrap.innerHTML = `
       <div class="fx-temple-beacon"></div>
       <div class="fx-temple-lightning-glow">⚡🏛️✨</div>
-      <img src="assets/s11/olympus_temple.png?v=20261012v3" class="fx-temple-hero-img" alt="Mount Olympus Temple" />
+      <img src="assets/thumbs/s11/olympus_temple.png" decoding="async" class="fx-temple-hero-img" alt="Mount Olympus Temple" />
     `;
     L.moment.appendChild(templeWrap);
 
@@ -2377,15 +2271,6 @@
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
     svg.innerHTML = `
       <defs>
-        <filter id="zeus-plasma-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="4" result="blur1" />
-          <feGaussianBlur stdDeviation="9" result="blur2" />
-          <feMerge>
-            <feMergeNode in="blur2" />
-            <feMergeNode in="blur1" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
         <linearGradient id="zeus-core-grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="40%" stop-color="#7dd3fc" />
@@ -2404,8 +2289,9 @@
       const skyX = templeAnchor.modelX + (Math.random() - 0.5) * 60;
       const mainBolt = generateOlympusLightning(skyX, 0, templeAnchor.modelX, templeAnchor.modelY, 18, 42);
       boltMarkup += `
-        <path d="${mainBolt.main}" stroke="#38bdf8" stroke-width="15" opacity="0.85" filter="url(#zeus-plasma-glow)" fill="none" stroke-linecap="round" />
-        <path d="${mainBolt.main}" stroke="#ffffff" stroke-width="4" opacity="1" fill="none" stroke-linecap="round" />
+        <path d="${mainBolt.main}" stroke="#38bdf8" stroke-width="14" opacity="0.45" fill="none" stroke-linecap="round" />
+        <path d="${mainBolt.main}" stroke="#7dd3fc" stroke-width="7" opacity="0.85" fill="none" stroke-linecap="round" />
+        <path d="${mainBolt.main}" stroke="#ffffff" stroke-width="3.5" opacity="1" fill="none" stroke-linecap="round" />
       `;
       mainBolt.forks.forEach(f => {
         boltMarkup += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.5" opacity="0.8" fill="none" stroke-linecap="round" />`;
@@ -2415,8 +2301,9 @@
       victimEntries.forEach(ve => {
         const vBolt = generateOlympusLightning(fromP.x, fromP.y, ve.p.x, ve.p.y, 14, 28);
         boltMarkup += `
-          <path d="${vBolt.main}" stroke="#38bdf8" stroke-width="11" opacity="0.8" filter="url(#zeus-plasma-glow)" fill="none" stroke-linecap="round" />
-          <path d="${vBolt.main}" stroke="#ffffff" stroke-width="3" opacity="0.95" fill="none" stroke-linecap="round" />
+          <path d="${vBolt.main}" stroke="#38bdf8" stroke-width="10" opacity="0.45" fill="none" stroke-linecap="round" />
+          <path d="${vBolt.main}" stroke="#7dd3fc" stroke-width="5.5" opacity="0.8" fill="none" stroke-linecap="round" />
+          <path d="${vBolt.main}" stroke="#ffffff" stroke-width="2.8" opacity="0.95" fill="none" stroke-linecap="round" />
         `;
         vBolt.forks.forEach(f => {
           boltMarkup += `<path d="${f}" stroke="#7dd3fc" stroke-width="2" opacity="0.75" fill="none" stroke-linecap="round" />`;
@@ -2426,14 +2313,14 @@
       if (gBolts) gBolts.innerHTML = boltMarkup;
 
       // Rubble debris burst on impact tile
-      burst({ x: templeAnchor.modelX, y: templeAnchor.modelY, name: 'smoke', count: 18, spread: 180, up: 120, life: 900, size: 28 });
-      burst({ x: templeAnchor.modelX, y: templeAnchor.modelY, name: 'sparkle', count: 32, spread: 260, up: 180, life: 1000, size: 24 });
+      burst({ x: templeAnchor.modelX, y: templeAnchor.modelY, name: 'smoke', count: 14, spread: 160, up: 110, life: 850, size: 24 });
+      burst({ x: templeAnchor.modelX, y: templeAnchor.modelY, name: 'sparkle', count: 24, spread: 240, up: 160, life: 950, size: 22 });
 
       // Phase 3: Coin Siphon & Spasms
       victimEntries.forEach(ve => {
         if (ve.el) ve.el.classList.add('fx-token-olympus-smote');
         ring(ve.p.x, ve.p.y, 140, '#38bdf8', 700);
-        burst({ x: ve.p.x, y: ve.p.y, name: 'sparkle', count: 24, spread: 160, up: 110, life: 850, size: 22 });
+        burst({ x: ve.p.x, y: ve.p.y, name: 'sparkle', count: 18, spread: 150, up: 100, life: 800, size: 20 });
         coins({ from: { role: ve.role }, to: { role: casterRole }, amount: ve.amount });
 
         const badge = document.createElement('div');
@@ -2481,7 +2368,7 @@
     ring(fromP.x, fromP.y, 360, '#fde047', 950);
     ring(fromP.x, fromP.y, 520, '#0284c7', 1200);
 
-    burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 40, spread: 330, up: 220, life: 1350, size: 26 });
+    burst({ x: fromP.x, y: fromP.y, name: 'sparkle', count: 32, spread: 300, up: 200, life: 1200, size: 24 });
 
     const b = banner('⚡ WRATH OF OLYMPUS: ZEUS THUNDER! 🏛️', `ORBITAL SMITE · +${rubbleCash}🪙 RUBBLE RECLAIMED · DIVINE PEGASUS ASCENT!`, 'gold', 2650);
     await sleep(T(1650));
@@ -2516,7 +2403,7 @@
     craterWrap.style.left = `${smiteAnchor.modelX}px`;
     craterWrap.style.top = `${smiteAnchor.modelY}px`;
     craterWrap.innerHTML = `
-      <img src="assets/s11/lightning_crater.png?v=20261012v3" class="fx-lightning-crater-img" alt="Scorched Crater" />
+      <img src="assets/thumbs/s11/lightning_crater.png" decoding="async" class="fx-lightning-crater-img" alt="Scorched Crater" />
     `;
     L.moment.appendChild(craterWrap);
     craterWrap.animate([
@@ -2531,7 +2418,7 @@
     masterboltWrap.style.left = `${smiteAnchor.modelX}px`;
     masterboltWrap.style.top = `${smiteAnchor.modelY}px`;
     masterboltWrap.innerHTML = `
-      <img src="assets/s11/zeus_masterbolt.png?v=20261012v3" class="fx-zeus-masterbolt-img" alt="Zeus Masterbolt Spear" />
+      <img src="assets/thumbs/s11/zeus_masterbolt.png" decoding="async" class="fx-zeus-masterbolt-img" alt="Zeus Masterbolt Spear" />
     `;
     L.moment.appendChild(masterboltWrap);
     masterboltWrap.animate([
@@ -2544,31 +2431,24 @@
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'fx-olympus-lightning-svg fx-lightning-flicker');
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
-    svg.innerHTML = `
-      <defs>
-        <filter id="zeus-smite-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      <g id="fxZeusSmiteBolts"></g>
-    `;
+    svg.innerHTML = `<g id="fxZeusSmiteBolts"></g>`;
     L.moment.appendChild(svg);
     const gBolts = svg.querySelector('#fxZeusSmiteBolts');
 
     const bolt = generateOlympusLightning(smiteAnchor.modelX, 0, smiteAnchor.modelX, smiteAnchor.modelY, 16, 38);
     let boltHtml = `
-      <path d="${bolt.main}" stroke="#38bdf8" stroke-width="14" opacity="0.85" filter="url(#zeus-smite-glow)" fill="none" stroke-linecap="round" />
-      <path d="${bolt.main}" stroke="#ffffff" stroke-width="4" opacity="1" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#38bdf8" stroke-width="12" opacity="0.45" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#7dd3fc" stroke-width="6.5" opacity="0.85" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#ffffff" stroke-width="3.5" opacity="1" fill="none" stroke-linecap="round" />
     `;
     bolt.forks.forEach(f => {
       boltHtml += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.5" opacity="0.8" fill="none" stroke-linecap="round" />`;
     });
     if (gBolts) gBolts.innerHTML = boltHtml;
 
-    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'smoke', count: 16, spread: 160, up: 110, life: 800, size: 24 });
-    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'coin', count: 14, spread: 200, up: 130, life: 900, size: 20 });
-    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'sparkle', count: 28, spread: 260, up: 160, life: 950, size: 22 });
+    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'smoke', count: 14, spread: 150, up: 100, life: 750, size: 22 });
+    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'coin', count: 12, spread: 180, up: 120, life: 850, size: 18 });
+    burst({ x: smiteAnchor.modelX, y: smiteAnchor.modelY, name: 'sparkle', count: 22, spread: 240, up: 150, life: 900, size: 20 });
     ring(smiteAnchor.modelX, smiteAnchor.modelY, 180, '#38bdf8', 650);
     ring(smiteAnchor.modelX, smiteAnchor.modelY, 300, '#fbbf24', 850);
 
@@ -2634,47 +2514,32 @@
     ], { duration: T(250), fill: 'forwards' });
     setTimeout(() => bullet.remove(), T(260));
 
-    // 4. SVG Branching Lightning Arc (2-stage dynamic strobe)
+    // 4. SVG Branching Lightning Arc
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'fx-olympus-lightning-svg fx-lightning-flicker');
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
-    svg.innerHTML = `
-      <defs>
-        <filter id="zeus-zap-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      <g id="fxZeusZapBolts"></g>
-    `;
+    svg.innerHTML = `<g id="fxZeusZapBolts"></g>`;
     L.moment.appendChild(svg);
     const gBolts = svg.querySelector('#fxZeusZapBolts');
 
     const renderBolts = (seg, dev) => {
       const b = generateOlympusLightning(pA.x, pA.y, pB.x, pB.y, seg, dev);
       let html = `
-        <path d="${b.main}" stroke="#38bdf8" stroke-width="13" opacity="0.9" filter="url(#zeus-zap-glow)" fill="none" stroke-linecap="round" />
-        <path d="${b.main}" stroke="#ffffff" stroke-width="4.5" opacity="1" fill="none" stroke-linecap="round" />
+        <path d="${b.main}" stroke="#38bdf8" stroke-width="11" opacity="0.45" fill="none" stroke-linecap="round" />
+        <path d="${b.main}" stroke="#7dd3fc" stroke-width="6" opacity="0.85" fill="none" stroke-linecap="round" />
+        <path d="${b.main}" stroke="#ffffff" stroke-width="3.5" opacity="1" fill="none" stroke-linecap="round" />
       `;
       b.forks.forEach(f => {
-        html += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.5" opacity="0.85" fill="none" stroke-linecap="round" />`;
+        html += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.2" opacity="0.8" fill="none" stroke-linecap="round" />`;
       });
       return html;
     };
 
     if (gBolts) gBolts.innerHTML = renderBolts(14, 32);
 
-    // Dynamic strobe jitter: re-generate fresh fork path halfway through!
-    setTimeout(() => {
-      if (gBolts && svg.parentNode) {
-        gBolts.innerHTML = renderBolts(16, 26);
-        flash('rgba(125, 211, 252, 0.45)', 90);
-      }
-    }, T(140));
-
     // Sparks and electric aura on the temple and victim
-    burst({ x: pA.x, y: pA.y, name: 'sparkle', count: 18, spread: 100, up: 60, life: 650, size: 20 });
-    burst({ x: pB.x, y: pB.y, name: 'sparkle', count: 24, spread: 150, up: 85, life: 800, size: 22 });
+    burst({ x: pA.x, y: pA.y, name: 'sparkle', count: 14, spread: 90, up: 55, life: 600, size: 18 });
+    burst({ x: pB.x, y: pB.y, name: 'sparkle', count: 18, spread: 140, up: 80, life: 750, size: 20 });
     burst({ x: pB.x, y: pB.y, name: 'coin', count: 10, spread: 120, up: 75, life: 750, size: 18 });
     ring(pA.x, pA.y, 90, '#38bdf8', 400);
     ring(pB.x, pB.y, 140, '#fbbf24', 550);
@@ -2709,29 +2574,22 @@
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'fx-olympus-lightning-svg fx-lightning-flicker');
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
-    svg.innerHTML = `
-      <defs>
-        <filter id="zeus-shock-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      <g id="fxZeusShockBolts"></g>
-    `;
+    svg.innerHTML = `<g id="fxZeusShockBolts"></g>`;
     L.moment.appendChild(svg);
     const gBolts = svg.querySelector('#fxZeusShockBolts');
 
     const bolt = generateOlympusLightning(pB.x, 0, pB.x, pB.y, 14, 34);
     let boltHtml = `
-      <path d="${bolt.main}" stroke="#38bdf8" stroke-width="12" opacity="0.85" filter="url(#zeus-shock-glow)" fill="none" stroke-linecap="round" />
-      <path d="${bolt.main}" stroke="#ffffff" stroke-width="4" opacity="1" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#38bdf8" stroke-width="11" opacity="0.45" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#7dd3fc" stroke-width="6" opacity="0.85" fill="none" stroke-linecap="round" />
+      <path d="${bolt.main}" stroke="#ffffff" stroke-width="3.5" opacity="1" fill="none" stroke-linecap="round" />
     `;
     bolt.forks.forEach(f => {
-      boltHtml += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.5" opacity="0.8" fill="none" stroke-linecap="round" />`;
+      boltHtml += `<path d="${f}" stroke="#7dd3fc" stroke-width="2.2" opacity="0.8" fill="none" stroke-linecap="round" />`;
     });
     if (gBolts) gBolts.innerHTML = boltHtml;
 
-    burst({ x: pB.x, y: pB.y, name: 'sparkle', count: 24, spread: 180, up: 120, life: 800, size: 20 });
+    burst({ x: pB.x, y: pB.y, name: 'sparkle', count: 20, spread: 160, up: 110, life: 750, size: 18 });
     burst({ x: pB.x, y: pB.y, name: 'coin', count: 10, spread: 140, up: 90, life: 750, size: 18 });
     ring(pB.x, pB.y, 150, '#38bdf8', 550);
 
@@ -2754,7 +2612,7 @@
     const crest = document.createElement('div');
     crest.style.cssText = `position:absolute;left:${p.x}px;top:${p.y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:35;`;
     crest.innerHTML = `
-      <img src="assets/s10/phantom_crest.png?v=20261012v4" style="width:110px;height:110px;filter:drop-shadow(0 0 16px #f43f5e) drop-shadow(0 0 30px #fbbf24);" alt="Crest" />
+      <img src="assets/thumbs/s10/phantom_crest.png" decoding="async" style="width:110px;height:110px;filter:drop-shadow(0 0 12px #f43f5e);" alt="Crest" />
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;pointer-events:none;animation:fxCitadelBadgeFloat 1.2s infinite alternate;">🥀🎭✨</div>
     `;
     L.moment.appendChild(crest);
@@ -2767,7 +2625,7 @@
 
     ring(p.x, p.y, 160, '#f43f5e', 550);
     ring(p.x, p.y, 260, '#fbbf24', 750);
-    burst({ x: p.x, y: p.y, name: 'sparkle', count: 28, spread: 220, up: 140, life: 850, size: 20 });
+    burst({ x: p.x, y: p.y, name: 'sparkle', count: 22, spread: 200, up: 130, life: 800, size: 18 });
     burst({ x: p.x, y: p.y, name: 'coin', count: 8, spread: 160, up: 100, life: 750, size: 16 });
     await sleep(T(850));
     crest.remove();
@@ -2783,7 +2641,7 @@
 
     const bolt = document.createElement('div');
     bolt.style.cssText = `position:absolute;left:${p.x}px;top:${p.y}px;transform:translate(-50%,-50%);pointer-events:none;z-index:35;`;
-    bolt.innerHTML = `<img src="assets/s11/zeus_masterbolt.png?v=20261012v3" style="width:95px;height:95px;filter:drop-shadow(0 0 18px #ffffff) drop-shadow(0 0 35px #38bdf8);" alt="Bolt" />`;
+    bolt.innerHTML = `<img src="assets/thumbs/s11/zeus_masterbolt.png" decoding="async" style="width:95px;height:95px;filter:drop-shadow(0 0 14px #38bdf8);" alt="Bolt" />`;
     L.moment.appendChild(bolt);
     bolt.animate([
       { transform: 'translate(-50%, -80%) scale(0.3) rotate(-30deg)', opacity: 0 },
@@ -2794,7 +2652,7 @@
 
     ring(p.x, p.y, 170, '#38bdf8', 550);
     ring(p.x, p.y, 280, '#fde047', 750);
-    burst({ x: p.x, y: p.y, name: 'sparkle', count: 26, spread: 240, up: 150, life: 900, size: 22 });
+    burst({ x: p.x, y: p.y, name: 'sparkle', count: 22, spread: 220, up: 140, life: 850, size: 20 });
     await sleep(T(850));
     bolt.remove();
   }
@@ -2870,7 +2728,7 @@
     staffWrap.style.top = `${p.y}px`;
     staffWrap.innerHTML = `
       <div class="fx-torch-flame-burst"></div>
-      <img src="assets/s7/living_staff_torch.png?v=20261012v5" class="fx-living-staff-torch-img" alt="Living Staff Torch" />
+      <img src="assets/thumbs/s7/living_staff_torch.png" decoding="async" class="fx-living-staff-torch-img" alt="Living Staff Torch" />
       <div class="fx-torch-parry-crest">🕯️ PARRY! 🕯️</div>
     `;
     L.moment.appendChild(staffWrap);
@@ -2892,8 +2750,6 @@
 
   /**
    * 🪐 S6 Mythic Ultimate Rework: Supernova Celestial Tithe (Void Lightning)
-   * Multi-target procedural branching vector lightning, spasming victim tokens,
-   * floating shock damage badges, energy siphon conduits, and supernova shockwaves.
    */
   async function voidLightningTithe(d = {}) {
     if (!refs()) return;
@@ -2910,7 +2766,6 @@
       Object.keys(tok.el).forEach(r => {
         if (r !== casterRole) victims.push({ role: r, amount: 150 });
       });
-      // If still empty (e.g. 1 player solo testing), synthesize a dramatic board target
       if (!victims.length) {
         victims.push({ role: 'dxb', amount: 150, fallbackCoord: { x: (L.moment ? L.moment.clientWidth : 400) * 0.75, y: (L.moment ? L.moment.clientHeight : 500) * 0.35 } });
       }
@@ -2960,15 +2815,6 @@
     svg.setAttribute('viewBox', `0 0 ${L.moment.clientWidth || 800} ${L.moment.clientHeight || 800}`);
     svg.innerHTML = `
       <defs>
-        <filter id="void-plasma-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="3" result="blur1" />
-          <feGaussianBlur stdDeviation="7" result="blur2" />
-          <feMerge>
-            <feMergeNode in="blur2" />
-            <feMergeNode in="blur1" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
         <linearGradient id="void-arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="25%" stop-color="#f0abfc" />
@@ -2976,8 +2822,10 @@
           <stop offset="100%" stop-color="#60a5fa" />
         </linearGradient>
       </defs>
+      <g id="fxVoidArcs"></g>
     `;
     L.moment.appendChild(svg);
+    const gArcs = svg.querySelector('#fxVoidArcs');
 
     function generateLightningPath(x1, y1, x2, y2, segments = 14, maxOffset = 30) {
       const dx = x2 - x1;
@@ -2997,7 +2845,6 @@
         const py = y1 + dy * t + ny * jitter + (Math.random() - 0.5) * 6;
         pts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
 
-        // Spawn a chaotic sub-branch fork at ~25% and ~70% of arc
         if (Math.random() < 0.4 && envelope > 0.35) {
           const bAngle = Math.atan2(dy, dx) + (Math.random() < 0.5 ? 0.65 : -0.65) + (Math.random() - 0.5) * 0.4;
           const bLen = (20 + Math.random() * 45) * envelope;
@@ -3010,51 +2857,26 @@
       return { trunk: pts.join(' '), branches };
     }
 
-    // High frequency re-jitter arc loop
-    const arcGroups = victimEntries.map(() => {
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('filter', 'url(#void-plasma-glow)');
-      svg.appendChild(g);
-      return g;
-    });
-
-    const startTime = performance.now();
-    const duration = T(750);
-
-    // Initial coin & stardust siphon stream towards sovereign
     victimEntries.forEach(ve => {
       coins({ from: { x: ve.coord.x, y: ve.coord.y }, to: { x: fromP.x, y: fromP.y }, amount: Math.min(150, ve.amount) });
       burst({ x: ve.coord.x, y: ve.coord.y, name: 'supernova_core', count: 6, spread: 70, up: 30, life: 550, size: 14 });
     });
 
     try {
-      while (performance.now() - startTime < duration) {
-        // Redraw lightning arcs every frame / tick
-        victimEntries.forEach((ve, idx) => {
-          const g = arcGroups[idx];
-          if (!g) return;
-          const arc = generateLightningPath(fromP.x, fromP.y, ve.coord.x, ve.coord.y, 14, 30);
-
-          let html = `
-            <polyline points="${arc.trunk}" fill="none" stroke="#a855f7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
-            <polyline points="${arc.trunk}" fill="none" stroke="url(#void-arc-grad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
-            <polyline points="${arc.trunk}" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          `;
-          arc.branches.forEach(bPts => {
-            html += `<polyline points="${bPts}" fill="none" stroke="#f0abfc" stroke-width="2" stroke-linecap="round" opacity="0.85" />`;
-          });
-          g.innerHTML = html;
+      let html = '';
+      victimEntries.forEach(ve => {
+        const arc = generateLightningPath(fromP.x, fromP.y, ve.coord.x, ve.coord.y, 14, 30);
+        html += `
+          <polyline points="${arc.trunk}" fill="none" stroke="#a855f7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.45" />
+          <polyline points="${arc.trunk}" fill="none" stroke="url(#void-arc-grad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          <polyline points="${arc.trunk}" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        `;
+        arc.branches.forEach(bPts => {
+          html += `<polyline points="${bPts}" fill="none" stroke="#f0abfc" stroke-width="2" stroke-linecap="round" opacity="0.85" />`;
         });
-
-        // Pulsing spark bursts
-        if (Math.random() < 0.4) {
-          const randVe = victimEntries[Math.floor(Math.random() * victimEntries.length)];
-          if (randVe) {
-            burst({ x: randVe.coord.x, y: randVe.coord.y, name: 'sparkle', count: 4, spread: 60, up: 20, life: 400, size: 12 });
-          }
-        }
-        await sleep(35);
-      }
+      });
+      if (gArcs) gArcs.innerHTML = html;
+      await sleep(T(750));
     } finally {
       // 5. Clean up lightning arcs and restore tokens
       svg.remove();
@@ -3142,7 +2964,7 @@
     tridentWrap.style.left = `${tridentAnchor.modelX}px`;
     tridentWrap.style.top = `${tridentAnchor.modelY}px`;
     tridentWrap.innerHTML = `
-      <img src="assets/s5/atlantis_trident_prop.png" class="fx-atlantis-hero-img" alt="Abyssal Trident" />
+      <img src="assets/thumbs/s5/atlantis_trident_prop.png" decoding="async" class="fx-atlantis-hero-img" alt="Abyssal Trident" />
     `;
     L.moment.appendChild(tridentWrap);
     tridentWrap.animate([
@@ -3169,7 +2991,7 @@
         decalWrap.className = 'fx-surface-impact-wrap';
         decalWrap.style.left = `${tilePt.x}px`;
         decalWrap.style.top = `${tilePt.y}px`;
-        decalWrap.innerHTML = `<img src="assets/s5/abyssal_coral_reef.png" class="fx-surface-impact-img" alt="Coral Reef" />`;
+        decalWrap.innerHTML = `<img src="assets/thumbs/s5/abyssal_coral_reef.png" decoding="async" class="fx-surface-impact-img" alt="Coral Reef" />`;
         L.moment.appendChild(decalWrap);
         groundDecals.push(decalWrap);
 
@@ -3375,7 +3197,7 @@
     nagaWrap.style.left = `${nagaAnchor.modelX}px`;
     nagaWrap.style.top = `${nagaAnchor.modelY}px`;
     nagaWrap.innerHTML = `
-      <img src="assets/s1/naga_emerald_crest.png" class="fx-naga-hero-img" alt="Naga Crest" />
+      <img src="assets/thumbs/s1/naga_emerald_crest.png" decoding="async" class="fx-naga-hero-img" alt="Naga Crest" />
     `;
     L.moment.appendChild(nagaWrap);
     nagaWrap.animate([
@@ -3402,7 +3224,7 @@
         decalWrap.className = 'fx-surface-impact-wrap';
         decalWrap.style.left = `${tilePt.x}px`;
         decalWrap.style.top = `${tilePt.y}px`;
-        decalWrap.innerHTML = `<img src="assets/s1/mekong_water_surge.png" class="fx-surface-impact-img" alt="Mekong Surge" />`;
+        decalWrap.innerHTML = `<img src="assets/thumbs/s1/mekong_water_surge.png" decoding="async" class="fx-surface-impact-img" alt="Mekong Surge" />`;
         L.moment.appendChild(decalWrap);
         domeNodes.push(decalWrap);
 
@@ -3491,7 +3313,7 @@
     toriiWrap.style.left = `${toriiAnchor.modelX}px`;
     toriiWrap.style.top = `${toriiAnchor.modelY}px`;
     toriiWrap.innerHTML = `
-      <img src="assets/s2/inari_torii_gate.png" class="fx-inari-hero-img" alt="Inari Torii Gate" />
+      <img src="assets/thumbs/s2/inari_torii_gate.png" decoding="async" class="fx-inari-hero-img" alt="Inari Torii Gate" />
     `;
     L.moment.appendChild(toriiWrap);
     toriiWrap.animate([
@@ -3512,7 +3334,7 @@
     groundDecal.className = 'fx-surface-impact-wrap';
     groundDecal.style.left = `${toP.x}px`;
     groundDecal.style.top = `${toP.y}px`;
-    groundDecal.innerHTML = `<img src="assets/s2/foxfire_crests.png" class="fx-surface-impact-img" alt="Foxfire Crest" />`;
+    groundDecal.innerHTML = `<img src="assets/thumbs/s2/foxfire_crests.png" decoding="async" class="fx-surface-impact-img" alt="Foxfire Crest" />`;
     L.moment.appendChild(groundDecal);
 
     // Siphon coins from rival
@@ -3570,7 +3392,7 @@
     moonWrap.style.left = `${moonAnchor.modelX}px`;
     moonWrap.style.top = `${moonAnchor.modelY}px`;
     moonWrap.innerHTML = `
-      <img src="assets/s2/eclipse_moon_disk.png" class="fx-eclipse-hero-img" alt="Eclipse Moon Disk" />
+      <img src="assets/thumbs/s2/eclipse_moon_disk.png" decoding="async" class="fx-eclipse-hero-img" alt="Eclipse Moon Disk" />
     `;
     L.moment.appendChild(moonWrap);
     moonWrap.animate([
@@ -3597,7 +3419,7 @@
         decalWrap.className = 'fx-surface-impact-wrap';
         decalWrap.style.left = `${tilePt.x}px`;
         decalWrap.style.top = `${tilePt.y}px`;
-        decalWrap.innerHTML = `<img src="assets/s2/eclipse_void_rift.png" class="fx-surface-impact-img" alt="Void Rift" />`;
+        decalWrap.innerHTML = `<img src="assets/thumbs/s2/eclipse_void_rift.png" decoding="async" class="fx-surface-impact-img" alt="Void Rift" />`;
         L.moment.appendChild(decalWrap);
         riftNodes.push(decalWrap);
 
@@ -3676,7 +3498,7 @@
     lampWrap.style.left = `${lampAnchor.modelX}px`;
     lampWrap.style.top = `${lampAnchor.modelY}px`;
     lampWrap.innerHTML = `
-      <img src="assets/s3/djinn_cosmic_lamp.png" class="fx-djinn-hero-img" alt="Djinn Lamp" />
+      <img src="assets/thumbs/s3/djinn_cosmic_lamp.png" decoding="async" class="fx-djinn-hero-img" alt="Djinn Lamp" />
     `;
     L.moment.appendChild(lampWrap);
     lampWrap.animate([
@@ -3697,7 +3519,7 @@
     decalWrap.className = 'fx-surface-impact-wrap';
     decalWrap.style.left = `${destPt.x}px`;
     decalWrap.style.top = `${destPt.y}px`;
-    decalWrap.innerHTML = `<img src="assets/s3/mirage_oasis_portal.png" class="fx-surface-impact-img" alt="Oasis Portal" />`;
+    decalWrap.innerHTML = `<img src="assets/thumbs/s3/mirage_oasis_portal.png" decoding="async" class="fx-surface-impact-img" alt="Oasis Portal" />`;
     L.moment.appendChild(decalWrap);
 
     let targetTileEl = upgradedTileId != null ? $(`boardTile_${upgradedTileId}`) : null;
@@ -3759,7 +3581,7 @@
     fireWrap.style.left = `${fireAnchor.modelX}px`;
     fireWrap.style.top = `${fireAnchor.modelY}px`;
     fireWrap.innerHTML = `
-      <img src="assets/s3/phoenix_sunfire_crest.png" class="fx-phoenix-hero-img" alt="Phoenix Sunfire Crest" />
+      <img src="assets/thumbs/s3/phoenix_sunfire_crest.png" decoding="async" class="fx-phoenix-hero-img" alt="Phoenix Sunfire Crest" />
     `;
     L.moment.appendChild(fireWrap);
     fireWrap.animate([
@@ -3787,7 +3609,7 @@
         decalWrap.className = 'fx-surface-impact-wrap';
         decalWrap.style.left = `${tilePt.x}px`;
         decalWrap.style.top = `${tilePt.y}px`;
-        decalWrap.innerHTML = `<img src="assets/s3/phoenix_molten_crater.png" class="fx-surface-impact-img" alt="Molten Crater" />`;
+        decalWrap.innerHTML = `<img src="assets/thumbs/s3/phoenix_molten_crater.png" decoding="async" class="fx-surface-impact-img" alt="Molten Crater" />`;
         L.moment.appendChild(decalWrap);
         craterNodes.push(decalWrap);
 

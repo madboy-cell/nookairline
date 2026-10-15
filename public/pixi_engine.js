@@ -631,14 +631,21 @@
   // ALL 11 SEASONS OF MYTHIC COSTUME ULTIMATES
   // =========================================================
 
+  function screenSize() {
+    const w = (SkyPixi.app && SkyPixi.app.screen && SkyPixi.app.screen.width) || (SkyPixi.canvas && SkyPixi.canvas.clientWidth) || 380;
+    const h = (SkyPixi.app && SkyPixi.app.screen && SkyPixi.app.screen.height) || (SkyPixi.canvas && SkyPixi.canvas.clientHeight) || 380;
+    return { w, h, cx: w / 2, cy: h / 2 };
+  }
+
   const ultimates = {
     /**
      * S11: Thunder Wolf Sovereign Zeus & Dawn Athena (Wrath of Olympus)
      */
     wrathOfOlympus(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const targetP = data.targetP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
-      const skyX = SkyPixi.canvas.width / 2;
+      const sc = screenSize();
+      const targetP = data.targetP || { x: sc.cx, y: sc.cy };
+      const skyX = sc.cx;
 
       // 1. Plunge Primary Master Lightning Bolt
       spawnLightning(skyX, 0, targetP.x, targetP.y, { color: 0x38bdf8, coreColor: 0xffffff, glowWidth: 16, coreWidth: 4 });
@@ -664,8 +671,9 @@
      */
     phantomCurtainCall(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
 
       // Concentric Cyan/Velvet Shockwaves & Stardust
       spawnShockwaveRing(cX, cY, 0x22d3ee, 170, 650);
@@ -683,9 +691,10 @@
      */
     phantomReverseHex(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const mirrorP = data.mirrorP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
-      const targetP = data.targetP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
-      const tenantP = data.tenantP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
+      const sc = screenSize();
+      const mirrorP = data.mirrorP || { x: sc.cx, y: sc.cy };
+      const targetP = data.targetP || { x: sc.cx, y: sc.cy };
+      const tenantP = data.tenantP || { x: sc.cx, y: sc.cy };
 
       // 1. Concentric Rose-Velvet & Gilded Shockwave Rings at Mirror
       spawnShockwaveRing(mirrorP.x, mirrorP.y, 0xf43f5e, 170, 700);
@@ -718,13 +727,14 @@
      */
     nileSeduction(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const targetP = data.targetP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
+      const sc = screenSize();
+      const targetP = data.targetP || { x: sc.cx, y: sc.cy };
 
       // Golden Solar Rays to all rivals
       spawnShockwaveRing(targetP.x, targetP.y, 0xffd700, 160, 700);
       spawnShockwaveRing(targetP.x, targetP.y, 0xf59e0b, 240, 900);
       spawnRadialBurst(targetP.x, targetP.y, 'stardust', 50, { maxSpeed: 8, additive: true });
-      spawnCoinBurst(targetP, { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height - 40 }, 30);
+      spawnCoinBurst(targetP, { x: sc.cx, y: sc.h - 40 }, 30);
       return true;
     },
 
@@ -733,7 +743,8 @@
      */
     solarWrath(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const targetP = data.targetP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
+      const sc = screenSize();
+      const targetP = data.targetP || { x: sc.cx, y: sc.cy };
       spawnLightning(targetP.x, 0, targetP.x, targetP.y, { color: 0xf97316, coreColor: 0xfffbeb, glowWidth: 20, coreWidth: 6, durationFrames: 26 });
       spawnShockwaveRing(targetP.x, targetP.y, 0xf97316, 170, 600);
       spawnRadialBurst(targetP.x, targetP.y, 'sunflame', 36, { maxSpeed: 9, minSpeed: 3, additive: true });
@@ -746,8 +757,9 @@
      */
     absoluteZero(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = SkyPixi.canvas.width / 2;
-      const cY = SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = sc.cx;
+      const cY = sc.cy;
       spawnShockwaveRing(cX, cY, 0x7dd3fc, 190, 750);
       spawnShockwaveRing(cX, cY, 0x38bdf8, 270, 950);
       spawnRadialBurst(cX, cY, 'crystal', 32, { maxSpeed: 9, minSpeed: 3, additive: true });
@@ -760,8 +772,9 @@
      */
     breakingTheCurse(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0xec4899, 170, 700);
       spawnShockwaveRing(cX, cY, 0xfde047, 260, 950);
       spawnRadialBurst(cX, cY, 'petal', 45, { maxSpeed: 8, minSpeed: 2, gravity: 0.08 });
@@ -774,8 +787,9 @@
      */
     midnightParadox(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0xfde047, 170, 650);
       spawnShockwaveRing(cX, cY, 0x818cf8, 250, 900);
       spawnRadialBurst(cX, cY, 'crescent', 24, { maxSpeed: 7, minSpeed: 2, additive: true });
@@ -788,7 +802,8 @@
      */
     voidLightningTithe(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const casterP = data.casterP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
+      const sc = screenSize();
+      const casterP = data.casterP || { x: sc.cx, y: sc.cy };
       if (Array.isArray(data.victims)) {
         data.victims.forEach(v => {
           if (v.p) {
@@ -806,7 +821,8 @@
      */
     abyssCataclysm(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const targetP = data.targetP || { x: SkyPixi.canvas.width / 2, y: SkyPixi.canvas.height / 2 };
+      const sc = screenSize();
+      const targetP = data.targetP || { x: sc.cx, y: sc.cy };
       spawnShockwaveRing(targetP.x, targetP.y, 0x0284c7, 170, 650);
       spawnShockwaveRing(targetP.x, targetP.y, 0x06b6d4, 250, 850);
       spawnRadialBurst(targetP.x, targetP.y, 'bubble', 40, { maxSpeed: 8, minSpeed: 2, gravity: -0.06 });
@@ -819,8 +835,9 @@
      */
     monacoGoldRush(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0x10b981, 160, 600);
       spawnShockwaveRing(cX, cY, 0xffd700, 240, 850);
       spawnRadialBurst(cX, cY, 'chip', 45, { maxSpeed: 9, additive: false });
@@ -832,8 +849,9 @@
      */
     phoenixRebirthFlame(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       const casterP = data.casterP || { x: cX, y: cY };
 
       // Triple Concentric Solar Shockwaves
@@ -862,8 +880,9 @@
      */
     cosmicGenieWish(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0xe879f9, 160, 600);
       spawnShockwaveRing(cX, cY, 0xfbbf24, 240, 850);
       spawnRadialBurst(cX, cY, 'stardust', 45, { maxSpeed: 7, additive: true });
@@ -876,8 +895,9 @@
      */
     eclipseConvergence(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0x6366f1, 180, 700);
       spawnShockwaveRing(cX, cY, 0xc084fc, 270, 950);
       spawnRadialBurst(cX, cY, 'crescent', 26, { maxSpeed: 7, minSpeed: 2, additive: true });
@@ -890,8 +910,9 @@
      */
     inariFoxfireMirage(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       const targetP = data.targetP;
 
       // Torii Shockwave Rings (Pink & Gold)
@@ -922,8 +943,9 @@
      */
     emeraldNagaSurge(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0x10b981, 170, 650);
       spawnShockwaveRing(cX, cY, 0x34d399, 250, 850);
       spawnRadialBurst(cX, cY, 'bubble', 32, { maxSpeed: 7, minSpeed: 2, gravity: -0.05 });
@@ -936,8 +958,9 @@
      */
     lanternFestival(data = {}) {
       if (!SkyPixi.isReady) return false;
-      const cX = data.cX || SkyPixi.canvas.width / 2;
-      const cY = data.cY || SkyPixi.canvas.height / 2;
+      const sc = screenSize();
+      const cX = data.cX || sc.cx;
+      const cY = data.cY || sc.cy;
       spawnShockwaveRing(cX, cY, 0xfde047, 160, 650);
       spawnShockwaveRing(cX, cY, 0xf59e0b, 240, 900);
       spawnRadialBurst(cX, cY, 'stardust', 45, { maxSpeed: 7, minSpeed: 2, additive: true, gravity: -0.05 });

@@ -2006,9 +2006,11 @@ wss.on('connection', (ws, req) => {
           const isBotTurn = (currentRoom.gameState && currentRoom.gameState.players && currentRoom.gameState.players[currentTurn]?.isBot) ||
                             (activeSlot && (activeSlot.type === 'bot' || activeSlot.controller === 'BOT_TEMPORARY' || activeSlot.controller === 'BOT_PERMANENT'));
           const isHost = clientData && (clientData.uid === currentRoom.hostUid || clientData.slotId === 1);
+          const hostSlot = currentRoom.slots ? currentRoom.slots.find((s) => s.id === 1) : null;
+          const hostActive = !!(hostSlot && hostSlot.connected !== false && hostSlot.controller !== 'BOT_TEMPORARY' && hostSlot.controller !== 'BOT_PERMANENT');
 
           if (message.action === 'roll') {
-            const isAuthorized = (myRole === currentTurn) || (isBotTurn && isHost);
+            const isAuthorized = (myRole === currentTurn) || (isBotTurn && (isHost || !hostActive));
             if (!isAuthorized && currentTurn != null) {
               ws.send(JSON.stringify({
                 type: 'monopoly_action_rejected',
