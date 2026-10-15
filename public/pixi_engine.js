@@ -947,21 +947,22 @@
   };
 
   function clearAll() {
-    cachedTileCenters = null;
-    cachedTileCenterTime = 0;
-    tileAuraTimer = 0;
     if (!SkyPixi.isReady) return;
-    const pList = SkyPixi.activeParticles;
-    while (pList.length > 0) {
-      const p = pList.pop();
-      if (p.parent) p.parent.removeChild(p);
-      p.destroy();
-    }
-    const mList = SkyPixi.activeMeshes;
-    while (mList.length > 0) {
-      const m = mList.pop();
-      if (m.graphics && m.graphics.parent) m.graphics.parent.removeChild(m.graphics);
-      if (m.graphics) m.graphics.destroy();
+    try {
+      const pList = SkyPixi.activeParticles;
+      while (pList.length > 0) {
+        const p = pList.pop();
+        if (p.parent) p.parent.removeChild(p);
+        p.destroy();
+      }
+      const mList = SkyPixi.activeMeshes;
+      while (mList.length > 0) {
+        const m = mList.pop();
+        if (m.graphics && m.graphics.parent) m.graphics.parent.removeChild(m.graphics);
+        if (m.graphics) m.graphics.destroy();
+      }
+    } catch (e) {
+      console.warn('[SkyPixi] clearAll notice:', e.message);
     }
   }
 
