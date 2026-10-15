@@ -2093,3 +2093,49 @@ img.fx-vis { object-fit: contain; }
   .reveal-stage.drum .rc-flip,
   .slot-marquee { animation: none !important; }
 }
+
+/* =========================================================
+   MOBILE 60FPS GPU / COMPOSITOR OPTIMIZATIONS (FX LAYER)
+   ========================================================= */
+/* Remove backdrop-filter blurs on transient banners & cards over the board */
+.moment-banner .mb-sub,
+.slot-card,
+.casino-prompt-card,
+.wheel-card,
+.pack-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Stop 24/7 infinite animations & heavy filter chains on idle board tokens */
+.board-token.is-active .token-body,
+.board-token .token-ring,
+.board-token.token-supernova-ready::before,
+.board-token.token-astral-shield::before,
+.board-token.token-frost-dragon-wings::before,
+.board-token.token-frost-dragon-wings::after,
+.board-token.token-gilded-scarab-wings::before,
+.board-token.token-gilded-scarab-wings::after,
+.board-token.token-solar-falcon-wings::before,
+.board-token.token-solar-falcon-wings::after,
+.token-phantom-waltz-wings,
+.token-olympus-pegasus-wings {
+  animation: none !important;
+  filter: none !important;
+}
+
+/* Lightweight single shadow on token sprite instead of double drop-shadow */
+.board-token .token-sprite {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45)) !important;
+}
+
+/* Single-pass drop-shadow on FX glow wrappers to prevent mobile GPU stalls */
+.fx-glow-gold    { filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.85)) !important; }
+.fx-glow-cyan    { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85)) !important; }
+.fx-glow-pink    { filter: drop-shadow(0 0 8px rgba(244, 114, 182, 0.85)) !important; }
+.fx-glow-red     { filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.85)) !important; }
+.fx-glow-purple  { filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.85)) !important; }
+.fx-glow-emerald { filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.85)) !important; }
+.fx-glow-crimson   { filter: drop-shadow(0 0 8px #f43f5e) !important; }
+.fx-glow-lightning { filter: drop-shadow(0 0 8px #38bdf8) !important; }
+

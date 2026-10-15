@@ -2229,12 +2229,22 @@ function floatText(tileId, text, cls = '') {
   span.textContent = text;
   let x = wrap.clientWidth / 2;
   let y = wrap.clientHeight / 2;
-  const tileEl = tileId != null ? $m(`boardTile_${tileId}`) : null;
-  if (tileEl) {
-    const wr = wrap.getBoundingClientRect();
-    const tr = tileEl.getBoundingClientRect();
-    x = tr.left - wr.left + tr.width / 2;
-    y = tr.top - wr.top + tr.height / 3;
+  if (tileId != null) {
+    const cached = (window.MonoFX && window.MonoFX.tokens && typeof window.MonoFX.tokens.tileBox === 'function')
+      ? window.MonoFX.tokens.tileBox(tileId)
+      : null;
+    if (cached) {
+      x = cached.x + cached.w / 2;
+      y = cached.y + cached.h / 3;
+    } else {
+      const tileEl = $m(`boardTile_${tileId}`);
+      if (tileEl) {
+        const wr = wrap.getBoundingClientRect();
+        const tr = tileEl.getBoundingClientRect();
+        x = tr.left - wr.left + tr.width / 2;
+        y = tr.top - wr.top + tr.height / 3;
+      }
+    }
   }
   span.style.left = `${x}px`;
   span.style.top = `${y}px`;
@@ -2245,8 +2255,10 @@ function floatText(tileId, text, cls = '') {
 function shakeBoard() {
   const grid = $m('monopolyBoardGrid');
   if (!grid) return;
-  grid.classList.remove('dice-impact');
-  void grid.offsetWidth;
+  if (grid.classList.contains('dice-impact')) {
+    grid.classList.remove('dice-impact');
+    void grid.offsetWidth;
+  }
   grid.classList.add('dice-impact');
   setTimeout(() => grid.classList.remove('dice-impact'), 380);
 }
@@ -8101,7 +8113,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       else if (isOlympus && AudioFX.playOlympusTick) AudioFX.playOlympusTick();
       else AudioFX.playDiceTick();
     }
-  }, 42);
+  }, 75);
 
   setTimeout(() => {
     clearInterval(rollInterval);
@@ -8121,88 +8133,52 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     renderDiceFace(rollVal);
 
     const drift = Number(perkOf(playerKey).oceanDrift) || 0;
+    const isBigRoll = (rollVal === 6 || viaGolden || isVipCasino);
+    const triggerShockwave = (cls = '', dur = 650) => {
+      if (!shockwave) return;
+      shockwave.className = cls ? `dice-shockwave active ${cls}` : 'dice-shockwave active';
+      setTimeout(() => {
+        shockwave.classList.remove('active');
+        if (cls) shockwave.classList.remove(cls);
+      }, dur);
+    };
 
     if (isMonaco) {
       AudioFX.playCasinoSlam();
-      shakeBoard();
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'monaco-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'monaco-shockwave'), 700);
+      triggerShockwave('monaco-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard();
+        emitFx({ kind: 'moment', id: 'monaco_highroller_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'monaco_highroller_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
       highlightRunwayTiles(player.pos, rollVal);
     } else if (isAbyss) {
       AudioFX.playAbyssalSplash();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'abyss-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'abyss-shockwave'), 650);
+      triggerShockwave('abyss-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'abyssal_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'abyssal_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (isAstral) {
       AudioFX.playAstralImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'astral-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'astral-shockwave'), 700);
+      triggerShockwave('astral-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'astral_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'astral_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (isNaga) {
       AudioFX.playNagaImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'naga-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'naga-shockwave'), 700);
+      triggerShockwave('naga-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'naga_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'naga_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (isInari) {
       AudioFX.playInariImpact();
-      shakeBoard('light');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'inari-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'inari-shockwave'), 650);
+      triggerShockwave('inari-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('light');
+        emitFx({ kind: 'moment', id: 'inari_foxfire_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'inari_foxfire_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
       if (rollVal === 6) {
         player.foxfireTails = Math.min(3, (player.foxfireTails == null ? 3 : player.foxfireTails) + 1);
         AudioFX.playInariFoxfire();
@@ -8213,37 +8189,18 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
     } else if (isEclipse) {
       const isSun = (monopolyState.round || monopolyState.roundCount || 1) % 2 === 1;
       AudioFX.playEclipseImpact(isSun);
-      shakeBoard('light');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'eclipse-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'eclipse-shockwave'), 650);
+      triggerShockwave('eclipse-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('light');
+        emitFx({ kind: 'moment', id: 'eclipse_stance_shift', role: playerKey, stance: isSun ? 'sun' : 'moon', rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'eclipse_stance_shift',
-        role: playerKey,
-        stance: isSun ? 'sun' : 'moon',
-        rollVal,
-        text: player.name
-      });
     } else if (isDjinn) {
       AudioFX.playDjinnImpact();
-      shakeBoard('light');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'djinn-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'djinn-shockwave'), 650);
+      triggerShockwave('djinn-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('light');
+        emitFx({ kind: 'moment', id: 'djinn_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'djinn_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
       if (rollVal >= 5) {
         // Cosmic Djinn 3 Wishes on Roll 5–6 (Carpet Flight, Oasis Portal, or Midas Gold)
         const wishType = (player.pos % 3 === 0) ? 'carpet' : (player.pos % 3 === 1) ? 'oasis' : 'midas';
@@ -8281,128 +8238,60 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       }
     } else if (isPhoenix) {
       AudioFX.playPhoenixImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'phoenix-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'phoenix-shockwave'), 650);
+      triggerShockwave('phoenix-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'phoenix_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'phoenix_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (isSundrop || isClockwork || isBeast) {
       AudioFX.playBoom();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'fairytale-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'fairytale-shockwave'), 650);
+      triggerShockwave('fairytale-shockwave', 650);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'fairytale_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'fairytale_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (isFrost) {
       AudioFX.playGlacialImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave', 'frost-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'frost-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'frost-shockwave'), 700);
+      triggerShockwave('frost-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'glacial_royalty_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'glacial_royalty_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (typeof isGildedSovereign === 'function' && isGildedSovereign(playerKey)) {
       AudioFX.playSolarImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave', 'frost-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'solar-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'solar-shockwave'), 700);
+      triggerShockwave('solar-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'gilded_sovereign_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'gilded_sovereign_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (typeof isSolarDivinity === 'function' && isSolarDivinity(playerKey)) {
       AudioFX.playSolarImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave', 'frost-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'solar-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'solar-shockwave'), 700);
+      triggerShockwave('solar-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'solar_divinity_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'solar_divinity_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (typeof isPhantomRoyalty === 'function' && isPhantomRoyalty(playerKey)) {
       AudioFX.playPhantomImpact();
-      shakeBoard('medium');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave', 'frost-shockwave', 'solar-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'phantom-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'phantom-shockwave'), 700);
+      triggerShockwave('phantom-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('medium');
+        emitFx({ kind: 'moment', id: 'phantom_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'phantom_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else if (typeof isOlympusDivinity === 'function' && isOlympusDivinity(playerKey)) {
       AudioFX.playZeusBolt();
-      shakeBoard('heavy');
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave', 'fairytale-shockwave', 'frost-shockwave', 'solar-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active', 'olympus-shockwave');
-        setTimeout(() => shockwave.classList.remove('active', 'olympus-shockwave'), 700);
+      triggerShockwave('olympus-shockwave', 700);
+      if (isBigRoll) {
+        shakeBoard('heavy');
+        emitFx({ kind: 'moment', id: 'olympus_throw', role: playerKey, rollVal, text: player.name });
       }
-      emitFx({
-        kind: 'moment',
-        id: 'olympus_throw',
-        role: playerKey,
-        rollVal,
-        text: player.name
-      });
     } else {
       AudioFX.playDiceImpact();
-      shakeBoard();
+      if (isBigRoll) shakeBoard();
       if (window.SkyPixi && window.SkyPixi.isReady && typeof window.SkyPixi.spawnDiceImpact === 'function') {
         window.SkyPixi.spawnDiceImpact();
       }
-      if (shockwave) {
-        shockwave.classList.remove('active', 'monaco-shockwave', 'astral-shockwave', 'abyss-shockwave', 'naga-shockwave', 'inari-shockwave', 'eclipse-shockwave', 'djinn-shockwave', 'phoenix-shockwave');
-        void shockwave.offsetWidth;
-        shockwave.classList.add('active');
-        setTimeout(() => shockwave.classList.remove('active'), 550);
-      }
+      triggerShockwave('', 550);
     }
 
     if (isVipCasino) {
@@ -8692,7 +8581,7 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
       ? `🎰 <strong>Monte Carlo High-Roller!</strong> ${player.name} rolled a <strong>${rollVal}</strong>! 💎✈️`
       : `🎲 ${player.name} rolled a <strong>${rollVal}</strong>${viaGolden ? ' (Golden Dice ✨)' : ''}! ✈️`);
 
-    const moveDelay = isMonaco ? 380 : 160;
+    const moveDelay = (isMonaco && isBigRoll) ? 300 : 120;
     setTimeout(() => {
       animateAvatarMove(playerKey, totalSteps, () => {
         clearTimeout(rollCycleWatchdog);
@@ -8704,12 +8593,13 @@ function executeRoll(playerKey, rollVal, viaGolden = false, isVipCasino = false)
         flushQueuedMessages();
       });
     }, moveDelay);
-  }, 480);
+  }, 340);
 }
 
 function renderDiceFace(val) {
   const faceEl = $m('monopolyDiceFace');
-  if (!faceEl) return;
+  if (!faceEl || faceEl._lastVal === val) return;
+  faceEl._lastVal = val;
   const pip = (c, r, red = false) => `<div style="grid-column: ${c}; grid-row: ${r};" class="dice-pip${red ? ' pip-center-red' : ''}"></div>`;
   const layouts = {
     1: [[2, 2, true]],

@@ -10292,3 +10292,103 @@ body.has-active-modal .ambient-star {
   font-weight: 600;
   font-size: 8.5px;
 }
+
+/* ==========================================================================
+   iOS SAFARI & MOBILE 60FPS GPU / COMPOSITOR PERFORMANCE OVERRIDES
+   Eliminates continuous offscreen/idle repaints, multi-pass Gaussian blurs,
+   and filter-interpolating keyframes during active WebRTC calls + flights.
+   ========================================================================== */
+
+/* 1. Hide terminal underlay from WebKit compositor while Monopoly modal is open
+      (Floating Call Island & remoteAudio remain 100% active outside .terminal-container) */
+body.has-active-modal .terminal-container {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 2. Remove 5 concurrent backdrop-filter Gaussian blur passes on HUD cards & header
+      over the already-opaque #131b2e Monopoly stage */
+#monopolyModal .neora-game-header,
+#monopolyModal .neora-player-card,
+#monopolyModal .monopoly-player-card,
+#monopolyModal .monopoly-center-hub,
+#monopolyModal .monopoly-board-grid {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#monopolyModal .neora-player-card,
+#monopolyModal .monopoly-player-card {
+  background: rgba(20, 29, 48, 0.96) !important;
+  contain: layout style;
+}
+
+/* 3. Silence all continuous infinite animations & permanent will-change layers on board tiles
+      (Overrides high-specificity .board-tile.tile-*-domain !important rules) */
+#monopolyModal .board-tile[class],
+#monopolyModal .board-tile[class]::before,
+#monopolyModal .board-tile[class]::after,
+#monopolyModal .board-tile .monument-25d-wrap,
+#monopolyModal .board-tile .monument-25d-wrap *,
+#monopolyModal .board-tile .tile-icon,
+#monopolyModal .board-tile .tile-landmark-svg,
+#monopolyModal .board-tile .tile-hazard,
+#monopolyModal .board-tile .tile-domain-badge {
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Preserve one-shot tactical step & blast feedback on tiles */
+#monopolyModal .board-tile.step-highlight {
+  animation: tileStepPulse 0.3s ease-out 1 !important;
+}
+#monopolyModal .board-tile.tile-blast {
+  animation: tileBlastShake 0.42s ease-out 1 !important;
+}
+
+/* Replace multi-pass drop-shadow filters on 20 tiles with lightweight single shadow */
+#monopolyModal .board-tile .monument-25d-img,
+#monopolyModal .board-tile .tile-icon {
+  filter: none !important;
+}
+
+/* 4. Stop continuous idle animations in Center Hub & Action Controls */
+#monopolyModal .hub-radar-beam,
+#monopolyModal .dice-stage-dais,
+#monopolyModal .roll-shimmer,
+#monopolyModal .item-slot.usable,
+#monopolyModal .btn-roll-dice.my-turn-pulse {
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* 5. Replace filter: drop-shadow() blur-radius interpolation during dice roll
+      with pure GPU transform keyframes */
+@keyframes diceTumbleGpuFast {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate3d(-3px, -5px, 0) rotate(-12deg) scale(1.06); }
+  50%  { transform: translate3d(3px, -2px, 0) rotate(12deg) scale(1.08); }
+  75%  { transform: translate3d(-2px, 4px, 0) rotate(-8deg) scale(1.04); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+}
+
+#monopolyModal .monopoly-dice-box.rolling,
+#monopolyModal .monopoly-dice-box.monaco-rolling,
+#monopolyModal .monopoly-dice-box.abyss-rolling,
+#monopolyModal .monopoly-dice-box.astral-rolling,
+#monopolyModal .monopoly-dice-box.naga-rolling,
+#monopolyModal .monopoly-dice-box.inari-rolling,
+#monopolyModal .monopoly-dice-box.eclipse-rolling,
+#monopolyModal .monopoly-dice-box.djinn-rolling,
+#monopolyModal .monopoly-dice-box.phoenix-rolling,
+#monopolyModal .monopoly-dice-box.fairytale-rolling,
+#monopolyModal .monopoly-dice-box.clockwork-rolling,
+#monopolyModal .monopoly-dice-box.enchanted-rolling,
+#monopolyModal .monopoly-dice-box.frost-rolling,
+#monopolyModal .monopoly-dice-box.solar-rolling,
+#monopolyModal .monopoly-dice-box.phantom-rolling,
+#monopolyModal .monopoly-dice-box.olympus-rolling {
+  animation: diceTumbleGpuFast 0.18s linear infinite !important;
+  filter: none !important;
+}
+

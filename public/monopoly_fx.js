@@ -135,8 +135,10 @@
 
   function restartClass(el, cls, ms = 1000) {
     if (!el) return;
-    el.classList.remove(cls);
-    void el.offsetWidth;
+    if (el.classList.contains(cls)) {
+      el.classList.remove(cls);
+      void el.offsetWidth;
+    }
     el.classList.add(cls);
     clearTimeout(el[`_fx_${cls}`]);
     el[`_fx_${cls}`] = setTimeout(() => el.classList.remove(cls), ms);
@@ -184,6 +186,12 @@
   function point(ep) {
     refs();
     if (ep && ep.x != null && ep.y != null) return { w: 0, h: 0, ...ep };
+    if (ep && ep.tileId != null) {
+      const box = tileBox(ep.tileId);
+      if (box) {
+        return { x: box.x + box.w / 2, y: box.y + box.h / 2, w: box.w, h: box.h };
+      }
+    }
     const base = L.moment;
     const el = endpointEl(ep);
     if (!base) return { x: 0, y: 0, w: 0, h: 0 };
@@ -369,11 +377,16 @@
     if (prev) cancelAnimationFrame(prev);
     const dur = T(ms);
     const t0 = performance.now();
+    let lastHtml = '';
     const step = (now) => {
       const t = Math.min(1, (now - t0) / dur);
       const e = 1 - Math.pow(1 - t, 3);
       const v = from + (to - from) * e;
-      el.innerHTML = fmtFn(v);
+      const html = fmtFn(v);
+      if (html !== lastHtml) {
+        lastHtml = html;
+        el.innerHTML = html;
+      }
       if (onStep) onStep(v);
       if (t < 1) tweens.set(el, requestAnimationFrame(step));
       else tweens.delete(el);
@@ -568,13 +581,13 @@
       const after = { ...tok.shown, [role]: toId };
       const A = anchor(role, fromId, before);
       const B = anchor(role, toId, after);
-      if (!A || !B) { place(role, toId); sfx('playHop'); setTimeout(resolve, 200); return; }
+      if (!A || !B) { place(role, toId); sfx('playHop'); setTimeout(resolve, 180); return; }
       tok.busy[role] = true;
       el.classList.add('hopping');
       el.style.width = `${B.size}px`;
       el.style.height = `${B.size}px`;
-      const dur = T(opts.first ? 280 : opts.final ? 400 : 230);
-      const arc = opts.final ? 30 : 20;
+      const dur = T(opts.first ? 210 : opts.final ? 290 : 175);
+      const arc = opts.final ? 26 : 18;
       const mid = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2, s: B.s };
       const anim = el.animate([
         { transform: tf(A), offset: 0 },
@@ -5388,7 +5401,7 @@
   // =========================================================
   Object.assign(api, {
     init, assetUrl, visual, visualHtml, point, center,
-    tokens: { mount, place, placeAll, hop, teleport, sync: syncTokens, setActive, lock: (r, v) => { tok.lock[r] = !!v; }, reset: resetTokens, fall: fallToken },
+    tokens: { mount, place, placeAll, hop, teleport, tileBox, sync: syncTokens, setActive, lock: (r, v) => { tok.lock[r] = !!v; }, reset: resetTokens, fall: fallToken },
     coins, flyIcon, plantFlag, burst, shake, flash, vignette, ring, banner,
     moment, busy, hold, tween, restartClass,
     cardOverlayOpen, deferTileFx, runTileFx, flushTileFx,
