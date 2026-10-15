@@ -29,8 +29,8 @@
   };
 
   const SESSION_ID = Math.random().toString(36).slice(2, 10);
-  const SAMPLE_MS = 5000;
-  const FLUSH_MS = 5000;
+  const SAMPLE_MS = FLAGS.debug ? 5000 : 10000;
+  const FLUSH_MS = FLAGS.debug ? 5000 : 30000;
   const MAX_QUEUE = 3000;
 
   let terminal = detectTerminal();
@@ -41,6 +41,7 @@
   let activePc = null;
   let prev = null;
   let lastSample = null;
+  let sampleCount = 0;
   const audioContexts = [];
 
   function detectTerminal() {
@@ -102,7 +103,9 @@
     }
   }
 
-  setInterval(() => flush(false), FLUSH_MS);
+  setInterval(() => {
+    if (!document.hidden || queue.length >= 25) flush(false);
+  }, FLUSH_MS);
   window.addEventListener('pagehide', () => {
     event('page_hide');
     flush(true);
@@ -353,7 +356,10 @@
 
     prev = cur;
     lastSample = s;
-    event('stats', s);
+    sampleCount++;
+    if (FLAGS.debug || (s.verdict && s.verdict !== 'ok') || sampleCount % 6 === 1) {
+      event('stats', s);
+    }
     if (FLAGS.debug) renderOverlayStats(s);
   }
 

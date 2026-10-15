@@ -518,11 +518,9 @@ html, body {
 @keyframes callButtonPulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.55);
   }
   50% {
-    transform: scale(1.1);
-    box-shadow: 0 0 32px rgba(16, 185, 129, 0.95);
+    transform: scale(1.08);
   }
 }
 
@@ -850,9 +848,8 @@ html, body {
 }
 
 @keyframes fci-pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0%, 100% { transform: scale(0.92); opacity: 0.85; }
+  50% { transform: scale(1.15); opacity: 1; }
 }
 
 .fci-info {
@@ -952,5 +949,9 @@ html, body {
 
 .fci-btn-hangup:hover {
   background: #dc2626;
+}
+
+body.page-hidden * {
+  animation-play-state: paused !important;
 }
 

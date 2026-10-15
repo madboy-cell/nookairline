@@ -757,7 +757,9 @@ function spawnTapRipple(x, y, parent) {
 
 // Move Avatar to Position with Smooth Natural Walk Cycle
 function moveAvatar(containerId, avatarObj, targetX, targetY, isLocal = true) {
-  lastInteractionTime = Date.now();
+  if (isLocal) {
+    lastInteractionTime = Date.now();
+  }
   const el = document.getElementById(containerId);
   if (!el) return;
 
@@ -784,7 +786,7 @@ function moveAvatar(containerId, avatarObj, targetX, targetY, isLocal = true) {
     el.classList.add('idle');
   }, 1150);
 
-  // If local, broadcast to partner over WebRTC/WebSocket
+  // If local user-initiated walk, broadcast to partner over WebRTC/WebSocket
   if (isLocal && typeof sendSignaling === 'function') {
     sendSignaling({
       type: 'avatar_move',
@@ -824,9 +826,18 @@ function runAvatarWanderStep(avatarId) {
   const isMe = avatarId === 'myAvatar';
   if (!isMe && !isPartnerActive()) return;
 
-  // Save mobile CPU & GPU: pause autonomous wander while modals (Monopoly/Vault) are open or app is in background
-  if (document.hidden || document.body.classList.contains('has-active-modal') || (window.monopolyState && window.monopolyState.active)) {
-    scheduleAvatarWander(avatarId, 5000, 8000);
+  const appEl = document.getElementById('app');
+  const isImmersiveHidden = !!(appEl && appEl.classList.contains('controls-hidden'));
+
+  // Save mobile CPU & GPU: pause autonomous wander while modals (Monopoly/Vault) are open,
+  // app is in background, or user is in immersive call power-save mode
+  if (
+    document.hidden ||
+    isImmersiveHidden ||
+    document.body.classList.contains('has-active-modal') ||
+    (window.monopolyState && window.monopolyState.active)
+  ) {
+    scheduleAvatarWander(avatarId, 10000, 15000);
     return;
   }
 
@@ -845,10 +856,18 @@ function runAvatarWanderStep(avatarId) {
     return;
   }
 
+  // Cozy Call Power-Save Mode: when untouched for > 90s (e.g. just talking on the phone),
+  // slow down autonomous strolling to every 18–28s to save CPU/GPU layout & battery
+  const isIdleResting = (Date.now() - lastInteractionTime) > 90000;
+  const nextMin = isIdleResting ? 18000 : 4500;
+  const nextMax = isIdleResting ? 28000 : 8500;
+
   // 25% chance of doing a cute idle flavor gesture instead of walking
   if (Math.random() < 0.25) {
-    doCuteIdleFlavor(avatarId);
-    scheduleAvatarWander(avatarId, 3200, 5800);
+    if (!isIdleResting) {
+      doCuteIdleFlavor(avatarId);
+    }
+    scheduleAvatarWander(avatarId, isIdleResting ? 14000 : 3200, isIdleResting ? 22000 : 5800);
     return;
   }
 
@@ -871,18 +890,18 @@ function runAvatarWanderStep(avatarId) {
     targetX = Math.max(18, Math.min(82, targetX));
   }
 
-  // Stroll avatar to new spot
-  moveAvatar(avatarId, avatarObj, targetX, targetY, isMe);
+  // Stroll avatar locally without broadcasting WebSocket spam on autonomous random steps
+  moveAvatar(avatarId, avatarObj, targetX, targetY, false);
 
   // Check proximity with partner avatar after arriving (only if partner is active)
-  if (partnerActive) {
+  if (partnerActive && !isIdleResting) {
     setTimeout(() => {
       checkAvatarProximity();
     }, 1150);
   }
 
   // Schedule next wander step
-  scheduleAvatarWander(avatarId, 4500, 8500);
+  scheduleAvatarWander(avatarId, nextMin, nextMax);
 }
 
 // Micro-idle cute gestures (whistle musical note, happy hop, wave, sword flourish, surf splash)
@@ -1358,10 +1377,9 @@ function spawnKissHeart(startX, startY, endX, endY) {
 function setAvatarTalking(who, isTalking) {
   const el = document.getElementById(who === 'me' ? 'myAvatar' : 'partnerAvatar');
   if (!el) return;
-  if (isTalking) {
-    el.classList.add('talking');
-  } else {
-    el.classList.remove('talking');
+  const want = !!isTalking;
+  if (el.classList.contains('talking') !== want) {
+    el.classList.toggle('talking', want);
   }
 }
 

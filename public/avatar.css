@@ -230,8 +230,15 @@
   height: 104px;
   transform-origin: bottom center;
   transition: left 1.1s cubic-bezier(0.25, 1, 0.5, 1), top 1.1s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: left, top, transform;
+  will-change: transform;
   z-index: 10;
+}
+
+body.has-active-modal .sky-lounge *,
+body.has-active-modal .emotion-deck *,
+#app.controls-hidden .cabin-ambient-light,
+#app.controls-hidden .emotion-deck * {
+  animation-play-state: paused !important;
 }
 
 /* Floor Shadow */

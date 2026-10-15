@@ -185,8 +185,12 @@ window.showToast = showToast;
 
 // --- Initialization ---
 window.addEventListener('DOMContentLoaded', async () => {
+  document.body.classList.toggle('page-hidden', document.hidden);
   setupDraggablePip();
-  await initLocalMedia();
+  // Battery & Privacy Optimization: Do NOT open the hardware microphone or start
+  // AudioContext FFT loops on page load. Mic is initialized on demand when starting
+  // or answering a call (or toggling camera).
+  updateBadge('Lounge Ready', true);
   initSignaling();
   setupEventListeners();
   if (typeof initAvatarStage === 'function') {
@@ -303,6 +307,9 @@ async function initLocalMedia() {
     };
 
     localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    localStream.getAudioTracks().forEach((track) => {
+      track.enabled = !isMicMuted;
+    });
     localVideo.srcObject = localStream;
     if (localPip) {
       localPip.classList.add('hidden');
@@ -1318,20 +1325,25 @@ function toggleMute() {
     else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
     return;
   }
-  if (!localStream) return;
   isMicMuted = !isMicMuted;
-  localStream.getAudioTracks().forEach((track) => {
-    track.enabled = !isMicMuted;
-  });
+  if (localStream) {
+    localStream.getAudioTracks().forEach((track) => {
+      track.enabled = !isMicMuted;
+    });
+  }
 
   if (micBtn) {
     micBtn.classList.toggle('active-off', isMicMuted);
+    if (isMicMuted) micBtn.classList.remove('speaking');
     const onIcon = micBtn.querySelector('.icon-on');
     const offIcon = micBtn.querySelector('.icon-off');
     if (onIcon) onIcon.classList.toggle('hidden', isMicMuted);
     if (offIcon) offIcon.classList.toggle('hidden', !isMicMuted);
   }
   if (micLabel) micLabel.textContent = isMicMuted ? 'Muted' : 'Mute';
+  if (isMicMuted && typeof setAvatarTalking === 'function') {
+    setAvatarTalking('me', false);
+  }
 
   sendSignaling({
     type: 'media_state',
@@ -1581,16 +1593,21 @@ function updateFloatingCallIsland() {
     pAvatar = window.partnerAvatar.sprite;
   }
 
-  if (els.name) els.name.textContent = pName;
+  if (els.name && els.name.textContent !== pName) els.name.textContent = pName;
   if (els.avatar && els.avatar.getAttribute('src') !== pAvatar) els.avatar.src = pAvatar;
 
   if (els.timer && callDuration) {
-    els.timer.textContent = callDuration.textContent || '00:00';
+    const nextTime = callDuration.textContent || '00:00';
+    if (els.timer.textContent !== nextTime) els.timer.textContent = nextTime;
   }
 
   if (els.muteBtn) {
-    els.muteBtn.classList.toggle('is-muted', !!isMicMuted);
-    els.muteBtn.innerHTML = isMicMuted ? '<span class="fci-mute-icon">🔇</span>' : '<span class="fci-mute-icon">🎤</span>';
+    const mutedKey = isMicMuted ? '1' : '0';
+    if (els.muteBtn.dataset.muted !== mutedKey) {
+      els.muteBtn.dataset.muted = mutedKey;
+      els.muteBtn.classList.toggle('is-muted', !!isMicMuted);
+      els.muteBtn.innerHTML = isMicMuted ? '<span class="fci-mute-icon">🔇</span>' : '<span class="fci-mute-icon">🎤</span>';
+    }
   }
 }
 
@@ -1625,17 +1642,23 @@ function setupFloatingCallIslandEvents() {
 }
 
 // Call Duration Counter (idempotent: ontrack fires per track and again after auto-heal)
+function refreshCallTimerDisplay() {
+  if (!callStartTime || !callDuration) return;
+  const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+  const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const secs = String(elapsed % 60).padStart(2, '0');
+  callDuration.textContent = `${mins}:${secs}`;
+  updateFloatingCallIsland();
+}
+
 function startCallTimer() {
   if (callTimerInterval) return;
   callStartTime = Date.now();
   callTimerChip.classList.remove('hidden');
   showFloatingCallIsland();
   callTimerInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-    const secs = String(elapsed % 60).padStart(2, '0');
-    callDuration.textContent = `${mins}:${secs}`;
-    updateFloatingCallIsland();
+    if (document.hidden) return;
+    refreshCallTimerDisplay();
   }, 1000);
 }
 
@@ -1713,12 +1736,13 @@ function routeToLoudspeaker(stream) {
   }
 }
 
-// Local Mic Activity Visualizer (VU meter)
+// Local Mic Activity Visualizer (VU meter) — low-power 180ms timer (~5.5 Hz) instead of 120Hz rAF
 let localAudioCtx = null;
 let localAudioAnimId = null;
 
 function stopLocalAudioMonitor() {
   if (localAudioAnimId) {
+    clearInterval(localAudioAnimId);
     cancelAnimationFrame(localAudioAnimId);
     localAudioAnimId = null;
   }
@@ -1748,35 +1772,26 @@ function monitorLocalAudio(stream) {
     source.connect(analyser);
     const data = new Uint8Array(analyser.frequencyBinCount);
 
-    let lastCheck = 0;
-    function checkLevel(now) {
+    let lastSpeaking = false;
+    localAudioAnimId = setInterval(() => {
       if (!stream || (stream.active === false)) {
         stopLocalAudioMonitor();
         return;
       }
-      // Throttle VU calculation to ~15 FPS (every 65ms) instead of 120 FPS
-      if (!now || now - lastCheck >= 65) {
-        lastCheck = now || performance.now();
-        if (isMicMuted) {
-          micBtn.classList.remove('speaking');
-          if (typeof setAvatarTalking === 'function') setAvatarTalking('me', false);
-        } else {
-          analyser.getByteFrequencyData(data);
-          let sum = 0;
-          for (let i = 0; i < data.length; i++) sum += data[i];
-          const avg = sum / data.length;
-          if (avg > 15) {
-            micBtn.classList.add('speaking');
-            if (typeof setAvatarTalking === 'function') setAvatarTalking('me', true);
-          } else {
-            micBtn.classList.remove('speaking');
-            if (typeof setAvatarTalking === 'function') setAvatarTalking('me', false);
-          }
-        }
+      if (document.hidden) return;
+      let isSpeaking = false;
+      if (!isMicMuted) {
+        analyser.getByteFrequencyData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i];
+        isSpeaking = (sum / data.length) > 15;
       }
-      localAudioAnimId = requestAnimationFrame(checkLevel);
-    }
-    localAudioAnimId = requestAnimationFrame(checkLevel);
+      if (isSpeaking !== lastSpeaking) {
+        lastSpeaking = isSpeaking;
+        if (micBtn) micBtn.classList.toggle('speaking', isSpeaking);
+        if (typeof setAvatarTalking === 'function') setAvatarTalking('me', isSpeaking);
+      }
+    }, 180);
   } catch (e) {
     console.warn('[Audio Monitor Notice]', e);
   }
@@ -1865,7 +1880,7 @@ function playCabinChime(type = 'board') {
   }
 }
 
-// Remote Audio Live VU Visualizer (Dynamic Voice Halo)
+// Remote Audio Live VU Visualizer (Dynamic Voice Halo) — low-power 160ms timer (~6.2 Hz)
 function monitorRemoteAudio(stream) {
   if (window.NookTelemetry && window.NookTelemetry.flags.novis) return;
   // Never run two loops at once (ontrack can fire again after an auto-heal)
@@ -1892,43 +1907,41 @@ function monitorRemoteAudio(stream) {
     const ringInner = document.getElementById('remoteVoiceRing');
     const ringOuter = document.getElementById('remoteVoiceRingOuter');
 
-    let lastRemoteCheck = 0;
-    function checkRemoteLevel(now) {
+    let lastRemoteTalking = false;
+    remoteVisualizerAnimId = setInterval(() => {
       if (!isCallActive) {
         if (ringInner) ringInner.style.transform = 'scale(1)';
         if (ringOuter) ringOuter.style.transform = 'scale(1)';
         stopRemoteAudioVisualizer();
         return;
       }
-      // Throttle remote ring pulse to ~30 FPS (every 33ms) instead of 120 FPS
-      if (!now || now - lastRemoteCheck >= 33) {
-        lastRemoteCheck = now || performance.now();
-        remoteAudioAnalyser.getByteFrequencyData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i++) sum += data[i];
-        const avg = sum / data.length;
+      if (document.hidden) return;
+      remoteAudioAnalyser.getByteFrequencyData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) sum += data[i];
+      const avg = sum / data.length;
+      const isTalking = avg > 12;
 
-        if (ringInner && ringOuter) {
-          if (avg > 12) {
-            const scale = Math.min(1.35, 1 + (avg / 140));
-            const opacity = Math.min(0.85, 0.25 + (avg / 90));
-            ringInner.style.transform = `scale(${scale})`;
-            ringInner.style.opacity = opacity;
-            ringOuter.style.transform = `scale(${scale * 1.22})`;
-            ringOuter.style.opacity = opacity * 0.55;
-            if (typeof setAvatarTalking === 'function') setAvatarTalking('partner', true);
-          } else {
-            ringInner.style.transform = 'scale(1)';
-            ringInner.style.opacity = '0.15';
-            ringOuter.style.transform = 'scale(1)';
-            ringOuter.style.opacity = '0';
-            if (typeof setAvatarTalking === 'function') setAvatarTalking('partner', false);
-          }
+      if (ringInner && ringOuter) {
+        if (isTalking) {
+          const scale = Math.min(1.35, 1 + (avg / 140));
+          const opacity = Math.min(0.85, 0.25 + (avg / 90));
+          ringInner.style.transform = `scale(${scale})`;
+          ringInner.style.opacity = opacity;
+          ringOuter.style.transform = `scale(${scale * 1.22})`;
+          ringOuter.style.opacity = opacity * 0.55;
+        } else if (lastRemoteTalking) {
+          ringInner.style.transform = 'scale(1)';
+          ringInner.style.opacity = '0.15';
+          ringOuter.style.transform = 'scale(1)';
+          ringOuter.style.opacity = '0';
         }
       }
-      remoteVisualizerAnimId = requestAnimationFrame(checkRemoteLevel);
-    }
-    remoteVisualizerAnimId = requestAnimationFrame(checkRemoteLevel);
+      if (isTalking !== lastRemoteTalking) {
+        lastRemoteTalking = isTalking;
+        if (typeof setAvatarTalking === 'function') setAvatarTalking('partner', isTalking);
+      }
+    }, 160);
   } catch (err) {
     console.warn('[Remote Audio Visualizer Notice]', err);
   }
@@ -1936,6 +1949,7 @@ function monitorRemoteAudio(stream) {
 
 function stopRemoteAudioVisualizer() {
   if (remoteVisualizerAnimId) {
+    clearInterval(remoteVisualizerAnimId);
     cancelAnimationFrame(remoteVisualizerAnimId);
     remoteVisualizerAnimId = null;
   }
@@ -1969,9 +1983,13 @@ function startLevelPoller() {
   if (!(window.NookTelemetry && window.NookTelemetry.flags.novis) || levelPollInterval) return;
   const ringInner = document.getElementById('remoteVoiceRing');
   const ringOuter = document.getElementById('remoteVoiceRingOuter');
+  let lastRemoteTalking = false;
+  let lastLocalTalking = false;
+  let tickCount = 0;
 
   levelPollInterval = setInterval(async () => {
-    if (!peerConnection || !isCallActive) return;
+    if (!peerConnection || !isCallActive || document.hidden) return;
+    tickCount++;
     try {
       let remoteLevel = 0;
       const receiver = peerConnection.getReceivers().find((r) => r.track && r.track.kind === 'audio');
@@ -1988,30 +2006,45 @@ function startLevelPoller() {
           ringInner.style.opacity = opacity;
           ringOuter.style.transform = `scale(${scale * 1.22})`;
           ringOuter.style.opacity = opacity * 0.55;
-        } else {
+        } else if (lastRemoteTalking) {
           ringInner.style.transform = 'scale(1)';
           ringInner.style.opacity = '0.15';
           ringOuter.style.transform = 'scale(1)';
           ringOuter.style.opacity = '0';
         }
       }
-      if (typeof setAvatarTalking === 'function') setAvatarTalking('partner', remoteTalking);
-
-      let localLevel = 0;
-      const sender = peerConnection.getSenders().find((s) => s.track && s.track.kind === 'audio');
-      if (sender && !isMicMuted) {
-        const stats = await sender.getStats();
-        stats.forEach((r) => {
-          if (r.type === 'media-source' && typeof r.audioLevel === 'number') localLevel = r.audioLevel;
-        });
+      if (remoteTalking !== lastRemoteTalking) {
+        lastRemoteTalking = remoteTalking;
+        if (typeof setAvatarTalking === 'function') setAvatarTalking('partner', remoteTalking);
       }
-      const localTalking = localLevel > 0.03;
-      micBtn.classList.toggle('speaking', localTalking);
-      if (typeof setAvatarTalking === 'function') setAvatarTalking('me', localTalking);
+
+      // Sample local sender getStats() every 2nd tick (1000ms) instead of 300ms to save CPU/battery
+      if (isMicMuted) {
+        if (lastLocalTalking) {
+          lastLocalTalking = false;
+          micBtn.classList.remove('speaking');
+          if (typeof setAvatarTalking === 'function') setAvatarTalking('me', false);
+        }
+      } else if (tickCount % 2 === 0) {
+        let localLevel = 0;
+        const sender = peerConnection.getSenders().find((s) => s.track && s.track.kind === 'audio');
+        if (sender) {
+          const stats = await sender.getStats();
+          stats.forEach((r) => {
+            if (r.type === 'media-source' && typeof r.audioLevel === 'number') localLevel = r.audioLevel;
+          });
+        }
+        const localTalking = localLevel > 0.03;
+        if (localTalking !== lastLocalTalking) {
+          lastLocalTalking = localTalking;
+          micBtn.classList.toggle('speaking', localTalking);
+          if (typeof setAvatarTalking === 'function') setAvatarTalking('me', localTalking);
+        }
+      }
     } catch (_) {
       // indicators are cosmetic — never let them disturb the call
     }
-  }, 300);
+  }, 500);
 }
 
 function stopLevelPoller() {
@@ -2045,8 +2078,12 @@ function releaseWakeLock() {
 }
 
 document.addEventListener('visibilitychange', async () => {
-  if (wakeLock !== null && document.visibilityState === 'visible' && isCallActive) {
-    await requestWakeLock();
+  document.body.classList.toggle('page-hidden', document.hidden);
+  if (!document.hidden && isCallActive) {
+    refreshCallTimerDisplay();
+    if (wakeLock !== null) {
+      await requestWakeLock();
+    }
   }
 });
 
@@ -2054,8 +2091,17 @@ document.addEventListener('visibilitychange', async () => {
 function startStatsMonitor() {
   stopStatsMonitor();
   statsInterval = setInterval(async () => {
-    if (!peerConnection || !isCallActive) return;
+    if (!peerConnection || !isCallActive || document.hidden) return;
     try {
+      // Reuse NookTelemetry's sampled RTT when available to avoid duplicate pc.getStats() calls
+      const teleSample = window.NookTelemetry && typeof window.NookTelemetry.getLastSample === 'function'
+        ? window.NookTelemetry.getLastSample()
+        : null;
+      if (teleSample && typeof teleSample.rttMs === 'number') {
+        updateBadge(`⚡ ${teleSample.rttMs}ms • Singapore Relay`, true);
+        return;
+      }
+
       const stats = await peerConnection.getStats();
       let rtt = null;
       stats.forEach((report) => {
@@ -2072,7 +2118,7 @@ function startStatsMonitor() {
     } catch (err) {
       // quiet stats fallback
     }
-  }, 3000);
+  }, 10000);
 }
 
 function stopStatsMonitor() {

@@ -319,12 +319,12 @@
 .neora-activity-counter .flame-icon {
   font-size: 16px;
   filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85));
-  animation: neoraFlamePulse 2.4s ease-in-out infinite;
+  animation: neoraFlamePulse 2.8s ease-in-out infinite;
 }
 
 @keyframes neoraFlamePulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85)); }
-  50% { transform: scale(1.12); filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.95)); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .dly-chip b,
@@ -417,12 +417,12 @@
   justify-content: center;
   flex: none;
   filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
-  animation: neoraGemFloat 3s ease-in-out infinite;
+  animation: neoraGemFloat 3.4s ease-in-out infinite;
 }
 
 @keyframes neoraGemFloat {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7)); transform: translateY(0); }
-  50% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.95)); transform: translateY(-1.5px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
 }
 
 .neora-gem-counter b,
@@ -965,7 +965,7 @@
   }
 }
 
-/* Accessible reduced-motion */
+/* Accessible reduced-motion & Battery Power-Save when hidden or in immersive call mode */
 @media (prefers-reduced-motion: reduce) {
   .profile-crown-icon,
   .neora-banner-moon,
@@ -974,4 +974,13 @@
   .dly-chip .dly-fire-icon {
     animation: none !important;
   }
+}
+
+body.page-hidden .flight-header *,
+body.page-hidden .flight-status-capsule *,
+body.has-active-modal .flight-header *,
+body.has-active-modal .flight-status-capsule *,
+#app.controls-hidden .flight-header *,
+#app.controls-hidden .flight-status-capsule * {
+  animation-play-state: paused !important;
 }

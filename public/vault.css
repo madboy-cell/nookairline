@@ -96,10 +96,10 @@
   height: 8px;
   border-radius: 50%;
   background: radial-gradient(circle, #fde68a, #f59e0b);
-  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
-  animation: vDotPing 1.8s ease-out infinite;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+  animation: vDotPing 1.8s ease-in-out infinite;
 }
-@keyframes vDotPing { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); } 100% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); } }
+@keyframes vDotPing { 0%, 100% { transform: scale(0.9); opacity: 0.75; } 50% { transform: scale(1.25); opacity: 1; } }
 
 /* ---------- Sheet ---------- */
 .vault-sheet {
@@ -2221,8 +2221,12 @@
 
 .aura-mythic .costume-aura-ring { width: 96px; margin-left: -48px; background: radial-gradient(ellipse, rgba(253, 230, 138, 0.95), rgba(251, 191, 36, 0.35) 45%, transparent 72%); box-shadow: 0 0 24px rgba(251, 191, 36, 0.6); }
 .aura-mythic .costume-aura-motes::before, .aura-mythic .costume-aura-motes::after { background: #fff7d6; box-shadow: 0 0 10px #fbbf24, 0 0 18px #f59e0b; width: 6px; height: 6px; }
-.aura-mythic .maple-sprite-img { filter: drop-shadow(0 0 9px rgba(251, 191, 36, 0.85)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)); animation: vMythicPulse 3s ease-in-out infinite; }
-@keyframes vMythicPulse { 0%, 100% { filter: drop-shadow(0 0 7px rgba(251, 191, 36, 0.7)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)); } 50% { filter: drop-shadow(0 0 14px rgba(253, 230, 138, 1)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)); } }
+/* Static drop-shadow on the sprite avoids 60fps alpha-mask re-rasterization while .costume-aura-ring pulses on the GPU compositor */
+.aura-mythic .maple-sprite-img { filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.88)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)); }
+
+#app.controls-hidden .costume-aura * {
+  animation-play-state: paused !important;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .vault-sheet *, .vault-pull-fx *, .costume-aura * { animation-duration: 0.01s !important; animation-iteration-count: 1 !important; }

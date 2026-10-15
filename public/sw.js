@@ -1,6 +1,6 @@
-// Sky Party PWA Service Worker (v1.2.1)
-const CACHE_NAME = 'sky-party-cache-v6';
-const ASSET_CACHE_NAME = 'sky-party-assets-v6';
+// Sky Party PWA Service Worker (v1.2.2)
+const CACHE_NAME = 'sky-party-cache-v7';
+const ASSET_CACHE_NAME = 'sky-party-assets-v7';
 const CORE_ASSETS = [
   './',
   './index.html',

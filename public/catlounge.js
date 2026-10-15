@@ -1826,6 +1826,7 @@
     window.addEventListener('sky:couple_status_changed', () => { if (S.open) onProfiles(); });
     // Needs decay continuously — refresh bars / bubbles / naps every 20s
     setInterval(() => {
+      if (document.hidden) return;
       updateDock();
       if (S.open && S.tab === 'lounge' && !S.petting && !S.play) { Object.keys(S.nodes).forEach(decorateCat); renderCare(); renderFeed(); }
     }, 20000);
