@@ -1647,13 +1647,16 @@ wss.on('connection', (ws, req) => {
   const terminal = (parsedUrl.query.terminal || '').toLowerCase();
   const usernameParam = parsedUrl.query.username;
   const uidParam = parsedUrl.query.uid;
+  const forceTakeover = parsedUrl.query.force === '1';
+  ws.inCall = parsedUrl.query.inCall === '1';
   if (usernameParam) ws.userName = decodeURIComponent(usernameParam).slice(0, 32);
   if (uidParam) ws.userUid = decodeURIComponent(uidParam).slice(0, 64);
 
-  console.log(`[Signaling] Terminal connection request: "${terminal}"${ws.userName ? ` (${ws.userName})` : ''}${ws.userUid ? ` [${ws.userUid.slice(0, 8)}]` : ''}`);
+  console.log(`[Signaling] Terminal connection request: "${terminal}"${ws.userName ? ` (${ws.userName})` : ''}${ws.userUid ? ` [${ws.userUid.slice(0, 8)}]` : ''}${ws.inCall ? ' [inCall]' : ''}`);
   serverEvent('ws_connect', terminal, {
     username: ws.userName || null,
     uid: ws.userUid || null,
+    inCall: ws.inCall,
     ip: req.headers['cf-connecting-ip'] || req.socket.remoteAddress,
     country: req.headers['cf-ipcountry'] || null,
     userAgent: req.headers['user-agent'] || null
@@ -1685,46 +1688,82 @@ wss.on('connection', (ws, req) => {
     return false;
   };
 
+  let conflictResolved = false;
+
   if (terminal === 'bkk') {
-    if (bkkDisconnectTimer) {
-      clearTimeout(bkkDisconnectTimer);
-      bkkDisconnectTimer = null;
-      console.log('[Signaling] BKK reconnected within grace period.');
-    }
     // If bkk is already occupied by a DIFFERENT user, avoid kicking them! Route incoming user to DXB!
     if (bkkSocket && bkkSocket !== ws && !isSameUser(bkkSocket)) {
       console.log(`[Signaling] Conflict avoided: BKK is occupied by ${bkkSocket.userName || 'user'}. Assigning ${ws.userName || 'passenger'} to DXB.`);
       if (dxbSocket && dxbSocket !== ws && isSameUser(dxbSocket)) {
+        if (dxbSocket.readyState === WebSocket.OPEN && dxbSocket.inCall && !ws.inCall && !forceTakeover) {
+          console.log(`[Signaling] Protecting active call on DXB (${dxbSocket.userName || 'user'}) from idle secondary device.`);
+          serverEvent('ws_idle_device_rejected', 'dxb', { username: ws.userName || null });
+          try { ws.close(4001, 'call_active_on_other_device'); } catch (e) {}
+          return;
+        }
         try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      if (dxbDisconnectTimer) {
+        clearTimeout(dxbDisconnectTimer);
+        dxbDisconnectTimer = null;
       }
       dxbSocket = ws;
       ws.terminal = 'dxb';
+      conflictResolved = true;
     } else {
       if (bkkSocket && bkkSocket !== ws) {
+        if (bkkSocket.readyState === WebSocket.OPEN && bkkSocket.inCall && !ws.inCall && !forceTakeover) {
+          console.log(`[Signaling] Protecting active call on BKK (${bkkSocket.userName || 'user'}) from idle secondary device.`);
+          serverEvent('ws_idle_device_rejected', 'bkk', { username: ws.userName || null });
+          try { ws.close(4001, 'call_active_on_other_device'); } catch (e) {}
+          return;
+        }
         console.log('[Signaling] Closing older BKK session for same user.');
         try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      if (bkkDisconnectTimer) {
+        clearTimeout(bkkDisconnectTimer);
+        bkkDisconnectTimer = null;
+        console.log('[Signaling] BKK reconnected within grace period.');
       }
       bkkSocket = ws;
       ws.terminal = 'bkk';
     }
   } else if (terminal === 'dxb') {
-    if (dxbDisconnectTimer) {
-      clearTimeout(dxbDisconnectTimer);
-      dxbDisconnectTimer = null;
-      console.log('[Signaling] DXB reconnected within grace period.');
-    }
     // If dxb is already occupied by a DIFFERENT user, avoid kicking them! Route incoming user to BKK!
     if (dxbSocket && dxbSocket !== ws && !isSameUser(dxbSocket)) {
       console.log(`[Signaling] Conflict avoided: DXB is occupied by ${dxbSocket.userName || 'user'}. Assigning ${ws.userName || 'passenger'} to BKK.`);
       if (bkkSocket && bkkSocket !== ws && isSameUser(bkkSocket)) {
+        if (bkkSocket.readyState === WebSocket.OPEN && bkkSocket.inCall && !ws.inCall && !forceTakeover) {
+          console.log(`[Signaling] Protecting active call on BKK (${bkkSocket.userName || 'user'}) from idle secondary device.`);
+          serverEvent('ws_idle_device_rejected', 'bkk', { username: ws.userName || null });
+          try { ws.close(4001, 'call_active_on_other_device'); } catch (e) {}
+          return;
+        }
         try { bkkSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      if (bkkDisconnectTimer) {
+        clearTimeout(bkkDisconnectTimer);
+        bkkDisconnectTimer = null;
       }
       bkkSocket = ws;
       ws.terminal = 'bkk';
+      conflictResolved = true;
     } else {
       if (dxbSocket && dxbSocket !== ws) {
+        if (dxbSocket.readyState === WebSocket.OPEN && dxbSocket.inCall && !ws.inCall && !forceTakeover) {
+          console.log(`[Signaling] Protecting active call on DXB (${dxbSocket.userName || 'user'}) from idle secondary device.`);
+          serverEvent('ws_idle_device_rejected', 'dxb', { username: ws.userName || null });
+          try { ws.close(4001, 'call_active_on_other_device'); } catch (e) {}
+          return;
+        }
         console.log('[Signaling] Closing older DXB session for same user.');
         try { dxbSocket.close(4001, 'replaced'); } catch (e) {}
+      }
+      if (dxbDisconnectTimer) {
+        clearTimeout(dxbDisconnectTimer);
+        dxbDisconnectTimer = null;
+        console.log('[Signaling] DXB reconnected within grace period.');
       }
       dxbSocket = ws;
       ws.terminal = 'dxb';
@@ -1746,7 +1785,8 @@ wss.on('connection', (ws, req) => {
   ws.send(JSON.stringify({
     type: 'assigned',
     terminal: ws.terminal,
-    partnerOnline: ws.terminal === 'bkk' ? !!dxbSocket : !!bkkSocket
+    partnerOnline: ws.terminal === 'bkk' ? !!dxbSocket : !!bkkSocket,
+    conflictResolved
   }));
 
   // Push global vault profiles (diamonds, costumes) to the newly connected passenger
@@ -1789,6 +1829,11 @@ wss.on('connection', (ws, req) => {
     try {
       const message = JSON.parse(data.toString());
 
+      if (message.type === 'call_state') {
+        ws.inCall = !!message.inCall;
+        return;
+      }
+
       if (message.type === 'identify') {
         if (message.username) ws.userName = String(message.username).slice(0, 32);
         if (message.uid) ws.userUid = String(message.uid).slice(0, 64);
@@ -1803,6 +1848,11 @@ wss.on('connection', (ws, req) => {
 
             if (isSameUser) {
               if (targetSocket && targetSocket !== ws) {
+                if (targetSocket.readyState === WebSocket.OPEN && targetSocket.inCall && !ws.inCall) {
+                  console.log(`[Signaling] Protecting active call on ${targetRole.toUpperCase()} during identify from idle secondary device.`);
+                  try { ws.close(4001, 'call_active_on_other_device'); } catch (e) {}
+                  return;
+                }
                 try { targetSocket.close(4001, 'replaced'); } catch (e) {}
               }
               if (targetRole === 'bkk') {
@@ -1815,8 +1865,24 @@ wss.on('connection', (ws, req) => {
                 ws.terminal = 'dxb';
               }
               console.log(`[Signaling] Passenger seat reassigned from ${oldRole ? oldRole.toUpperCase() : 'NONE'} to [${ws.terminal.toUpperCase()}] for ${ws.userName || 'Passenger'}`);
+              sendTo(ws, {
+                type: 'assigned',
+                terminal: ws.terminal,
+                partnerOnline: ws.terminal === 'bkk' ? !!dxbSocket : !!bkkSocket,
+                conflictResolved: false
+              });
+              if (bkkSocket && dxbSocket) {
+                sendTo(bkkSocket, { type: 'partner_status', online: true, role: 'receiver' });
+                sendTo(dxbSocket, { type: 'partner_status', online: true, role: 'caller' });
+              }
             } else {
               console.log(`[Signaling] Prevented hijack: ${ws.userName || 'User'} tried to claim seat ${targetRole.toUpperCase()} held by ${targetSocket.userName || 'another passenger'}`);
+              sendTo(ws, {
+                type: 'assigned',
+                terminal: ws.terminal,
+                partnerOnline: ws.terminal === 'bkk' ? !!dxbSocket : !!bkkSocket,
+                conflictResolved: true
+              });
             }
           }
         }
@@ -2012,6 +2078,13 @@ wss.on('connection', (ws, req) => {
       } else {
         const target = ws.terminal === 'bkk' ? dxbSocket : bkkSocket;
         const delivered = !!(target && target.readyState === WebSocket.OPEN);
+        if (message.type === 'offer' || message.type === 'answer') {
+          ws.inCall = true;
+          if (target) target.inCall = true;
+        } else if (message.type === 'hangup') {
+          ws.inCall = false;
+          if (target) target.inCall = false;
+        }
         if (delivered) {
           target.send(JSON.stringify(message));
         }

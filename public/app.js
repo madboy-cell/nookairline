@@ -64,6 +64,12 @@ let isCameraOff = true;
 let callTimerInterval = null;
 let callStartTime = null;
 let isCaller = false;
+let isStartingCall = false;
+let serverConflictResolved = false;
+let wsReconnectTimer = null;
+let pendingReconnectOnVisible = false;
+let pendingIceRestart = false;
+let iceDisconnectTimer = null;
 let partnerOfflineGraceTimer = null;
 let pendingCandidates = []; // ICE candidates that arrived before the remote description
 let callConnectedOnce = false; // so auto-heal rebuilds don't replay the connect chime
@@ -221,7 +227,7 @@ window.addEventListener('sky:auth_state_changed', (e) => {
   if (!u) return;
   const currentBase = u.character_base;
   if (currentBase && (currentBase === 'bkk' || currentBase === 'dxb')) {
-    if (myTerminal !== currentBase) {
+    if (myTerminal !== currentBase && !serverConflictResolved && !isCallActive) {
       console.log(`[Signaling] Reconciling seat terminal from ${myTerminal} to ${currentBase} for ${u.username}`);
       myTerminal = currentBase;
       window.myTerminal = currentBase;
@@ -230,11 +236,20 @@ window.addEventListener('sky:auth_state_changed', (e) => {
           type: 'identify',
           terminal: currentBase,
           username: u.username,
-          uid: u.id
+          uid: u.id,
+          inCall: isCallActive
         }));
       }
       const el = document.getElementById('seatTakenOverlay');
       if (el) el.classList.remove('open');
+    } else if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'identify',
+        terminal: myTerminal,
+        username: u.username,
+        uid: u.id,
+        inCall: isCallActive
+      }));
     }
   }
 });
@@ -393,8 +408,13 @@ function applyCameraUI() {
 }
 
 function getTerminal() {
-  if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
-    const base = window.SkySupabase.getCharacterBase();
+  const path = window.location.pathname.toLowerCase();
+  const params = new URLSearchParams(window.location.search);
+  if (path.includes('/bkk') || params.get('terminal') === 'bkk' || params.get('role') === 'bkk') return 'bkk';
+  if (path.includes('/dxb') || params.get('terminal') === 'dxb' || params.get('role') === 'dxb') return 'dxb';
+
+  if (window.SkySupabase && window.SkySupabase.currentUser) {
+    const base = window.SkySupabase.currentUser.character_base;
     if (base === 'bkk' || base === 'dxb') return base;
   }
   // Synchronous profile cache in localStorage (crucial for initial page load before async auth completes!)
@@ -407,10 +427,10 @@ function getTerminal() {
   } catch (_) {}
   const localBase = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
   if (localBase === 'bkk' || localBase === 'dxb') return localBase;
-  const path = window.location.pathname.toLowerCase();
-  const params = new URLSearchParams(window.location.search);
-  if (path.includes('/bkk') || params.get('terminal') === 'bkk' || params.get('role') === 'bkk') return 'bkk';
-  if (path.includes('/dxb') || params.get('terminal') === 'dxb' || params.get('role') === 'dxb') return 'dxb';
+  if (window.SkySupabase && typeof window.SkySupabase.getCharacterBase === 'function') {
+    const base = window.SkySupabase.getCharacterBase();
+    if (base === 'bkk' || base === 'dxb') return base;
+  }
   return 'bkk';
 }
 
@@ -418,9 +438,22 @@ let myTerminal = getTerminal();
 window.myTerminal = myTerminal;
 
 // 2. Initialize WebSocket Signaling with Dedicated Terminal Support
-function initSignaling() {
+function initSignaling(options = {}) {
+  const force = !!(options && options.force);
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+  pendingReconnectOnVisible = false;
+
+  if (!force && ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const terminal = getTerminal();
+  const terminal = (serverConflictResolved || isCallActive) && (myTerminal === 'bkk' || myTerminal === 'dxb')
+    ? myTerminal
+    : getTerminal();
   myTerminal = terminal;
   window.myTerminal = terminal;
 
@@ -438,7 +471,7 @@ function initSignaling() {
     } catch (_) {}
   }
 
-  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}${uname ? `&username=${encodeURIComponent(uname)}` : ''}${uid ? `&uid=${encodeURIComponent(uid)}` : ''}`;
+  const wsUrl = `${protocol}//${window.location.host}/ws?terminal=${terminal}${uname ? `&username=${encodeURIComponent(uname)}` : ''}${uid ? `&uid=${encodeURIComponent(uid)}` : ''}&inCall=${isCallActive ? '1' : '0'}${force ? '&force=1' : ''}`;
 
   console.log(`[Signaling] Connecting to ${wsUrl}`);
   ws = new WebSocket(wsUrl);
@@ -447,13 +480,27 @@ function initSignaling() {
     console.log('[Signaling] Connected to flight dispatch.');
     if (uname || uid) {
       try {
-        ws.send(JSON.stringify({ type: 'identify', terminal, username: uname, uid }));
+        ws.send(JSON.stringify({ type: 'identify', terminal: myTerminal, username: uname, uid, inCall: isCallActive }));
       } catch (e) {}
     }
     tlog('ws_open', { callActive: isCallActive });
-    updateBadge('Connected to Flight Network', false);
+    updateBadge(isCallActive ? 'Encrypted • Singapore Relay' : 'Connected to Flight Network', isCallActive);
     if (typeof window.onWebSocketReconnect === 'function') {
       window.onWebSocketReconnect();
+    }
+    // If we were mid-call and the ICE connection dropped or needed an ICE restart while WS was reconnecting, heal immediately
+    if (isCallActive && peerConnection) {
+      const ice = peerConnection.iceConnectionState;
+      const conn = peerConnection.connectionState;
+      if (
+        pendingIceRestart ||
+        ['disconnected', 'failed', 'closed'].includes(ice) ||
+        ['disconnected', 'failed', 'closed'].includes(conn) ||
+        peerConnection.signalingState === 'have-local-offer'
+      ) {
+        pendingIceRestart = false;
+        restartIce();
+      }
     }
   };
 
@@ -472,13 +519,25 @@ function initSignaling() {
     // kick each other every 3s (and game moves sent in between are lost), so wait for a tap.
     if (event.code === 4001) {
       console.log('[Signaling] Seat taken over by another device. Not reconnecting.');
+      if (isCallActive && event.reason !== 'call_active_on_other_device') {
+        endCall(false);
+      }
       updateBadge('Open on another device', false);
       showSeatTakenOverlay();
       return;
     }
-    console.log('[Signaling] Disconnected. Reconnecting in 3s...');
+    // Do not auto-reconnect from a hidden background tab when not in a call; otherwise a sleeping
+    // second device (e.g. phone in pocket) periodically wakes up and steals the seat from the active call!
+    if (document.hidden && !isCallActive) {
+      console.log('[Signaling] Disconnected while tab hidden (not in call). Deferring reconnect until visible.');
+      pendingReconnectOnVisible = true;
+      return;
+    }
+    const retryMs = isCallActive ? 1200 : 3000;
+    console.log(`[Signaling] Disconnected. Reconnecting in ${retryMs}ms...`);
     updateBadge('Reconnecting to Network...', false);
-    setTimeout(initSignaling, 3000);
+    if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = setTimeout(() => initSignaling(), retryMs);
   };
 
   ws.onerror = (err) => {
@@ -507,7 +566,7 @@ function showSeatTakenOverlay() {
     el.querySelector('#seatTakeBackBtn').addEventListener('click', () => {
       el.classList.remove('open');
       updateBadge('Reconnecting to Network...', false);
-      initSignaling();
+      initSignaling({ force: true });
     });
   }
   requestAnimationFrame(() => el.classList.add('open'));
@@ -522,6 +581,9 @@ async function handleSignalingMessage(message) {
     case 'assigned':
       myTerminal = message.terminal;
       window.myTerminal = myTerminal;
+      if (message.conflictResolved) {
+        serverConflictResolved = true;
+      }
       window.nookPartnerOnline = !!message.partnerOnline;
       const isCouple = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
       if (typeof window.updatePartnerPresence === 'function') {
@@ -551,16 +613,19 @@ async function handleSignalingMessage(message) {
 
     case 'partner_status':
       window.nookPartnerOnline = !!message.online;
+      if (message.role) {
+        window.lastPartnerStatusRole = message.role;
+      }
+      if (message.online && partnerOfflineGraceTimer) {
+        clearTimeout(partnerOfflineGraceTimer);
+        partnerOfflineGraceTimer = null;
+        console.log('[Signaling] Partner back online, cleared offline grace timer.');
+      }
       const isCoupleActive = window.SkySupabase && window.SkySupabase.coupleStatus && window.SkySupabase.coupleStatus.isCouple;
       if (typeof window.updatePartnerPresence === 'function') {
         window.updatePartnerPresence(isCoupleActive ? !!message.online : false);
       }
       if (message.online && isCoupleActive) {
-        if (partnerOfflineGraceTimer) {
-          clearTimeout(partnerOfflineGraceTimer);
-          partnerOfflineGraceTimer = null;
-          console.log('[Signaling] Partner back online, cleared offline grace timer.');
-        }
         const partnerUname = window.SkySupabase.coupleStatus.partner?.username || 'Partner';
         updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
         updateBadge(`${partnerUname} Boarded • Connected`, true);
@@ -568,16 +633,19 @@ async function handleSignalingMessage(message) {
         if (typeof broadcastMyAvatar === 'function') {
           broadcastMyAvatar();
         }
-        if (message.role === 'caller' && !isCallActive && window.SkySupabase?.checkCoupleCallAllowed?.()) {
+        if (message.role === 'caller' && !isCallActive && !isStartingCall && window.SkySupabase?.checkCoupleCallAllowed?.()) {
           startCall();
-        } else if (message.role === 'caller' && isCallActive) {
-          // Partner may have reloaded mid-call: if our line doesn't recover, rebuild it fresh
+        } else if (isCallActive) {
+          // Partner may have reloaded or reconnected mid-call (either BKK or DXB):
+          // if our WebRTC line is disconnected/failed after 2.5s, rebuild it fresh from our active side!
           setTimeout(() => {
-            const st = peerConnection ? peerConnection.iceConnectionState : 'none';
-            if (isCallActive && ['disconnected', 'failed', 'closed', 'none'].includes(st)) {
+            if (!isCallActive || isRebuilding) return;
+            const ice = peerConnection ? peerConnection.iceConnectionState : 'none';
+            const conn = peerConnection ? peerConnection.connectionState : 'none';
+            if (['disconnected', 'failed', 'closed', 'none'].includes(ice) || ['disconnected', 'failed', 'closed', 'none'].includes(conn)) {
               rebuildPeerConnection('partner_rejoined');
             }
-          }, 6000);
+          }, 2500);
         }
       } else if (!isCoupleActive) {
         updateCapsule('Solo Flight • Couple Sanctuary 💫', false);
@@ -585,22 +653,19 @@ async function handleSignalingMessage(message) {
       } else {
         updateCapsule('Partner Signal Fluctuation • Reconnecting...', false);
         updateBadge('Reconnecting Line...', false);
-        // Do not immediately terminate active call! Mobile phones frequently reconnect within 1-5s.
+        // Do not immediately terminate active call! Mobile phones frequently reconnect within 1-15s.
         if (isCallActive) {
           if (!partnerOfflineGraceTimer) {
-            console.log('[Signaling] Partner offline received during active call. Starting 20s grace period...');
+            console.log('[Signaling] Partner offline received during active call. Starting 35s grace period...');
             partnerOfflineGraceTimer = setTimeout(() => {
-              if (isCallActive) {
+              if (isCallActive && !window.nookPartnerOnline) {
                 console.log('[Signaling] Grace period expired without reconnect. Ending call.');
                 playCabinChime('hangup');
                 endCall(false);
               }
               partnerOfflineGraceTimer = null;
-            }, 20000);
+            }, 35000);
           }
-        } else {
-          playCabinChime('hangup');
-          endCall(false);
         }
       }
       break;
@@ -708,6 +773,9 @@ if (typeof window !== 'undefined') {
     if (isCouple && window.nookPartnerOnline) {
       updateCapsule(`💞 ${partnerUname} Boarded • Ready to Fly ✈️`, true);
       updateBadge(`${partnerUname} Boarded • Ready`, true);
+      if (!isCallActive && !isStartingCall && window.lastPartnerStatusRole === 'caller' && window.SkySupabase?.checkCoupleCallAllowed?.()) {
+        startCall();
+      }
     } else if (isCouple) {
       updateCapsule(`Awaiting ${partnerUname}... ⏳`, false);
       updateBadge(`Waiting for ${partnerUname}...`, false);
@@ -720,6 +788,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('sky:character_base_changed', (e) => {
     const base = (e.detail && (e.detail.base || e.detail.characterBase)) || null;
     if (base) {
+      serverConflictResolved = false;
       const oldTerminal = myTerminal;
       myTerminal = base;
       window.myTerminal = myTerminal;
@@ -729,10 +798,11 @@ if (typeof window !== 'undefined') {
       const currentUname = (window.SkySupabase && window.SkySupabase.getCurrentUser()?.username) || '';
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
-          ws.send(JSON.stringify({ type: 'identify', terminal: myTerminal, username: currentUname }));
+          ws.send(JSON.stringify({ type: 'identify', terminal: myTerminal, username: currentUname, inCall: isCallActive }));
         } catch (err) {}
       }
-      if (oldTerminal !== myTerminal && ws) {
+      // Never tear down the signaling WebSocket while a voice/video call is active!
+      if (oldTerminal !== myTerminal && ws && !isCallActive) {
         console.log(`[Signaling] Re-syncing socket connection for new seat: ${myTerminal}`);
         try { ws.close(); } catch (err) {}
       }
@@ -753,7 +823,8 @@ if (typeof window !== 'undefined') {
           ws.send(JSON.stringify({
             type: 'identify',
             terminal: myTerminal,
-            username: user.username || ''
+            username: user.username || '',
+            inCall: isCallActive
           }));
         } catch (err) {}
       }
@@ -763,6 +834,7 @@ if (typeof window !== 'undefined') {
 
 // 4. Start WebRTC Call
 async function startCall() {
+  if (isCallActive || isStartingCall) return;
   if (window.SkySupabase && !window.SkySupabase.checkCoupleCallAllowed()) {
     if (window.SkySocialUI) window.SkySocialUI.showCoupleGatingModal();
     else showToast('💞 1:1 Voice & Video calls are exclusive to linked Couple Partners in the Couple Sanctuary.');
@@ -772,20 +844,28 @@ async function startCall() {
     showToast('⏳ Partner is currently offline. Call line will be ready once partner boards.');
     return;
   }
-  if (!localStream) {
-    await initLocalMedia();
-  }
-  if (isCallActive) return;
-  isCallActive = true;
-  isCaller = true;
-  if (window.NookTelemetry) window.NookTelemetry.callStarted('caller');
-  updateCallActionBtn(true);
-  updateBadge('Securing Couple Line (TURNS 443)...', false);
-
-  createPeerConnection();
-  addLocalMediaToPeer();
-
+  isStartingCall = true;
   try {
+    if (!localStream) {
+      await initLocalMedia();
+    }
+    if (isCallActive) return;
+    if (!localStream) {
+      // On iOS Safari, auto-starting getUserMedia without a user tap can be blocked until the user taps Connect
+      if (callActionBtn) callActionBtn.classList.add('ready-to-connect');
+      updateBadge('Partner Boarded • Tap Connect', true);
+      return;
+    }
+    isCallActive = true;
+    isCaller = true;
+    sendSignaling({ type: 'call_state', inCall: true });
+    if (window.NookTelemetry) window.NookTelemetry.callStarted('caller');
+    updateCallActionBtn(true);
+    updateBadge('Securing Couple Line (TURNS 443)...', false);
+
+    createPeerConnection();
+    addLocalMediaToPeer();
+
     const rawOffer = await peerConnection.createOffer({
       offerToReceiveAudio: true
     });
@@ -813,12 +893,20 @@ async function startCall() {
   } catch (err) {
     console.error('Failed to create offer:', err);
     tlog('offer_create_error', { name: err.name, message: err.message });
+  } finally {
+    isStartingCall = false;
   }
 }
 
 // 5. Handle Incoming Call Offer (supports seamless renegotiation)
 async function handleOffer(offer, fresh = false) {
   if (window.SkySupabase && typeof window.SkySupabase.checkCoupleCallAllowed === 'function') {
+    if (!window.SkySupabase.checkCoupleCallAllowed() && typeof window.SkySupabase.ready === 'function') {
+      await window.SkySupabase.ready();
+    }
+    if (!window.SkySupabase.checkCoupleCallAllowed() && typeof window.SkySupabase.getCoupleStatus === 'function' && window.SkySupabase.currentUser) {
+      try { await window.SkySupabase.getCoupleStatus(); } catch (_) {}
+    }
     if (!window.SkySupabase.checkCoupleCallAllowed()) {
       console.warn('[Security] Rejecting call offer: couple verification failed.');
       sendSignaling({ type: 'hangup', reason: 'unauthorized' });
@@ -839,6 +927,7 @@ async function handleOffer(offer, fresh = false) {
 
   if (!isCallActive) {
     isCallActive = true;
+    sendSignaling({ type: 'call_state', inCall: true });
     if (window.NookTelemetry) window.NookTelemetry.callStarted('receiver');
     updateCallActionBtn(true);
   }
@@ -955,6 +1044,10 @@ async function flushPendingCandidates() {
 
 // 8. Create & Configure RTCPeerConnection
 function createPeerConnection() {
+  if (iceDisconnectTimer) {
+    clearTimeout(iceDisconnectTimer);
+    iceDisconnectTimer = null;
+  }
   if (peerConnection) {
     peerConnection.close();
   }
@@ -1044,8 +1137,14 @@ function createPeerConnection() {
 
   // Monitor ICE Connection State
   peerConnection.oniceconnectionstatechange = () => {
+    if (!peerConnection) return;
     console.log(`[ICE State] ${peerConnection.iceConnectionState}`);
     if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
+      if (iceDisconnectTimer) {
+        clearTimeout(iceDisconnectTimer);
+        iceDisconnectTimer = null;
+      }
+      pendingIceRestart = false;
       updateBadge('Encrypted • Singapore Relay', true);
       startStatsMonitor();
       requestWakeLock();
@@ -1057,7 +1156,38 @@ function createPeerConnection() {
       }
     } else if (peerConnection.iceConnectionState === 'disconnected') {
       updateBadge('Reconnecting Line...', false);
+      if (iceDisconnectTimer) clearTimeout(iceDisconnectTimer);
+      iceDisconnectTimer = setTimeout(() => {
+        iceDisconnectTimer = null;
+        if (peerConnection && isCallActive && peerConnection.iceConnectionState === 'disconnected') {
+          console.log('[WebRTC] ICE still disconnected after 6s — triggering proactive ICE restart');
+          restartIce();
+        }
+      }, 6000);
     } else if (peerConnection.iceConnectionState === 'failed') {
+      if (iceDisconnectTimer) {
+        clearTimeout(iceDisconnectTimer);
+        iceDisconnectTimer = null;
+      }
+      updateBadge('Line Interrupted • Retrying...', false);
+      restartIce();
+    }
+  };
+
+  // Also monitor overall RTCPeerConnection state (Safari/Chrome can transition connectionState to 'failed' while iceConnectionState stays 'disconnected')
+  peerConnection.onconnectionstatechange = () => {
+    if (!peerConnection) return;
+    if (peerConnection.connectionState === 'connected') {
+      if (iceDisconnectTimer) {
+        clearTimeout(iceDisconnectTimer);
+        iceDisconnectTimer = null;
+      }
+      pendingIceRestart = false;
+    } else if (peerConnection.connectionState === 'failed' && isCallActive) {
+      if (iceDisconnectTimer) {
+        clearTimeout(iceDisconnectTimer);
+        iceDisconnectTimer = null;
+      }
       updateBadge('Line Interrupted • Retrying...', false);
       restartIce();
     }
@@ -1086,6 +1216,10 @@ function stopIceRefreshTimer() {
 
 async function triggerSilentIceRestart() {
   if (!peerConnection || !isCallActive || !isCaller) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    pendingIceRestart = true;
+    return;
+  }
   console.log('🔄 [Socket Refresh] Performing seamless background socket renewal to reset du DPI timer...');
   tlog('ice_restart', { reason: 'scheduled_24min' });
   try {
@@ -1104,6 +1238,11 @@ async function triggerSilentIceRestart() {
 
 async function restartIce() {
   if (!peerConnection || !isCallActive) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.log('[WebRTC] Deferring restartIce until signaling WebSocket reconnects...');
+    pendingIceRestart = true;
+    return;
+  }
   try {
     tlog('ice_restart', { reason: 'ice_failed' });
     if (typeof peerConnection.restartIce === 'function') {
@@ -1137,11 +1276,10 @@ function addLocalMediaToPeer() {
 }
 
 // --- Auto-heal ---------------------------------------------------------------
-// A page refresh fixed the robot voice for a while, so do the same thing automatically:
-// when the incoming audio degrades (concealment / time-stretch) or the line bloats
-// (RTT far above this connection's best), build a brand-new connection. ~1-2 s blip.
-const HEAL_COOLDOWN_MS = 60000;
-const HEAL_SETTLE_MS = 15000;
+// Conservative self-healing: only rebuilds when severe degradation persists across
+// multiple consecutive windows, and never tears down the connection while signaling is offline.
+const HEAL_COOLDOWN_MS = 180000;
+const HEAL_SETTLE_MS = 25000;
 
 function startHealMonitor() {
   stopHealMonitor();
@@ -1160,6 +1298,7 @@ function stopHealMonitor() {
 
 function checkCallHealth() {
   if (!isCallActive || !peerConnection || isRebuilding || !window.NookTelemetry) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
   const ice = peerConnection.iceConnectionState;
   if (ice !== 'connected' && ice !== 'completed') return;
   const s = window.NookTelemetry.getLastSample();
@@ -1174,12 +1313,12 @@ function checkCallHealth() {
   // Only judge concealment while the partner is actually sending (DTX silence is ~2-3 pkt/s)
   const receiving = (Number(rx.packetsPerSec) || 0) >= 8;
   const reasons = [];
-  if (receiving && (Number(rx.concealPct) || 0) >= 4) reasons.push('conceal');
-  if (receiving && (Number(rx.stretchPct) || 0) >= 3) reasons.push('stretch');
-  if (rtt !== null && healMinRtt !== null && rtt >= healMinRtt + 120) reasons.push('rtt_bloat');
+  if (receiving && (Number(rx.concealPct) || 0) >= 12) reasons.push('conceal');
+  if (receiving && (Number(rx.stretchPct) || 0) >= 10) reasons.push('stretch');
+  if (rtt !== null && healMinRtt !== null && rtt >= healMinRtt + 350) reasons.push('rtt_bloat');
 
   healBadStreak = reasons.length ? healBadStreak + 1 : 0;
-  if (healBadStreak >= 2) {
+  if (healBadStreak >= 3) {
     healBadStreak = 0;
     requestHeal(reasons.join('+'), s);
   }
@@ -1217,7 +1356,7 @@ function requestHeal(reason, s) {
 
 // Replace the connection with a brand-new one (what a page refresh did, minus the reload)
 async function rebuildPeerConnection(reason) {
-  if (!isCallActive || isRebuilding) return;
+  if (!isCallActive || isRebuilding || !ws || ws.readyState !== WebSocket.OPEN) return;
   isRebuilding = true;
   isCaller = true;
   lastHealAt = Date.now();
@@ -1250,13 +1389,20 @@ window.sendSignaling = sendSignaling;
 
 // 9. End / Hangup Call
 function endCall(sendNotification = true) {
-  if (window.NookTelemetry) {
+  if (window.NookTelemetry && (isCallActive || isStartingCall)) {
     window.NookTelemetry.callEnded(sendNotification ? 'local_hangup' : 'remote_or_timeout');
   }
   if (partnerOfflineGraceTimer) {
     clearTimeout(partnerOfflineGraceTimer);
     partnerOfflineGraceTimer = null;
   }
+  if (iceDisconnectTimer) {
+    clearTimeout(iceDisconnectTimer);
+    iceDisconnectTimer = null;
+  }
+  pendingIceRestart = false;
+  isStartingCall = false;
+  sendSignaling({ type: 'call_state', inCall: false });
   if (sendNotification) {
     sendSignaling({ type: 'hangup' });
   }
@@ -2079,10 +2225,19 @@ function releaseWakeLock() {
 
 document.addEventListener('visibilitychange', async () => {
   document.body.classList.toggle('page-hidden', document.hidden);
-  if (!document.hidden && isCallActive) {
-    refreshCallTimerDisplay();
-    if (wakeLock !== null) {
-      await requestWakeLock();
+  if (!document.hidden) {
+    if (pendingReconnectOnVisible || !ws || ws.readyState === WebSocket.CLOSED) {
+      pendingReconnectOnVisible = false;
+      initSignaling();
+    }
+    if (isCallActive) {
+      refreshCallTimerDisplay();
+      if (wakeLock !== null) {
+        await requestWakeLock();
+      }
+      if (peerConnection && (peerConnection.iceConnectionState === 'failed' || peerConnection.iceConnectionState === 'disconnected')) {
+        restartIce('foreground_recovery');
+      }
     }
   }
 });

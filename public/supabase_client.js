@@ -18,6 +18,7 @@
     CONFIG: 'sky_party_supabase_config',
     PROFILE: 'sky_party_user_profile',
     COUPLES: 'sky_party_couples_store',
+    COUPLE_STATUS_CACHE: 'sky_party_couple_status_cache',
     FRIENDS: 'sky_party_friends_store',
     PRESENCE: 'sky_party_presence_state',
     ONBOARDING: 'sky_party_onboarding_done',
@@ -162,84 +163,109 @@
       this.friends = [];
       this.presenceListeners = [];
       this._heartbeatTimer = null;
+      this._initPromise = null;
+    }
+
+    async ready() {
+      if (this._initPromise) {
+        try { await this._initPromise; } catch (_) {}
+      }
+      return this.currentUser;
     }
 
     /**
      * Initializes SDK. Checks for live Supabase credentials or falls back to Guest/Local mode.
      */
     async init(customConfig = null) {
-      // Clean slate check: if client has old storage epoch, purge stale local records
-      try {
-        const CURRENT_EPOCH = '2026_10_13_clean_slate_15k';
-        const savedEpoch = localStorage.getItem(STORAGE_KEYS.RESET_EPOCH);
-        if (savedEpoch !== CURRENT_EPOCH) {
-          localStorage.removeItem(STORAGE_KEYS.PROFILE);
-          localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
-          localStorage.removeItem(STORAGE_KEYS.COUPLES);
-          localStorage.removeItem(STORAGE_KEYS.FRIENDS);
-          localStorage.removeItem('sky_active_persona');
-          localStorage.setItem(STORAGE_KEYS.RESET_EPOCH, CURRENT_EPOCH);
-          console.log('[SkySupabase] Clean slate applied: local storage reset to epoch', CURRENT_EPOCH);
-        }
-      } catch (e) {}
-
-      let cfg = customConfig;
-      if (!cfg) {
+      this._initPromise = (async () => {
+        // Clean slate check: if client has old storage epoch, purge stale local records
         try {
-          const stored = localStorage.getItem(STORAGE_KEYS.CONFIG);
-          if (stored) cfg = JSON.parse(stored);
+          const CURRENT_EPOCH = '2026_10_13_clean_slate_15k';
+          const savedEpoch = localStorage.getItem(STORAGE_KEYS.RESET_EPOCH);
+          if (savedEpoch !== CURRENT_EPOCH) {
+            localStorage.removeItem(STORAGE_KEYS.PROFILE);
+            localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+            localStorage.removeItem(STORAGE_KEYS.COUPLES);
+            localStorage.removeItem(STORAGE_KEYS.COUPLE_STATUS_CACHE);
+            localStorage.removeItem(STORAGE_KEYS.FRIENDS);
+            localStorage.removeItem('sky_active_persona');
+            localStorage.setItem(STORAGE_KEYS.RESET_EPOCH, CURRENT_EPOCH);
+            console.log('[SkySupabase] Clean slate applied: local storage reset to epoch', CURRENT_EPOCH);
+          }
         } catch (e) {}
-      }
-      if (!cfg && window.SUPABASE_CONFIG) {
-        cfg = window.SUPABASE_CONFIG;
-      }
 
-      if (cfg && cfg.url && cfg.anonKey && window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-          this.client = window.supabase.createClient(cfg.url, cfg.anonKey);
-          this.isLiveClient = true;
-          console.log('[SkySupabase] Initialized with LIVE Supabase backend at:', cfg.url);
-
-          // Hook into Supabase live auth state events
-          if (this.client.auth && typeof this.client.auth.onAuthStateChange === 'function') {
-            this.client.auth.onAuthStateChange(async (event, session) => {
-              console.log('[SkySupabase] Auth event:', event);
-              if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session && session.user) {
-                await this._fetchOrCreateProfile(session.user);
-                safeDispatch('sky:auth_state_changed', { user: this.currentUser });
-              } else if (event === 'SIGNED_OUT') {
-                await this.loginGuest();
-                safeDispatch('sky:auth_state_changed', { user: this.currentUser });
-              }
-            });
-          }
-
-          // Realtime Couple Sync across devices / tabs
-          if (this.client && typeof this.client.channel === 'function') {
-            try {
-              this.client
-                .channel('public:couples_sync')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'couples' }, async () => {
-                  await this.getCoupleStatus();
-                })
-                .subscribe();
-            } catch (e) {
-              console.warn('[SkySupabase] Couple realtime subscription notice:', e);
-            }
-          }
-        } catch (err) {
-          console.warn('[SkySupabase] Failed to initialize live client, falling back to Local Provider:', err);
-          this.isLiveClient = false;
+        let cfg = customConfig;
+        if (!cfg) {
+          try {
+            const stored = localStorage.getItem(STORAGE_KEYS.CONFIG);
+            if (stored) cfg = JSON.parse(stored);
+          } catch (e) {}
         }
-      } else {
-        this.isLiveClient = false;
-        console.log('[SkySupabase] Initialized with LOCAL GUEST PROVIDER (100% offline & local play ready)');
-      }
+        if (!cfg && window.SUPABASE_CONFIG) {
+          cfg = window.SUPABASE_CONFIG;
+        }
 
-      // Restore session or generate Guest Profile
-      await this._restoreSession();
-      this._startPresenceHeartbeat();
-      return this.currentUser;
+        if (cfg && cfg.url && cfg.anonKey && window.supabase && typeof window.supabase.createClient === 'function') {
+          try {
+            this.client = window.supabase.createClient(cfg.url, cfg.anonKey);
+            this.isLiveClient = true;
+            console.log('[SkySupabase] Initialized with LIVE Supabase backend at:', cfg.url);
+
+            // Synchronously prime currentUser and coupleStatus from localStorage cache before async network restore
+            // so WebSocket seat assignment and incoming WebRTC offers at 0ms have accurate identity & couple gating.
+            try {
+              const cachedProfile = this.localProvider._load(STORAGE_KEYS.PROFILE, null);
+              if (cachedProfile && cachedProfile.id && !cachedProfile.isGuest) {
+                this.currentUser = cachedProfile;
+              }
+              const cachedCouple = this.localProvider._load(STORAGE_KEYS.COUPLE_STATUS_CACHE, null);
+              if (cachedCouple && typeof cachedCouple.isCouple === 'boolean') {
+                this.coupleStatus = cachedCouple;
+              }
+            } catch (e) {}
+
+            // Hook into Supabase live auth state events
+            if (this.client.auth && typeof this.client.auth.onAuthStateChange === 'function') {
+              this.client.auth.onAuthStateChange(async (event, session) => {
+                console.log('[SkySupabase] Auth event:', event);
+                if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session && session.user) {
+                  await this._fetchOrCreateProfile(session.user);
+                  safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+                } else if (event === 'SIGNED_OUT') {
+                  await this.loginGuest();
+                  safeDispatch('sky:auth_state_changed', { user: this.currentUser });
+                }
+              });
+            }
+
+            // Realtime Couple Sync across devices / tabs
+            if (this.client && typeof this.client.channel === 'function') {
+              try {
+                this.client
+                  .channel('public:couples_sync')
+                  .on('postgres_changes', { event: '*', schema: 'public', table: 'couples' }, async () => {
+                    await this.getCoupleStatus();
+                  })
+                  .subscribe();
+              } catch (e) {
+                console.warn('[SkySupabase] Couple realtime subscription notice:', e);
+              }
+            }
+          } catch (err) {
+            console.warn('[SkySupabase] Failed to initialize live client, falling back to Local Provider:', err);
+            this.isLiveClient = false;
+          }
+        } else {
+          this.isLiveClient = false;
+          console.log('[SkySupabase] Initialized with LOCAL GUEST PROVIDER (100% offline & local play ready)');
+        }
+
+        // Restore session or generate Guest Profile
+        await this._restoreSession();
+        this._startPresenceHeartbeat();
+        return this.currentUser;
+      })();
+      return this._initPromise;
     }
 
     isLive() {
@@ -507,6 +533,7 @@
       // Reset to Guest Profile
       localStorage.removeItem(STORAGE_KEYS.PROFILE);
       localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+      localStorage.removeItem(STORAGE_KEYS.COUPLE_STATUS_CACHE);
       this.coupleStatus = { isCouple: false, coupleId: null, partner: null, status: null, anniversaryDate: null };
       this.friends = [];
       await this.loginGuest();
@@ -520,9 +547,18 @@
      * Gets the active character base ('bkk' for Wolf Boy, 'dxb' for Dragon Girl)
      */
     getCharacterBase() {
-      if (this.currentUser && this.currentUser.character_base) {
+      if (this.currentUser && (this.currentUser.character_base === 'bkk' || this.currentUser.character_base === 'dxb')) {
         return this.currentUser.character_base;
       }
+      try {
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.PROFILE) : null;
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && (p.character_base === 'bkk' || p.character_base === 'dxb')) return p.character_base;
+        }
+        const persona = typeof localStorage !== 'undefined' ? localStorage.getItem('sky_active_persona') : null;
+        if (persona === 'bkk' || persona === 'dxb') return persona;
+      } catch (e) {}
       // Fallback to role if any
       if (window.myTerminal) {
         return window.myTerminal === 'dxb' ? 'dxb' : 'bkk';
@@ -761,6 +797,10 @@
         }
       }
 
+      if (this.isLiveClient && !this.currentUser.isGuest) {
+        this.localProvider._save(STORAGE_KEYS.COUPLE_STATUS_CACHE, this.coupleStatus);
+      }
+
       safeDispatch('sky:couple_status_changed', this.coupleStatus);
       return this.coupleStatus;
     }
@@ -883,6 +923,7 @@
         status: null,
         anniversaryDate: null
       };
+      try { localStorage.removeItem(STORAGE_KEYS.COUPLE_STATUS_CACHE); } catch (e) {}
 
       safeDispatch('sky:couple_status_changed', this.coupleStatus);
       console.log('[SkySupabase] Couple decoupled safely. Player diamonds & wardrobe remain 100% intact.');
@@ -1156,9 +1197,12 @@
 
       // No session and no local guest: enforce authentication
       this.currentUser = null;
+      this.coupleStatus = { isCouple: false, coupleId: null, partner: null, status: null, anniversaryDate: null };
       try {
         localStorage.removeItem(STORAGE_KEYS.PROFILE);
+        localStorage.removeItem(STORAGE_KEYS.COUPLE_STATUS_CACHE);
       } catch (e) {}
+      safeDispatch('sky:couple_status_changed', this.coupleStatus);
       safeDispatch('sky:auth_state_changed', { user: null });
     }
   }
