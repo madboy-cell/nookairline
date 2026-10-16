@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#3a2415" />
+  <title>NEORA WORLD — Sky Monopoly (Step 4 dev preview)</title>
+  <link rel="icon" href="/assets/ui/app_icon_192.png" />
+  <link rel="stylesheet" href="/css/style2_hud.css" />
+  <link rel="stylesheet" href="/css/monopoly.css" />
+  <script type="importmap">{ "imports": { "three": "/vendor/three.module.js" } }</script>
+  <style>
+    #dev-toast { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 90; background: #3a2415ee; color: #fff6e3; padding: 8px 14px; border-radius: 14px; font-weight: 800; max-width: 90%; text-align: center; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    #dev-toast.show { opacity: 1; }
+    #dev-badge { position: absolute; left: 6px; bottom: 6px; z-index: 95; font: 700 11px system-ui; color: #fff; background: #0008; padding: 3px 7px; border-radius: 8px; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <!-- Step 4 standalone preview: Table Hub (Screen 09) → Sky Monopoly (Screen 10) → Podium (Screen 11).
+       Runs the shared TableManager in the browser; production wiring into main.js / server.js comes next. -->
+  <div id="app" class="phone-shell">
+    <canvas id="world"></canvas>
+    <div id="dev-toast"></div>
+    <div id="dev-badge">Step 4 dev preview • solo vs bots</div>
+  </div>
+  <script type="module" src="/js/minigames/monopoly_25d/dev_main.js"></script>
+</body>
+</html>

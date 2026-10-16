@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-10-15T23:23:15.540Z",
+  "sprites": {
+    "mono_villa_a": {
+      "file": "monopoly/mono_villa_a.png",
+      "w": 262,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.633
+    },
+    "mono_hotel_a": {
+      "file": "monopoly/mono_hotel_a.png",
+      "w": 242,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.718
+    },
+    "mono_landmark_a": {
+      "file": "monopoly/mono_landmark_a.png",
+      "w": 142,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.671
+    },
+    "mono_pyramid_a": {
+      "file": "monopoly/mono_pyramid_a.png",
+      "w": 296,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.496
+    },
+    "mono_villa_b": {
+      "file": "monopoly/mono_villa_b.png",
+      "w": 274,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.609
+    },
+    "mono_hotel_b": {
+      "file": "monopoly/mono_hotel_b.png",
+      "w": 262,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.712
+    },
+    "mono_landmark_b": {
+      "file": "monopoly/mono_landmark_b.png",
+      "w": 202,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.648
+    },
+    "mono_pyramid_b": {
+      "file": "monopoly/mono_pyramid_b.png",
+      "w": 263,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.529
+    },
+    "mono_trap_ice_cube": {
+      "file": "monopoly/mono_trap_ice_cube.png",
+      "w": 270,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.759
+    },
+    "mono_trap_torii": {
+      "file": "monopoly/mono_trap_torii.png",
+      "w": 252,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.413
+    },
+    "mono_trap_mirror": {
+      "file": "monopoly/mono_trap_mirror.png",
+      "w": 222,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.527
+    },
+    "mono_trap_slipper": {
+      "file": "monopoly/mono_trap_slipper.png",
+      "w": 270,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.619
+    },
+    "mono_trap_waterway": {
+      "file": "monopoly/mono_trap_waterway.png",
+      "w": 280,
+      "h": 195,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.749
+    },
+    "mono_trap_fire": {
+      "file": "monopoly/mono_trap_fire.png",
+      "w": 299,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.249
+    },
+    "mono_trap_coral": {
+      "file": "monopoly/mono_trap_coral.png",
+      "w": 271,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.537
+    },
+    "mono_trap_lightning_rod": {
+      "file": "monopoly/mono_trap_lightning_rod.png",
+      "w": 158,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.374
+    },
+    "mono_dec_fountain": {
+      "file": "monopoly/mono_dec_fountain.png",
+      "w": 272,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.545
+    },
+    "mono_dec_shrine": {
+      "file": "monopoly/mono_dec_shrine.png",
+      "w": 404,
+      "h": 323,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.561
+    },
+    "mono_dec_boba": {
+      "file": "monopoly/mono_dec_boba.png",
+      "w": 271,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.692
+    },
+    "mono_dec_sakura": {
+      "file": "monopoly/mono_dec_sakura.png",
+      "w": 324,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.574
+    },
+    "mono_dec_hedge": {
+      "file": "monopoly/mono_dec_hedge.png",
+      "w": 359,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.578
+    },
+    "mono_dec_start_gate": {
+      "file": "monopoly/mono_dec_start_gate.png",
+      "w": 319,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.586
+    }
+  }
+}

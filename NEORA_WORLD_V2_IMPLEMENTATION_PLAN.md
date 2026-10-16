@@ -1,0 +1,1 @@
+/Users/thanapat/Documents/neora-world-v3/neora_world_v2_export/NEORA_WORLD_V2_IMPLEMENTATION_PLAN.md

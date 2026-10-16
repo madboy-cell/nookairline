@@ -1,0 +1,14 @@
+{
+  "name": "NEORA WORLD — 2.5D Sky Kingdom",
+  "short_name": "Neora World",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2b1c10",
+  "theme_color": "#3a2415",
+  "icons": [
+    { "src": "/assets/ui/app_icon_192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/ui/app_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

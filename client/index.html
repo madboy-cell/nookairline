@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#3a2415" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Neora World" />
+  <title>NEORA WORLD</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/assets/ui/app_icon_192.png" />
+  <link rel="icon" href="/assets/ui/app_icon_192.png" />
+  <link rel="stylesheet" href="/css/style2_hud.css" />
+  <link rel="stylesheet" href="/css/rpg_ui.css" />
+  <link rel="stylesheet" href="/css/monopoly.css" />
+  <script type="importmap">{ "imports": { "three": "/vendor/three.module.js" } }</script>
+</head>
+<body>
+  <div id="app" class="phone-shell">
+    <canvas id="world"></canvas>
+
+    <!-- In-game HUD (hidden until signed in) -->
+    <div id="hud" data-scene="BOOT">
+      <header id="top-hud-bar">
+        <div class="player-card">
+          <div class="avatar" id="hud-avatar"></div>
+          <div class="player-meta">
+            <div class="player-name" id="hud-name">—</div>
+            <div class="player-sub"><span id="hud-level">Lv. 1</span> • <span class="cp">⚔️ <span id="hud-cp">0</span></span></div>
+            <div class="exp-bar"><div class="exp-fill" id="hud-exp"></div></div>
+          </div>
+        </div>
+        <div class="currencies">
+          <div class="pill"><img src="/assets/ui/icon_gold.png" alt="" /><span id="hud-gold">0</span></div>
+          <div class="pill"><img src="/assets/ui/icon_berry.png" alt="" /><span id="hud-berries">0</span></div>
+          <div class="pill"><img src="/assets/ui/icon_diamond.png" alt="" /><span id="hud-diamonds">0</span></div>
+        </div>
+      </header>
+      <div id="net-pill" class="net-pill offline">● connecting…</div>
+      <div id="debug-readout" class="debug-readout" hidden></div>
+
+      <div id="joystick" class="joystick-pad" aria-label="Move">
+        <div class="joystick-base"><div class="joystick-stick"></div></div>
+      </div>
+
+      <!-- Village quick actions (Screen 01 / 03 / 17) -->
+      <div id="village-actions">
+        <button id="act-harvest" class="act act-harvest" disabled><span class="ico">🍓</span><span>Harvest All</span><small id="harvest-sub">—</small></button>
+        <button id="act-edit" class="act"><span class="ico">🔨</span><span>Edit Grid</span></button>
+        <button id="act-mood" class="act"><span class="ico" id="mood-ico">☀️</span><span id="mood-name">Auto</span></button>
+        <button id="act-bless" class="act" hidden><span class="ico">💧</span><span>Bless +15%</span></button>
+        <button id="act-fountain" class="act" hidden><span class="ico">⛲</span><span>Toss 100🪙</span></button>
+        <button id="fish-open" class="act act-fish" hidden><span class="ico">🎣</span><span>Fish!</span></button>
+      </div>
+      <div id="speech" class="speech" hidden></div>
+
+      <!-- Grid editor (Screen 02) -->
+      <div id="editor-ui">
+        <div class="ed-top">
+          <button id="ed-undo">↩️ Undo</button>
+          <button id="ed-store">🧹 Store All</button>
+          <button id="ed-mode">📍 Drag</button>
+          <button id="ed-save" class="ed-save">✅ Save</button>
+          <button id="ed-exit">✕</button>
+        </div>
+        <div class="ed-info"><span id="ed-comfort">🌸 0</span><span id="ed-status" class="ed-status"></span></div>
+        <div id="ed-select" class="ed-select" hidden>
+          <button id="ed-confirm">✓ Confirm</button>
+          <button id="ed-rotate">🔄 Rotate 90°</button>
+          <button id="ed-bag">📥 Bag</button>
+        </div>
+        <div class="ed-drawer">
+          <div id="ed-tabs" class="ed-tabs">
+            <button data-tab="buildings">🏠 Buildings</button>
+            <button data-tab="wonders">🎡 Wonders</button>
+            <button data-tab="decor">🪑 Decor</button>
+            <button data-tab="tiles">🧱 Roads &amp; Water</button>
+            <button data-tab="skins">🎨 Skins</button>
+          </div>
+          <div id="ed-items" class="ed-items"></div>
+        </div>
+      </div>
+
+      <!-- Dock fishing (Screen 04) -->
+      <section id="fishing-panel" class="parchment fishing" hidden>
+        <div class="parchment-title">🎣 Starlight Dock Fishing</div>
+        <button id="fish-close" class="x-btn">✕</button>
+        <div id="fish-coop" class="coop-banner" hidden>🎣 Co-Op Fishing Buff Active: +35% Sunken Gear Chest Bite Rate!</div>
+        <div id="fish-status" class="fish-status"></div>
+        <div id="fish-gauge" class="fish-gauge" hidden>
+          <div class="gauge-track"><div id="fish-zone" class="gauge-zone"></div><div id="fish-icon" class="gauge-fish">🐟</div></div>
+          <div class="reel-track"><div id="fish-progress" class="reel-fill"></div></div>
+          <button id="fish-reel" class="btn-gold small reel-btn" disabled>🎣 HOLD TO REEL IN!</button>
+        </div>
+        <div id="fish-result" class="fish-result" hidden></div>
+        <div class="fish-buttons">
+          <button id="fish-cast" class="btn-gold small">🎣 Free Cast</button>
+          <button id="fish-bait" class="btn-gold small berry">✨ Bait Cast <small>5 🍓</small></button>
+        </div>
+        <div class="codex-title">📖 Fish &amp; Chest Log</div>
+        <div id="fish-codex" class="fish-codex"></div>
+      </section>
+
+      <!-- Generic parchment modal (building info, upgrades, cloud territory, welcome back) -->
+      <div id="modal" class="modal-wrap" hidden>
+        <section class="parchment modal">
+          <div class="parchment-title" id="modal-title">—</div>
+          <button id="modal-x" class="x-btn">✕</button>
+          <div id="modal-body" class="modal-body"></div>
+          <div id="modal-actions" class="modal-actions"></div>
+        </section>
+      </div>
+
+      <nav id="bottom-dock">
+        <button class="dock-btn active" data-dock="village"><span class="ico">🏡</span><span>Village</span></button>
+        <button class="dock-btn" data-dock="townhall" data-step="5"><span class="ico">🏛️</span><span>Town Hall</span></button>
+        <button class="dock-btn" data-dock="play"><span class="ico">🎮</span><span>Play</span></button>
+        <button class="dock-btn" data-dock="wardrobe"><span class="ico">👗</span><span>Wardrobe</span></button>
+        <button class="dock-btn" data-dock="gacha"><span class="ico">🗽</span><span>Gacha</span></button>
+      </nav>
+    </div>
+
+    <!-- Screen 24: onboarding / sign-in gate -->
+    <section id="gate" class="gate">
+      <div class="gate-scroll">
+        <div class="logo">
+          <div class="logo-gem">✦</div>
+          <h1>NEORA WORLD</h1>
+          <div class="ribbon">2.5D Sky Kingdom &amp; Couple Party</div>
+        </div>
+
+        <div class="parchment">
+          <div class="parchment-title">Choose Your Starter Avatar &amp; Free Pet Egg!</div>
+          <div class="lineage-row">
+            <button type="button" class="lineage selected" data-lineage="bkk" data-body="boy">
+              <div class="gate-chibi-preview">
+                <img class="gate-chibi-hair-back" src="/assets/chibi/hair_boy_fluffy_front.png" alt="" />
+                <img class="gate-chibi-body" src="/assets/chibi/boy_base_front.png" alt="Starlight Boy" />
+                <img class="gate-chibi-hair" src="/assets/chibi/hair_boy_fluffy_front.png" alt="" />
+              </div>
+              <div class="pedestal"><img class="egg" src="/assets/pets/nyx_t1_front.png" alt="" /></div>
+              <div class="tag">Starlight Prince (Boy)</div>
+              <div class="egg-name">🐉 Nyx Midnight Drake Egg</div>
+            </button>
+            <button type="button" class="lineage" data-lineage="dxb" data-body="girl">
+              <div class="gate-chibi-preview">
+                <img class="gate-chibi-hair-back" src="/assets/chibi/hair_girl_waves_front.png" alt="" />
+                <img class="gate-chibi-body" src="/assets/chibi/girl_base_front.png" alt="Starlight Girl" />
+                <img class="gate-chibi-hair" src="/assets/chibi/hair_girl_waves_front.png" alt="" />
+              </div>
+              <div class="pedestal"><img class="egg" src="/assets/pets/ragdoll_t1_front.png" alt="" /></div>
+              <div class="tag">Starlight Princess (Girl)</div>
+              <div class="egg-name">👑 Princess Ragdoll Egg</div>
+            </button>
+          </div>
+          <div class="gate-hair-colors" id="gate-hair-colors">
+            <span class="gate-hair-label">💇 Starter Hair Dye:</span>
+            <button type="button" class="gate-color-swatch selected" data-hair-color="chestnut" style="--swatch:#8a5a3c;" title="Chestnut Brown"></button>
+            <button type="button" class="gate-color-swatch" data-hair-color="midnight" style="--swatch:#3a3550;" title="Midnight Ink"></button>
+            <button type="button" class="gate-color-swatch" data-hair-color="honey" style="--swatch:#e8b86a;" title="Honey Blonde"></button>
+            <button type="button" class="gate-color-swatch" data-hair-color="silver" style="--swatch:#d9dbe6;" title="Moonlit Silver"></button>
+          </div>
+          <div class="hint-small">Includes free Wolf Ears / Dragon Horns &amp; Tail in your Wardrobe!</div>
+        </div>
+
+        <form id="login-form" class="parchment wood">
+          <div class="parchment-title">Sign-In</div>
+          <label>Username <input id="login-user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="16" required /></label>
+          <label>Password <input id="login-pass" type="password" autocomplete="current-password" maxlength="64" required /></label>
+          <div id="quickfills" class="quickfills" hidden>
+            <span>Quick-fills</span>
+            <button type="button" data-qf="nook">nook</button>
+            <button type="button" data-qf="neen">neen</button>
+            <button type="button" data-qf="mochi">mochi</button>
+            <button type="button" data-qf="leo">leo</button>
+          </div>
+          <div id="login-error" class="form-error" role="alert"></div>
+          <button id="login-btn" class="btn-gold" type="submit">ENTER NEORA WORLD<small>(Fullscreen 60 FPS)</small></button>
+          <div class="hint-small">New username? We'll create your account automatically.</div>
+        </form>
+
+        <div id="a2hs-card" class="parchment a2hs" hidden>
+          <div class="parchment-title">Required for Fullscreen Play</div>
+          <div id="a2hs-steps" class="steps"></div>
+          <button id="a2hs-install" class="btn-gold small" type="button" hidden>📲 Install Fullscreen App</button>
+          <button id="a2hs-skip" class="link-btn" type="button" hidden>Continue in browser (testing only)</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="rotate-overlay"><div>📱<br />Rotate to Portrait</div></div>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

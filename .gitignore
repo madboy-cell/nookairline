@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+server/data/*.db*
+server/data/*.sqlite*
+qa_artifacts/

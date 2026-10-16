@@ -1,0 +1,3446 @@
+{
+  "$comment": "Sheet definitions for scripts/process_art_assets.js. Each sheet is cut into an even rows x cols grid; each named cell is alpha-matted, trimmed and written to client/assets/<pack>/<name>.png. anchorY: 0 = feet/bottom (characters, pets), 0.5 = centered. faces: which way the DRAWING looks ('right' = toward screen right / down-right / up-right, 'left' = the opposite). The renderer mirrors a sprite only when its native facing differs from the direction the character should look, so this MUST match the art. Views: <id>_front (Front-3/4), <id>_side (pure profile), <id>_back (Back-3/4).",
+  "sheets": [
+    {
+      "src": "art_src/sheet_1a_chibi_mannequins.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "bkk_base_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bkk_base_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "wings_golden_seraphim",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dxb_base_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_base_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "wings_pastel_angel",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1c_chibi_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_base_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_base_side",
+          "anchorY": 0,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_3a_pets_starter.jpg",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 2,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dragon_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dragon_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "capybara_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "capybara_back",
+          "anchorY": 0,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_3b_pets_side.jpg",
+      "pack": "pets",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dragon_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "capybara_side",
+          "anchorY": 0,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1d_chibi_lifted.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 500,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_base_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_base_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2a_buildings.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.01,
+      "cells": [
+        {
+          "name": "bld_castle",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_mint",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_patisserie",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_shrine",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_nest",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 56,
+              "band": 14
+            }
+          }
+        },
+        {
+          "name": "bld_dock",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2b_wonders.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "wnd_onsen",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_ferris",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_fountain",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_casino_dome",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_world_tree",
+          "anchorY": 0
+        },
+        {
+          "name": "bridge_rainbow_arch",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2c_decor.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "dec_swing",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_picnic",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_gramophone",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_tent",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_cat_cushion",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_balloon_cart",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_mushroom_ring",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 72,
+              "band": 60,
+              "pools": true
+            }
+          }
+        },
+        {
+          "name": "dec_birdbath_lamp",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 72,
+              "band": 40
+            }
+          }
+        },
+        {
+          "name": "dec_love_pavilion",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2d_terrain.jpg",
+      "pack": "terrain",
+      "rows": 2,
+      "cols": 4,
+      "type": "swatch",
+      "size": 512,
+      "cells": [
+        {
+          "name": "ground_classic"
+        },
+        {
+          "name": "ground_sakura"
+        },
+        {
+          "name": "ground_vanilla"
+        },
+        {
+          "name": "ground_aurora"
+        },
+        {
+          "name": "road_cobble"
+        },
+        {
+          "name": "road_sakura"
+        },
+        {
+          "name": "road_cream"
+        },
+        {
+          "name": "water_canal"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2e_misc_fishing.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "env_signpost",
+          "anchorY": 0
+        },
+        {
+          "name": "env_cloud",
+          "anchorY": 0
+        },
+        {
+          "name": "env_pine",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bush",
+          "anchorY": 0
+        },
+        {
+          "name": "fish_minnow",
+          "anchorY": 0
+        },
+        {
+          "name": "fish_crab",
+          "anchorY": 0
+        },
+        {
+          "name": "fish_koi",
+          "anchorY": 0
+        },
+        {
+          "name": "fish_chest",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2f_env_master_1.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "env_tree_oak_a",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bush_mixed_large",
+          "anchorY": 0
+        },
+        {
+          "name": "env_streetlamp_iron",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bridge_parapet_side",
+          "anchorY": 0
+        },
+        {
+          "name": "env_fence_wood_stone_straight",
+          "anchorY": 0
+        },
+        {
+          "name": "env_river_boulders_a",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2g_new_buildings_trees.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bld_windmill_bakery",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_flower_greenhouse",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_owl_post_office",
+          "anchorY": 0
+        },
+        {
+          "name": "bld_starlight_lighthouse",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_sakura_a",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_fruit_apple",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2h_trees_bushes_fences.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "env_tree_oak_b",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_sakura_b",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_golden_maple",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bush_roses_pink",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bush_daisies_white",
+          "anchorY": 0
+        },
+        {
+          "name": "env_bush_hydrangea_blue",
+          "anchorY": 0
+        },
+        {
+          "name": "env_hedge_boxwood_straight",
+          "anchorY": 0
+        },
+        {
+          "name": "env_hedge_boxwood_corner",
+          "anchorY": 0
+        },
+        {
+          "name": "env_flowerbed_planter",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2i_fences_lamps_bridges.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "env_sunflower_clump",
+          "anchorY": 0
+        },
+        {
+          "name": "env_fence_wood_stone_corner",
+          "anchorY": 0
+        },
+        {
+          "name": "env_fence_wood_stone_gate",
+          "anchorY": 0
+        },
+        {
+          "name": "env_wall_stone_low",
+          "anchorY": 0
+        },
+        {
+          "name": "env_streetlamp_double",
+          "anchorY": 0
+        },
+        {
+          "name": "env_string_lights_post",
+          "anchorY": 0
+        },
+        {
+          "name": "bridge_stone_deck",
+          "anchorY": 0.5
+        },
+        {
+          "name": "env_bridge_pillar_cap",
+          "anchorY": 0
+        },
+        {
+          "name": "bridge_wood_deck",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2j_roads_rivers_cliffs.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 4,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "tile_edge_cobble_straight",
+          "anchorY": 0.5
+        },
+        {
+          "name": "tile_edge_cobble_corner_outer",
+          "anchorY": 0.5
+        },
+        {
+          "name": "tile_edge_cobble_corner_inner",
+          "anchorY": 0.5
+        },
+        {
+          "name": "tile_plaza_cobble_medallion_4way",
+          "anchorY": 0.5
+        },
+        {
+          "name": "decal_path_stepping_stones",
+          "anchorY": 0.5
+        },
+        {
+          "name": "decal_soil_flowerbed_patch",
+          "anchorY": 0.5
+        },
+        {
+          "name": "decal_grass_clover_a",
+          "anchorY": 0.5
+        },
+        {
+          "name": "decal_grass_daisies_b",
+          "anchorY": 0.5
+        },
+        {
+          "name": "river_bank_straight",
+          "anchorY": 0.5
+        },
+        {
+          "name": "river_bank_corner_outer",
+          "anchorY": 0.5
+        },
+        {
+          "name": "river_bank_corner_inner",
+          "anchorY": 0.5
+        },
+        {
+          "name": "decal_water_lily_white",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2k_water_cliffs_clouds.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "decal_water_lotus_pink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "env_river_boulders_b",
+          "anchorY": 0
+        },
+        {
+          "name": "env_river_cattails",
+          "anchorY": 0
+        },
+        {
+          "name": "cliff_grass_lip_strip",
+          "anchorY": 0.25
+        },
+        {
+          "name": "cliff_side_strata_strip",
+          "anchorY": 0
+        },
+        {
+          "name": "cliff_waterfall_strip",
+          "anchorY": 0.08
+        },
+        {
+          "name": "env_waterfall_mist",
+          "anchorY": 0.5
+        },
+        {
+          "name": "env_cloud_fluffy_a",
+          "anchorY": 0.5
+        },
+        {
+          "name": "env_cloud_fluffy_b",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2l_new_decor_1.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dec_wooden_bench",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_flower_cart",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_boba_stand",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_wishing_well",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_honey_beehive",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_cat_bakery_sign",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2m_new_decor_2.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dec_couple_hammock",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_koi_barrel_pond",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_painter_easel",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_berry_wheelbarrow",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_starlight_telescope",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_owl_mailbox",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4b_monopoly_25d_tiles.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 4,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        {
+          "name": "mono_tile_property_tier1",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_property_tier2",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_property_tier3",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_property_tier4",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_start",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_festival",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_portal",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_tile_tax",
+          "anchorY": 0.5
+        },
+        {
+          "name": "mono_house_lv1",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_house_lv2",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_house_lv3",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_landmark_lv4",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5a_particle_atlas.jpg",
+      "pack": "ui",
+      "rows": 4,
+      "cols": 4,
+      "holeMinArea": 150,
+      "minIslandRatio": 0.002,
+      "atlas": {
+        "name": "particle_atlas",
+        "cellSize": 256
+      },
+      "cells": [
+        {
+          "name": "fx_snowflake"
+        },
+        {
+          "name": "fx_feather"
+        },
+        {
+          "name": "fx_petal"
+        },
+        {
+          "name": "fx_star"
+        },
+        {
+          "name": "fx_lightning"
+        },
+        {
+          "name": "fx_flame"
+        },
+        {
+          "name": "fx_bubble"
+        },
+        {
+          "name": "fx_note"
+        },
+        {
+          "name": "fx_chip"
+        },
+        {
+          "name": "fx_moon"
+        },
+        {
+          "name": "fx_heart"
+        },
+        {
+          "name": "fx_leaf"
+        },
+        {
+          "name": "fx_stardust"
+        },
+        {
+          "name": "fx_rune"
+        },
+        {
+          "name": "fx_shockwave"
+        },
+        {
+          "name": "fx_magic_circle"
+        }
+      ],
+      "holeMinInkWall": 0
+    },
+    {
+      "src": "art_src/sheet_5b_currency_icons.jpg",
+      "pack": "ui",
+      "rows": 2,
+      "cols": 2,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "icon_gold"
+        },
+        {
+          "name": "icon_berry"
+        },
+        {
+          "name": "icon_diamond"
+        },
+        {
+          "name": "icon_shard"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1e_acc_head.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.03,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_straw_explorer",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_cat_headset",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_glowing_bunny",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_rosegold_shades",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_cyber_visor",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_oracle_monocle",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_3d_pet_eggs.jpg",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "egg_dragon",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_capybara",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_couple",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_rare",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_epic",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_mythic",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_3c_pet_families.jpg",
+      "pack": "pets",
+      "rows": 4,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.05,
+      "optional": true,
+      "cells": [
+        {
+          "name": "cat_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "cat_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "cat_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "pup_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "pup_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "pup_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bunny_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bunny_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bunny_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "wisp_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "wisp_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "wisp_back",
+          "anchorY": 0,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1f_acc_limbs.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "gloves_cat_mittens",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "flipX": true,
+            "rotateDeg": 18
+          }
+        },
+        {
+          "name": "gloves_vorax_cyan",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "flipX": true,
+            "rotateDeg": 18
+          }
+        },
+        {
+          "name": "gloves_starlight_wand",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_slime_rain",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "flipX": true,
+            "closeBootCuff": {
+              "seedX": 0.36,
+              "seedY": 24,
+              "tol": 34,
+              "ink": [
+                24,
+                88,
+                42
+              ]
+            }
+          }
+        },
+        {
+          "name": "boots_hermes_greaves",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "flipX": true,
+            "closeBootCuff": {
+              "seedX": 0.45,
+              "seedY": 22,
+              "tol": 26,
+              "ink": [
+                72,
+                42,
+                22
+              ]
+            }
+          }
+        },
+        {
+          "name": "boots_astral_striders",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "flipX": true,
+            "closeBootCuff": {
+              "seedX": 0.36,
+              "seedY": 22,
+              "tol": 24,
+              "ink": [
+                33,
+                20,
+                44
+              ]
+            }
+          }
+        },
+        {
+          "name": "wings_crystal_butterfly",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "fx_spark_gold",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "fx_spark_cyan",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1g_mythic_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_s8_glacial_elsa_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bkk_s3_sultan_djinn_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_kitsune_inari_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bkk_s11_zeus_olympus_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "bkk_s8_glacial_elsa_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "bkk_s3_sultan_djinn_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_kitsune_inari_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "bkk_s11_zeus_olympus_back",
+          "anchorY": 0,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1g_mythic_bkk_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_s8_glacial_elsa_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s3_sultan_djinn_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_kitsune_inari_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "bkk_s11_zeus_olympus_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1h_mythic_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_s8_glacial_elsa_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_s3_sultan_djinn_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_s2_kitsune_inari_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_s11_zeus_olympus_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_s8_glacial_elsa_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "dxb_s3_sultan_djinn_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "dxb_s2_kitsune_inari_back",
+          "anchorY": 0,
+          "faces": "left"
+        },
+        {
+          "name": "dxb_s11_zeus_olympus_back",
+          "anchorY": 0,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1h_mythic_dxb_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_s8_glacial_elsa_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s3_sultan_djinn_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s2_kitsune_inari_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s11_zeus_olympus_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1i_fashion_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_rare_royal_scholar_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_boba_barista_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_starlight_idol_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_frost_knight_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_royal_scholar_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_boba_barista_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_starlight_idol_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_frost_knight_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1i_fashion_bkk_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_rare_royal_scholar_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_boba_barista_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_starlight_idol_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_frost_knight_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1j_fashion_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_rare_royal_scholar_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_boba_barista_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_starlight_idol_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_frost_knight_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_royal_scholar_back",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_boba_barista_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_starlight_idol_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_frost_knight_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1j_fashion_dxb_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_rare_royal_scholar_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_boba_barista_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_starlight_idol_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_frost_knight_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1k_costumes_a_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_epic_sakura_samurai_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s1_naga_sovereign_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_tsukuyomi_eclipse_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s3_dune_phoenix_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_sakura_samurai_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s1_naga_sovereign_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_tsukuyomi_eclipse_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s3_dune_phoenix_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1k_costumes_a_bkk_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_epic_sakura_samurai_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s1_naga_sovereign_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s2_tsukuyomi_eclipse_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s3_dune_phoenix_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1l_costumes_a_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_epic_sakura_samurai_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s1_naga_sovereign_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s2_tsukuyomi_eclipse_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s3_dune_phoenix_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_sakura_samurai_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s1_naga_sovereign_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s2_tsukuyomi_eclipse_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s3_dune_phoenix_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1l_costumes_a_dxb_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_epic_sakura_samurai_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s1_naga_sovereign_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s2_tsukuyomi_eclipse_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s3_dune_phoenix_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1m_costumes_b_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_s4_casino_royale_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s5_atlantis_siren_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s6_astral_sovereign_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s7_cinderella_clock_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s4_casino_royale_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s5_atlantis_siren_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s6_astral_sovereign_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s7_cinderella_clock_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1n_costumes_b_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_s4_casino_royale_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s5_atlantis_siren_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s6_astral_sovereign_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s7_cinderella_clock_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s4_casino_royale_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s5_atlantis_siren_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_s6_astral_sovereign_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s7_cinderella_clock_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1o_costumes_s9_s10_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_s9_pharaoh_ra_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s9_pharaoh_ra_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s9_pharaoh_ra_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s10_phantom_masque_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s10_phantom_masque_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_s10_phantom_masque_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1p_costumes_s9_s10_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_s9_pharaoh_ra_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s9_pharaoh_ra_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s9_pharaoh_ra_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s10_phantom_masque_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s10_phantom_masque_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_s10_phantom_masque_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2a_base_bodies.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "boy_base_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "boy_base_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "girl_base_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "girl_base_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2b_base_bodies_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "boy_base_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "girl_base_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2c_hair_classic.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_boy_fluffy_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_boy_fluffy_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_boy_fluffy_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_girl_waves_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_girl_waves_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_girl_waves_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_bob_blunt_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_bob_blunt_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_bob_blunt_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2g_hair_classic2.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 80,
+      "holeMaxMean": 16,
+      "holeMaxP95": 28,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_spiky_hero_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_spiky_hero_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_spiky_hero_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_parted_curtains_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_parted_curtains_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_parted_curtains_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_wolf_shag_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_wolf_shag_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_wolf_shag_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2h_hair_classic3.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 80,
+      "holeMaxMean": 16,
+      "holeMaxP95": 28,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_high_ponytail_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_high_ponytail_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_high_ponytail_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_twin_tails_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_twin_tails_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_twin_tails_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_double_buns_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_double_buns_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_double_buns_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2i_hair_classic4.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_hime_straight_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_hime_straight_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_hime_straight_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_braided_crown_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_braided_crown_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_braided_crown_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_half_up_bun_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_half_up_bun_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_half_up_bun_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2j_hair_royal1.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_royal_drill_ribbons_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_drill_ribbons_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_drill_ribbons_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_sakura_braid_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_sakura_braid_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_sakura_braid_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_starlight_bob_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_starlight_bob_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_starlight_bob_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2k_hair_royal2.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_royal_prince_feather_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_prince_feather_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_prince_feather_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_butterfly_updo_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_butterfly_updo_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_butterfly_updo_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_moon_ponytail_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_royal_moon_ponytail_side",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_royal_moon_ponytail_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2l_hair_celestial.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 60,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hair_celestial_seraph_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_seraph_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_seraph_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "hair_celestial_empress_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_empress_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_empress_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2d_ears_tails.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 2,
+      "holeMinArea": 60,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_wolf_ears",
+          "anchorY": 0.5
+        },
+        {
+          "name": "hat_dragon_horns",
+          "anchorY": 0.5
+        },
+        {
+          "name": "back_wolf_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_dragon_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5c_ui_kit.jpg",
+      "pack": "ui",
+      "rows": 3,
+      "cols": 2,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "ui_win_filigree",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ui_win_woodheader",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ui_plaque_bronze",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ui_btn_gold",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ui_btn_pink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ui_btn_green",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5d_bag_shop_icons.jpg",
+      "pack": "ui",
+      "rows": 3,
+      "cols": 3,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "item_ticket_standard",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_ticket_gold",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_vip_communicator",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_gift_box",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_dupe_box",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_protection_scroll",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_streak_freeze",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_blueprint_scroll",
+          "anchorY": 0.5
+        },
+        {
+          "name": "npc_royal_owl",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5e_hero_stage_props.jpg",
+      "pack": "ui",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "stage_blacksmith_anvil",
+          "anchorY": 0
+        },
+        {
+          "name": "stage_couple_nest",
+          "anchorY": 0
+        },
+        {
+          "name": "stage_wardrobe_pedestal",
+          "anchorY": 0
+        },
+        {
+          "name": "stage_goddess_pedestal",
+          "anchorY": 0
+        },
+        {
+          "name": "stage_architect_stand",
+          "anchorY": 0
+        },
+        {
+          "name": "stage_shield_emblem",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2e_headwear_views.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 2,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_straw_explorer_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_straw_explorer_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_cat_headset_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_cat_headset_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_glowing_bunny_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_glowing_bunny_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2f_ears_tails_views.jpg",
+      "pack": "chibi",
+      "rows": 3,
+      "cols": 2,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_wolf_ears_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_wolf_ears_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_dragon_horns_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_dragon_horns_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_wolf_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_dragon_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p1_ragdoll_base.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "ragdoll_t1_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_move",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t1_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p1_ragdoll_awakened.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "ragdoll_t2_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_move",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "ragdoll_t2_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p1_ragdoll_emotes.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "ragdoll_emo_joy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_wink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_surprised",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_teary",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_sleepy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_love",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_proud",
+          "anchorY": 0.5
+        },
+        {
+          "name": "ragdoll_emo_shy",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p2_nyx_base.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "nyx_t1_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t1_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p2_nyx_awakened.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "nyx_t2_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t2_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p2_nyx_radiant.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "nyx_t3_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "nyx_t3_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p2_nyx_emotes.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "nyx_emo_joy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_wink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_surprised",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_teary",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_sleepy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_love",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_proud",
+          "anchorY": 0.5
+        },
+        {
+          "name": "nyx_emo_shy",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p3_kitsune_base.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "kitsune_t1_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t1_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p3_kitsune_awakened.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "kitsune_t2_front",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_side",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_back",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_cast",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_happy",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_sleep",
+          "anchorY": 0,
+          "faces": "right"
+        },
+        {
+          "name": "kitsune_t2_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p3_kitsune_emotes.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "kitsune_emo_joy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_wink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_surprised",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_teary",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_sleepy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_love",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_proud",
+          "anchorY": 0.5
+        },
+        {
+          "name": "kitsune_emo_shy",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p4_skywhale_base.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.015,
+      "cells": [
+        {
+          "name": "skywhale_t1_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_move",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_cast",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_happy",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_sleep",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t1_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p4_skywhale_awakened.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "skywhale_t2_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t2_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "flipX": true
+        },
+        {
+          "name": "skywhale_t2_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t2_move",
+          "anchorY": 0.5,
+          "faces": "right",
+          "flipX": true
+        },
+        {
+          "name": "skywhale_t2_cast",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t2_happy",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t2_sleep",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "skywhale_t2_lifted",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p4_skywhale_emotes.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "skywhale_emo_joy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_wink",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_surprised",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_teary",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_sleepy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_love",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_proud",
+          "anchorY": 0.5
+        },
+        {
+          "name": "skywhale_emo_shy",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p5_pet_eggs_v2.png",
+      "pack": "pets",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "egg_ragdoll",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_nyx",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_kitsune",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_skywhale",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_couple_v2",
+          "anchorY": 0
+        },
+        {
+          "name": "egg_mystery",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_p6_pet_ui_icons.png",
+      "pack": "ui",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.02,
+      "cells": [
+        {
+          "name": "icon_skill_royal_charm",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_skill_plasma_blast",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_skill_foxfire",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_skill_bubble_shield",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_pet_essence",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_pet_lock",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_pet_release",
+          "anchorY": 0.5
+        },
+        {
+          "name": "icon_pet_bond",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5f_hair_studio_icons.jpg",
+      "pack": "ui",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "npc_fluffe_poodle",
+          "anchorY": 0.5
+        },
+        {
+          "name": "item_ticket_royal_hair",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4a_buildings.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.01,
+      "cells": [
+        {
+          "name": "mono_villa_a",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_hotel_a",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_landmark_a",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_pyramid_a",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 56,
+              "band": 14
+            }
+          }
+        },
+        {
+          "name": "mono_villa_b",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_hotel_b",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_landmark_b",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_pyramid_b",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 56,
+              "band": 14
+            }
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4a_traps.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "mono_trap_ice_cube",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_trap_torii",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_trap_mirror",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_trap_slipper",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 56,
+              "band": 30
+            }
+          }
+        },
+        {
+          "name": "mono_trap_waterway",
+          "anchorY": 0,
+          "meta": {
+            "flat": true
+          }
+        },
+        {
+          "name": "mono_trap_fire",
+          "anchorY": 0,
+          "meta": {
+            "flat": true
+          }
+        },
+        {
+          "name": "mono_trap_coral",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_trap_lightning_rod",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 64,
+              "band": 40,
+              "pools": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4a_center.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "mono_dec_fountain",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_dec_shrine",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_dec_boba",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_dec_sakura",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_dec_hedge",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_dec_start_gate",
+          "anchorY": 0,
+          "opts": {
+            "glow": {
+              "t": 56,
+              "band": 30
+            }
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_5e_dice_skins.jpg",
+      "pack": "ui",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dice_classic_ivory",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_pastel_boba",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_emerald_naga",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_kitsune_foxfire",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_mirage_sultan",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_atlantis_pearl",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_glacial_crystal",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_astral_galaxy",
+          "anchorY": 0.5
+        },
+        {
+          "name": "dice_zeus_thunder",
+          "anchorY": 0.5
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2n_cliff_wall.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 1,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.002,
+      "cells": [
+        {
+          "name": "cliff_wall_strip",
+          "anchorY": 0
+        },
+        {
+          "name": "cliff_rim_turf_strip",
+          "anchorY": 0
+        }
+      ]
+    }
+  ]
+}

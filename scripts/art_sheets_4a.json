@@ -1,0 +1,57 @@
+{
+  "$comment": "Sky Monopoly (pack 'monopoly') sheet definitions for scripts/slice_pack_4a.js. Same schema as scripts/art_sheets.json; kept separate so slicing this pack never rewrites the shared asset_manifest.json. Output: client/assets/monopoly/<name>.png + client/assets/monopoly/manifest_4a.json. anchorY 0 = bottom/feet. meta.flat = ground decal (draw under tokens, no depth sort).",
+  "sheets": [
+    {
+      "src": "art_src/sheet_4a_buildings.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.01,
+      "cells": [
+        { "name": "mono_villa_a", "anchorY": 0 },
+        { "name": "mono_hotel_a", "anchorY": 0 },
+        { "name": "mono_landmark_a", "anchorY": 0 },
+        { "name": "mono_pyramid_a", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 14 } } },
+        { "name": "mono_villa_b", "anchorY": 0 },
+        { "name": "mono_hotel_b", "anchorY": 0 },
+        { "name": "mono_landmark_b", "anchorY": 0 },
+        { "name": "mono_pyramid_b", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 14 } } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4a_traps.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "mono_trap_ice_cube", "anchorY": 0 },
+        { "name": "mono_trap_torii", "anchorY": 0 },
+        { "name": "mono_trap_mirror", "anchorY": 0 },
+        { "name": "mono_trap_slipper", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 30 } } },
+        { "name": "mono_trap_waterway", "anchorY": 0, "meta": { "flat": true } },
+        { "name": "mono_trap_fire", "anchorY": 0, "meta": { "flat": true } },
+        { "name": "mono_trap_coral", "anchorY": 0 },
+        { "name": "mono_trap_lightning_rod", "anchorY": 0, "opts": { "glow": { "t": 64, "band": 40, "pools": true } } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4a_center.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "mono_dec_fountain", "anchorY": 0 },
+        { "name": "mono_dec_shrine", "anchorY": 0 },
+        { "name": "mono_dec_boba", "anchorY": 0 },
+        { "name": "mono_dec_sakura", "anchorY": 0 },
+        { "name": "mono_dec_hedge", "anchorY": 0 },
+        { "name": "mono_dec_start_gate", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 30 } } }
+      ]
+    }
+  ]
+}

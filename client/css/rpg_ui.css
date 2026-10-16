@@ -1,0 +1,3569 @@
+/* client/css/rpg_ui.css — Style 2 (Tree of Savior × Cookie Run: Kingdom) Design System & RPG UI.
+   Cream parchment panels, roasted caramel-oak wood frames, royal gold accents, and 3-Zone Diorama layouts.
+   Fits 360–440px portrait phone, respects safe-area insets. */
+
+:root {
+  --rpg-rare: #4f8fe0;
+  --rpg-epic: #9a5be0;
+  --rpg-mythic: #e0a42a;
+  --rpg-common: #9c8669;
+  --rpg-success: #3e9e3a;
+  --rpg-fail: #c0392b;
+}
+
+/* ---------------- Overlay Wrap & Panel ---------------- */
+.rpg-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font, "Trebuchet MS", "Avenir Next Rounded", "Nunito", system-ui, sans-serif);
+  color: var(--ink, #3a2415);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.rpg-wrap[hidden] {
+  display: none !important;
+}
+
+.rpg-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 15, 8, 0.76);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.rpg-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fcefd2 0%, #f7e2b4 100%);
+  border-left: 3px solid #8a5222;
+  border-right: 3px solid #8a5222;
+  box-shadow: inset 0 0 0 2px #ffe8b3, 0 0 36px rgba(0, 0, 0, 0.65);
+  padding: calc(var(--safe-top, 0px) + 6px) 8px calc(var(--safe-bottom, 0px) + 6px);
+  overflow: hidden;
+}
+
+/* Close button */
+.rpg-x-btn {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 6px);
+  right: 8px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid #8a5222;
+  background: radial-gradient(circle at 35% 30%, #fff8e6, #ebd09a);
+  font: 900 15px var(--font, inherit);
+  color: #4b2a12;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #5c3416, 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+.rpg-x-btn:active {
+  transform: scale(0.92);
+}
+
+/* ---------------- Top View Navigation ---------------- */
+.rpg-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 36px 5px 0;
+  flex-shrink: 0;
+}
+
+.rpg-view-tab {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 2px 4px;
+  border-radius: 12px;
+  border: 2px solid #c9932c;
+  background: linear-gradient(180deg, #7a4a26, #4b2a12);
+  color: var(--cream, #fff6e3);
+  font: 800 calc(10.5px * var(--ui-scale, 1)) var(--font, inherit);
+  cursor: pointer;
+  box-shadow: 0 2px 0 #2a170a;
+}
+.rpg-view-tab .ico {
+  font-size: calc(16px * var(--ui-scale, 1));
+  line-height: 1;
+}
+.rpg-view-tab.active {
+  background: linear-gradient(180deg, #ffe082, #e59e26);
+  color: #3a2208;
+  border-color: #fff5cc;
+  box-shadow: inset 0 -2px 0 #b37112, 0 2px 4px rgba(0, 0, 0, 0.22);
+}
+
+/* ---------------- Currency Strip ---------------- */
+.rpg-currencies {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #382212, #24150a);
+  border: 1.5px solid #d49f3a;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  margin-bottom: 5px;
+  flex-shrink: 0;
+}
+
+.rpg-curr-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: #fff6e3;
+  font-weight: 900;
+  font-size: clamp(10px, calc(11.5px * var(--ui-scale, 1)), 12.5px);
+}
+.rpg-curr-item img {
+  width: clamp(15px, 4.2vw, 18px);
+  height: clamp(15px, 4.2vw, 18px);
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+
+/* ---------------- View Body (Scrollable) ---------------- */
+.rpg-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 2px 2px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.rpg-busy button,
+.rpg-busy input,
+.rpg-busy select {
+  pointer-events: none !important;
+  opacity: 0.65 !important;
+}
+
+/* ---------------- Sub-tabs ---------------- */
+.rpg-sub-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.rpg-sub-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 2px solid #b58548;
+  background: linear-gradient(180deg, #ebd5ae, #d9bc8a);
+  color: #522e12;
+  font: 800 clamp(9.5px, calc(11px * var(--ui-scale, 1)), 12px) var(--font, inherit);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 0 #7a4a1a;
+}
+.rpg-sub-tab.active {
+  background: linear-gradient(180deg, #ffe388, #e39e26);
+  color: #3a2006;
+  border-color: #fff4c4;
+  box-shadow: 0 2px 0 #9a5a10;
+}
+
+/* ---------------- Reusable Style 2 Primitives ---------------- */
+.rpg-rarity-1, .s2-rarity-1 { border-color: var(--rpg-rare) !important; }
+.rpg-rarity-2, .s2-rarity-2 { border-color: var(--rpg-epic) !important; }
+.rpg-rarity-3, .s2-rarity-3 {
+  border-color: var(--rpg-mythic) !important;
+  box-shadow: 0 0 8px rgba(224, 164, 42, 0.35);
+}
+
+.rpg-stars {
+  color: #e69d12;
+  text-shadow: 0 1px 1px rgba(58, 36, 21, 0.25);
+  font-size: 11px;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+
+.s2-inline-ico {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+
+.s2-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: clamp(38px, var(--thumb-size, 52px), 14vw);
+  height: clamp(38px, var(--thumb-size, 52px), 14vw);
+  border-radius: 11px;
+  border: 2.5px solid #c9a46a;
+  background: radial-gradient(circle at 50% 38%, #ffffff, #f5e4c3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.s2-thumb.is-round {
+  border-radius: 50%;
+}
+.s2-thumb.s2-rarity-1 { background: radial-gradient(circle, #f2f8ff, #cbe2ff); }
+.s2-thumb.s2-rarity-2 { background: radial-gradient(circle, #faf2ff, #e5ccf8); }
+.s2-thumb.s2-rarity-3 { background: radial-gradient(circle, #fffdf0, #ffe49c); }
+
+.s2-thumb-img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.18));
+}
+.s2-thumb-corner {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.s2-thumb-refine {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background: linear-gradient(180deg, #43b53f, #247821);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 0 4px;
+  border-radius: 5px;
+  line-height: 1.3;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.s2-thumb-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(58, 36, 21, 0.86);
+  color: #ffe28a;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 0 4px;
+  border-radius: 5px;
+  line-height: 1.3;
+}
+
+.s2-btn-blue {
+  background: linear-gradient(180deg, #74b9ff, #2f74d0) !important;
+  color: #fff !important;
+  border-color: #bfe0ff !important;
+  box-shadow: 0 4px 0 #1b498a, 0 6px 12px rgba(0,0,0,0.22) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.s2-btn-green {
+  background: linear-gradient(180deg, #7ee268, #369b31) !important;
+  color: #fff !important;
+  border-color: #c9f7be !important;
+  box-shadow: 0 4px 0 #1e611b, 0 6px 12px rgba(0,0,0,0.22) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.s2-btn-rainbow {
+  background: linear-gradient(180deg, #ffe57f 0%, #f5a623 100%) !important;
+  color: #3a1f04 !important;
+  border-color: #fff8d6 !important;
+  box-shadow: 0 4px 0 #9a5a10, 0 0 14px rgba(255, 215, 106, 0.55) !important;
+}
+
+.rpg-card {
+  position: relative;
+  background: linear-gradient(180deg, #fffdf7, #fbf0d9);
+  border: 2.5px solid #b88748;
+  border-radius: 14px;
+  padding: 8px 10px;
+  box-shadow: inset 0 0 0 1.5px #fff6e0, 0 3px 0 #7a4a1f, 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+.rpg-card-title {
+  font-weight: 900;
+  font-size: calc(12.5px * var(--ui-scale, 1));
+  color: #5c3416;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.s2-empty-notice {
+  grid-column: 1 / -1;
+  padding: 16px;
+  text-align: center;
+  color: #7a4a1a;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* ============================================================================
+   VIEW 1: WARDROBE & PAPER-DOLL STAGE (Screens 07 & 08)
+   ============================================================================ */
+.s2-wardrobe-stage {
+  display: grid;
+  grid-template-columns: minmax(86px, 27.5%) minmax(0, 1fr) minmax(86px, 27.5%);
+  gap: 5px;
+  align-items: stretch;
+  background: radial-gradient(circle at 50% 42%, #fff9eb 0%, #f3dfb9 72%, #e0c18c 100%);
+  border: 2.5px solid #a46a32;
+  border-radius: 16px;
+  padding: 6px 5px;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 18px rgba(164, 106, 50, 0.25), 0 3px 0 #6b3f1f;
+}
+
+.s2-pd-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.s2-pd-slot {
+  background: linear-gradient(180deg, #fffdf9, #f7ead0);
+  border: 2px solid #c9a46a;
+  border-radius: 11px;
+  padding: 4px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.s2-pd-slot.selected {
+  border-color: #f0a91c !important;
+  box-shadow: 0 0 0 2px #ffd76a, 0 2px 6px rgba(0,0,0,0.18);
+  background: #fff9e6;
+}
+.s2-pd-slot.slot-hidden .s2-pd-thumb {
+  opacity: 0.42;
+  filter: grayscale(0.6);
+}
+.s2-pd-slot-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
+}
+.rpg-slot-label {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #7a461d;
+}
+.rpg-slot-refine {
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  background: #2e8b2a;
+  padding: 0 4px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.s2-pd-slot-Body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.s2-pd-thumb-wrap {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: radial-gradient(circle, #fff, #efe0c2);
+  border: 1.5px solid #d8b984;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.s2-pd-thumb {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+.s2-pd-empty {
+  font-size: 16px;
+  font-weight: 900;
+  color: #c4a472;
+}
+.s2-pd-meta {
+  min-width: 0;
+  flex: 1;
+}
+.rpg-slot-name {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #3a2415;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rpg-slot-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+}
+.rpg-eye-btn {
+  background: #f1dfba;
+  border: 1px solid #c49c5e;
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.rpg-goforge-btn {
+  position: relative;
+  background: linear-gradient(180deg, #ffe07d, #e09b22);
+  border: 1px solid #fff2c2;
+  border-radius: 6px;
+  padding: 1px 5px;
+  font: 800 9px var(--font, inherit);
+  color: #3a2208;
+  cursor: pointer;
+  box-shadow: 0 1px 0 #9a5a10;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Center Paper-Doll Hero Stage */
+.s2-pd-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 214px;
+  min-width: 0;
+  padding: 2px 0;
+}
+.s2-pd-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 8;
+}
+.s2-badge-gold {
+  background: linear-gradient(90deg, #6b3f1f, #9c5d27, #6b3f1f);
+  border: 1.5px solid #ffd76a;
+  color: #ffe89e;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.s2-badge-pink {
+  background: linear-gradient(90deg, #ff7eb3, #e0487c);
+  border: 1px solid #ffe0ec;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.s2-badge-green {
+  background: #e3f7e2;
+  border: 1px solid #3e9e3a;
+  color: #1c6619;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.s2-pd-figure {
+  position: relative;
+  width: 158px;
+  height: 166px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Interactive Pose & Motion Controls on Stage */
+.s2-pd-stage-ctrls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 12;
+}
+.s2-pd-ctrl-btn {
+  pointer-events: auto;
+  background: rgba(255, 250, 235, 0.92);
+  border: 1.5px solid #b88748;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font: 800 8.5px var(--font, inherit);
+  color: #4f2c12;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.16);
+}
+.s2-pd-ctrl-btn.active {
+  background: linear-gradient(180deg, #ffe388, #e39e26);
+  border-color: #9a5a10;
+  color: #2e1604;
+}
+
+@keyframes s2AuraSpin {
+  0% { transform: translateX(-50%) rotate(0deg); }
+  100% { transform: translateX(-50%) rotate(360deg); }
+}
+.s2-pd-aura {
+  position: absolute;
+  width: 138px;
+  height: 138px;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.56;
+  pointer-events: none;
+  z-index: 1;
+  animation: s2AuraSpin 22s linear infinite;
+}
+.s2-pd-pedestal {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  height: 54px;
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 1. Unified Bone-Math DOM Rig (100% coordinate match with ChibiRig; hidden once live WebGL canvas renders) */
+@keyframes s2ChibiBreath {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50% { transform: scaleY(1.016) translateY(-1px); }
+}
+@keyframes s2ChibiWalkHop {
+  0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+  25% { transform: translateY(-4px) rotate(0deg); }
+  50% { transform: translateY(0) rotate(1.2deg); }
+  75% { transform: translateY(-4px) rotate(0deg); }
+}
+@keyframes s2WingFlapL {
+  0%, 100% { transform: scaleX(1) rotate(3deg); }
+  50% { transform: scaleX(0.84) rotate(7deg); }
+}
+@keyframes s2WingFlapR {
+  0%, 100% { transform: scaleX(1) rotate(-3deg); }
+  50% { transform: scaleX(0.84) rotate(-7deg); }
+}
+
+.s2-pd-rig-box {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  width: 121px;
+  height: 121px;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+.s2-pd-figure.is-webgl-live .s2-pd-rig-box {
+  opacity: 0;
+}
+.s2-pd-dom-rig {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+  animation: s2ChibiBreath 2.8s ease-in-out infinite;
+}
+.s2-pd-rig-box.is-walking .s2-pd-dom-rig {
+  animation: s2ChibiWalkHop 0.55s ease-in-out infinite;
+}
+
+.s2-pd-wings-pivot {
+  position: absolute;
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+}
+.s2-pd-wings-pivot.behind { z-index: 2; }
+.s2-pd-wings-pivot.in-front { z-index: 25; }
+
+.s2-pd-wing-half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+}
+.s2-pd-wing-half img {
+  position: absolute;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+}
+.s2-pd-wing-half.is-left {
+  left: 0;
+  transform-origin: 100% 55%;
+  animation: s2WingFlapL 0.83s ease-in-out infinite;
+}
+.s2-pd-wing-half.is-left img { left: 0; }
+.s2-pd-wing-half.is-right {
+  right: 0;
+  transform-origin: 0% 55%;
+  animation: s2WingFlapR 0.83s ease-in-out infinite;
+}
+.s2-pd-wing-half.is-right img { left: -100%; }
+
+.s2-pd-bone-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  object-fit: fill;
+  z-index: 5;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.22));
+}
+.s2-pd-bone-body.s2-mask-feet-short {
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 84%, transparent 87%);
+  mask-image: linear-gradient(to bottom, black 0%, black 84%, transparent 87%);
+}
+
+.s2-pd-bone-acc {
+  position: absolute;
+  object-fit: fill;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.22));
+}
+/* Floor-length gown boot masking (matches ChibiRig uClipTopY = 0.56 so only shoe tips peek under long hem) */
+.s2-pd-bone-acc.s2-clip-long-boot {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 48%, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 48%, black 100%);
+}
+
+/* 2. Live WebGL ChibiRig Stage Host (60fps 9-bone vertex skinning, cloth wave, wing flap) */
+.s2-pd-webgl-host {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  width: 160px;
+  height: 160px;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+}
+.s2-pd-webgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.22));
+}
+
+/* 3. Companion Pet Stage Preview with Locomotion Idle Animations */
+@keyframes s2PetHop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  40% { transform: translateY(-4px) scale(0.97, 1.03); }
+  55% { transform: translateY(0) scale(1.03, 0.97); }
+}
+@keyframes s2PetFlutter {
+  0%, 100% { transform: translateY(-2px) rotate(-2deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+@keyframes s2PetFloat {
+  0%, 100% { transform: translate(0, -1px); }
+  50% { transform: translate(1px, -6px); }
+}
+
+.s2-pd-pet-wrap {
+  position: absolute;
+  right: 0px;
+  bottom: 10px;
+  width: 56px;
+  height: 56px;
+  z-index: 9;
+  pointer-events: none;
+  animation: s2PetHop 2.1s ease-in-out infinite;
+}
+.s2-pd-pet-wrap.s2-loco-FLY_FLUTTER {
+  animation: s2PetFlutter 1.4s ease-in-out infinite;
+}
+.s2-pd-pet-wrap.s2-loco-FLOAT_SPIRIT {
+  animation: s2PetFloat 2.4s ease-in-out infinite;
+}
+.s2-pd-pet {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(var(--pet-ui-scale, 1));
+  transform-origin: 50% 85%;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.28));
+}
+.s2-pd-nameplate {
+  z-index: 10;
+  background: rgba(58, 36, 21, 0.9);
+  border: 1.5px solid #e0a72a;
+  color: #fff6e3;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10.5px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.s2-pd-nameplate span {
+  color: #ffe08a;
+  font-weight: 900;
+}
+
+/* 2x2 Stat Breakdown Card (Screen 07) */
+.s2-stat-panel {
+  background: linear-gradient(180deg, #56351c, #3b2210);
+  border: 2px solid #d49f3a;
+  border-radius: 13px;
+  padding: 6px 8px;
+  color: #fff6e3;
+}
+.s2-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  margin-bottom: 5px;
+  color: #ffe59e;
+}
+.s2-cp-pill {
+  background: linear-gradient(180deg, #ffe082, #d99018);
+  color: #3a2006;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 900;
+}
+.s2-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.s2-stat-cell {
+  min-width: 0;
+  background: rgba(255, 248, 232, 0.12);
+  border: 1px solid rgba(255, 224, 138, 0.3);
+  border-radius: 9px;
+  padding: 4px 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s2-stat-cell img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.s2-stat-name {
+  font-size: 10px;
+  color: #ebd5b3;
+  font-weight: 800;
+}
+.s2-stat-val {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #fff;
+}
+.s2-stat-val small {
+  font-size: 9.5px;
+  color: #ffd76a;
+}
+
+/* Closet Grid & Slot Pills */
+.s2-slot-pills-bar {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.s2-slot-pill {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1.5px solid #c9a46a;
+  background: #f4e3c3;
+  color: #5c3416;
+  font: 800 10px var(--font, inherit);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.s2-slot-pill.active {
+  background: #6b3f1f;
+  color: #ffe08a;
+  border-color: #e0a72a;
+}
+
+.rpg-items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.s2-closet-card {
+  min-width: 0;
+  max-width: 100%;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.s2-closet-card.equipped {
+  background: #fff6db;
+  border-color: #e0a42a;
+}
+.s2-closet-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rpg-item-name {
+  font-weight: 900;
+  font-size: 11px;
+  color: #3a2415;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-closet-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+.s2-cp-mini {
+  font-weight: 800;
+  color: #2b7d2f;
+  font-size: 9.5px;
+}
+.s2-closet-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 2px;
+}
+.rpg-equipped-badge {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #3e9e3a;
+  color: #fff;
+  white-space: nowrap;
+}
+.rpg-equip-btn {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffe285, #e09b22);
+  border: 1px solid #b57314;
+  color: #3a2006;
+  cursor: pointer;
+}
+
+/* Pets & Bag Sub-tabs in Wardrobe */
+.rpg-pets-list, .rpg-bag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rpg-pet-card, .rpg-bag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+.rpg-pet-card { cursor: pointer; }
+.rpg-pet-card.equipped { background: #fff6db; border-color: #e0a72a; }
+.s2-pet-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.s2-pet-card-info {
+  min-width: 0;
+  flex: 1;
+}
+.s2-pet-card-title {
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-pet-card-sub {
+  font-size: 11px;
+  color: #7a4a1a;
+  font-weight: 700;
+}
+.s2-pet-card-meta {
+  font-size: 10px;
+  color: #5c3416;
+}
+.rpg-bag-meta { flex: 1; min-width: 0; }
+.rpg-bag-title { font-weight: 900; font-size: 12.5px; }
+.rpg-bag-desc { font-size: 10.5px; color: #7a4a1a; }
+.rpg-bag-count {
+  font-weight: 900;
+  font-size: 14px;
+  color: #5c3416;
+  background: #f5e2be;
+  padding: 3px 8px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Royal Owl Gift Card (Screen 08) */
+.s2-owl-gift-card {
+  position: relative;
+  padding-top: 12px;
+  background: linear-gradient(180deg, #fff9ec, #f5e1b9);
+}
+.s2-owl-mascot {
+  position: absolute;
+  top: -14px;
+  right: 8px;
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
+}
+.s2-owl-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  font-size: 12px;
+  color: #5c3416;
+  padding-right: 64px;
+}
+.s2-owl-gift-ico {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.s2-owl-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  margin: 5px 0;
+}
+.s2-owl-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s2-owl-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e8cfa1;
+  border: 1.5px solid #b58548;
+  border-radius: 9px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+}
+.s2-owl-slot img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  background: #fff8e8;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+/* ============================================================================
+   VIEW 2: GACHA SUMMON & SHARD SHOP (Screens 21, 22, 23)
+   ============================================================================ */
+.s2-gacha-stage {
+  position: relative;
+  border-radius: 16px;
+  border: 2.5px solid #c9932c;
+  padding: 8px 8px 6px;
+  overflow: hidden;
+  box-shadow: 0 3px 0 #6b3f1f;
+}
+.s2-stage-box1 {
+  background: radial-gradient(circle at 50% 42%, #fff8eb 0%, #cde6ff 55%, #5b4b8a 100%);
+}
+.s2-stage-box2 {
+  background: radial-gradient(circle at 50% 42%, #fff4d2 0%, #d4a359 60%, #482e4d 100%);
+}
+.s2-stage-header-pill {
+  text-align: center;
+  background: rgba(43, 28, 16, 0.85);
+  border: 1.5px solid #ffd76a;
+  color: #ffe89e;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin: 0 auto 6px;
+  width: fit-content;
+}
+
+.s2-gacha-diorama {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 158px;
+  position: relative;
+}
+.s2-float-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 3;
+}
+.s2-bubble {
+  width: 62px;
+  background: rgba(255, 252, 242, 0.92);
+  border: 2px solid #e0a42a;
+  border-radius: 12px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.22);
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.s2-bubble:hover,
+.s2-bubble.is-selected {
+  transform: scale(1.06);
+  border-color: #ff9800;
+  background: #fff9e2;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.65), 0 4px 10px rgba(0,0,0,0.28);
+}
+.s2-bubble img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.s2-bubble span {
+  font-size: 9px;
+  font-weight: 900;
+  color: #4b2a12;
+  white-space: nowrap;
+}
+.s2-stage-reset-inline {
+  background: #ffe082;
+  color: #3a2208;
+  border: 1px solid #c9932c;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.s2-stage-centerpiece {
+  position: relative;
+  flex: 1;
+  height: 156px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-arch-prop {
+  position: absolute;
+  width: 170px;
+  height: 154px;
+  object-fit: contain;
+  z-index: 1;
+}
+.s2-arch-figures {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 18px;
+}
+.s2-arch-chibi {
+  height: 112px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+}
+.s2-arch-chibi.left { margin-right: -12px; }
+.s2-arch-chibi.right { margin-left: -12px; }
+
+.s2-draft-prop {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: 84px;
+  height: 96px;
+  object-fit: contain;
+  z-index: 2;
+}
+.s2-wonder-hero {
+  height: 146px;
+  width: auto;
+  object-fit: contain;
+  margin-left: 24px;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+  z-index: 3;
+}
+
+.rpg-featured-banner {
+  background: linear-gradient(180deg, #ffe7a6, #f0be59);
+  border: 2px solid #8a5222;
+  border-radius: 11px;
+  padding: 4px 8px;
+  text-align: center;
+  margin-top: 4px;
+}
+.rpg-featured-title {
+  font-size: 10px;
+  font-weight: 900;
+  color: #7a3f12;
+  text-transform: uppercase;
+}
+.rpg-featured-name {
+  font-size: 13px;
+  font-weight: 900;
+  color: #3a2208;
+}
+
+.rpg-pity-wrap { margin-bottom: 6px; }
+.rpg-pity-bar {
+  position: relative;
+  height: 22px;
+  background: #3a2414;
+  border: 2px solid #c9932c;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rpg-pity-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #e09b22, #ffe27a);
+  transition: width 0.3s;
+}
+.rpg-pity-text {
+  position: relative;
+  z-index: 2;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.rpg-rates-box {
+  display: flex;
+  justify-content: space-around;
+  background: #f8ebd0;
+  border: 1.5px solid #d8b880;
+  border-radius: 9px;
+  padding: 4px;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+.rpg-rates-box .rare { color: var(--rpg-rare); }
+.rpg-rates-box .epic { color: var(--rpg-epic); }
+.rpg-rates-box .mythic { color: #b87400; }
+
+/* 1-List Ranked Prize Pool Grid (★3 Mythic → ★2 Epic → ★1 Rare) */
+.s2-pool-section {
+  margin-top: 6px;
+}
+.s2-pool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+.s2-pool-title {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #5c3416;
+}
+.s2-pool-hint {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #8a5a2b;
+}
+.s2-pool-reset-btn {
+  background: #fff3cd;
+  border: 1.5px solid #c9932c;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #5c3416;
+  cursor: pointer;
+  font-family: inherit;
+}
+.s2-gacha-pool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  max-height: 168px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 3px;
+  background: rgba(244, 229, 198, 0.65);
+  border: 1.5px solid #d8b880;
+  border-radius: 10px;
+}
+@media (max-width: 360px) {
+  .s2-gacha-pool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.s2-pool-tile {
+  min-width: 0;
+  background: #fffdf8;
+  border: 1.5px solid #d3b27a;
+  border-radius: 9px;
+  padding: 3px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+}
+.s2-pool-tile.s2-rarity-3 {
+  border-color: #e09b22;
+  background: linear-gradient(180deg, #fffdf4 0%, #fff2c6 100%);
+}
+.s2-pool-tile.s2-rarity-2 {
+  border-color: #9b6bd6;
+  background: linear-gradient(180deg, #fdfbff 0%, #f1e6ff 100%);
+}
+.s2-pool-tile.s2-rarity-1 {
+  border-color: #6ea8dc;
+  background: linear-gradient(180deg, #fafdff 0%, #e7f3ff 100%);
+}
+.s2-pool-tile.is-selected {
+  outline: 2.5px solid #ff9800;
+  box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35);
+}
+.s2-pool-tile-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 8.5px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+.s2-pool-tile.s2-rarity-3 .s2-pool-stars { color: #c77c00; }
+.s2-pool-tile.s2-rarity-2 .s2-pool-stars { color: #7b3ec8; }
+.s2-pool-tile.s2-rarity-1 .s2-pool-stars { color: #2b6cb0; }
+.s2-pool-rate {
+  color: #5c3a1a;
+  font-size: 8px;
+}
+.s2-pool-rate b {
+  color: #b83214;
+}
+.s2-pool-thumb-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1px 0;
+}
+.s2-pool-thumb-wrap img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.s2-pool-owned-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  background: #2f855a;
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 0 4px;
+  border-radius: 999px;
+  line-height: 1.35;
+}
+.s2-pool-name {
+  width: 100%;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #3a2208;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Box 2 Blueprint Progress Strip */
+.s2-bp-strip-title {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #5c3416;
+  margin: 6px 0 4px;
+}
+.s2-bp-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.s2-bp-mini {
+  min-width: 0;
+  background: #fffdf8;
+  border: 1.5px solid #d3b27a;
+  border-radius: 8px;
+  padding: 3px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.s2-bp-mini.ready {
+  border-color: #3e9e3a;
+  background: #eaf9e8;
+}
+.s2-bp-mini img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.s2-bp-mini-meta b {
+  display: block;
+  font-size: 8.5px;
+  color: #3a2415;
+}
+.s2-bp-mini-meta span {
+  font-size: 8px;
+  font-weight: 800;
+  color: #7a4a1a;
+}
+
+.rpg-gacha-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rpg-gacha-btn-row {
+  display: flex;
+  gap: 6px;
+}
+.rpg-gacha-btn-row .btn-gold {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  padding: 7px 4px 6px;
+  font-size: clamp(11.5px, 3.2vw, 13px);
+}
+.rpg-gacha-btn-row .btn-gold small {
+  font-size: clamp(9px, 2.5vw, 10px);
+}
+
+/* Gacha Results Panel */
+.rpg-results-panel {
+  background: #fff9eb;
+  border: 2.5px solid #c9932c;
+  border-radius: 14px;
+  padding: 8px;
+}
+.rpg-results-title {
+  font-weight: 900;
+  font-size: 13px;
+  color: #5c3416;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.rpg-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.rpg-result-item {
+  min-width: 0;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 10px;
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.s2-res-top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s2-res-thumb {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-res-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.rpg-result-badge {
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 5px;
+  color: #fff;
+  background: #887a6b;
+}
+.rpg-badge-new { background: #3e9e3a; }
+.rpg-badge-dupe { background: #2f6cc9; }
+.rpg-badge-shards { background: #d48a10; }
+.rpg-badge-star_up { background: #9a5be0; }
+.rpg-badge-star_dupe { background: #2f6cc9; }
+.rpg-badge-blueprint { background: #1c7bb5; }
+.rpg-badge-decor { background: #b05c9a; }
+
+.rpg-result-name {
+  font-weight: 800;
+  font-size: 10.5px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.s2-shards-toast {
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 900;
+  font-size: 11.5px;
+  color: #9a5a10;
+  background: #fff2c2;
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+
+/* Screen 23: Shard Exchange Shop */
+.s2-shard-hero {
+  background: linear-gradient(180deg, #fff8e6, #f2dcb1);
+  border: 2.5px solid #c9932c;
+  border-radius: 14px;
+  padding: 6px 8px;
+}
+.s2-shard-ribbon {
+  background: linear-gradient(90deg, #8c261d, #c43c2f, #8c261d);
+  border: 1.5px solid #ffd76a;
+  color: #fff8e6;
+  font-size: clamp(9.5px, 2.7vw, 10.5px);
+  font-weight: 900;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.s2-shard-hero-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.s2-shard-showcase {
+  position: relative;
+  width: clamp(96px, 28vw, 124px);
+  height: clamp(74px, 21vw, 90px);
+  flex-shrink: 0;
+}
+.s2-shard-arch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.s2-shard-chibi {
+  position: absolute;
+  left: 11%;
+  bottom: 6%;
+  height: 80%;
+  max-width: 60%;
+  object-fit: contain;
+}
+.s2-shard-wonder {
+  position: absolute;
+  right: 5%;
+  bottom: 8%;
+  height: 76%;
+  max-width: 60%;
+  object-fit: contain;
+}
+.s2-shard-summary {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.s2-shard-bal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  background: #fffdf8;
+  border: 1.5px solid #d3b27a;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: clamp(10.5px, 2.8vw, 11.5px);
+  font-weight: 800;
+}
+.s2-shard-bal img {
+  width: clamp(22px, 6.5vw, 28px);
+  height: clamp(22px, 6.5vw, 28px);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.s2-shard-bal-text {
+  flex: 1;
+  min-width: 0;
+}
+.s2-shard-bal small {
+  display: block;
+  font-size: clamp(8.5px, 2.3vw, 9.5px);
+  color: #7a4a1a;
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.rpg-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.s2-shop-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 5px;
+}
+.s2-shop-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.rpg-offer-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 900;
+  font-size: clamp(10px, 2.7vw, 11px);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+.s2-shop-card-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.s2-shop-thumb {
+  width: clamp(38px, 11vw, 48px);
+  height: clamp(38px, 11vw, 48px);
+}
+.s2-shop-card-info {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.s2-shop-sub {
+  font-size: clamp(8.8px, 2.3vw, 9.5px);
+  color: #7a4a1a;
+  font-weight: 700;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+.rpg-offer-cost {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 900;
+  font-size: clamp(10px, 2.7vw, 11.5px);
+  color: #b97a1c;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.rpg-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 5px;
+  border-radius: 7px;
+  border: 1.5px solid #c9a46a;
+  background: #fff8e8;
+  font: 700 clamp(9.5px, 2.5vw, 10.5px) var(--font, inherit);
+  color: #3a2415;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-shop-card .btn-gold,
+.s2-shop-btn {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: auto;
+  padding: 6px 5px;
+  border-radius: 10px;
+  border-width: 2px;
+  font-size: clamp(10px, 2.7vw, 12px);
+  letter-spacing: 0;
+  box-shadow: 0 3px 0 #9a5a10, 0 4px 8px rgba(0, 0, 0, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.s2-shop-btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================================
+   VIEW 3: BLACKSMITH STAR-FORCE FORGE (Screen 20)
+   ============================================================================ */
+.s2-forge-stage {
+  background: radial-gradient(circle at 50% 60%, #ffdf9e 0%, #73391d 68%, #2e170c 100%);
+  border: 2.5px solid #c9932c;
+  border-radius: 16px;
+  padding: 8px 10px 6px;
+  color: #fff6e3;
+  box-shadow: 0 3px 0 #5c3416;
+}
+.s2-sf-arc {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 0 8px;
+}
+.s2-sf-star {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  border: 1.5px solid #8a6432;
+  color: #6b5335;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-sf-star.filled {
+  background: radial-gradient(circle, #fff6b3, #e69d12);
+  border-color: #fff;
+  color: #5c3000;
+  box-shadow: 0 0 8px #ffd76a;
+}
+.s2-sf-star.target {
+  border-color: #ffd76a;
+  color: #ffd76a;
+  animation: pulse 1.1s infinite;
+}
+
+.s2-anvil-diorama {
+  position: relative;
+  height: 134px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-anvil-center {
+  position: relative;
+  width: 170px;
+  height: 134px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.s2-anvil-magic {
+  position: absolute;
+  top: -4px;
+  width: 96px;
+  height: 96px;
+  opacity: 0.7;
+}
+.s2-anvil-item-box {
+  position: relative;
+  z-index: 3;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  border: 2.5px solid #ffd76a;
+  background: radial-gradient(circle, #fffdf2, #f5d382);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -14px;
+  box-shadow: 0 0 16px rgba(255, 215, 106, 0.75);
+}
+.s2-anvil-item-box img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+}
+.s2-anvil-plus {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #2b8a28;
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+}
+.s2-anvil-prop {
+  width: 118px;
+  height: 84px;
+  object-fit: contain;
+  z-index: 2;
+}
+.s2-anvil-smith {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.45));
+}
+
+.rpg-forge-target {
+  text-align: center;
+  font-weight: 900;
+  font-size: 13.5px;
+  color: #ffe89e;
+  margin-top: 2px;
+}
+
+.rpg-forge-console {
+  background: linear-gradient(180deg, #fffdf7, #f8e8c6);
+  border: 2.5px solid #c9932c;
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s2-aura-banner {
+  background: linear-gradient(90deg, #fff2c2, #ffd97d, #fff2c2);
+  border: 1.5px solid #d49424;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  text-align: center;
+  color: #4b2a12;
+}
+.s2-forge-mid-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rpg-chance-gauge {
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 4px solid #3e9e3a;
+  background: radial-gradient(circle, #ffffff, #e6f9e4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.14);
+}
+.rpg-chance-num {
+  font-weight: 900;
+  font-size: 21px;
+  color: #237020;
+  line-height: 1;
+}
+.rpg-chance-sub {
+  font-size: 9px;
+  font-weight: 900;
+  color: #5c3416;
+}
+.s2-forge-controls-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rpg-safe-badge {
+  background: #e6f9e6;
+  border: 1.5px solid #3e9e3a;
+  color: #1c6619;
+  font-weight: 900;
+  font-size: 9.5px;
+  padding: 3px 7px;
+  border-radius: 8px;
+}
+.rpg-berries-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff0f5;
+  border: 1.5px solid #e5527a;
+  border-radius: 8px;
+  padding: 4px 7px;
+  font-weight: 900;
+  font-size: 11px;
+  color: #7a1432;
+  cursor: pointer;
+}
+.rpg-berries-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #e5527a;
+}
+.rpg-scroll-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fdf5e6;
+  border: 1.5px solid #d49f3a;
+  border-radius: 8px;
+  padding: 4px 7px;
+  font-weight: 900;
+  font-size: 11px;
+  color: #5c3416;
+  cursor: pointer;
+}
+.rpg-scroll-check.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #baa482;
+  color: #7d6b56;
+}
+.rpg-scroll-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #d49f3a;
+}
+
+.s2-pity-box-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 3px;
+  gap: 6px;
+}
+.s2-pity-bar-slim {
+  height: 14px;
+}
+.s2-forge-picker-card {
+  padding: 8px;
+}
+.s2-forge-picker-title {
+  margin-bottom: 4px;
+}
+
+.rpg-cost-rows {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f5e5c6;
+  padding: 5px 8px;
+  border-radius: 8px;
+}
+.s2-lack { color: #c0392b; }
+
+.rpg-forge-result {
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 11.5px;
+  text-align: center;
+}
+.rpg-forge-result.success { background: #e4f7e2; border: 1.5px solid #3e9e3a; color: #10300a; }
+.rpg-forge-result.fail { background: #fff0ed; border: 1.5px solid #c9932c; color: #7a2012; }
+
+.rpg-forge-picker {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  touch-action: pan-x;
+  padding: 2px;
+}
+.rpg-forge-item {
+  flex: 0 0 auto;
+  width: 68px;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+.rpg-forge-item.active {
+  border-color: #f0a91c !important;
+  box-shadow: 0 0 0 2px #ffd76a;
+  background: #fff6db;
+}
+.s2-forge-pick-thumb {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-forge-pick-thumb img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+.s2-forge-pick-name {
+  font-size: 9px;
+  font-weight: 800;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================================
+   VIEW 4: COZY PET NEST & SANCTUARY (Screen 16)
+   ============================================================================ */
+.s2-pet-sanctuary-stage {
+  background: radial-gradient(circle at 50% 45%, #fff9eb 0%, #cdeeff 60%, #8bc9f0 100%);
+  border: 2.5px solid #a46a32;
+  border-radius: 16px;
+  padding: 7px 8px;
+  box-shadow: 0 3px 0 #6b3f1f;
+}
+.s2-nest-diorama {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 124px;
+  padding: 0 4px;
+  gap: 4px;
+}
+.s2-nest-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 1 31%;
+  min-width: 0;
+  z-index: 3;
+}
+.s2-nest-pet {
+  width: clamp(60px, 17vw, 74px);
+  height: clamp(60px, 17vw, 74px);
+  object-fit: contain;
+  transform: scale(var(--pet-ui-scale, 1));
+  transform-origin: 50% 88%;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
+}
+.s2-nest-pet.mirror {
+  transform: scaleX(-1) scale(var(--pet-ui-scale, 1));
+}
+.s2-nest-label {
+  background: rgba(58, 36, 21, 0.86);
+  color: #fff6e3;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-nest-center {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.s2-nest-prop {
+  width: min(142px, 100%);
+  height: 104px;
+  object-fit: contain;
+  z-index: 1;
+}
+.s2-nest-egg {
+  position: absolute;
+  bottom: 36px;
+  width: 52px;
+  height: 64px;
+  object-fit: contain;
+  z-index: 2;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 140, 0.9));
+}
+.s2-nest-heart {
+  position: absolute;
+  top: 2px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  z-index: 3;
+}
+
+.rpg-pet-details {
+  background: linear-gradient(180deg, #fffdf7, #f9ebd0);
+  border: 2.5px solid #b88748;
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rpg-pet-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.rpg-pet-name-title {
+  font-weight: 900;
+  font-size: 13.5px;
+  color: #3a2415;
+}
+.rpg-pet-family {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #7a4a1a;
+}
+.s2-pet-lv-badge {
+  background: #6b3f1f;
+  color: #ffe08a;
+  font-weight: 900;
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.rpg-bar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rpg-stat-bar-wrap {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+.rpg-stat-track {
+  height: 11px;
+  background: #3a2414;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #a46a32;
+}
+.rpg-stat-fill { height: 100%; transition: width 0.25s; }
+.rpg-fill-exp { background: linear-gradient(90deg, #56c94e, #98f274); }
+.rpg-fill-mood { background: linear-gradient(90deg, #ff6b9d, #ffb3ce); }
+
+.rpg-traits-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s2-traits-heading {
+  font-size: 11px;
+  font-weight: 900;
+  color: #5c3416;
+}
+.rpg-trait-slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 9px;
+  border: 2px solid #d3b27a;
+  background: #fffdf8;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rpg-trait-slot.selected {
+  box-shadow: 0 0 0 2px #f0a91c;
+}
+.rpg-tier-mythic { background: linear-gradient(90deg, #fff5cc, #ffe184); border-color: #e0a42a; color: #523000; }
+.rpg-tier-epic { background: linear-gradient(90deg, #f6ebff, #e5ccf8); border-color: #9a5be0; color: #3d1666; }
+.rpg-tier-rare { background: linear-gradient(90deg, #edf6ff, #cfe4fc); border-color: #4f8fe0; color: #123e73; }
+.rpg-tier-common { background: #f7ecd5; border-color: #b89b72; color: #4b2a12; }
+
+.s2-trait-tag { font-weight: 900; font-size: 9.5px; flex-shrink: 0; }
+.s2-trait-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0 6px;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-trait-lock { font-size: 9.5px; opacity: 0.85; flex-shrink: 0; }
+
+.rpg-pet-actions {
+  display: flex;
+  gap: 6px;
+}
+.rpg-pet-actions .btn-gold {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  padding: 6px 4px;
+  font-size: clamp(11px, 3vw, 12px);
+}
+
+.rpg-couple-box {
+  background: linear-gradient(180deg, #fff7fa, #f9dfeb);
+  border: 2.5px solid #d96b98;
+  border-radius: 14px;
+  padding: 7px 9px;
+}
+.s2-pet-carousel-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #6b2242;
+  margin-bottom: 3px;
+}
+.rpg-pet-selector {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  touch-action: pan-x;
+  padding: 2px;
+}
+.rpg-pet-bubble {
+  flex: 0 0 auto;
+  width: 68px;
+  background: #fff;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  cursor: pointer;
+}
+.rpg-pet-bubble.active {
+  border-color: #f0a91c !important;
+  box-shadow: 0 0 0 2px #ffd76a;
+  background: #fff8e6;
+}
+.s2-pet-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #f2e0bd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.s2-pet-avatar-circle img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+.s2-pet-b-name {
+  font-size: 9px;
+  font-weight: 800;
+  max-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-pet-b-lv {
+  font-size: 9px;
+  color: #7a4a1a;
+  font-weight: 800;
+}
+
+.rpg-pet-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffdf0;
+  border: 2px solid #e0a42a;
+  border-radius: 10px;
+  padding: 6px 8px;
+  margin-top: 5px;
+  font-size: 11px;
+}
+.s2-pet-result-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+/* Blacksmith Red Dot Badge (Section 21.L.7) */
+.rpg-red-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rpg-fail, #c0392b);
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 5px rgba(192, 57, 43, 0.9);
+  pointer-events: none;
+  animation: rpg-pulse 1.4s infinite ease-in-out;
+  z-index: 5;
+}
+
+@keyframes rpg-pulse {
+  0% { transform: scale(0.9); opacity: 0.85; }
+  50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 7px rgba(192, 57, 43, 1); }
+  100% { transform: scale(0.9); opacity: 0.85; }
+}
+
+/* Box 1 Sub-Banner Selector Pills */
+.s2-banner-pills-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+.s2-banner-pill {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 3px;
+  border-radius: 999px;
+  border: 1.5px solid #b58548;
+  background: linear-gradient(180deg, #ebd5ae, #d9bc8a);
+  color: #522e12;
+  font: 800 clamp(9px, calc(10px * var(--ui-scale, 1)), 11.5px) var(--font, inherit);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 0 #7a4a1a;
+}
+.s2-banner-pill.active {
+  background: linear-gradient(180deg, #ffe388, #e39e26);
+  color: #3a2006;
+  border-color: #fff4c4;
+  box-shadow: 0 2px 0 #9a5a10;
+}
+
+/* Pet Star Progress */
+.s2-pet-star-progress {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #7b3fb8;
+  background: #f1e4fb;
+  border: 1px solid #d3a9f5;
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Gacha Rates Subtitle & Rate-Up */
+.rpg-rates-sub {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #522e12;
+  text-align: center;
+}
+
+/* ============================================================================
+   RESPONSIVE BREAKPOINTS (Compact Portrait Mobile <= 360px & <= 325px)
+   ============================================================================ */
+@media (max-width: 360px) {
+  .rpg-panel {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  .rpg-shop-grid,
+  .rpg-items-grid {
+    gap: 5px;
+  }
+  .s2-shop-card {
+    padding: 5px;
+    gap: 4px;
+  }
+  .s2-shard-showcase {
+    width: 86px;
+    height: 68px;
+  }
+  .s2-wardrobe-stage {
+    grid-template-columns: minmax(74px, 28%) minmax(0, 1fr) minmax(74px, 28%);
+    gap: 4px;
+  }
+}
+
+@media (max-width: 325px) {
+  .rpg-shop-grid,
+  .rpg-items-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ============================================================================
+   PET SYSTEM V2 ("SOUL-BOND COMPANIONS") SANCTUARY STYLES
+   ============================================================================ */
+.pet-v2-hero-focus {
+  position: relative;
+}
+.pet-v2-shimmer {
+  filter: drop-shadow(0 0 10px rgba(255, 224, 130, 0.95)) drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28));
+  animation: petV2FloatShimmer 2.4s ease-in-out infinite;
+}
+@keyframes petV2FloatShimmer {
+  0%, 100% { transform: translateY(0px) scale(var(--pet-ui-scale, 1)); }
+  50% { transform: translateY(-4px) scale(calc(var(--pet-ui-scale, 1) * 1.04)); }
+}
+.pet-v2-emote-bubble {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 38px;
+  background: #fffdf7;
+  border: 2px solid #e0a42a;
+  border-radius: 50%;
+  padding: 2px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+  z-index: 6;
+}
+.pet-v2-emote-bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pet-v2-vtier-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  background: rgba(255, 253, 245, 0.88);
+  border: 1.5px solid #c99b56;
+  border-radius: 999px;
+  padding: 3px 7px;
+  flex-wrap: wrap;
+}
+.pet-v2-vtier-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #5c3416;
+  margin-right: 2px;
+}
+.pet-v2-vtier-pill {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1.5px solid #b88748;
+  background: #fff6e0;
+  color: #4b2a12;
+  border-radius: 999px;
+  padding: 3px 6px;
+  font-size: 9.5px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pet-v2-vtier-pill.active {
+  background: linear-gradient(180deg, #ffe285, #e39a22);
+  color: #3a1d04;
+  border-color: #fff3c4;
+}
+.pet-v2-vtier-pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pet-v2-quick-bar {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  align-items: center;
+}
+.pet-v2-quick-bar .btn-gold {
+  flex: 1 1 0;
+  margin-top: 0;
+  padding: 5px 6px;
+  font-size: 10px;
+}
+.pet-v2-equipped-pill {
+  background: #e6f9e6;
+  border: 1.5px solid #3e9e3a;
+  color: #1c6619;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pet-v2-rename-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pet-v2-rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1.5px solid #c99b56;
+  background: #fffdf8;
+  font: 800 11px var(--font, inherit);
+  color: #3a2415;
+}
+.pet-v2-rename-btn {
+  width: auto !important;
+  margin-top: 0 !important;
+  padding: 5px 10px !important;
+  flex-shrink: 0;
+}
+
+.pet-v2-essence-box {
+  background: #fdf3ff;
+  border: 1.5px solid #b97be0;
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pet-v2-essence-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: #461c66;
+  gap: 6px;
+}
+.pet-v2-pool-pill {
+  background: #f0dcff;
+  border: 1px solid #b97be0;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.pet-v2-fill-essence {
+  background: linear-gradient(90deg, #a55eea, #ff7eb3, #ffd86f);
+}
+.pet-v2-evo-actions {
+  display: flex;
+  gap: 6px;
+}
+.pet-v2-evo-actions .btn-gold {
+  flex: 1;
+  margin-top: 0;
+  padding: 5px 6px;
+  font-size: 10px;
+}
+
+.pet-v2-slot-locked {
+  opacity: 0.72;
+  background: #efe5d4;
+  border-style: dashed;
+}
+.pet-v2-slot-body {
+  flex: 1;
+  min-width: 0;
+  margin: 0 6px;
+  display: flex;
+  flex-direction: column;
+}
+.pet-v2-slot-desc {
+  font-size: 9px;
+  opacity: 0.82;
+  font-weight: 700;
+}
+.pet-v2-lock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1.5px solid #b88748;
+  background: #fff8e6;
+  color: #4b2a12;
+  font-size: 9.5px;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pet-v2-lock-btn.locked {
+  background: linear-gradient(180deg, #ffe082, #d48c1c);
+  color: #3a1d04;
+  border-color: #9a5a10;
+}
+.pet-v2-lock-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pet-v2-lock-summary {
+  font-size: 10px;
+  color: #8c4a15;
+}
+.s2-traits-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pet-v2-mythic-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff2cc;
+  border: 1.5px solid #d48c1c;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #5c3000;
+  cursor: pointer;
+}
+
+.pet-v2-skill-card {
+  background: linear-gradient(180deg, #fff9ee, #f4e1be);
+  border: 1.5px solid #c9932c;
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pet-v2-skill-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pet-v2-skill-ico {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #fffdf8;
+  border: 1.5px solid #d49f3a;
+  padding: 2px;
+}
+.pet-v2-skill-title {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #3a2415;
+}
+.pet-v2-skill-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #6b3f1f;
+  line-height: 1.25;
+}
+.pet-v2-skill-modes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pet-v2-mode-pill {
+  background: #fffdf8;
+  border: 1px solid #c9a46a;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #522e12;
+}
+
+.pet-v2-bond-card {
+  background: #fff5f8;
+  border: 1.5px solid #e07ca2;
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pet-v2-bond-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: #6b1d3b;
+}
+.pet-v2-fill-bond {
+  background: linear-gradient(90deg, #ff6b9d, #ff9ebc);
+}
+.pet-v2-emotes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.pet-v2-emote-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1.5px solid #d99bb5;
+  background: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #522035;
+  cursor: pointer;
+}
+.pet-v2-emote-btn img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.pet-v2-emote-btn.active {
+  border-color: #e05288;
+  background: #ffe8f1;
+  box-shadow: 0 0 0 1.5px #ff85b3;
+}
+.pet-v2-emote-btn.locked {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+}
+
+.s2-pet-carousel-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pet-v2-release-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fffdf5;
+  border: 1.5px solid #c9932c;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #5c3416;
+  cursor: pointer;
+}
+.pet-v2-release-modal {
+  background: #fffdf2;
+  border: 2px solid #d48c1c;
+  border-radius: 10px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pet-v2-release-text {
+  font-size: 10.5px;
+  color: #4b2a12;
+}
+.pet-v2-release-btns {
+  display: flex;
+  gap: 6px;
+}
+.pet-v2-release-btns .btn-gold {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* --- Minimal 3-Block Pet Sanctuary V2.5 Additions --- */
+.pet-v2-single-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 124px;
+  padding: 6px 0 2px;
+}
+.pet-v2-stage-pet {
+  width: clamp(76px, 20vw, 96px);
+  height: clamp(76px, 20vw, 96px);
+  object-fit: contain;
+  transform: scale(var(--pet-ui-scale, 1));
+  transform-origin: 50% 88%;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+}
+.pet-v2-stage-label {
+  display: block;
+  margin-top: 4px;
+  background: rgba(58, 36, 21, 0.88);
+  color: #fff6e3;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 999px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Interactive Pose & Trick Bar */
+.pet-v2-pose-bar {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.pet-v2-pose-btn {
+  flex: 1 1 0;
+  min-width: 54px;
+  padding: 4px 5px;
+  border-radius: 8px;
+  border: 1.5px solid #c9932c;
+  background: #fff8e8;
+  color: #4b2a12;
+  font-size: 9.5px;
+  font-weight: 900;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+.pet-v2-pose-btn.active {
+  background: linear-gradient(180deg, #ffe285, #e39a22);
+  color: #3a1d04;
+  border-color: #ffd86b;
+  box-shadow: 0 0 0 1.5px #f4a22b;
+}
+.pet-v2-pose-btn.locked,
+.pet-v2-pose-btn:disabled {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+  cursor: not-allowed;
+  background: #ede6d8;
+  border-color: #baa48a;
+  color: #6b5c4f;
+}
+
+/* Block 2: Progress Bars */
+.pet-v2-progress-card {
+  background: #fffdf8;
+  border: 1.5px solid #d49f3a;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pet-v2-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pet-v2-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #422511;
+}
+.pet-v2-milestone-hint {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #8c4a15;
+}
+.pet-v2-hunger-badge {
+  font-size: 10px;
+  font-weight: 900;
+}
+.pet-v2-hunger-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+.pet-v2-hunger-track {
+  width: 100%;
+  height: 11px;
+}
+.pet-v2-feed-btn {
+  width: 100%;
+  margin-top: 0 !important;
+  padding: 5px 8px !important;
+  font-size: 10px !important;
+  white-space: nowrap;
+}
+
+/* Block 3: Costume Card & Trait Slots */
+.pet-v2-costume-card {
+  background: linear-gradient(180deg, #f7f0ff, #eddcfc);
+  border: 1.5px solid #9c6ad6;
+  border-radius: 10px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+.pet-v2-costume-locked {
+  background: #f0eaf5;
+  border: 1.5px dashed #a894bd;
+}
+.pet-v2-costume-lock-banner {
+  font-size: 10px;
+  font-weight: 800;
+  color: #63467d;
+  text-align: center;
+  padding: 3px 0;
+}
+.pet-v2-costume-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #491f6e;
+}
+.pet-v2-costume-hint {
+  font-size: 9px;
+  font-weight: 700;
+  color: #6d4294;
+}
+.pet-v2-costume-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pet-v2-costume-select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 6px;
+  border: 1.5px solid #9c6ad6;
+  background: #fff;
+  color: #3b1759;
+}
+.pet-v2-traits-card {
+  margin-top: 8px;
+}
+.pet-v2-reroll-row {
+  display: flex;
+  margin-top: 6px;
+}
+.pet-v2-reroll-row .btn-gold {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Bottom 4-Companion Bar & Adopt */
+.pet-v2-4bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+.pet-v2-adopt-bubble {
+  border: 1.5px dashed #c9932c;
+  background: #fff9ed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  border-radius: 10px;
+}
+.s2-pet-avatar-circle.not-owned img {
+  filter: grayscale(0.55) opacity(0.75);
+}
+.pet-v2-adopt-btn {
+  margin-top: 3px !important;
+  padding: 3px 5px !important;
+  font-size: 8.5px !important;
+  width: 90% !important;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   STEP 3.5: FLUFFÉ'S STARLIGHT HAIR STUDIO (20 Hairs + 20 Dyes + Royal/Celestial Gacha)
+   ============================================================================ */
+.s2-fluffe-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff5fa 0%, #ffe8f3 50%, #fff6db 100%);
+  border: 2px solid #d48ba8;
+  box-shadow: 0 2px 0 #8a4b68;
+}
+.s2-fluffe-mascot {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: #fffdf9;
+  border-radius: 12px;
+  border: 2px solid #e0a72a;
+  padding: 2px;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.18));
+}
+.s2-fluffe-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s2-fluffe-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #5c2240;
+}
+.s2-fluffe-sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a425e;
+}
+.s2-fluffe-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+.s2-body-toggle {
+  display: inline-flex;
+  background: #f5dce8;
+  border: 1.5px solid #c982a0;
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+}
+.s2-body-btn {
+  border: 0;
+  background: transparent;
+  padding: 2px 8px;
+  border-radius: 7px;
+  font: 800 10px var(--font, inherit);
+  color: #6b2d4a;
+  cursor: pointer;
+}
+.s2-body-btn.active {
+  background: linear-gradient(180deg, #ffe285, #e09b22);
+  color: #3a2006;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.s2-coupon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #3a2030;
+  border: 1.5px solid #f0b44c;
+  color: #ffe89e;
+  border-radius: 999px;
+  padding: 2px 8px 2px 4px;
+  font-size: 11px;
+  font-weight: 900;
+}
+.s2-coupon-pill img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.s2-hair-mirror-card {
+  background: linear-gradient(180deg, #2c1e38 0%, #4a2d56 60%, #3a2416 100%);
+  border: 2.5px solid #e0a72a;
+  border-radius: 16px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  box-shadow: inset 0 0 18px rgba(255, 215, 130, 0.2), 0 3px 0 #5c3416;
+}
+.s2-hair-stage-fig {
+  width: 100%;
+  max-width: 230px;
+  height: 168px !important;
+  min-height: 168px !important;
+}
+.s2-hair-current-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.s2-hair-current-pill {
+  background: rgba(32, 18, 10, 0.85);
+  border: 1.5px solid #e0a72a;
+  color: #ffe8a3;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+.is-celestial-nameplate {
+  background: linear-gradient(90deg, #3b1d5e 0%, #6b2fa0 50%, #2a4878 100%) !important;
+  border: 1.5px solid #ffd86b !important;
+  color: #fff6c8 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 106, 0.65);
+}
+.s2-hair-current-dye {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 248, 232, 0.92);
+  border: 1.5px solid #c9932c;
+  color: #3a2415;
+  border-radius: 999px;
+  padding: 2px 9px 2px 4px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.s2-dye-circle {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px #5c3416;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.s2-hair-quick-dye-bar {
+  padding: 6px 8px;
+}
+.s2-hair-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10.5px;
+  color: #4b2a12;
+  margin-bottom: 5px;
+}
+.s2-hair-quick-swatches {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+}
+.s2-dye-mini-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #c99a5b;
+  background: #fff8e8;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.s2-dye-mini-swatch .s2-dye-circle {
+  width: 100%;
+  height: 100%;
+}
+.s2-dye-mini-swatch.active {
+  border-color: #f0a91c;
+  box-shadow: 0 0 0 2px #ffd76a;
+  transform: scale(1.1);
+}
+
+.s2-hair-section-note {
+  font-size: 10px;
+  color: #6b3f1f;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.s2-hair-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.s2-hair-card {
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  cursor: pointer;
+}
+.s2-hair-card.tier-royal {
+  border-color: #d47ba8;
+  background: linear-gradient(180deg, #fffdf9, #fff2f8);
+}
+.s2-hair-card.tier-celestial {
+  border-color: #e8a828;
+  background: linear-gradient(135deg, #fffdf4 0%, #f5ecff 60%, #e8f8ff 100%);
+  box-shadow: 0 0 8px rgba(232, 168, 40, 0.35);
+}
+.s2-hair-card.equipped {
+  border-color: #e0a42a;
+  box-shadow: 0 0 0 2px #ffd76a;
+}
+.s2-hair-thumb-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 40%, #fff8eb, #ead4b0);
+  border: 1.5px solid #c9a46a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.s2-hair-thumb-wrap.tier-royal {
+  background: radial-gradient(circle at 50% 40%, #fff5fa, #eab8d1);
+  border-color: #c96b98;
+}
+.s2-hair-thumb-wrap.tier-celestial {
+  background: radial-gradient(circle at 50% 40%, #fffbe0, #c8a8ff 65%, #7ad8ff 100%);
+  border-color: #e0a72a;
+}
+.s2-hair-thumb {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+.s2-hair-owned-dot, .s2-hair-lock-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 9px;
+  font-weight: 900;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-hair-owned-dot {
+  background: #3e9e3a;
+  color: #fff;
+  border: 1.5px solid #fff;
+}
+.s2-hair-lock-dot {
+  background: #5c3416;
+  color: #ffe08a;
+  font-size: 8px;
+}
+.s2-hair-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s2-hair-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.s2-hair-tier-badge {
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.s2-hair-tier-badge.is-classic {
+  background: #e8d5b5;
+  color: #5c3416;
+}
+.s2-hair-tier-badge.is-royal {
+  background: #ffd1e6;
+  color: #7a1c48;
+}
+.s2-hair-tier-badge.is-celestial {
+  background: linear-gradient(90deg, #ffe27a, #d4a5ff, #8ce8ff);
+  color: #32154d;
+}
+.s2-hair-bundle-tag {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #5a287a;
+  background: #f0e0ff;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.s2-hair-desc {
+  font-size: 9px;
+  color: #6b482e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-hair-actions {
+  margin-top: 2px;
+}
+
+/* Royal & Celestial Hair Gacha Banner */
+.s2-hair-gacha-banner {
+  background: linear-gradient(180deg, #2d183e 0%, #4d265e 55%, #3a1f2d 100%);
+  border: 2.5px solid #e8a828;
+  border-radius: 16px;
+  padding: 8px;
+  color: #fff8eb;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-shadow: 0 3px 0 #5c3416;
+}
+.s2-hair-gacha-head {
+  text-align: center;
+}
+.s2-hair-gacha-title {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #ffe48a;
+  letter-spacing: 0.4px;
+}
+.s2-hair-gacha-rates {
+  font-size: 9.5px;
+  color: #f3cfe2;
+  font-weight: 700;
+}
+.s2-celestial-showcase {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.s2-celestial-spot {
+  position: relative;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 244, 196, 0.25), rgba(35, 16, 56, 0.85));
+  border: 1.5px solid #ffd86b;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+}
+.s2-celestial-spot img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(255, 220, 120, 0.65));
+}
+.s2-celestial-tag {
+  font-size: 8px;
+  font-weight: 900;
+  color: #ffd86b;
+  letter-spacing: 0.3px;
+}
+.s2-celestial-name {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #fff;
+}
+.s2-celestial-perk {
+  font-size: 8.5px;
+  color: #e6d4ff;
+  line-height: 1.2;
+}
+.s2-celestial-rate-pill {
+  font-size: 8.5px;
+  font-weight: 800;
+  background: rgba(255, 216, 107, 0.2);
+  border: 1px solid #ffd86b;
+  color: #ffe89e;
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+.s2-hair-pity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s2-pity-royal .rpg-pity-fill {
+  background: linear-gradient(90deg, #e05294, #ff9ec8);
+}
+.s2-pity-celestial .rpg-pity-fill {
+  background: linear-gradient(90deg, #9b5cff, #ffd86b, #6be8ff);
+}
+.s2-hair-pull-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.s2-hair-pull-actions .s2-pull-btn {
+  margin: 0;
+  padding: 6px 4px;
+  font-size: 11px;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+}
+.s2-hair-pull-actions .s2-pull-btn small {
+  font-size: 8.5px;
+  margin-top: 2px;
+}
+.s2-hair-pull-actions .s2-pull-btn.ticket {
+  background: linear-gradient(180deg, #ffb8dc, #d94b8c);
+  color: #fff;
+}
+.s2-hair-pull-actions .s2-pull-btn.ten {
+  background: linear-gradient(180deg, #ffe885, #e0961c);
+}
+
+.s2-hair-pull-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+.s2-hair-pull-item {
+  background: #fffdf8;
+  border: 2px solid #d3b27a;
+  border-radius: 10px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+.s2-hair-pull-item.tier-royal {
+  border-color: #d95b98;
+  background: #fff2f8;
+}
+.s2-hair-pull-item.tier-celestial {
+  border-color: #e8a828;
+  background: linear-gradient(135deg, #fffbe6, #f2e6ff);
+}
+.s2-hair-pull-item img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.s2-hair-pull-name {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #3a2415;
+}
+.s2-hair-pull-badge {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #2b7d2f;
+}
+.s2-hair-pull-bundle {
+  font-size: 8px;
+  font-weight: 800;
+  color: #6b2fa0;
+}
+
+/* 20-Swatch Permanent Dye Closet */
+.s2-dye-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.s2-dye-card {
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.s2-dye-card.equipped {
+  border-color: #e0a42a;
+  background: #fff6db;
+}
+.s2-dye-swatch-lg {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25), 0 0 0 1.5px #8a5a2b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-dye-check, .s2-dye-lock {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  font-size: 8.5px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-dye-check {
+  background: #3e9e3a;
+  color: #fff;
+  border: 1.5px solid #fff;
+}
+.s2-dye-lock {
+  background: #3a2415;
+  color: #ffe08a;
+  font-size: 8px;
+}
+.s2-dye-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s2-dye-name {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #3a2415;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-dye-sub {
+  font-size: 9px;
+  color: #7a4a1a;
+  font-weight: 700;
+}
+
+
+

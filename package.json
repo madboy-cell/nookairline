@@ -1,0 +1,28 @@
+{
+  "name": "neora-world-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "slice-assets": "node scripts/process_art_assets.js",
+    "test": "node --test tests/*.test.js",
+    "qa:step1": "node scripts/qa_step1.js",
+    "qa:step2": "node scripts/qa_step2.js",
+    "qa:step3": "node scripts/qa_step3.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "express": "^4.19.2",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
+    "three": "^0.169.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.5.0"
+  }
+}

@@ -1,0 +1,40 @@
+// shared/costumes_catalog.js — canonical outfits (Implementation Plan Section 21.D).
+// Seasonal Mythic ultimates live in shared/season_skills.js (Step 4).
+
+// Costume signature parts (Section 22.C): `headgear: true` = built-in headdress (equipped hat not drawn),
+// `faceCover: true` = built-in mask (equipped face accessory not drawn), `lowerBody: 'legs' (default) | 'tail' | 'gown'`
+// ('tail' = no leg scissor + boots not drawn; 'gown' = long-hem boot rules). Stats are never affected.
+export const OUTFITS = {
+  newbie_outfit:        { rarity: 1, name: 'Island Explorer Set',        stats: { all: 2 } },
+  rare_royal_scholar:   { rarity: 1, name: 'Klaipeda Royal Scholar',     stats: { fortune: 8, luck: 8 } },
+  rare_boba_barista:    { rarity: 1, name: 'Pastel Boba Barista',        stats: { fortune: 10, swiftness: 6 } },
+  epic_sakura_samurai:  { rarity: 2, name: 'Kyoto Sakura Ronin / Miko',  stats: { power: 15, swiftness: 14 } },
+  epic_starlight_idol:  { rarity: 2, name: 'Starlight Pop Idol',         stats: { fortune: 16, luck: 14 } },
+  epic_frost_knight:    { rarity: 2, name: 'Winter Guardia Knight',      stats: { power: 16, fortune: 12 } },
+  s1_naga_sovereign:    { rarity: 3, name: 'Naga Sovereign',             season: 1, headgear: true, lowerBody: 'tail',
+    walkFx: { stepCell: 'fx_bubble', trailCell: 'fx_rune', tint: [0.3, 0.85, 0.6], up: 0.55, speed: 0.32, gravity: -0.45, size: 0.25, life: 0.65 } },
+  s2_kitsune_inari:     { rarity: 3, name: 'Kitsune Inari',              season: 2,
+    walkFx: { stepCell: 'fx_petal', trailCell: 'fx_flame', tint: [1.0, 0.7, 0.8], up: 0.5, speed: 0.35, gravity: 0.25, size: 0.24, life: 0.6 } },
+  s2_tsukuyomi_eclipse: { rarity: 3, name: 'Tsukuyomi Eclipse',          season: 2, headgear: true,
+    walkFx: { stepCell: 'fx_moon', trailCell: 'fx_stardust', tint: [0.7, 0.7, 1.0], up: 0.45, speed: 0.3, gravity: 0.1, size: 0.26, life: 0.65 } },
+  s3_sultan_djinn:      { rarity: 3, name: 'Sultan Djinn',               season: 3,
+    walkFx: { stepCell: 'fx_stardust', trailCell: 'fx_rune', tint: [0.8, 0.5, 1.0], up: 0.55, speed: 0.35, gravity: -0.15, size: 0.25, life: 0.6 } },
+  s3_dune_phoenix:      { rarity: 3, name: 'Dune Phoenix',               season: 3, headgear: true,
+    walkFx: { stepCell: 'fx_flame', trailCell: 'fx_feather', tint: [1.0, 0.5, 0.2], up: 0.7, speed: 0.4, gravity: -0.8, size: 0.25, life: 0.55 } },
+  s4_casino_royale:     { rarity: 3, name: 'Casino Royale 007',          season: 4,
+    walkFx: { stepCell: 'fx_chip', trailCell: 'fx_star', tint: [0.4, 0.9, 0.5], up: 0.75, speed: 0.5, gravity: 1.1, size: 0.26, life: 0.45 } },
+  s5_atlantis_siren:    { rarity: 3, name: 'Atlantis Siren',             season: 5, headgear: true, lowerBody: 'tail',
+    walkFx: { stepCell: 'fx_bubble', trailCell: 'fx_note', tint: [0.3, 0.9, 0.9], up: 0.5, speed: 0.3, gravity: -0.5, size: 0.24, life: 0.7 } },
+  s6_astral_sovereign:  { rarity: 3, name: 'Astral Sovereign',           season: 6,
+    walkFx: { stepCell: 'fx_star', trailCell: 'fx_rune', tint: [0.7, 0.4, 0.9], up: 0.45, speed: 0.3, gravity: -0.1, size: 0.28, life: 0.7 } },
+  s7_cinderella_clock:  { rarity: 3, name: 'Cinderella Midnight Clock',  season: 7,
+    walkFx: { stepCell: 'fx_star', trailCell: 'fx_magic_circle', tint: [0.7, 0.85, 1.0], up: 0.5, speed: 0.35, gravity: 0.2, size: 0.26, life: 0.6 } },
+  s8_glacial_elsa:      { rarity: 3, name: 'Glacial Empress',            season: 8,
+    walkFx: { stepCell: 'fx_snowflake', trailCell: 'fx_stardust', tint: [0.6, 0.9, 1.0], up: 0.4, speed: 0.3, gravity: -0.2, size: 0.26, life: 0.8 } },
+  s9_pharaoh_ra:        { rarity: 3, name: 'Pharaoh & Sun God Ra',       season: 9,
+    walkFx: { stepCell: 'fx_moon', trailCell: 'fx_rune', tint: [1.0, 0.8, 0.2], up: 0.6, speed: 0.35, gravity: -0.3, size: 0.26, life: 0.55 } },
+  s10_phantom_masque:   { rarity: 3, name: 'Phantom Masque',             season: 10,
+    walkFx: { stepCell: 'fx_feather', trailCell: 'fx_note', tint: [0.9, 0.2, 0.3], up: 0.4, speed: 0.25, gravity: 0.3, size: 0.25, life: 0.75 } },
+  s11_zeus_olympus:     { rarity: 3, name: 'Zeus Olympus',               season: 11,
+    walkFx: { stepCell: 'fx_lightning', trailCell: 'fx_shockwave', tint: [1.0, 0.85, 0.3], up: 0.6, speed: 0.8, gravity: 0.8, size: 0.28, life: 0.25 } },
+};

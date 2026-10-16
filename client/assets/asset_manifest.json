@@ -1,0 +1,5788 @@
+{
+  "generatedAt": "2026-10-16T05:35:30.216Z",
+  "sprites": {
+    "bkk_base_front": {
+      "file": "chibi/bkk_base_front.png",
+      "w": 289,
+      "h": 625,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.527
+    },
+    "bkk_base_back": {
+      "file": "chibi/bkk_base_back.png",
+      "w": 279,
+      "h": 621,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.55
+    },
+    "wings_golden_seraphim": {
+      "file": "chibi/wings_golden_seraphim.png",
+      "w": 338,
+      "h": 324,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.39
+    },
+    "dxb_base_front": {
+      "file": "chibi/dxb_base_front.png",
+      "w": 289,
+      "h": 625,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.528
+    },
+    "dxb_base_back": {
+      "file": "chibi/dxb_base_back.png",
+      "w": 279,
+      "h": 622,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.551
+    },
+    "wings_pastel_angel": {
+      "file": "chibi/wings_pastel_angel.png",
+      "w": 335,
+      "h": 193,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.443
+    },
+    "bkk_base_side": {
+      "file": "chibi/bkk_base_side.png",
+      "w": 289,
+      "h": 826,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.628
+    },
+    "dxb_base_side": {
+      "file": "chibi/dxb_base_side.png",
+      "w": 303,
+      "h": 808,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.552
+    },
+    "dragon_front": {
+      "file": "pets/dragon_front.png",
+      "w": 324,
+      "h": 372,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.606
+    },
+    "dragon_back": {
+      "file": "pets/dragon_back.png",
+      "w": 377,
+      "h": 367,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.555
+    },
+    "capybara_front": {
+      "file": "pets/capybara_front.png",
+      "w": 357,
+      "h": 373,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.6
+    },
+    "capybara_back": {
+      "file": "pets/capybara_back.png",
+      "w": 322,
+      "h": 381,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.63
+    },
+    "dragon_side": {
+      "file": "pets/dragon_side.png",
+      "w": 546,
+      "h": 501,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.49
+    },
+    "capybara_side": {
+      "file": "pets/capybara_side.png",
+      "w": 533,
+      "h": 468,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.549
+    },
+    "bkk_base_lifted": {
+      "file": "chibi/bkk_base_lifted.png",
+      "w": 493,
+      "h": 628,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.375
+    },
+    "boy_base_lifted": {
+      "file": "chibi/boy_base_lifted.png",
+      "w": 493,
+      "h": 628,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.375
+    },
+    "dxb_base_lifted": {
+      "file": "chibi/dxb_base_lifted.png",
+      "w": 447,
+      "h": 623,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.413
+    },
+    "girl_base_lifted": {
+      "file": "chibi/girl_base_lifted.png",
+      "w": 447,
+      "h": 623,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.413
+    },
+    "bld_castle": {
+      "file": "village/bld_castle.png",
+      "w": 378,
+      "h": 410,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.527
+    },
+    "bld_mint": {
+      "file": "village/bld_mint.png",
+      "w": 404,
+      "h": 372,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.68
+    },
+    "bld_patisserie": {
+      "file": "village/bld_patisserie.png",
+      "w": 321,
+      "h": 388,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.51
+    },
+    "bld_shrine": {
+      "file": "village/bld_shrine.png",
+      "w": 411,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.59
+    },
+    "bld_nest": {
+      "file": "village/bld_nest.png",
+      "w": 368,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.642
+    },
+    "bld_dock": {
+      "file": "village/bld_dock.png",
+      "w": 362,
+      "h": 354,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.573
+    },
+    "wnd_onsen": {
+      "file": "village/wnd_onsen.png",
+      "w": 426,
+      "h": 355,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.666
+    },
+    "wnd_ferris": {
+      "file": "village/wnd_ferris.png",
+      "w": 374,
+      "h": 384,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.573
+    },
+    "wnd_fountain": {
+      "file": "village/wnd_fountain.png",
+      "w": 396,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.587
+    },
+    "wnd_casino_dome": {
+      "file": "village/wnd_casino_dome.png",
+      "w": 414,
+      "h": 384,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.523
+    },
+    "wnd_world_tree": {
+      "file": "village/wnd_world_tree.png",
+      "w": 360,
+      "h": 370,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.658
+    },
+    "bridge_rainbow_arch": {
+      "file": "village/bridge_rainbow_arch.png",
+      "w": 387,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.475
+    },
+    "dec_swing": {
+      "file": "village/dec_swing.png",
+      "w": 299,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.499
+    },
+    "dec_picnic": {
+      "file": "village/dec_picnic.png",
+      "w": 408,
+      "h": 263,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.519
+    },
+    "dec_gramophone": {
+      "file": "village/dec_gramophone.png",
+      "w": 202,
+      "h": 309,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.583
+    },
+    "dec_tent": {
+      "file": "village/dec_tent.png",
+      "w": 338,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.561
+    },
+    "dec_cat_cushion": {
+      "file": "village/dec_cat_cushion.png",
+      "w": 276,
+      "h": 274,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.557
+    },
+    "dec_balloon_cart": {
+      "file": "village/dec_balloon_cart.png",
+      "w": 264,
+      "h": 306,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.612
+    },
+    "dec_mushroom_ring": {
+      "file": "village/dec_mushroom_ring.png",
+      "w": 307,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.723
+    },
+    "dec_birdbath_lamp": {
+      "file": "village/dec_birdbath_lamp.png",
+      "w": 210,
+      "h": 347,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.429
+    },
+    "dec_love_pavilion": {
+      "file": "village/dec_love_pavilion.png",
+      "w": 230,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.725
+    },
+    "ground_classic": {
+      "file": "terrain/ground_classic.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "ground_sakura": {
+      "file": "terrain/ground_sakura.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "ground_vanilla": {
+      "file": "terrain/ground_vanilla.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "ground_aurora": {
+      "file": "terrain/ground_aurora.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "road_cobble": {
+      "file": "terrain/road_cobble.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "road_sakura": {
+      "file": "terrain/road_sakura.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "road_cream": {
+      "file": "terrain/road_cream.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "water_canal": {
+      "file": "terrain/water_canal.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "env_signpost": {
+      "file": "village/env_signpost.png",
+      "w": 213,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.547
+    },
+    "env_cloud": {
+      "file": "village/env_cloud.png",
+      "w": 372,
+      "h": 226,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.625
+    },
+    "env_pine": {
+      "file": "village/env_pine.png",
+      "w": 246,
+      "h": 377,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.538
+    },
+    "env_tree": {
+      "file": "village/env_tree.png",
+      "w": 342,
+      "h": 362,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.579
+    },
+    "env_bush": {
+      "file": "village/env_bush.png",
+      "w": 326,
+      "h": 253,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.666
+    },
+    "fish_minnow": {
+      "file": "village/fish_minnow.png",
+      "w": 264,
+      "h": 147,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.517
+    },
+    "fish_crab": {
+      "file": "village/fish_crab.png",
+      "w": 277,
+      "h": 269,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.51
+    },
+    "fish_koi": {
+      "file": "village/fish_koi.png",
+      "w": 300,
+      "h": 249,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.433
+    },
+    "fish_chest": {
+      "file": "village/fish_chest.png",
+      "w": 273,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.706
+    },
+    "env_tree_oak_a": {
+      "file": "village/env_tree_oak_a.png",
+      "w": 401,
+      "h": 361,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.628
+    },
+    "env_bush_mixed_large": {
+      "file": "village/env_bush_mixed_large.png",
+      "w": 388,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.665
+    },
+    "env_streetlamp_iron": {
+      "file": "village/env_streetlamp_iron.png",
+      "w": 110,
+      "h": 383,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.528
+    },
+    "env_bridge_parapet_side": {
+      "file": "village/env_bridge_parapet_side.png",
+      "w": 414,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.408
+    },
+    "env_fence_wood_stone_straight": {
+      "file": "village/env_fence_wood_stone_straight.png",
+      "w": 372,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.405
+    },
+    "env_river_boulders_a": {
+      "file": "village/env_river_boulders_a.png",
+      "w": 325,
+      "h": 236,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.644
+    },
+    "bld_windmill_bakery": {
+      "file": "village/bld_windmill_bakery.png",
+      "w": 366,
+      "h": 385,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.592
+    },
+    "bld_flower_greenhouse": {
+      "file": "village/bld_flower_greenhouse.png",
+      "w": 379,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.588
+    },
+    "bld_owl_post_office": {
+      "file": "village/bld_owl_post_office.png",
+      "w": 336,
+      "h": 380,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.608
+    },
+    "bld_starlight_lighthouse": {
+      "file": "village/bld_starlight_lighthouse.png",
+      "w": 254,
+      "h": 363,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.505
+    },
+    "env_tree_sakura_a": {
+      "file": "village/env_tree_sakura_a.png",
+      "w": 341,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.558
+    },
+    "env_tree_fruit_apple": {
+      "file": "village/env_tree_fruit_apple.png",
+      "w": 333,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.59
+    },
+    "env_tree_oak_b": {
+      "file": "village/env_tree_oak_b.png",
+      "w": 323,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.579
+    },
+    "env_tree_sakura_b": {
+      "file": "village/env_tree_sakura_b.png",
+      "w": 301,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.462
+    },
+    "env_tree_golden_maple": {
+      "file": "village/env_tree_golden_maple.png",
+      "w": 295,
+      "h": 344,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.567
+    },
+    "env_bush_roses_pink": {
+      "file": "village/env_bush_roses_pink.png",
+      "w": 328,
+      "h": 255,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.663
+    },
+    "env_bush_daisies_white": {
+      "file": "village/env_bush_daisies_white.png",
+      "w": 288,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.513
+    },
+    "env_bush_hydrangea_blue": {
+      "file": "village/env_bush_hydrangea_blue.png",
+      "w": 285,
+      "h": 248,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.707
+    },
+    "env_hedge_boxwood_straight": {
+      "file": "village/env_hedge_boxwood_straight.png",
+      "w": 298,
+      "h": 259,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.593
+    },
+    "env_hedge_boxwood_corner": {
+      "file": "village/env_hedge_boxwood_corner.png",
+      "w": 301,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.697
+    },
+    "env_flowerbed_planter": {
+      "file": "village/env_flowerbed_planter.png",
+      "w": 301,
+      "h": 237,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.602
+    },
+    "env_sunflower_clump": {
+      "file": "village/env_sunflower_clump.png",
+      "w": 270,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.67
+    },
+    "env_fence_wood_stone_corner": {
+      "file": "village/env_fence_wood_stone_corner.png",
+      "w": 313,
+      "h": 209,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.527
+    },
+    "env_fence_wood_stone_gate": {
+      "file": "village/env_fence_wood_stone_gate.png",
+      "w": 287,
+      "h": 316,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.551
+    },
+    "env_wall_stone_low": {
+      "file": "village/env_wall_stone_low.png",
+      "w": 317,
+      "h": 242,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.421
+    },
+    "env_streetlamp_double": {
+      "file": "village/env_streetlamp_double.png",
+      "w": 195,
+      "h": 387,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.538
+    },
+    "env_string_lights_post": {
+      "file": "village/env_string_lights_post.png",
+      "w": 300,
+      "h": 337,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.351
+    },
+    "bridge_stone_deck": {
+      "file": "village/bridge_stone_deck.png",
+      "w": 378,
+      "h": 270,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.546
+    },
+    "env_bridge_pillar_cap": {
+      "file": "village/env_bridge_pillar_cap.png",
+      "w": 139,
+      "h": 255,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.714
+    },
+    "bridge_wood_deck": {
+      "file": "village/bridge_wood_deck.png",
+      "w": 310,
+      "h": 270,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.536
+    },
+    "tile_edge_cobble_straight": {
+      "file": "village/tile_edge_cobble_straight.png",
+      "w": 382,
+      "h": 237,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.645
+    },
+    "tile_edge_cobble_corner_outer": {
+      "file": "village/tile_edge_cobble_corner_outer.png",
+      "w": 270,
+      "h": 233,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.732
+    },
+    "tile_edge_cobble_corner_inner": {
+      "file": "village/tile_edge_cobble_corner_inner.png",
+      "w": 266,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.731
+    },
+    "tile_plaza_cobble_medallion_4way": {
+      "file": "village/tile_plaza_cobble_medallion_4way.png",
+      "w": 342,
+      "h": 237,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.693
+    },
+    "decal_path_stepping_stones": {
+      "file": "village/decal_path_stepping_stones.png",
+      "w": 273,
+      "h": 184,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.673
+    },
+    "decal_soil_flowerbed_patch": {
+      "file": "village/decal_soil_flowerbed_patch.png",
+      "w": 300,
+      "h": 184,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.59
+    },
+    "decal_grass_clover_a": {
+      "file": "village/decal_grass_clover_a.png",
+      "w": 218,
+      "h": 152,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.648
+    },
+    "decal_grass_daisies_b": {
+      "file": "village/decal_grass_daisies_b.png",
+      "w": 276,
+      "h": 182,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.629
+    },
+    "river_bank_straight": {
+      "file": "village/river_bank_straight.png",
+      "w": 288,
+      "h": 226,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.575
+    },
+    "river_bank_corner_outer": {
+      "file": "village/river_bank_corner_outer.png",
+      "w": 298,
+      "h": 190,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.652
+    },
+    "river_bank_corner_inner": {
+      "file": "village/river_bank_corner_inner.png",
+      "w": 286,
+      "h": 223,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.605
+    },
+    "decal_water_lily_white": {
+      "file": "village/decal_water_lily_white.png",
+      "w": 236,
+      "h": 128,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.492
+    },
+    "decal_water_lotus_pink": {
+      "file": "village/decal_water_lotus_pink.png",
+      "w": 302,
+      "h": 189,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.556
+    },
+    "env_river_boulders_b": {
+      "file": "village/env_river_boulders_b.png",
+      "w": 288,
+      "h": 185,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.638
+    },
+    "env_river_cattails": {
+      "file": "village/env_river_cattails.png",
+      "w": 221,
+      "h": 276,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.521
+    },
+    "cliff_grass_lip_strip": {
+      "file": "village/cliff_grass_lip_strip.png",
+      "w": 314,
+      "h": 171,
+      "anchorX": 0.5,
+      "anchorY": 0.25,
+      "coverage": 0.759
+    },
+    "cliff_side_strata_strip": {
+      "file": "village/cliff_side_strata_strip.png",
+      "w": 316,
+      "h": 295,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.631
+    },
+    "cliff_waterfall_strip": {
+      "file": "village/cliff_waterfall_strip.png",
+      "w": 285,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.745
+    },
+    "env_waterfall_mist": {
+      "file": "village/env_waterfall_mist.png",
+      "w": 304,
+      "h": 231,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.541
+    },
+    "env_cloud_fluffy_a": {
+      "file": "village/env_cloud_fluffy_a.png",
+      "w": 320,
+      "h": 241,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.66
+    },
+    "env_cloud_fluffy_b": {
+      "file": "village/env_cloud_fluffy_b.png",
+      "w": 311,
+      "h": 153,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.57
+    },
+    "dec_wooden_bench": {
+      "file": "village/dec_wooden_bench.png",
+      "w": 383,
+      "h": 324,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.52
+    },
+    "dec_flower_cart": {
+      "file": "village/dec_flower_cart.png",
+      "w": 413,
+      "h": 389,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.612
+    },
+    "dec_boba_stand": {
+      "file": "village/dec_boba_stand.png",
+      "w": 312,
+      "h": 427,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.585
+    },
+    "dec_wishing_well": {
+      "file": "village/dec_wishing_well.png",
+      "w": 358,
+      "h": 422,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.633
+    },
+    "dec_honey_beehive": {
+      "file": "village/dec_honey_beehive.png",
+      "w": 372,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.597
+    },
+    "dec_cat_bakery_sign": {
+      "file": "village/dec_cat_bakery_sign.png",
+      "w": 323,
+      "h": 284,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.584
+    },
+    "dec_couple_hammock": {
+      "file": "village/dec_couple_hammock.png",
+      "w": 492,
+      "h": 347,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.504
+    },
+    "dec_koi_barrel_pond": {
+      "file": "village/dec_koi_barrel_pond.png",
+      "w": 382,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.628
+    },
+    "dec_painter_easel": {
+      "file": "village/dec_painter_easel.png",
+      "w": 304,
+      "h": 380,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.504
+    },
+    "dec_berry_wheelbarrow": {
+      "file": "village/dec_berry_wheelbarrow.png",
+      "w": 405,
+      "h": 323,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.522
+    },
+    "dec_starlight_telescope": {
+      "file": "village/dec_starlight_telescope.png",
+      "w": 308,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.516
+    },
+    "dec_owl_mailbox": {
+      "file": "village/dec_owl_mailbox.png",
+      "w": 266,
+      "h": 363,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.559
+    },
+    "mono_tile_property_tier1": {
+      "file": "village/mono_tile_property_tier1.png",
+      "w": 317,
+      "h": 233,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.56
+    },
+    "mono_tile_property_tier2": {
+      "file": "village/mono_tile_property_tier2.png",
+      "w": 318,
+      "h": 233,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.558
+    },
+    "mono_tile_property_tier3": {
+      "file": "village/mono_tile_property_tier3.png",
+      "w": 317,
+      "h": 233,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.56
+    },
+    "mono_tile_property_tier4": {
+      "file": "village/mono_tile_property_tier4.png",
+      "w": 318,
+      "h": 233,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.578
+    },
+    "mono_tile_start": {
+      "file": "village/mono_tile_start.png",
+      "w": 318,
+      "h": 235,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.562
+    },
+    "mono_tile_festival": {
+      "file": "village/mono_tile_festival.png",
+      "w": 318,
+      "h": 244,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.574
+    },
+    "mono_tile_portal": {
+      "file": "village/mono_tile_portal.png",
+      "w": 318,
+      "h": 235,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.583
+    },
+    "mono_tile_tax": {
+      "file": "village/mono_tile_tax.png",
+      "w": 318,
+      "h": 234,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.572
+    },
+    "mono_house_lv1": {
+      "file": "village/mono_house_lv1.png",
+      "w": 212,
+      "h": 224,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.663
+    },
+    "mono_house_lv2": {
+      "file": "village/mono_house_lv2.png",
+      "w": 208,
+      "h": 229,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.723
+    },
+    "mono_house_lv3": {
+      "file": "village/mono_house_lv3.png",
+      "w": 206,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.666
+    },
+    "mono_landmark_lv4": {
+      "file": "village/mono_landmark_lv4.png",
+      "w": 234,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.657
+    },
+    "fx_snowflake": {
+      "file": "ui/fx_snowflake.png",
+      "w": 178,
+      "h": 204,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.488
+    },
+    "fx_feather": {
+      "file": "ui/fx_feather.png",
+      "w": 177,
+      "h": 202,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.532
+    },
+    "fx_petal": {
+      "file": "ui/fx_petal.png",
+      "w": 140,
+      "h": 147,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.72
+    },
+    "fx_star": {
+      "file": "ui/fx_star.png",
+      "w": 168,
+      "h": 168,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.446
+    },
+    "fx_lightning": {
+      "file": "ui/fx_lightning.png",
+      "w": 126,
+      "h": 198,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.595
+    },
+    "fx_flame": {
+      "file": "ui/fx_flame.png",
+      "w": 140,
+      "h": 196,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.659
+    },
+    "fx_bubble": {
+      "file": "ui/fx_bubble.png",
+      "w": 178,
+      "h": 178,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.749
+    },
+    "fx_note": {
+      "file": "ui/fx_note.png",
+      "w": 166,
+      "h": 186,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.601
+    },
+    "fx_chip": {
+      "file": "ui/fx_chip.png",
+      "w": 180,
+      "h": 186,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.76
+    },
+    "fx_moon": {
+      "file": "ui/fx_moon.png",
+      "w": 194,
+      "h": 196,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.533
+    },
+    "fx_heart": {
+      "file": "ui/fx_heart.png",
+      "w": 191,
+      "h": 169,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.703
+    },
+    "fx_leaf": {
+      "file": "ui/fx_leaf.png",
+      "w": 148,
+      "h": 186,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.609
+    },
+    "fx_stardust": {
+      "file": "ui/fx_stardust.png",
+      "w": 189,
+      "h": 174,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.188
+    },
+    "fx_rune": {
+      "file": "ui/fx_rune.png",
+      "w": 222,
+      "h": 222,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.707
+    },
+    "fx_shockwave": {
+      "file": "ui/fx_shockwave.png",
+      "w": 228,
+      "h": 206,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.549
+    },
+    "fx_magic_circle": {
+      "file": "ui/fx_magic_circle.png",
+      "w": 236,
+      "h": 236,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.593
+    },
+    "icon_gold": {
+      "file": "ui/icon_gold.png",
+      "w": 370,
+      "h": 380,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.769
+    },
+    "icon_berry": {
+      "file": "ui/icon_berry.png",
+      "w": 321,
+      "h": 373,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.722
+    },
+    "icon_diamond": {
+      "file": "ui/icon_diamond.png",
+      "w": 384,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.588
+    },
+    "icon_shard": {
+      "file": "ui/icon_shard.png",
+      "w": 399,
+      "h": 397,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.636
+    },
+    "hat_straw_explorer": {
+      "file": "chibi/hat_straw_explorer.png",
+      "w": 398,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.431
+    },
+    "hat_cat_headset": {
+      "file": "chibi/hat_cat_headset.png",
+      "w": 324,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.433
+    },
+    "hat_glowing_bunny": {
+      "file": "chibi/hat_glowing_bunny.png",
+      "w": 290,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.437
+    },
+    "face_rosegold_shades": {
+      "file": "chibi/face_rosegold_shades.png",
+      "w": 304,
+      "h": 108,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.563
+    },
+    "face_cyber_visor": {
+      "file": "chibi/face_cyber_visor.png",
+      "w": 303,
+      "h": 91,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.884
+    },
+    "face_oracle_monocle": {
+      "file": "chibi/face_oracle_monocle.png",
+      "w": 150,
+      "h": 98,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.632
+    },
+    "egg_dragon": {
+      "file": "pets/egg_dragon.png",
+      "w": 270,
+      "h": 358,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.759
+    },
+    "egg_capybara": {
+      "file": "pets/egg_capybara.png",
+      "w": 270,
+      "h": 399,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.695
+    },
+    "egg_couple": {
+      "file": "pets/egg_couple.png",
+      "w": 270,
+      "h": 356,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.759
+    },
+    "egg_rare": {
+      "file": "pets/egg_rare.png",
+      "w": 269,
+      "h": 350,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.757
+    },
+    "egg_epic": {
+      "file": "pets/egg_epic.png",
+      "w": 269,
+      "h": 350,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.757
+    },
+    "egg_mythic": {
+      "file": "pets/egg_mythic.png",
+      "w": 270,
+      "h": 351,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.754
+    },
+    "cat_front": {
+      "file": "pets/cat_front.png",
+      "w": 237,
+      "h": 252,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.639
+    },
+    "cat_side": {
+      "file": "pets/cat_side.png",
+      "w": 235,
+      "h": 260,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.579
+    },
+    "cat_back": {
+      "file": "pets/cat_back.png",
+      "w": 220,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.643
+    },
+    "pup_front": {
+      "file": "pets/pup_front.png",
+      "w": 234,
+      "h": 259,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.637
+    },
+    "pup_side": {
+      "file": "pets/pup_side.png",
+      "w": 252,
+      "h": 262,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.581
+    },
+    "pup_back": {
+      "file": "pets/pup_back.png",
+      "w": 218,
+      "h": 273,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.641
+    },
+    "bunny_front": {
+      "file": "pets/bunny_front.png",
+      "w": 202,
+      "h": 279,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.6
+    },
+    "bunny_side": {
+      "file": "pets/bunny_side.png",
+      "w": 216,
+      "h": 276,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.534
+    },
+    "bunny_back": {
+      "file": "pets/bunny_back.png",
+      "w": 189,
+      "h": 280,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.614
+    },
+    "wisp_front": {
+      "file": "pets/wisp_front.png",
+      "w": 187,
+      "h": 219,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.545
+    },
+    "wisp_side": {
+      "file": "pets/wisp_side.png",
+      "w": 173,
+      "h": 217,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.572
+    },
+    "wisp_back": {
+      "file": "pets/wisp_back.png",
+      "w": 186,
+      "h": 219,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.547
+    },
+    "gloves_cat_mittens": {
+      "file": "chibi/gloves_cat_mittens.png",
+      "w": 189,
+      "h": 262,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.73
+    },
+    "gloves_vorax_cyan": {
+      "file": "chibi/gloves_vorax_cyan.png",
+      "w": 157,
+      "h": 250,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.728
+    },
+    "gloves_starlight_wand": {
+      "file": "chibi/gloves_starlight_wand.png",
+      "w": 260,
+      "h": 261,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.395
+    },
+    "boots_slime_rain": {
+      "file": "chibi/boots_slime_rain.png",
+      "w": 210,
+      "h": 244,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.579
+    },
+    "boots_hermes_greaves": {
+      "file": "chibi/boots_hermes_greaves.png",
+      "w": 234,
+      "h": 243,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.525
+    },
+    "boots_astral_striders": {
+      "file": "chibi/boots_astral_striders.png",
+      "w": 195,
+      "h": 243,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.577
+    },
+    "wings_crystal_butterfly": {
+      "file": "chibi/wings_crystal_butterfly.png",
+      "w": 299,
+      "h": 255,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.546
+    },
+    "fx_spark_gold": {
+      "file": "chibi/fx_spark_gold.png",
+      "w": 128,
+      "h": 151,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.287
+    },
+    "fx_spark_cyan": {
+      "file": "chibi/fx_spark_cyan.png",
+      "w": 133,
+      "h": 152,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.477
+    },
+    "bkk_s8_glacial_elsa_front": {
+      "file": "chibi/bkk_s8_glacial_elsa_front.png",
+      "w": 237,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.471
+    },
+    "boy_s8_glacial_elsa_front": {
+      "file": "chibi/boy_s8_glacial_elsa_front.png",
+      "w": 237,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.471
+    },
+    "bkk_s3_sultan_djinn_front": {
+      "file": "chibi/bkk_s3_sultan_djinn_front.png",
+      "w": 141,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.702
+    },
+    "boy_s3_sultan_djinn_front": {
+      "file": "chibi/boy_s3_sultan_djinn_front.png",
+      "w": 141,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.702
+    },
+    "bkk_s2_kitsune_inari_front": {
+      "file": "chibi/bkk_s2_kitsune_inari_front.png",
+      "w": 161,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.644
+    },
+    "boy_s2_kitsune_inari_front": {
+      "file": "chibi/boy_s2_kitsune_inari_front.png",
+      "w": 161,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.644
+    },
+    "bkk_s11_zeus_olympus_front": {
+      "file": "chibi/bkk_s11_zeus_olympus_front.png",
+      "w": 209,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.51
+    },
+    "boy_s11_zeus_olympus_front": {
+      "file": "chibi/boy_s11_zeus_olympus_front.png",
+      "w": 209,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.51
+    },
+    "bkk_s8_glacial_elsa_back": {
+      "file": "chibi/bkk_s8_glacial_elsa_back.png",
+      "w": 159,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.623
+    },
+    "boy_s8_glacial_elsa_back": {
+      "file": "chibi/boy_s8_glacial_elsa_back.png",
+      "w": 159,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.623
+    },
+    "bkk_s3_sultan_djinn_back": {
+      "file": "chibi/bkk_s3_sultan_djinn_back.png",
+      "w": 157,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.641
+    },
+    "boy_s3_sultan_djinn_back": {
+      "file": "chibi/boy_s3_sultan_djinn_back.png",
+      "w": 157,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.641
+    },
+    "bkk_s2_kitsune_inari_back": {
+      "file": "chibi/bkk_s2_kitsune_inari_back.png",
+      "w": 167,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.628
+    },
+    "boy_s2_kitsune_inari_back": {
+      "file": "chibi/boy_s2_kitsune_inari_back.png",
+      "w": 167,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.628
+    },
+    "bkk_s11_zeus_olympus_back": {
+      "file": "chibi/bkk_s11_zeus_olympus_back.png",
+      "w": 155,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.634
+    },
+    "boy_s11_zeus_olympus_back": {
+      "file": "chibi/boy_s11_zeus_olympus_back.png",
+      "w": 155,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.634
+    },
+    "bkk_s8_glacial_elsa_side": {
+      "file": "chibi/bkk_s8_glacial_elsa_side.png",
+      "w": 397,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.443
+    },
+    "boy_s8_glacial_elsa_side": {
+      "file": "chibi/boy_s8_glacial_elsa_side.png",
+      "w": 397,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.443
+    },
+    "bkk_s3_sultan_djinn_side": {
+      "file": "chibi/bkk_s3_sultan_djinn_side.png",
+      "w": 233,
+      "h": 681,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.656
+    },
+    "boy_s3_sultan_djinn_side": {
+      "file": "chibi/boy_s3_sultan_djinn_side.png",
+      "w": 233,
+      "h": 681,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.656
+    },
+    "bkk_s2_kitsune_inari_side": {
+      "file": "chibi/bkk_s2_kitsune_inari_side.png",
+      "w": 235,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.673
+    },
+    "boy_s2_kitsune_inari_side": {
+      "file": "chibi/boy_s2_kitsune_inari_side.png",
+      "w": 235,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.673
+    },
+    "bkk_s11_zeus_olympus_side": {
+      "file": "chibi/bkk_s11_zeus_olympus_side.png",
+      "w": 337,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.491
+    },
+    "boy_s11_zeus_olympus_side": {
+      "file": "chibi/boy_s11_zeus_olympus_side.png",
+      "w": 337,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.491
+    },
+    "dxb_s8_glacial_elsa_front": {
+      "file": "chibi/dxb_s8_glacial_elsa_front.png",
+      "w": 335,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.403
+    },
+    "girl_s8_glacial_elsa_front": {
+      "file": "chibi/girl_s8_glacial_elsa_front.png",
+      "w": 335,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.403
+    },
+    "dxb_s3_sultan_djinn_front": {
+      "file": "chibi/dxb_s3_sultan_djinn_front.png",
+      "w": 241,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.452
+    },
+    "girl_s3_sultan_djinn_front": {
+      "file": "chibi/girl_s3_sultan_djinn_front.png",
+      "w": 241,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.452
+    },
+    "dxb_s2_kitsune_inari_front": {
+      "file": "chibi/dxb_s2_kitsune_inari_front.png",
+      "w": 195,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.57
+    },
+    "girl_s2_kitsune_inari_front": {
+      "file": "chibi/girl_s2_kitsune_inari_front.png",
+      "w": 195,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.57
+    },
+    "dxb_s11_zeus_olympus_front": {
+      "file": "chibi/dxb_s11_zeus_olympus_front.png",
+      "w": 233,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.47
+    },
+    "girl_s11_zeus_olympus_front": {
+      "file": "chibi/girl_s11_zeus_olympus_front.png",
+      "w": 233,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.47
+    },
+    "dxb_s8_glacial_elsa_back": {
+      "file": "chibi/dxb_s8_glacial_elsa_back.png",
+      "w": 285,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.45
+    },
+    "girl_s8_glacial_elsa_back": {
+      "file": "chibi/girl_s8_glacial_elsa_back.png",
+      "w": 285,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.45
+    },
+    "dxb_s3_sultan_djinn_back": {
+      "file": "chibi/dxb_s3_sultan_djinn_back.png",
+      "w": 189,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.566
+    },
+    "girl_s3_sultan_djinn_back": {
+      "file": "chibi/girl_s3_sultan_djinn_back.png",
+      "w": 189,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.566
+    },
+    "dxb_s2_kitsune_inari_back": {
+      "file": "chibi/dxb_s2_kitsune_inari_back.png",
+      "w": 187,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.628
+    },
+    "girl_s2_kitsune_inari_back": {
+      "file": "chibi/girl_s2_kitsune_inari_back.png",
+      "w": 187,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.628
+    },
+    "dxb_s11_zeus_olympus_back": {
+      "file": "chibi/dxb_s11_zeus_olympus_back.png",
+      "w": 227,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.478
+    },
+    "girl_s11_zeus_olympus_back": {
+      "file": "chibi/girl_s11_zeus_olympus_back.png",
+      "w": 227,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.478
+    },
+    "dxb_s8_glacial_elsa_side": {
+      "file": "chibi/dxb_s8_glacial_elsa_side.png",
+      "w": 409,
+      "h": 670,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.484
+    },
+    "girl_s8_glacial_elsa_side": {
+      "file": "chibi/girl_s8_glacial_elsa_side.png",
+      "w": 409,
+      "h": 670,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.484
+    },
+    "dxb_s3_sultan_djinn_side": {
+      "file": "chibi/dxb_s3_sultan_djinn_side.png",
+      "w": 245,
+      "h": 674,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.583
+    },
+    "girl_s3_sultan_djinn_side": {
+      "file": "chibi/girl_s3_sultan_djinn_side.png",
+      "w": 245,
+      "h": 674,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.583
+    },
+    "dxb_s2_kitsune_inari_side": {
+      "file": "chibi/dxb_s2_kitsune_inari_side.png",
+      "w": 243,
+      "h": 676,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.597
+    },
+    "girl_s2_kitsune_inari_side": {
+      "file": "chibi/girl_s2_kitsune_inari_side.png",
+      "w": 243,
+      "h": 676,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.597
+    },
+    "dxb_s11_zeus_olympus_side": {
+      "file": "chibi/dxb_s11_zeus_olympus_side.png",
+      "w": 345,
+      "h": 674,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.432
+    },
+    "girl_s11_zeus_olympus_side": {
+      "file": "chibi/girl_s11_zeus_olympus_side.png",
+      "w": 345,
+      "h": 674,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.432
+    },
+    "bkk_rare_royal_scholar_front": {
+      "file": "chibi/bkk_rare_royal_scholar_front.png",
+      "w": 141,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.642
+    },
+    "boy_rare_royal_scholar_front": {
+      "file": "chibi/boy_rare_royal_scholar_front.png",
+      "w": 141,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.642
+    },
+    "bkk_rare_boba_barista_front": {
+      "file": "chibi/bkk_rare_boba_barista_front.png",
+      "w": 141,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.653
+    },
+    "boy_rare_boba_barista_front": {
+      "file": "chibi/boy_rare_boba_barista_front.png",
+      "w": 141,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.653
+    },
+    "bkk_epic_starlight_idol_front": {
+      "file": "chibi/bkk_epic_starlight_idol_front.png",
+      "w": 143,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.666
+    },
+    "boy_epic_starlight_idol_front": {
+      "file": "chibi/boy_epic_starlight_idol_front.png",
+      "w": 143,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.666
+    },
+    "bkk_epic_frost_knight_front": {
+      "file": "chibi/bkk_epic_frost_knight_front.png",
+      "w": 217,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.526
+    },
+    "boy_epic_frost_knight_front": {
+      "file": "chibi/boy_epic_frost_knight_front.png",
+      "w": 217,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.526
+    },
+    "bkk_rare_royal_scholar_back": {
+      "file": "chibi/bkk_rare_royal_scholar_back.png",
+      "w": 159,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.595
+    },
+    "boy_rare_royal_scholar_back": {
+      "file": "chibi/boy_rare_royal_scholar_back.png",
+      "w": 159,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.595
+    },
+    "bkk_rare_boba_barista_back": {
+      "file": "chibi/bkk_rare_boba_barista_back.png",
+      "w": 155,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.627
+    },
+    "boy_rare_boba_barista_back": {
+      "file": "chibi/boy_rare_boba_barista_back.png",
+      "w": 155,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.627
+    },
+    "bkk_epic_starlight_idol_back": {
+      "file": "chibi/bkk_epic_starlight_idol_back.png",
+      "w": 167,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.578
+    },
+    "boy_epic_starlight_idol_back": {
+      "file": "chibi/boy_epic_starlight_idol_back.png",
+      "w": 167,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.578
+    },
+    "bkk_epic_frost_knight_back": {
+      "file": "chibi/bkk_epic_frost_knight_back.png",
+      "w": 155,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.636
+    },
+    "boy_epic_frost_knight_back": {
+      "file": "chibi/boy_epic_frost_knight_back.png",
+      "w": 155,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.636
+    },
+    "bkk_rare_royal_scholar_side": {
+      "file": "chibi/bkk_rare_royal_scholar_side.png",
+      "w": 233,
+      "h": 685,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.638
+    },
+    "boy_rare_royal_scholar_side": {
+      "file": "chibi/boy_rare_royal_scholar_side.png",
+      "w": 233,
+      "h": 685,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.638
+    },
+    "bkk_rare_boba_barista_side": {
+      "file": "chibi/bkk_rare_boba_barista_side.png",
+      "w": 233,
+      "h": 682,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.636
+    },
+    "boy_rare_boba_barista_side": {
+      "file": "chibi/boy_rare_boba_barista_side.png",
+      "w": 233,
+      "h": 682,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.636
+    },
+    "bkk_epic_starlight_idol_side": {
+      "file": "chibi/bkk_epic_starlight_idol_side.png",
+      "w": 235,
+      "h": 685,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.656
+    },
+    "boy_epic_starlight_idol_side": {
+      "file": "chibi/boy_epic_starlight_idol_side.png",
+      "w": 235,
+      "h": 685,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.656
+    },
+    "bkk_epic_frost_knight_side": {
+      "file": "chibi/bkk_epic_frost_knight_side.png",
+      "w": 381,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.494
+    },
+    "boy_epic_frost_knight_side": {
+      "file": "chibi/boy_epic_frost_knight_side.png",
+      "w": 381,
+      "h": 684,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.494
+    },
+    "dxb_rare_royal_scholar_front": {
+      "file": "chibi/dxb_rare_royal_scholar_front.png",
+      "w": 151,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.605
+    },
+    "girl_rare_royal_scholar_front": {
+      "file": "chibi/girl_rare_royal_scholar_front.png",
+      "w": 151,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.605
+    },
+    "dxb_rare_boba_barista_front": {
+      "file": "chibi/dxb_rare_boba_barista_front.png",
+      "w": 185,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.555
+    },
+    "girl_rare_boba_barista_front": {
+      "file": "chibi/girl_rare_boba_barista_front.png",
+      "w": 185,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.555
+    },
+    "dxb_epic_starlight_idol_front": {
+      "file": "chibi/dxb_epic_starlight_idol_front.png",
+      "w": 167,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.582
+    },
+    "girl_epic_starlight_idol_front": {
+      "file": "chibi/girl_epic_starlight_idol_front.png",
+      "w": 167,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.582
+    },
+    "dxb_epic_frost_knight_front": {
+      "file": "chibi/dxb_epic_frost_knight_front.png",
+      "w": 151,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.659
+    },
+    "girl_epic_frost_knight_front": {
+      "file": "chibi/girl_epic_frost_knight_front.png",
+      "w": 151,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.659
+    },
+    "dxb_rare_royal_scholar_back": {
+      "file": "chibi/dxb_rare_royal_scholar_back.png",
+      "w": 165,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.584
+    },
+    "girl_rare_royal_scholar_back": {
+      "file": "chibi/girl_rare_royal_scholar_back.png",
+      "w": 165,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.584
+    },
+    "dxb_rare_boba_barista_back": {
+      "file": "chibi/dxb_rare_boba_barista_back.png",
+      "w": 173,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.624
+    },
+    "girl_rare_boba_barista_back": {
+      "file": "chibi/girl_rare_boba_barista_back.png",
+      "w": 173,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.624
+    },
+    "dxb_epic_starlight_idol_back": {
+      "file": "chibi/dxb_epic_starlight_idol_back.png",
+      "w": 187,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.567
+    },
+    "girl_epic_starlight_idol_back": {
+      "file": "chibi/girl_epic_starlight_idol_back.png",
+      "w": 187,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.567
+    },
+    "dxb_epic_frost_knight_back": {
+      "file": "chibi/dxb_epic_frost_knight_back.png",
+      "w": 159,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.629
+    },
+    "girl_epic_frost_knight_back": {
+      "file": "chibi/girl_epic_frost_knight_back.png",
+      "w": 159,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.629
+    },
+    "dxb_rare_royal_scholar_side": {
+      "file": "chibi/dxb_rare_royal_scholar_side.png",
+      "w": 225,
+      "h": 717,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.623
+    },
+    "girl_rare_royal_scholar_side": {
+      "file": "chibi/girl_rare_royal_scholar_side.png",
+      "w": 225,
+      "h": 717,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.623
+    },
+    "dxb_rare_boba_barista_side": {
+      "file": "chibi/dxb_rare_boba_barista_side.png",
+      "w": 319,
+      "h": 717,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.512
+    },
+    "girl_rare_boba_barista_side": {
+      "file": "chibi/girl_rare_boba_barista_side.png",
+      "w": 319,
+      "h": 717,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.512
+    },
+    "dxb_epic_starlight_idol_side": {
+      "file": "chibi/dxb_epic_starlight_idol_side.png",
+      "w": 293,
+      "h": 716,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.544
+    },
+    "girl_epic_starlight_idol_side": {
+      "file": "chibi/girl_epic_starlight_idol_side.png",
+      "w": 293,
+      "h": 716,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.544
+    },
+    "dxb_epic_frost_knight_side": {
+      "file": "chibi/dxb_epic_frost_knight_side.png",
+      "w": 265,
+      "h": 716,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.614
+    },
+    "girl_epic_frost_knight_side": {
+      "file": "chibi/girl_epic_frost_knight_side.png",
+      "w": 265,
+      "h": 716,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.614
+    },
+    "bkk_epic_sakura_samurai_front": {
+      "file": "chibi/bkk_epic_sakura_samurai_front.png",
+      "w": 157,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.624
+    },
+    "boy_epic_sakura_samurai_front": {
+      "file": "chibi/boy_epic_sakura_samurai_front.png",
+      "w": 157,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.624
+    },
+    "bkk_s1_naga_sovereign_front": {
+      "file": "chibi/bkk_s1_naga_sovereign_front.png",
+      "w": 229,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.581
+    },
+    "boy_s1_naga_sovereign_front": {
+      "file": "chibi/boy_s1_naga_sovereign_front.png",
+      "w": 229,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.581
+    },
+    "bkk_s2_tsukuyomi_eclipse_front": {
+      "file": "chibi/bkk_s2_tsukuyomi_eclipse_front.png",
+      "w": 167,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.613
+    },
+    "boy_s2_tsukuyomi_eclipse_front": {
+      "file": "chibi/boy_s2_tsukuyomi_eclipse_front.png",
+      "w": 167,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.613
+    },
+    "bkk_s3_dune_phoenix_front": {
+      "file": "chibi/bkk_s3_dune_phoenix_front.png",
+      "w": 149,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.654
+    },
+    "boy_s3_dune_phoenix_front": {
+      "file": "chibi/boy_s3_dune_phoenix_front.png",
+      "w": 149,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.654
+    },
+    "bkk_epic_sakura_samurai_back": {
+      "file": "chibi/bkk_epic_sakura_samurai_back.png",
+      "w": 159,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.616
+    },
+    "boy_epic_sakura_samurai_back": {
+      "file": "chibi/boy_epic_sakura_samurai_back.png",
+      "w": 159,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.616
+    },
+    "bkk_s1_naga_sovereign_back": {
+      "file": "chibi/bkk_s1_naga_sovereign_back.png",
+      "w": 253,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.549
+    },
+    "boy_s1_naga_sovereign_back": {
+      "file": "chibi/boy_s1_naga_sovereign_back.png",
+      "w": 253,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.549
+    },
+    "bkk_s2_tsukuyomi_eclipse_back": {
+      "file": "chibi/bkk_s2_tsukuyomi_eclipse_back.png",
+      "w": 165,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.622
+    },
+    "boy_s2_tsukuyomi_eclipse_back": {
+      "file": "chibi/boy_s2_tsukuyomi_eclipse_back.png",
+      "w": 165,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.622
+    },
+    "bkk_s3_dune_phoenix_back": {
+      "file": "chibi/bkk_s3_dune_phoenix_back.png",
+      "w": 155,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.645
+    },
+    "boy_s3_dune_phoenix_back": {
+      "file": "chibi/boy_s3_dune_phoenix_back.png",
+      "w": 155,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.645
+    },
+    "bkk_epic_sakura_samurai_side": {
+      "file": "chibi/bkk_epic_sakura_samurai_side.png",
+      "w": 257,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.634
+    },
+    "boy_epic_sakura_samurai_side": {
+      "file": "chibi/boy_epic_sakura_samurai_side.png",
+      "w": 257,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.634
+    },
+    "bkk_s1_naga_sovereign_side": {
+      "file": "chibi/bkk_s1_naga_sovereign_side.png",
+      "w": 381,
+      "h": 681,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.546
+    },
+    "boy_s1_naga_sovereign_side": {
+      "file": "chibi/boy_s1_naga_sovereign_side.png",
+      "w": 381,
+      "h": 681,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.546
+    },
+    "bkk_s2_tsukuyomi_eclipse_side": {
+      "file": "chibi/bkk_s2_tsukuyomi_eclipse_side.png",
+      "w": 237,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.697
+    },
+    "boy_s2_tsukuyomi_eclipse_side": {
+      "file": "chibi/boy_s2_tsukuyomi_eclipse_side.png",
+      "w": 237,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.697
+    },
+    "bkk_s3_dune_phoenix_side": {
+      "file": "chibi/bkk_s3_dune_phoenix_side.png",
+      "w": 229,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.639
+    },
+    "boy_s3_dune_phoenix_side": {
+      "file": "chibi/boy_s3_dune_phoenix_side.png",
+      "w": 229,
+      "h": 683,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.639
+    },
+    "dxb_epic_sakura_samurai_front": {
+      "file": "chibi/dxb_epic_sakura_samurai_front.png",
+      "w": 135,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.703
+    },
+    "girl_epic_sakura_samurai_front": {
+      "file": "chibi/girl_epic_sakura_samurai_front.png",
+      "w": 135,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.703
+    },
+    "dxb_s1_naga_sovereign_front": {
+      "file": "chibi/dxb_s1_naga_sovereign_front.png",
+      "w": 191,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.615
+    },
+    "girl_s1_naga_sovereign_front": {
+      "file": "chibi/girl_s1_naga_sovereign_front.png",
+      "w": 191,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.615
+    },
+    "dxb_s2_tsukuyomi_eclipse_front": {
+      "file": "chibi/dxb_s2_tsukuyomi_eclipse_front.png",
+      "w": 201,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.503
+    },
+    "girl_s2_tsukuyomi_eclipse_front": {
+      "file": "chibi/girl_s2_tsukuyomi_eclipse_front.png",
+      "w": 201,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.503
+    },
+    "dxb_s3_dune_phoenix_front": {
+      "file": "chibi/dxb_s3_dune_phoenix_front.png",
+      "w": 173,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.571
+    },
+    "girl_s3_dune_phoenix_front": {
+      "file": "chibi/girl_s3_dune_phoenix_front.png",
+      "w": 173,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.571
+    },
+    "dxb_epic_sakura_samurai_back": {
+      "file": "chibi/dxb_epic_sakura_samurai_back.png",
+      "w": 163,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.638
+    },
+    "girl_epic_sakura_samurai_back": {
+      "file": "chibi/girl_epic_sakura_samurai_back.png",
+      "w": 163,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.638
+    },
+    "dxb_s1_naga_sovereign_back": {
+      "file": "chibi/dxb_s1_naga_sovereign_back.png",
+      "w": 209,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.59
+    },
+    "girl_s1_naga_sovereign_back": {
+      "file": "chibi/girl_s1_naga_sovereign_back.png",
+      "w": 209,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.59
+    },
+    "dxb_s2_tsukuyomi_eclipse_back": {
+      "file": "chibi/dxb_s2_tsukuyomi_eclipse_back.png",
+      "w": 213,
+      "h": 344,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.561
+    },
+    "girl_s2_tsukuyomi_eclipse_back": {
+      "file": "chibi/girl_s2_tsukuyomi_eclipse_back.png",
+      "w": 213,
+      "h": 344,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.561
+    },
+    "dxb_s3_dune_phoenix_back": {
+      "file": "chibi/dxb_s3_dune_phoenix_back.png",
+      "w": 191,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.565
+    },
+    "girl_s3_dune_phoenix_back": {
+      "file": "chibi/girl_s3_dune_phoenix_back.png",
+      "w": 191,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.565
+    },
+    "dxb_epic_sakura_samurai_side": {
+      "file": "chibi/dxb_epic_sakura_samurai_side.png",
+      "w": 231,
+      "h": 692,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.685
+    },
+    "girl_epic_sakura_samurai_side": {
+      "file": "chibi/girl_epic_sakura_samurai_side.png",
+      "w": 231,
+      "h": 692,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.685
+    },
+    "dxb_s1_naga_sovereign_side": {
+      "file": "chibi/dxb_s1_naga_sovereign_side.png",
+      "w": 371,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.523
+    },
+    "girl_s1_naga_sovereign_side": {
+      "file": "chibi/girl_s1_naga_sovereign_side.png",
+      "w": 371,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.523
+    },
+    "dxb_s2_tsukuyomi_eclipse_side": {
+      "file": "chibi/dxb_s2_tsukuyomi_eclipse_side.png",
+      "w": 377,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.439
+    },
+    "girl_s2_tsukuyomi_eclipse_side": {
+      "file": "chibi/girl_s2_tsukuyomi_eclipse_side.png",
+      "w": 377,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.439
+    },
+    "dxb_s3_dune_phoenix_side": {
+      "file": "chibi/dxb_s3_dune_phoenix_side.png",
+      "w": 307,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.511
+    },
+    "girl_s3_dune_phoenix_side": {
+      "file": "chibi/girl_s3_dune_phoenix_side.png",
+      "w": 307,
+      "h": 690,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.511
+    },
+    "bkk_s4_casino_royale_front": {
+      "file": "chibi/bkk_s4_casino_royale_front.png",
+      "w": 137,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.671
+    },
+    "boy_s4_casino_royale_front": {
+      "file": "chibi/boy_s4_casino_royale_front.png",
+      "w": 137,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.671
+    },
+    "bkk_s5_atlantis_siren_front": {
+      "file": "chibi/bkk_s5_atlantis_siren_front.png",
+      "w": 367,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.338
+    },
+    "boy_s5_atlantis_siren_front": {
+      "file": "chibi/boy_s5_atlantis_siren_front.png",
+      "w": 367,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.338
+    },
+    "bkk_s6_astral_sovereign_front": {
+      "file": "chibi/bkk_s6_astral_sovereign_front.png",
+      "w": 285,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.454
+    },
+    "boy_s6_astral_sovereign_front": {
+      "file": "chibi/boy_s6_astral_sovereign_front.png",
+      "w": 285,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.454
+    },
+    "bkk_s7_cinderella_clock_front": {
+      "file": "chibi/bkk_s7_cinderella_clock_front.png",
+      "w": 183,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.531
+    },
+    "boy_s7_cinderella_clock_front": {
+      "file": "chibi/boy_s7_cinderella_clock_front.png",
+      "w": 183,
+      "h": 333,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.531
+    },
+    "bkk_s4_casino_royale_back": {
+      "file": "chibi/bkk_s4_casino_royale_back.png",
+      "w": 155,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.62
+    },
+    "boy_s4_casino_royale_back": {
+      "file": "chibi/boy_s4_casino_royale_back.png",
+      "w": 155,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.62
+    },
+    "bkk_s5_atlantis_siren_back": {
+      "file": "chibi/bkk_s5_atlantis_siren_back.png",
+      "w": 373,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.339
+    },
+    "boy_s5_atlantis_siren_back": {
+      "file": "chibi/boy_s5_atlantis_siren_back.png",
+      "w": 373,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.339
+    },
+    "bkk_s6_astral_sovereign_back": {
+      "file": "chibi/bkk_s6_astral_sovereign_back.png",
+      "w": 217,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.546
+    },
+    "boy_s6_astral_sovereign_back": {
+      "file": "chibi/boy_s6_astral_sovereign_back.png",
+      "w": 217,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.546
+    },
+    "bkk_s7_cinderella_clock_back": {
+      "file": "chibi/bkk_s7_cinderella_clock_back.png",
+      "w": 153,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.642
+    },
+    "boy_s7_cinderella_clock_back": {
+      "file": "chibi/boy_s7_cinderella_clock_back.png",
+      "w": 153,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.642
+    },
+    "dxb_s4_casino_royale_front": {
+      "file": "chibi/dxb_s4_casino_royale_front.png",
+      "w": 253,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.454
+    },
+    "girl_s4_casino_royale_front": {
+      "file": "chibi/girl_s4_casino_royale_front.png",
+      "w": 253,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.454
+    },
+    "dxb_s5_atlantis_siren_front": {
+      "file": "chibi/dxb_s5_atlantis_siren_front.png",
+      "w": 283,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.39
+    },
+    "girl_s5_atlantis_siren_front": {
+      "file": "chibi/girl_s5_atlantis_siren_front.png",
+      "w": 283,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.39
+    },
+    "dxb_s6_astral_sovereign_front": {
+      "file": "chibi/dxb_s6_astral_sovereign_front.png",
+      "w": 287,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.425
+    },
+    "girl_s6_astral_sovereign_front": {
+      "file": "chibi/girl_s6_astral_sovereign_front.png",
+      "w": 287,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.425
+    },
+    "dxb_s7_cinderella_clock_front": {
+      "file": "chibi/dxb_s7_cinderella_clock_front.png",
+      "w": 213,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.551
+    },
+    "girl_s7_cinderella_clock_front": {
+      "file": "chibi/girl_s7_cinderella_clock_front.png",
+      "w": 213,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.551
+    },
+    "dxb_s4_casino_royale_back": {
+      "file": "chibi/dxb_s4_casino_royale_back.png",
+      "w": 225,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.544
+    },
+    "girl_s4_casino_royale_back": {
+      "file": "chibi/girl_s4_casino_royale_back.png",
+      "w": 225,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.544
+    },
+    "dxb_s5_atlantis_siren_back": {
+      "file": "chibi/dxb_s5_atlantis_siren_back.png",
+      "w": 243,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.482
+    },
+    "girl_s5_atlantis_siren_back": {
+      "file": "chibi/girl_s5_atlantis_siren_back.png",
+      "w": 243,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.482
+    },
+    "dxb_s6_astral_sovereign_back": {
+      "file": "chibi/dxb_s6_astral_sovereign_back.png",
+      "w": 227,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.569
+    },
+    "girl_s6_astral_sovereign_back": {
+      "file": "chibi/girl_s6_astral_sovereign_back.png",
+      "w": 227,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.569
+    },
+    "dxb_s7_cinderella_clock_back": {
+      "file": "chibi/dxb_s7_cinderella_clock_back.png",
+      "w": 237,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.537
+    },
+    "girl_s7_cinderella_clock_back": {
+      "file": "chibi/girl_s7_cinderella_clock_back.png",
+      "w": 237,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.537
+    },
+    "bkk_s9_pharaoh_ra_front": {
+      "file": "chibi/bkk_s9_pharaoh_ra_front.png",
+      "w": 153,
+      "h": 368,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.662
+    },
+    "boy_s9_pharaoh_ra_front": {
+      "file": "chibi/boy_s9_pharaoh_ra_front.png",
+      "w": 153,
+      "h": 368,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.662
+    },
+    "bkk_s9_pharaoh_ra_back": {
+      "file": "chibi/bkk_s9_pharaoh_ra_back.png",
+      "w": 157,
+      "h": 365,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.64
+    },
+    "boy_s9_pharaoh_ra_back": {
+      "file": "chibi/boy_s9_pharaoh_ra_back.png",
+      "w": 157,
+      "h": 365,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.64
+    },
+    "bkk_s9_pharaoh_ra_side": {
+      "file": "chibi/bkk_s9_pharaoh_ra_side.png",
+      "w": 133,
+      "h": 367,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.583
+    },
+    "boy_s9_pharaoh_ra_side": {
+      "file": "chibi/boy_s9_pharaoh_ra_side.png",
+      "w": 133,
+      "h": 367,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.583
+    },
+    "bkk_s10_phantom_masque_front": {
+      "file": "chibi/bkk_s10_phantom_masque_front.png",
+      "w": 285,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.512
+    },
+    "boy_s10_phantom_masque_front": {
+      "file": "chibi/boy_s10_phantom_masque_front.png",
+      "w": 285,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.512
+    },
+    "bkk_s10_phantom_masque_back": {
+      "file": "chibi/bkk_s10_phantom_masque_back.png",
+      "w": 303,
+      "h": 395,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.511
+    },
+    "boy_s10_phantom_masque_back": {
+      "file": "chibi/boy_s10_phantom_masque_back.png",
+      "w": 303,
+      "h": 395,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.511
+    },
+    "bkk_s10_phantom_masque_side": {
+      "file": "chibi/bkk_s10_phantom_masque_side.png",
+      "w": 261,
+      "h": 400,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.484
+    },
+    "boy_s10_phantom_masque_side": {
+      "file": "chibi/boy_s10_phantom_masque_side.png",
+      "w": 261,
+      "h": 400,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.484
+    },
+    "dxb_s9_pharaoh_ra_front": {
+      "file": "chibi/dxb_s9_pharaoh_ra_front.png",
+      "w": 167,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.642
+    },
+    "girl_s9_pharaoh_ra_front": {
+      "file": "chibi/girl_s9_pharaoh_ra_front.png",
+      "w": 167,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.642
+    },
+    "dxb_s9_pharaoh_ra_back": {
+      "file": "chibi/dxb_s9_pharaoh_ra_back.png",
+      "w": 169,
+      "h": 371,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.644
+    },
+    "girl_s9_pharaoh_ra_back": {
+      "file": "chibi/girl_s9_pharaoh_ra_back.png",
+      "w": 169,
+      "h": 371,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.644
+    },
+    "dxb_s9_pharaoh_ra_side": {
+      "file": "chibi/dxb_s9_pharaoh_ra_side.png",
+      "w": 165,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.526
+    },
+    "girl_s9_pharaoh_ra_side": {
+      "file": "chibi/girl_s9_pharaoh_ra_side.png",
+      "w": 165,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.526
+    },
+    "dxb_s10_phantom_masque_front": {
+      "file": "chibi/dxb_s10_phantom_masque_front.png",
+      "w": 271,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.541
+    },
+    "girl_s10_phantom_masque_front": {
+      "file": "chibi/girl_s10_phantom_masque_front.png",
+      "w": 271,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.541
+    },
+    "dxb_s10_phantom_masque_back": {
+      "file": "chibi/dxb_s10_phantom_masque_back.png",
+      "w": 279,
+      "h": 400,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.527
+    },
+    "girl_s10_phantom_masque_back": {
+      "file": "chibi/girl_s10_phantom_masque_back.png",
+      "w": 279,
+      "h": 400,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "long",
+      "coverage": 0.527
+    },
+    "dxb_s10_phantom_masque_side": {
+      "file": "chibi/dxb_s10_phantom_masque_side.png",
+      "w": 269,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.485
+    },
+    "girl_s10_phantom_masque_side": {
+      "file": "chibi/girl_s10_phantom_masque_side.png",
+      "w": 269,
+      "h": 398,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "long",
+      "coverage": 0.485
+    },
+    "boy_base_front": {
+      "file": "chibi/boy_base_front.png",
+      "w": 289,
+      "h": 625,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.527
+    },
+    "boy_base_back": {
+      "file": "chibi/boy_base_back.png",
+      "w": 279,
+      "h": 621,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.55
+    },
+    "girl_base_front": {
+      "file": "chibi/girl_base_front.png",
+      "w": 289,
+      "h": 625,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.528
+    },
+    "girl_base_back": {
+      "file": "chibi/girl_base_back.png",
+      "w": 279,
+      "h": 622,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "left",
+      "hem": "short",
+      "coverage": 0.551
+    },
+    "boy_base_side": {
+      "file": "chibi/boy_base_side.png",
+      "w": 289,
+      "h": 826,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.628
+    },
+    "girl_base_side": {
+      "file": "chibi/girl_base_side.png",
+      "w": 303,
+      "h": 808,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "hem": "short",
+      "coverage": 0.552
+    },
+    "hair_boy_fluffy_front": {
+      "file": "chibi/hair_boy_fluffy_front.png",
+      "w": 290,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.492
+    },
+    "hair_boy_fluffy_side": {
+      "file": "chibi/hair_boy_fluffy_side.png",
+      "w": 273,
+      "h": 257,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.502
+    },
+    "hair_boy_fluffy_back": {
+      "file": "chibi/hair_boy_fluffy_back.png",
+      "w": 282,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.604
+    },
+    "hair_girl_waves_front": {
+      "file": "chibi/hair_girl_waves_front.png",
+      "w": 261,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.532
+    },
+    "hair_girl_waves_side": {
+      "file": "chibi/hair_girl_waves_side.png",
+      "w": 262,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.583
+    },
+    "hair_girl_waves_back": {
+      "file": "chibi/hair_girl_waves_back.png",
+      "w": 259,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.727
+    },
+    "hair_bob_blunt_front": {
+      "file": "chibi/hair_bob_blunt_front.png",
+      "w": 273,
+      "h": 263,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.613
+    },
+    "hair_bob_blunt_side": {
+      "file": "chibi/hair_bob_blunt_side.png",
+      "w": 248,
+      "h": 261,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.629
+    },
+    "hair_bob_blunt_back": {
+      "file": "chibi/hair_bob_blunt_back.png",
+      "w": 260,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.784
+    },
+    "hair_spiky_hero_front": {
+      "file": "chibi/hair_spiky_hero_front.png",
+      "w": 294,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.508
+    },
+    "hair_spiky_hero_side": {
+      "file": "chibi/hair_spiky_hero_side.png",
+      "w": 285,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.499
+    },
+    "hair_spiky_hero_back": {
+      "file": "chibi/hair_spiky_hero_back.png",
+      "w": 282,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.636
+    },
+    "hair_parted_curtains_front": {
+      "file": "chibi/hair_parted_curtains_front.png",
+      "w": 294,
+      "h": 237,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.478
+    },
+    "hair_parted_curtains_side": {
+      "file": "chibi/hair_parted_curtains_side.png",
+      "w": 264,
+      "h": 249,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.567
+    },
+    "hair_parted_curtains_back": {
+      "file": "chibi/hair_parted_curtains_back.png",
+      "w": 280,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.657
+    },
+    "hair_wolf_shag_front": {
+      "file": "chibi/hair_wolf_shag_front.png",
+      "w": 297,
+      "h": 291,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.513
+    },
+    "hair_wolf_shag_side": {
+      "file": "chibi/hair_wolf_shag_side.png",
+      "w": 295,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.57
+    },
+    "hair_wolf_shag_back": {
+      "file": "chibi/hair_wolf_shag_back.png",
+      "w": 288,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.67
+    },
+    "hair_high_ponytail_front": {
+      "file": "chibi/hair_high_ponytail_front.png",
+      "w": 275,
+      "h": 298,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.489
+    },
+    "hair_high_ponytail_side": {
+      "file": "chibi/hair_high_ponytail_side.png",
+      "w": 321,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.546
+    },
+    "hair_high_ponytail_back": {
+      "file": "chibi/hair_high_ponytail_back.png",
+      "w": 244,
+      "h": 306,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.572
+    },
+    "hair_twin_tails_front": {
+      "file": "chibi/hair_twin_tails_front.png",
+      "w": 322,
+      "h": 317,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.586
+    },
+    "hair_twin_tails_side": {
+      "file": "chibi/hair_twin_tails_side.png",
+      "w": 258,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.528
+    },
+    "hair_twin_tails_back": {
+      "file": "chibi/hair_twin_tails_back.png",
+      "w": 313,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.68
+    },
+    "hair_double_buns_front": {
+      "file": "chibi/hair_double_buns_front.png",
+      "w": 314,
+      "h": 274,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.555
+    },
+    "hair_double_buns_side": {
+      "file": "chibi/hair_double_buns_side.png",
+      "w": 254,
+      "h": 272,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.577
+    },
+    "hair_double_buns_back": {
+      "file": "chibi/hair_double_buns_back.png",
+      "w": 305,
+      "h": 272,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.695
+    },
+    "hair_hime_straight_front": {
+      "file": "chibi/hair_hime_straight_front.png",
+      "w": 252,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.56
+    },
+    "hair_hime_straight_side": {
+      "file": "chibi/hair_hime_straight_side.png",
+      "w": 248,
+      "h": 312,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.573
+    },
+    "hair_hime_straight_back": {
+      "file": "chibi/hair_hime_straight_back.png",
+      "w": 240,
+      "h": 309,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.783
+    },
+    "hair_braided_crown_front": {
+      "file": "chibi/hair_braided_crown_front.png",
+      "w": 254,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.512
+    },
+    "hair_braided_crown_side": {
+      "file": "chibi/hair_braided_crown_side.png",
+      "w": 240,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.538
+    },
+    "hair_braided_crown_back": {
+      "file": "chibi/hair_braided_crown_back.png",
+      "w": 248,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.63
+    },
+    "hair_half_up_bun_front": {
+      "file": "chibi/hair_half_up_bun_front.png",
+      "w": 272,
+      "h": 298,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.548
+    },
+    "hair_half_up_bun_side": {
+      "file": "chibi/hair_half_up_bun_side.png",
+      "w": 261,
+      "h": 294,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.623
+    },
+    "hair_half_up_bun_back": {
+      "file": "chibi/hair_half_up_bun_back.png",
+      "w": 263,
+      "h": 295,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.716
+    },
+    "hair_royal_drill_ribbons_front": {
+      "file": "chibi/hair_royal_drill_ribbons_front.png",
+      "w": 307,
+      "h": 291,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.58
+    },
+    "hair_royal_drill_ribbons_side": {
+      "file": "chibi/hair_royal_drill_ribbons_side.png",
+      "w": 264,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.567
+    },
+    "hair_royal_drill_ribbons_back": {
+      "file": "chibi/hair_royal_drill_ribbons_back.png",
+      "w": 309,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.668
+    },
+    "hair_royal_sakura_braid_front": {
+      "file": "chibi/hair_royal_sakura_braid_front.png",
+      "w": 243,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.49
+    },
+    "hair_royal_sakura_braid_side": {
+      "file": "chibi/hair_royal_sakura_braid_side.png",
+      "w": 225,
+      "h": 328,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.548
+    },
+    "hair_royal_sakura_braid_back": {
+      "file": "chibi/hair_royal_sakura_braid_back.png",
+      "w": 242,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.627
+    },
+    "hair_royal_starlight_bob_front": {
+      "file": "chibi/hair_royal_starlight_bob_front.png",
+      "w": 302,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.538
+    },
+    "hair_royal_starlight_bob_side": {
+      "file": "chibi/hair_royal_starlight_bob_side.png",
+      "w": 238,
+      "h": 243,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.633
+    },
+    "hair_royal_starlight_bob_back": {
+      "file": "chibi/hair_royal_starlight_bob_back.png",
+      "w": 292,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.679
+    },
+    "hair_royal_prince_feather_front": {
+      "file": "chibi/hair_royal_prince_feather_front.png",
+      "w": 295,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.465
+    },
+    "hair_royal_prince_feather_side": {
+      "file": "chibi/hair_royal_prince_feather_side.png",
+      "w": 292,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.489
+    },
+    "hair_royal_prince_feather_back": {
+      "file": "chibi/hair_royal_prince_feather_back.png",
+      "w": 280,
+      "h": 285,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.648
+    },
+    "hair_royal_butterfly_updo_front": {
+      "file": "chibi/hair_royal_butterfly_updo_front.png",
+      "w": 288,
+      "h": 321,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.6
+    },
+    "hair_royal_butterfly_updo_side": {
+      "file": "chibi/hair_royal_butterfly_updo_side.png",
+      "w": 270,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.589
+    },
+    "hair_royal_butterfly_updo_back": {
+      "file": "chibi/hair_royal_butterfly_updo_back.png",
+      "w": 271,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.744
+    },
+    "hair_royal_moon_ponytail_front": {
+      "file": "chibi/hair_royal_moon_ponytail_front.png",
+      "w": 251,
+      "h": 306,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.5
+    },
+    "hair_royal_moon_ponytail_side": {
+      "file": "chibi/hair_royal_moon_ponytail_side.png",
+      "w": 309,
+      "h": 309,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.595
+    },
+    "hair_royal_moon_ponytail_back": {
+      "file": "chibi/hair_royal_moon_ponytail_back.png",
+      "w": 251,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.659
+    },
+    "hair_celestial_seraph_front": {
+      "file": "chibi/hair_celestial_seraph_front.png",
+      "w": 298,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.456
+    },
+    "hair_celestial_seraph_side": {
+      "file": "chibi/hair_celestial_seraph_side.png",
+      "w": 268,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.532
+    },
+    "hair_celestial_seraph_back": {
+      "file": "chibi/hair_celestial_seraph_back.png",
+      "w": 290,
+      "h": 356,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.554
+    },
+    "hair_celestial_empress_front": {
+      "file": "chibi/hair_celestial_empress_front.png",
+      "w": 412,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.495
+    },
+    "hair_celestial_empress_side": {
+      "file": "chibi/hair_celestial_empress_side.png",
+      "w": 241,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.593
+    },
+    "hair_celestial_empress_back": {
+      "file": "chibi/hair_celestial_empress_back.png",
+      "w": 395,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "left",
+      "coverage": 0.664
+    },
+    "hat_wolf_ears": {
+      "file": "chibi/hat_wolf_ears.png",
+      "w": 393,
+      "h": 222,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.387
+    },
+    "hat_dragon_horns": {
+      "file": "chibi/hat_dragon_horns.png",
+      "w": 369,
+      "h": 251,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.328
+    },
+    "back_wolf_tail": {
+      "file": "chibi/back_wolf_tail.png",
+      "w": 342,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.522
+    },
+    "back_dragon_tail": {
+      "file": "chibi/back_dragon_tail.png",
+      "w": 392,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.426
+    },
+    "ui_win_filigree": {
+      "file": "ui/ui_win_filigree.png",
+      "w": 456,
+      "h": 315,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.973
+    },
+    "ui_win_woodheader": {
+      "file": "ui/ui_win_woodheader.png",
+      "w": 456,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.954
+    },
+    "ui_plaque_bronze": {
+      "file": "ui/ui_plaque_bronze.png",
+      "w": 478,
+      "h": 112,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.88
+    },
+    "ui_btn_gold": {
+      "file": "ui/ui_btn_gold.png",
+      "w": 416,
+      "h": 209,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.951
+    },
+    "ui_btn_pink": {
+      "file": "ui/ui_btn_pink.png",
+      "w": 416,
+      "h": 203,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.952
+    },
+    "ui_btn_green": {
+      "file": "ui/ui_btn_green.png",
+      "w": 416,
+      "h": 203,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.952
+    },
+    "item_ticket_standard": {
+      "file": "ui/item_ticket_standard.png",
+      "w": 259,
+      "h": 242,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.579
+    },
+    "item_ticket_gold": {
+      "file": "ui/item_ticket_gold.png",
+      "w": 259,
+      "h": 245,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.554
+    },
+    "item_vip_communicator": {
+      "file": "ui/item_vip_communicator.png",
+      "w": 217,
+      "h": 263,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.565
+    },
+    "item_gift_box": {
+      "file": "ui/item_gift_box.png",
+      "w": 245,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.731
+    },
+    "item_dupe_box": {
+      "file": "ui/item_dupe_box.png",
+      "w": 259,
+      "h": 244,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.758
+    },
+    "item_protection_scroll": {
+      "file": "ui/item_protection_scroll.png",
+      "w": 252,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.622
+    },
+    "item_streak_freeze": {
+      "file": "ui/item_streak_freeze.png",
+      "w": 237,
+      "h": 245,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.788
+    },
+    "item_blueprint_scroll": {
+      "file": "ui/item_blueprint_scroll.png",
+      "w": 289,
+      "h": 242,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.625
+    },
+    "npc_royal_owl": {
+      "file": "ui/npc_royal_owl.png",
+      "w": 235,
+      "h": 272,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.691
+    },
+    "stage_blacksmith_anvil": {
+      "file": "ui/stage_blacksmith_anvil.png",
+      "w": 354,
+      "h": 349,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.723
+    },
+    "stage_couple_nest": {
+      "file": "ui/stage_couple_nest.png",
+      "w": 394,
+      "h": 328,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.712
+    },
+    "stage_wardrobe_pedestal": {
+      "file": "ui/stage_wardrobe_pedestal.png",
+      "w": 335,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.792
+    },
+    "stage_goddess_pedestal": {
+      "file": "ui/stage_goddess_pedestal.png",
+      "w": 400,
+      "h": 380,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.5
+    },
+    "stage_architect_stand": {
+      "file": "ui/stage_architect_stand.png",
+      "w": 324,
+      "h": 387,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.5
+    },
+    "stage_shield_emblem": {
+      "file": "ui/stage_shield_emblem.png",
+      "w": 381,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.55
+    },
+    "hat_straw_explorer_side": {
+      "file": "chibi/hat_straw_explorer_side.png",
+      "w": 390,
+      "h": 257,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.433
+    },
+    "hat_straw_explorer_back": {
+      "file": "chibi/hat_straw_explorer_back.png",
+      "w": 376,
+      "h": 301,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.574
+    },
+    "hat_cat_headset_side": {
+      "file": "chibi/hat_cat_headset_side.png",
+      "w": 148,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.562
+    },
+    "hat_cat_headset_back": {
+      "file": "chibi/hat_cat_headset_back.png",
+      "w": 324,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.416
+    },
+    "hat_glowing_bunny_side": {
+      "file": "chibi/hat_glowing_bunny_side.png",
+      "w": 179,
+      "h": 361,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.396
+    },
+    "hat_glowing_bunny_back": {
+      "file": "chibi/hat_glowing_bunny_back.png",
+      "w": 297,
+      "h": 312,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.437
+    },
+    "hat_wolf_ears_side": {
+      "file": "chibi/hat_wolf_ears_side.png",
+      "w": 257,
+      "h": 247,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.518
+    },
+    "hat_wolf_ears_back": {
+      "file": "chibi/hat_wolf_ears_back.png",
+      "w": 342,
+      "h": 193,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.415
+    },
+    "hat_dragon_horns_side": {
+      "file": "chibi/hat_dragon_horns_side.png",
+      "w": 251,
+      "h": 250,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.503
+    },
+    "hat_dragon_horns_back": {
+      "file": "chibi/hat_dragon_horns_back.png",
+      "w": 336,
+      "h": 225,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.325
+    },
+    "back_wolf_tail_back": {
+      "file": "chibi/back_wolf_tail_back.png",
+      "w": 287,
+      "h": 372,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.568
+    },
+    "back_dragon_tail_back": {
+      "file": "chibi/back_dragon_tail_back.png",
+      "w": 246,
+      "h": 391,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.508
+    },
+    "ragdoll_t1_front": {
+      "file": "pets/ragdoll_t1_front.png",
+      "w": 270,
+      "h": 310,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.648
+    },
+    "ragdoll_t1_side": {
+      "file": "pets/ragdoll_t1_side.png",
+      "w": 310,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.61
+    },
+    "ragdoll_t1_back": {
+      "file": "pets/ragdoll_t1_back.png",
+      "w": 258,
+      "h": 316,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.652
+    },
+    "ragdoll_t1_move": {
+      "file": "pets/ragdoll_t1_move.png",
+      "w": 321,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.657
+    },
+    "ragdoll_t1_cast": {
+      "file": "pets/ragdoll_t1_cast.png",
+      "w": 356,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.565
+    },
+    "ragdoll_t1_happy": {
+      "file": "pets/ragdoll_t1_happy.png",
+      "w": 268,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.621
+    },
+    "ragdoll_t1_sleep": {
+      "file": "pets/ragdoll_t1_sleep.png",
+      "w": 309,
+      "h": 239,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.733
+    },
+    "ragdoll_t1_lifted": {
+      "file": "pets/ragdoll_t1_lifted.png",
+      "w": 323,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.502
+    },
+    "ragdoll_t2_front": {
+      "file": "pets/ragdoll_t2_front.png",
+      "w": 302,
+      "h": 347,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.64
+    },
+    "ragdoll_t2_side": {
+      "file": "pets/ragdoll_t2_side.png",
+      "w": 313,
+      "h": 347,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.559
+    },
+    "ragdoll_t2_back": {
+      "file": "pets/ragdoll_t2_back.png",
+      "w": 236,
+      "h": 363,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.673
+    },
+    "ragdoll_t2_move": {
+      "file": "pets/ragdoll_t2_move.png",
+      "w": 338,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.586
+    },
+    "ragdoll_t2_cast": {
+      "file": "pets/ragdoll_t2_cast.png",
+      "w": 347,
+      "h": 320,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.628
+    },
+    "ragdoll_t2_happy": {
+      "file": "pets/ragdoll_t2_happy.png",
+      "w": 271,
+      "h": 342,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.671
+    },
+    "ragdoll_t2_sleep": {
+      "file": "pets/ragdoll_t2_sleep.png",
+      "w": 357,
+      "h": 213,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.663
+    },
+    "ragdoll_t2_lifted": {
+      "file": "pets/ragdoll_t2_lifted.png",
+      "w": 311,
+      "h": 349,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.615
+    },
+    "ragdoll_emo_joy": {
+      "file": "pets/ragdoll_emo_joy.png",
+      "w": 333,
+      "h": 377,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.75
+    },
+    "ragdoll_emo_wink": {
+      "file": "pets/ragdoll_emo_wink.png",
+      "w": 329,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.726
+    },
+    "ragdoll_emo_surprised": {
+      "file": "pets/ragdoll_emo_surprised.png",
+      "w": 333,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.737
+    },
+    "ragdoll_emo_teary": {
+      "file": "pets/ragdoll_emo_teary.png",
+      "w": 333,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.726
+    },
+    "ragdoll_emo_sleepy": {
+      "file": "pets/ragdoll_emo_sleepy.png",
+      "w": 335,
+      "h": 377,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.726
+    },
+    "ragdoll_emo_love": {
+      "file": "pets/ragdoll_emo_love.png",
+      "w": 337,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.726
+    },
+    "ragdoll_emo_proud": {
+      "file": "pets/ragdoll_emo_proud.png",
+      "w": 328,
+      "h": 380,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.73
+    },
+    "ragdoll_emo_shy": {
+      "file": "pets/ragdoll_emo_shy.png",
+      "w": 335,
+      "h": 377,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.736
+    },
+    "nyx_t1_front": {
+      "file": "pets/nyx_t1_front.png",
+      "w": 265,
+      "h": 253,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.476
+    },
+    "nyx_t1_side": {
+      "file": "pets/nyx_t1_side.png",
+      "w": 265,
+      "h": 211,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.386
+    },
+    "nyx_t1_back": {
+      "file": "pets/nyx_t1_back.png",
+      "w": 203,
+      "h": 296,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.535
+    },
+    "nyx_t1_move": {
+      "file": "pets/nyx_t1_move.png",
+      "w": 265,
+      "h": 100,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.478
+    },
+    "nyx_t1_cast": {
+      "file": "pets/nyx_t1_cast.png",
+      "w": 265,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.6
+    },
+    "nyx_t1_happy": {
+      "file": "pets/nyx_t1_happy.png",
+      "w": 265,
+      "h": 292,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.485
+    },
+    "nyx_t1_sleep": {
+      "file": "pets/nyx_t1_sleep.png",
+      "w": 265,
+      "h": 187,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.64
+    },
+    "nyx_t1_lifted": {
+      "file": "pets/nyx_t1_lifted.png",
+      "w": 217,
+      "h": 296,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.499
+    },
+    "nyx_t2_front": {
+      "file": "pets/nyx_t2_front.png",
+      "w": 279,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.478
+    },
+    "nyx_t2_side": {
+      "file": "pets/nyx_t2_side.png",
+      "w": 279,
+      "h": 223,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.388
+    },
+    "nyx_t2_back": {
+      "file": "pets/nyx_t2_back.png",
+      "w": 213,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.538
+    },
+    "nyx_t2_move": {
+      "file": "pets/nyx_t2_move.png",
+      "w": 279,
+      "h": 105,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.487
+    },
+    "nyx_t2_cast": {
+      "file": "pets/nyx_t2_cast.png",
+      "w": 279,
+      "h": 245,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.603
+    },
+    "nyx_t2_happy": {
+      "file": "pets/nyx_t2_happy.png",
+      "w": 268,
+      "h": 295,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.488
+    },
+    "nyx_t2_sleep": {
+      "file": "pets/nyx_t2_sleep.png",
+      "w": 279,
+      "h": 196,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.645
+    },
+    "nyx_t2_lifted": {
+      "file": "pets/nyx_t2_lifted.png",
+      "w": 227,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.504
+    },
+    "nyx_t3_front": {
+      "file": "pets/nyx_t3_front.png",
+      "w": 293,
+      "h": 280,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.479
+    },
+    "nyx_t3_side": {
+      "file": "pets/nyx_t3_side.png",
+      "w": 293,
+      "h": 234,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.389
+    },
+    "nyx_t3_back": {
+      "file": "pets/nyx_t3_back.png",
+      "w": 216,
+      "h": 315,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.538
+    },
+    "nyx_t3_move": {
+      "file": "pets/nyx_t3_move.png",
+      "w": 293,
+      "h": 110,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.49
+    },
+    "nyx_t3_cast": {
+      "file": "pets/nyx_t3_cast.png",
+      "w": 293,
+      "h": 257,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.602
+    },
+    "nyx_t3_happy": {
+      "file": "pets/nyx_t3_happy.png",
+      "w": 268,
+      "h": 295,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.488
+    },
+    "nyx_t3_sleep": {
+      "file": "pets/nyx_t3_sleep.png",
+      "w": 287,
+      "h": 202,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.645
+    },
+    "nyx_t3_lifted": {
+      "file": "pets/nyx_t3_lifted.png",
+      "w": 239,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.503
+    },
+    "nyx_emo_joy": {
+      "file": "pets/nyx_emo_joy.png",
+      "w": 256,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.586
+    },
+    "nyx_emo_wink": {
+      "file": "pets/nyx_emo_wink.png",
+      "w": 260,
+      "h": 259,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.578
+    },
+    "nyx_emo_surprised": {
+      "file": "pets/nyx_emo_surprised.png",
+      "w": 258,
+      "h": 268,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.543
+    },
+    "nyx_emo_teary": {
+      "file": "pets/nyx_emo_teary.png",
+      "w": 257,
+      "h": 203,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.66
+    },
+    "nyx_emo_sleepy": {
+      "file": "pets/nyx_emo_sleepy.png",
+      "w": 255,
+      "h": 259,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.591
+    },
+    "nyx_emo_love": {
+      "file": "pets/nyx_emo_love.png",
+      "w": 263,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.591
+    },
+    "nyx_emo_proud": {
+      "file": "pets/nyx_emo_proud.png",
+      "w": 242,
+      "h": 259,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.655
+    },
+    "nyx_emo_shy": {
+      "file": "pets/nyx_emo_shy.png",
+      "w": 255,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.762
+    },
+    "kitsune_t1_front": {
+      "file": "pets/kitsune_t1_front.png",
+      "w": 274,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.669
+    },
+    "kitsune_t1_side": {
+      "file": "pets/kitsune_t1_side.png",
+      "w": 307,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.589
+    },
+    "kitsune_t1_back": {
+      "file": "pets/kitsune_t1_back.png",
+      "w": 274,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.609
+    },
+    "kitsune_t1_move": {
+      "file": "pets/kitsune_t1_move.png",
+      "w": 359,
+      "h": 288,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.561
+    },
+    "kitsune_t1_cast": {
+      "file": "pets/kitsune_t1_cast.png",
+      "w": 332,
+      "h": 335,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.564
+    },
+    "kitsune_t1_happy": {
+      "file": "pets/kitsune_t1_happy.png",
+      "w": 269,
+      "h": 349,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.598
+    },
+    "kitsune_t1_sleep": {
+      "file": "pets/kitsune_t1_sleep.png",
+      "w": 293,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.641
+    },
+    "kitsune_t1_lifted": {
+      "file": "pets/kitsune_t1_lifted.png",
+      "w": 300,
+      "h": 347,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.518
+    },
+    "kitsune_t2_front": {
+      "file": "pets/kitsune_t2_front.png",
+      "w": 307,
+      "h": 292,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.738
+    },
+    "kitsune_t2_side": {
+      "file": "pets/kitsune_t2_side.png",
+      "w": 313,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.583
+    },
+    "kitsune_t2_back": {
+      "file": "pets/kitsune_t2_back.png",
+      "w": 258,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.621
+    },
+    "kitsune_t2_move": {
+      "file": "pets/kitsune_t2_move.png",
+      "w": 337,
+      "h": 255,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.613
+    },
+    "kitsune_t2_cast": {
+      "file": "pets/kitsune_t2_cast.png",
+      "w": 337,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.595
+    },
+    "kitsune_t2_happy": {
+      "file": "pets/kitsune_t2_happy.png",
+      "w": 274,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.649
+    },
+    "kitsune_t2_sleep": {
+      "file": "pets/kitsune_t2_sleep.png",
+      "w": 287,
+      "h": 232,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "faces": "right",
+      "coverage": 0.661
+    },
+    "kitsune_t2_lifted": {
+      "file": "pets/kitsune_t2_lifted.png",
+      "w": 317,
+      "h": 285,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.663
+    },
+    "kitsune_emo_joy": {
+      "file": "pets/kitsune_emo_joy.png",
+      "w": 330,
+      "h": 357,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.721
+    },
+    "kitsune_emo_wink": {
+      "file": "pets/kitsune_emo_wink.png",
+      "w": 303,
+      "h": 356,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.688
+    },
+    "kitsune_emo_surprised": {
+      "file": "pets/kitsune_emo_surprised.png",
+      "w": 296,
+      "h": 367,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.717
+    },
+    "kitsune_emo_teary": {
+      "file": "pets/kitsune_emo_teary.png",
+      "w": 341,
+      "h": 310,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.651
+    },
+    "kitsune_emo_sleepy": {
+      "file": "pets/kitsune_emo_sleepy.png",
+      "w": 352,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.648
+    },
+    "kitsune_emo_love": {
+      "file": "pets/kitsune_emo_love.png",
+      "w": 306,
+      "h": 344,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.748
+    },
+    "kitsune_emo_proud": {
+      "file": "pets/kitsune_emo_proud.png",
+      "w": 299,
+      "h": 346,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.764
+    },
+    "kitsune_emo_shy": {
+      "file": "pets/kitsune_emo_shy.png",
+      "w": 353,
+      "h": 312,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.713
+    },
+    "skywhale_t1_front": {
+      "file": "pets/skywhale_t1_front.png",
+      "w": 254,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.556
+    },
+    "skywhale_t1_side": {
+      "file": "pets/skywhale_t1_side.png",
+      "w": 320,
+      "h": 274,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.529
+    },
+    "skywhale_t1_back": {
+      "file": "pets/skywhale_t1_back.png",
+      "w": 259,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.597
+    },
+    "skywhale_t1_move": {
+      "file": "pets/skywhale_t1_move.png",
+      "w": 345,
+      "h": 268,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.522
+    },
+    "skywhale_t1_cast": {
+      "file": "pets/skywhale_t1_cast.png",
+      "w": 375,
+      "h": 270,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.514
+    },
+    "skywhale_t1_happy": {
+      "file": "pets/skywhale_t1_happy.png",
+      "w": 247,
+      "h": 368,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.52
+    },
+    "skywhale_t1_sleep": {
+      "file": "pets/skywhale_t1_sleep.png",
+      "w": 293,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.582
+    },
+    "skywhale_t1_lifted": {
+      "file": "pets/skywhale_t1_lifted.png",
+      "w": 251,
+      "h": 355,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.549
+    },
+    "skywhale_t2_front": {
+      "file": "pets/skywhale_t2_front.png",
+      "w": 304,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.546
+    },
+    "skywhale_t2_side": {
+      "file": "pets/skywhale_t2_side.png",
+      "w": 368,
+      "h": 298,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.459
+    },
+    "skywhale_t2_back": {
+      "file": "pets/skywhale_t2_back.png",
+      "w": 257,
+      "h": 359,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.513
+    },
+    "skywhale_t2_move": {
+      "file": "pets/skywhale_t2_move.png",
+      "w": 323,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.555
+    },
+    "skywhale_t2_cast": {
+      "file": "pets/skywhale_t2_cast.png",
+      "w": 369,
+      "h": 305,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.473
+    },
+    "skywhale_t2_happy": {
+      "file": "pets/skywhale_t2_happy.png",
+      "w": 247,
+      "h": 391,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.544
+    },
+    "skywhale_t2_sleep": {
+      "file": "pets/skywhale_t2_sleep.png",
+      "w": 304,
+      "h": 296,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.661
+    },
+    "skywhale_t2_lifted": {
+      "file": "pets/skywhale_t2_lifted.png",
+      "w": 314,
+      "h": 345,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "faces": "right",
+      "coverage": 0.508
+    },
+    "skywhale_emo_joy": {
+      "file": "pets/skywhale_emo_joy.png",
+      "w": 339,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.656
+    },
+    "skywhale_emo_wink": {
+      "file": "pets/skywhale_emo_wink.png",
+      "w": 302,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.721
+    },
+    "skywhale_emo_surprised": {
+      "file": "pets/skywhale_emo_surprised.png",
+      "w": 287,
+      "h": 310,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.731
+    },
+    "skywhale_emo_teary": {
+      "file": "pets/skywhale_emo_teary.png",
+      "w": 287,
+      "h": 302,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.739
+    },
+    "skywhale_emo_sleepy": {
+      "file": "pets/skywhale_emo_sleepy.png",
+      "w": 292,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.742
+    },
+    "skywhale_emo_love": {
+      "file": "pets/skywhale_emo_love.png",
+      "w": 286,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.734
+    },
+    "skywhale_emo_proud": {
+      "file": "pets/skywhale_emo_proud.png",
+      "w": 320,
+      "h": 306,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.678
+    },
+    "skywhale_emo_shy": {
+      "file": "pets/skywhale_emo_shy.png",
+      "w": 287,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.735
+    },
+    "egg_ragdoll": {
+      "file": "pets/egg_ragdoll.png",
+      "w": 273,
+      "h": 410,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.825
+    },
+    "egg_nyx": {
+      "file": "pets/egg_nyx.png",
+      "w": 351,
+      "h": 394,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.638
+    },
+    "egg_kitsune": {
+      "file": "pets/egg_kitsune.png",
+      "w": 285,
+      "h": 471,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.655
+    },
+    "egg_skywhale": {
+      "file": "pets/egg_skywhale.png",
+      "w": 324,
+      "h": 434,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.659
+    },
+    "egg_couple_v2": {
+      "file": "pets/egg_couple_v2.png",
+      "w": 345,
+      "h": 394,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.684
+    },
+    "egg_mystery": {
+      "file": "pets/egg_mystery.png",
+      "w": 270,
+      "h": 395,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.774
+    },
+    "icon_skill_royal_charm": {
+      "file": "ui/icon_skill_royal_charm.png",
+      "w": 217,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.734
+    },
+    "icon_skill_plasma_blast": {
+      "file": "ui/icon_skill_plasma_blast.png",
+      "w": 349,
+      "h": 278,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.664
+    },
+    "icon_skill_foxfire": {
+      "file": "ui/icon_skill_foxfire.png",
+      "w": 209,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.569
+    },
+    "icon_skill_bubble_shield": {
+      "file": "ui/icon_skill_bubble_shield.png",
+      "w": 289,
+      "h": 288,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.763
+    },
+    "icon_pet_essence": {
+      "file": "ui/icon_pet_essence.png",
+      "w": 256,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.528
+    },
+    "icon_pet_lock": {
+      "file": "ui/icon_pet_lock.png",
+      "w": 262,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.656
+    },
+    "icon_pet_release": {
+      "file": "ui/icon_pet_release.png",
+      "w": 341,
+      "h": 263,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.642
+    },
+    "icon_pet_bond": {
+      "file": "ui/icon_pet_bond.png",
+      "w": 295,
+      "h": 271,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.733
+    },
+    "npc_fluffe_poodle": {
+      "file": "ui/npc_fluffe_poodle.png",
+      "w": 622,
+      "h": 634,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.524
+    },
+    "item_ticket_royal_hair": {
+      "file": "ui/item_ticket_royal_hair.png",
+      "w": 590,
+      "h": 556,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.552
+    },
+    "mono_villa_a": {
+      "file": "monopoly/mono_villa_a.png",
+      "w": 262,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.633
+    },
+    "mono_hotel_a": {
+      "file": "monopoly/mono_hotel_a.png",
+      "w": 242,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.718
+    },
+    "mono_landmark_a": {
+      "file": "monopoly/mono_landmark_a.png",
+      "w": 142,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.671
+    },
+    "mono_pyramid_a": {
+      "file": "monopoly/mono_pyramid_a.png",
+      "w": 296,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.496
+    },
+    "mono_villa_b": {
+      "file": "monopoly/mono_villa_b.png",
+      "w": 274,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.609
+    },
+    "mono_hotel_b": {
+      "file": "monopoly/mono_hotel_b.png",
+      "w": 262,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.712
+    },
+    "mono_landmark_b": {
+      "file": "monopoly/mono_landmark_b.png",
+      "w": 202,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.648
+    },
+    "mono_pyramid_b": {
+      "file": "monopoly/mono_pyramid_b.png",
+      "w": 263,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.529
+    },
+    "mono_trap_ice_cube": {
+      "file": "monopoly/mono_trap_ice_cube.png",
+      "w": 270,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.759
+    },
+    "mono_trap_torii": {
+      "file": "monopoly/mono_trap_torii.png",
+      "w": 252,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.413
+    },
+    "mono_trap_mirror": {
+      "file": "monopoly/mono_trap_mirror.png",
+      "w": 222,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.527
+    },
+    "mono_trap_slipper": {
+      "file": "monopoly/mono_trap_slipper.png",
+      "w": 270,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.619
+    },
+    "mono_trap_waterway": {
+      "file": "monopoly/mono_trap_waterway.png",
+      "w": 280,
+      "h": 195,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.749
+    },
+    "mono_trap_fire": {
+      "file": "monopoly/mono_trap_fire.png",
+      "w": 299,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.249
+    },
+    "mono_trap_coral": {
+      "file": "monopoly/mono_trap_coral.png",
+      "w": 271,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.537
+    },
+    "mono_trap_lightning_rod": {
+      "file": "monopoly/mono_trap_lightning_rod.png",
+      "w": 158,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.374
+    },
+    "mono_dec_fountain": {
+      "file": "monopoly/mono_dec_fountain.png",
+      "w": 272,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.545
+    },
+    "mono_dec_shrine": {
+      "file": "monopoly/mono_dec_shrine.png",
+      "w": 404,
+      "h": 323,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.561
+    },
+    "mono_dec_boba": {
+      "file": "monopoly/mono_dec_boba.png",
+      "w": 271,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.692
+    },
+    "mono_dec_sakura": {
+      "file": "monopoly/mono_dec_sakura.png",
+      "w": 324,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.574
+    },
+    "mono_dec_hedge": {
+      "file": "monopoly/mono_dec_hedge.png",
+      "w": 359,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.578
+    },
+    "mono_dec_start_gate": {
+      "file": "monopoly/mono_dec_start_gate.png",
+      "w": 319,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.586
+    },
+    "dice_classic_ivory": {
+      "file": "ui/dice_classic_ivory.png",
+      "w": 259,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.772
+    },
+    "dice_pastel_boba": {
+      "file": "ui/dice_pastel_boba.png",
+      "w": 264,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.758
+    },
+    "dice_emerald_naga": {
+      "file": "ui/dice_emerald_naga.png",
+      "w": 262,
+      "h": 286,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.757
+    },
+    "dice_kitsune_foxfire": {
+      "file": "ui/dice_kitsune_foxfire.png",
+      "w": 260,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.765
+    },
+    "dice_mirage_sultan": {
+      "file": "ui/dice_mirage_sultan.png",
+      "w": 259,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.766
+    },
+    "dice_atlantis_pearl": {
+      "file": "ui/dice_atlantis_pearl.png",
+      "w": 270,
+      "h": 291,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.726
+    },
+    "dice_glacial_crystal": {
+      "file": "ui/dice_glacial_crystal.png",
+      "w": 261,
+      "h": 283,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.758
+    },
+    "dice_astral_galaxy": {
+      "file": "ui/dice_astral_galaxy.png",
+      "w": 340,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.638
+    },
+    "dice_zeus_thunder": {
+      "file": "ui/dice_zeus_thunder.png",
+      "w": 260,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.763
+    },
+    "cliff_wall_strip": {
+      "file": "village/cliff_wall_strip.png",
+      "w": 1275,
+      "h": 408,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.818
+    },
+    "cliff_rim_turf_strip": {
+      "file": "village/cliff_rim_turf_strip.png",
+      "w": 1327,
+      "h": 185,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.785
+    },
+    "tile_grass_meadow_a": {
+      "file": "terrain/tile_grass_meadow_a.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "tile_grass_meadow_b": {
+      "file": "terrain/tile_grass_meadow_b.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "tile_grass_sunlit_c": {
+      "file": "terrain/tile_grass_sunlit_c.png",
+      "w": 512,
+      "h": 512,
+      "type": "swatch",
+      "tile": true
+    },
+    "decal_grass_blossom_c": {
+      "file": "village/decal_grass_blossom_c.png",
+      "w": 276,
+      "h": 182,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.629
+    },
+    "decal_water_ripples": {
+      "file": "village/decal_water_ripples.png",
+      "w": 236,
+      "h": 128,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.492
+    }
+  },
+  "atlases": {
+    "particle_atlas": {
+      "file": "ui/particle_atlas.png",
+      "cols": 4,
+      "rows": 4,
+      "cells": [
+        "fx_snowflake",
+        "fx_feather",
+        "fx_petal",
+        "fx_star",
+        "fx_lightning",
+        "fx_flame",
+        "fx_bubble",
+        "fx_note",
+        "fx_chip",
+        "fx_moon",
+        "fx_heart",
+        "fx_leaf",
+        "fx_stardust",
+        "fx_rune",
+        "fx_shockwave",
+        "fx_magic_circle"
+      ]
+    }
+  }
+}
