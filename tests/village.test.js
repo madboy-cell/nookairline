@@ -19,10 +19,10 @@ test('catalog footprints match the locked Step 2 decision', () => {
   assert.deepEqual([CORE.shrine.w, CORE.shrine.h, CORE.nest.w, CORE.nest.h], [2, 2, 2, 2]);
   assert.deepEqual([CORE.dock.w, CORE.dock.h], [3, 2]);
   assert.deepEqual(footprint('dock', 90), { w: 2, h: 3 });
-  assert.equal(Object.keys(WONDERS).length, 5);
-  assert.equal(Object.keys(DECOR).length, 20);
+  assert.equal(Object.keys(WONDERS).length, 11);
+  assert.equal(Object.keys(DECOR).length, 28);
   assert.equal(Object.values(FISH).reduce((s, f) => s + f.rate, 0), 100);
-  assert.deepEqual(EXPANSION_TIERS.map((t) => t.size), [24, 26, 28, 30, 32]);
+  assert.deepEqual(EXPANSION_TIERS.map((t) => t.size), [18, 20, 24, 28, 32]);
   assert.deepEqual(BLUEPRINT_CARDS.slice(1), [5, 10, 15, 20, 25, 30, 35, 40, 50]);
 });
 
@@ -47,19 +47,19 @@ test('layout validation: overlap, bounds, ownership, dock water rule, bridge lan
   const v = starter().village;
   const L = layoutOf(v);
   const castle = L.buildings.find((b) => b.type === 'castle');
-  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b === castle ? { ...b, x: 4, y: 6 } : b)) }).error, 'overlap');
-  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b === castle ? { ...b, x: 21 } : b)) }).error, 'out_of_bounds');
-  assert.equal(validateLayout(v, { ...L, buildings: [...L.buildings, { type: 'wnd_ferris', x: 0, y: 18, rot: 0 }] }).error, 'not_owned');
-  assert.equal(validateLayout(v, { ...L, buildings: [...L.buildings, { type: 'mint', x: 0, y: 18, rot: 0 }] }).error, 'not_owned');
+  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b === castle ? { ...b, x: 2, y: 3 } : b)) }).error, 'overlap');
+  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b === castle ? { ...b, x: 16 } : b)) }).error, 'out_of_bounds');
+  assert.equal(validateLayout(v, { ...L, buildings: [...L.buildings, { type: 'wnd_ferris', x: 0, y: 13, rot: 0 }] }).error, 'not_owned');
+  assert.equal(validateLayout(v, { ...L, buildings: [...L.buildings, { type: 'mint', x: 0, y: 13, rot: 0 }] }).error, 'not_owned');
   // dock away from water / coast
-  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b.type === 'dock' ? { ...b, x: 14, y: 16 } : b)) }).error, 'dock_needs_water');
+  assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b.type === 'dock' ? { ...b, x: 11, y: 13 } : b)) }).error, 'dock_needs_water');
   // dock on the coastline is fine
-  assert.ok(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b.type === 'dock' ? { ...b, x: 14, y: 22 } : b)) }).ok);
+  assert.ok(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b.type === 'dock' ? { ...b, x: 11, y: 16 } : b)) }).ok);
   // bridge landing cells stay clear
-  const [lx, ly] = landingCells(24)[1];
+  const [lx, ly] = landingCells(18)[1];
   assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: lx, y: ly, t: 'water' }] }).error, 'bridge_landing');
-  assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: 11, y: 9, t: 'road_cream' }] }).error, 'duplicate_tile');
-  assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: 10, y: 4, t: 'road_cream' }] }).error, 'tile_under_building');
+  assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: 8, y: 6, t: 'road_cream' }] }).error, 'duplicate_tile');
+  assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: 7, y: 1, t: 'road_cream' }] }).error, 'tile_under_building');
 });
 
 test('storage cap: 8h at Dock Lv1 → exactly 24h at Lv10, Casino ×2, Chonker +25–50%, Tent +5%', () => {
@@ -145,30 +145,30 @@ test('cloud expansion: tiers need castle level + gold, coordinates shift so noth
   p.village.castle_lv = 2; p.gold = 2500;
   const castleBefore = p.village.buildings.find((b) => b.type === 'castle');
   const r = eco.expandTerritory(p);
-  assert.ok(r.ok); assert.equal(p.village.grid_size, 26); assert.equal(p.gold, 0);
+  assert.ok(r.ok); assert.equal(p.village.grid_size, 20); assert.equal(p.gold, 0);
   const castle = p.village.buildings.find((b) => b.type === 'castle');
-  assert.deepEqual([castle.x, castle.y], [11, 5]);
+  assert.deepEqual([castle.x, castle.y], [8, 2]);
   assert.ok(validateLayout(p.village, layoutOf(p.village)).ok);
   assert.ok(castleBefore);
 });
 
-test('twin sky-islands: partner island at S/2 + 16 + S/2, bridge walkable, water blocks walkers', () => {
+test('twin sky-islands: partner island at S/2 + 8 + S/2, bridge walkable, water blocks walkers', () => {
   const [nook, neen] = seedProfiles();
   const L = instanceLayout([{ owner: 'nook', village: nook.village }, { owner: 'neen', village: neen.village }]);
   for (const i of L.islands) buildCellIndex(i);
   assert.equal(L.islands[0].owner, 'neen'); assert.equal(L.islands[0].cx, 0);
-  assert.equal(L.islands[1].cx, 40); assert.equal(L.bridge.cx, 20);
-  assert.ok(groundAt(L, 20, 3).walkable, 'bridge deck');
-  assert.ok(groundAt(L, 12.4, 3).walkable && groundAt(L, 27.6, 3).walkable, 'both landings');
+  assert.equal(L.islands[1].cx, 26); assert.equal(L.bridge.cx, 13);
+  assert.ok(groundAt(L, 13, 3).walkable, 'bridge deck');
+  assert.ok(groundAt(L, 9.4, 3).walkable && groundAt(L, 16.6, 3).walkable, 'both landings');
   assert.equal(groundAt(L, -5, 0.5).walkable, false, 'canal water');
   assert.equal(groundAt(L, -5, 0.5, { canFly: true }).walkable, true, 'wings glide over water');
   assert.equal(groundAt(L, -0.5, 0.5).walkable, true, 'footbridge');
-  assert.equal(groundAt(L, 20, -6).walkable, false, 'sky between islands');
-  assert.ok(groundAt(L, -0.5, 5).road, 'avenue is a road (+15%)');
-  assert.ok(clampToArea(L, 20, -6).clamped);
+  assert.equal(groundAt(L, 13, -6).walkable, false, 'sky between islands');
+  assert.ok(groundAt(L, -0.5, 4).road, 'avenue is a road (+15%)');
+  assert.ok(clampToArea(L, 13, -6).clamped);
   const sp = spawnPoint(L, 'nook', 'bkk');
-  assert.equal(Math.abs(sp.x - 40) < 2, true);
-  assert.ok(dockNear(L, 40 - 12 + 19.5, -12 + 15.6, 2.6), 'nook can fish from his dock');
+  assert.equal(Math.abs(sp.x - 26) < 2, true);
+  assert.ok(dockNear(L, 26 - 9 + 14.5, -9 + 11.0, 2.6), 'nook can fish from his dock');
 });
 
 test('fishing loot: free cast = pond fish only, bait unlocks koi/chest, co-op chest 13.5%', () => {
@@ -228,7 +228,7 @@ test('migration repairs pre-Step-2 starter saves without losing progress', () =>
   const v = old.village;
   assert.equal(v.levels.mint, 4); assert.equal(v.levels.shrine, 2); assert.equal(v.castle_lv, 3);
   assert.equal(v.tiles[0].t, 'road_cobble');
-  assert.deepEqual(v.buildings.find((b) => b.type === 'shrine') && [v.buildings.find((b) => b.type === 'shrine').x], [9]);
+  assert.deepEqual(v.buildings.find((b) => b.type === 'shrine') && [v.buildings.find((b) => b.type === 'shrine').x], [6]);
   assert.ok(validateLayout(v, layoutOf(v)).ok);
   assert.equal(Object.keys(bagContents(v)).length, 0);
 });

@@ -188,7 +188,7 @@ async function partB() {
     // Step 2: the meadow is now a real village with buildings — run the motion checks from an open
     // stretch of nook's island and use Finger Pick-Up & Drop to teleport (server-agreed position).
     const tp = async (page, x, z) => { await page.evaluate((x, z) => { const w = window.__neora.world; w.setLocalPosition(x, z); w.followDetached = false; w.onDrop({ x, z, propId: null }); }, x, z); await sleep(1000); };
-    await tp(nook, 40.5, 10.5);
+    await tp(nook, 26.0, 6.5);
     const hold = async (page, keys, ms) => { for (const k of keys) await page.keyboard.down(k); await sleep(ms); for (const k of keys) await page.keyboard.up(k); };
     const sample = async (page, keys, ms) => {
       for (const k of keys) await page.keyboard.down(k);

@@ -9,9 +9,9 @@
 >   - **Expanded Catalog & Sky Monopoly Diorama**: Added all 4 new buildings (`windmill_bakery`, `flower_greenhouse`, `owl_post_office`, `starlight_lighthouse`), 12 new decorations (`dec_wooden_bench` through `dec_owl_mailbox`), and 30 environment props in [`shared/catalog_landmarks.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/shared/catalog_landmarks.js), and wired the 2.5D grass, terracotta cliffs, trees, flower bushes, fences, and iron streetlamps into the **Sky Monopoly (`8×6` board)** Center Park Diorama in [`client/js/minigames/monopoly_25d/board_scene.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/minigames/monopoly_25d/board_scene.js).
 
 ````carousel
-![Live 2.5D Sky Monopoly (Overview Camera — Zero Flashing, 2 Merged Cliff/Rim Draw Calls): 8x6 floating island with single-quad faceted terracotta cliff wall, merged 4-side scalloped wildflower grass rim, and 2.5D Center Park Diorama](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_fixed_overview.png)
+![Live 2.5D Sky Monopoly — Royal Sky-Garden & Fountain Promenade (Overview Camera): Cruciform honey-sandstone cobblestone boulevard with cream-stone curbs, Central Fountain of 1,000 Wishes, North Goddess Shrine & Sakura Sanctuary, West Swing Lounge, East Boba & Flower Market, and South Picnic & Wishing Well Parterre](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_garden_overview.png)
 <!-- slide -->
-![Live 2.5D Sky Monopoly (Follow Camera): Crisp 3D perimeter tiles, zero Z-fighting against the scalloped grass rim and terracotta cliff wall, and mobile-hardened Ultimate VFX](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_fixed_follow.png)
+![Live 2.5D Sky Monopoly — Royal Sky-Garden & Fountain Promenade (Follow Camera): Crisp 3D perimeter tiles, zero Z-fighting against the scalloped grass rim and terracotta cliff wall, and mobile-hardened Ultimate VFX](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_garden_follow.png)
 <!-- slide -->
 ![Live 2.5D Floating Island Bottom-Right Cliff Edge (Fixed!): Scalloped flower-dotted overhanging meadow grass rim blending seamlessly into the lawn above chiseled 2.5D terracotta-sandstone cliff rock strata and golden-hour clouds](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_bottom_edge_cliff_v6.png)
 <!-- slide -->
@@ -734,3 +734,36 @@ dec_berry_wheelbarrow:   { kind: 'decor', sprite: 'dec_berry_wheelbarrow',   nam
 dec_starlight_telescope: { kind: 'decor', sprite: 'dec_starlight_telescope', name: 'Brass Starlight Telescope',    emoji: '🔭', w: 1, h: 1, buff: { fortunePct: 3 },                      effect: '+3% Fortune' },
 dec_owl_mailbox:         { kind: 'decor', sprite: 'dec_owl_mailbox',         name: 'Sleepy Owl Postbox',           emoji: '📮', w: 1, h: 1, buff: { swiftnessPct: 2 },                    effect: '+2% Swiftness' },
 ```
+
+---
+
+## 9. 🎲 Sheet 2O & Sheet 4C — Orthogonal Park Framing & Sky Monopoly Event Emblems (Assets 112–125, 550 Total Sprites)
+
+To eliminate any diagonal-vs-orthogonal angle mismatch on the `0° / 90°` Sky Monopoly (`8×6`) board and replace all remaining flat OS emoji tile icons, we generated and integrated **2 additional sheets (14 total cliff/park/emblem assets -> 550 total manifest sprites, 0 warnings)**:
+
+1. **Sheet 2N (`art_src/sheet_2n_cliff_wall.jpg`)**:
+   - `cliff_wall_strip` (`928×300`, `village/cliff_wall_strip.png`) — 2.5D floating sky-island front cliff wall & overhanging grass lip.
+   - `cliff_rim_turf_strip` (`956×180`, `village/cliff_rim_turf_strip.png`) — Horizontally repeatable scalloped meadow grass & wildflower rim border.
+2. **Sheet 2O (`art_src/sheet_2o_ortho_park_framing.jpg`)**:
+   - `env_arch_floral_ortho` (`253×205`, `village/env_arch_floral_ortho.png`) — Strictly `0°` horizontal cream-stone & rose-garland garden gate.
+   - `env_fence_ortho_horizontal` (`368×192`, `village/env_fence_ortho_horizontal.png`) — Strictly `0°` horizontal cream-stone & honey-oak rail fence.
+   - `env_planter_ortho_horizontal` (`358×323`, `village/env_planter_ortho_horizontal.png`) — Strictly `0°` horizontal timber & stone flowerbed planter box.
+   - `env_hedge_ortho_horizontal` (`296×200`, `village/env_hedge_ortho_horizontal.png`) — Manicured boxwood & daisy topiary hedge.
+   - `dec_bench_ortho_front` (`371×276`, `village/dec_bench_ortho_front.png`) — Carved honey-oak park bench with heart cutout & plaid blanket.
+   - `decal_plaza_medallion_circle` (`340×251`, `village/decal_plaza_medallion_circle.png`, `flat: true`) — Circular Royal Starlight Compass Plaza Medallion decal.
+3. **Sheet 4C (`art_src/sheet_4c_monopoly_event_emblems.jpg`)**:
+   - `mono_icon_start` (`371×361`, `village/mono_icon_start.png`) — Royal Sky-Ship & Golden Compass `START` emblem.
+   - `mono_icon_casino` (`374×345`, `village/mono_icon_casino.png`) — Starlight Lucky Wheel & Jackpot `MINI-CASINO` emblem.
+   - `mono_icon_airdrop` (`310×371`, `village/mono_icon_airdrop.png`) — Pastel Sky-Parachute & Winged Supply Crate `AIRDROP` emblem.
+   - `mono_icon_vault` (`344×361`, `village/mono_icon_vault.png`) — Black-Market & Royal Magnet `BLACK MARKET` emblem.
+   - `mono_icon_warp` (`413×309`, `village/mono_icon_warp.png`) — Astral Cloud Portal & Angel-Wing `SKY WARP` emblem.
+   - `mono_icon_arena` (`388×358`, `village/mono_icon_arena.png`) — Crossed Royal Broadswords & Lion Shield `ARENA` emblem.
+
+````carousel
+![Completed 2.5D Sky Monopoly — Overview Camera](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_complete_overview.png)
+<!-- slide -->
+![Completed 2.5D Sky Monopoly — Follow Camera](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/live_25d_monopoly_complete_follow.png)
+<!-- slide -->
+![Sheet 4C — 2.5D Monopoly Event Emblems](/Users/thanapat/.gemini/antigravity/brain/753bcef0-ad37-414d-acee-dceff4909f18/sheet_4c_monopoly_event_emblems_1792133188908.jpg)
+````
+

@@ -12,9 +12,12 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/assets/ui/app_icon_192.png" />
   <link rel="icon" href="/assets/ui/app_icon_192.png" />
-  <link rel="stylesheet" href="/css/style2_hud.css" />
-  <link rel="stylesheet" href="/css/rpg_ui.css" />
-  <link rel="stylesheet" href="/css/monopoly.css" />
+  <link rel="stylesheet" href="/css/style2_hud.css?v=mockup11" />
+  <link rel="stylesheet" href="/css/rpg_ui.css?v=mockup10" />
+  <link rel="stylesheet" href="/css/monopoly.css?v=mockup10" />
+  <link rel="stylesheet" href="/css/runway.css?v=mockup10" />
+  <link rel="stylesheet" href="/css/casino.css?v=mockup17" />
+  <link rel="stylesheet" href="/css/phase5.css" />
   <script type="importmap">{ "imports": { "three": "/vendor/three.module.js" } }</script>
 </head>
 <body>
@@ -24,13 +27,16 @@
     <!-- In-game HUD (hidden until signed in) -->
     <div id="hud" data-scene="BOOT">
       <header id="top-hud-bar">
-        <div class="player-card">
-          <div class="avatar" id="hud-avatar"></div>
-          <div class="player-meta">
-            <div class="player-name" id="hud-name">—</div>
-            <div class="player-sub"><span id="hud-level">Lv. 1</span> • <span class="cp">⚔️ <span id="hud-cp">0</span></span></div>
-            <div class="exp-bar"><div class="exp-fill" id="hud-exp"></div></div>
+        <div class="player-hud-stack">
+          <div class="player-card">
+            <div class="avatar" id="hud-avatar"></div>
+            <div class="player-meta">
+              <div class="player-name" id="hud-name">—</div>
+              <div class="player-sub"><span id="hud-level">Lv. 1</span> • <span class="cp">⚔️ <span id="hud-cp">0</span></span></div>
+              <div class="exp-bar"><div class="exp-fill" id="hud-exp"></div></div>
+            </div>
           </div>
+          <div id="hud-couple-pill" class="hud-couple-pill">💚 Sky Kingdom Online • <b>+15% Couple Yield</b></div>
         </div>
         <div class="currencies">
           <div class="pill"><img src="/assets/ui/icon_gold.png" alt="" /><span id="hud-gold">0</span></div>
@@ -38,6 +44,10 @@
           <div class="pill"><img src="/assets/ui/icon_diamond.png" alt="" /><span id="hud-diamonds">0</span></div>
         </div>
       </header>
+      <div id="global-cheer-banner" class="global-cheer-banner" hidden></div>
+      <canvas id="hud-mini-radar" class="hud-mini-radar" width="64" height="64" hidden></canvas>
+      <div id="landmark-prompt" class="landmark-prompt" hidden></div>
+      <button type="button" class="wayfinder-edge-pill" hidden></button>
       <div id="net-pill" class="net-pill offline">● connecting…</div>
       <div id="debug-readout" class="debug-readout" hidden></div>
 
@@ -47,37 +57,105 @@
 
       <!-- Village quick actions (Screen 01 / 03 / 17) -->
       <div id="village-actions">
-        <button id="act-harvest" class="act act-harvest" disabled><span class="ico">🍓</span><span>Harvest All</span><small id="harvest-sub">—</small></button>
-        <button id="act-edit" class="act"><span class="ico">🔨</span><span>Edit Grid</span></button>
-        <button id="act-mood" class="act"><span class="ico" id="mood-ico">☀️</span><span id="mood-name">Auto</span></button>
-        <button id="act-bless" class="act" hidden><span class="ico">💧</span><span>Bless +15%</span></button>
-        <button id="act-fountain" class="act" hidden><span class="ico">⛲</span><span>Toss 100🪙</span></button>
-        <button id="fish-open" class="act act-fish" hidden><span class="ico">🎣</span><span>Fish!</span></button>
+        <button id="act-harvest" class="act act-harvest" disabled>
+          <span class="ico"><img src="/assets/ui/icon_berry.png" alt="" /></span>
+          <span class="act-txt"><span>Harvest All</span><small id="harvest-sub">—</small></span>
+        </button>
+        <button id="act-edit" class="act act-edit">
+          <span class="ico"><img src="/assets/ui/ed_tab_buildings.png" alt="" /></span>
+          <span class="act-txt"><span>Edit Grid</span><small>Decorate</small></span>
+        </button>
+        <button id="act-mood" class="act act-wonder-mood">
+          <span class="ico" id="mood-ico">☀️</span>
+          <span class="act-txt"><span id="mood-name">Sunny</span><small>Wonders &amp; Mood</small></span>
+        </button>
+        <button id="act-bless" class="act" hidden><span class="ico">💧</span><span class="act-txt"><span>Bless +15%</span></span></button>
+        <button id="act-fountain" class="act" hidden><span class="ico">⛲</span><span class="act-txt"><span>Toss 100🪙</span></span></button>
+        <button id="fish-open" class="act act-fish" hidden><span class="ico">🎣</span><span class="act-txt"><span>Fish!</span></span></button>
+      </div>
+
+      <!-- Town Hall quick actions (Screen 05 — Mockup 05) -->
+      <div id="townhall-actions">
+        <button id="act-th-table" class="act act-th-table" type="button">
+          <span class="ico">🪑</span>
+          <span class="act-txt"><span>Create Table</span><small>4-Seat Hub</small></span>
+        </button>
+        <button id="act-th-social" class="act act-th-social" type="button">
+          <span class="ico">💖</span>
+          <span class="act-txt"><span>Couple &amp; Call Hub</span><small>Switchboard</small></span>
+        </button>
+        <button id="act-th-hof" class="act act-th-hof" type="button">
+          <span class="ico">🏆</span>
+          <span class="act-txt"><span>Hall of Fame</span><small>5 Champions</small></span>
+        </button>
       </div>
       <div id="speech" class="speech" hidden></div>
 
-      <!-- Grid editor (Screen 02) -->
+      <!-- Mockup 01 Inline Quick-Move Floating Bar (Long-press a building in Village) -->
+      <div id="quick-move-ui" class="qm-wrap" hidden>
+        <div id="qm-bar" class="qm-bar">
+          <button id="qm-place" class="qm-btn place"><img src="/assets/ui/ed_act_confirm.png" alt="✓" /><span>Place</span></button>
+          <button id="qm-rotate" class="qm-btn rotate"><img src="/assets/ui/ed_act_rotate.png" alt="🔄" /><span>Rotate</span></button>
+          <button id="qm-bag" class="qm-btn bag"><img src="/assets/ui/ed_act_bag.png" alt="📥" /><span>Bag</span></button>
+          <button id="qm-full" class="qm-btn full" title="Open Full Grid Drawer">🛠️</button>
+          <button id="qm-cancel" class="qm-btn cancel" title="Cancel Move">✕</button>
+        </div>
+        <div id="qm-footprint" class="ed-footprint-tag">3×3 Tiles</div>
+      </div>
+
+      <!-- Grid editor (Screen 02 — Kingdom Grid Editor) -->
       <div id="editor-ui">
-        <div class="ed-top">
-          <button id="ed-undo">↩️ Undo</button>
-          <button id="ed-store">🧹 Store All</button>
-          <button id="ed-mode">📍 Drag</button>
-          <button id="ed-save" class="ed-save">✅ Save</button>
-          <button id="ed-exit">✕</button>
+        <div class="ed-header">
+          <div class="ed-title-box">
+            <div class="ed-title-main" id="ed-grid-title">🏰 Kingdom Grid Editor (24×24 Tiles)</div>
+            <div class="ed-title-sub" id="ed-comfort">🌸 Comfort Score: 0 (+0% Yield)</div>
+          </div>
+          <div class="ed-top-btns">
+            <div class="ed-top-row1">
+              <button id="ed-undo" class="ed-wood-btn">↩️ Undo</button>
+              <button id="ed-store" class="ed-wood-btn">🧹 Store All</button>
+              <button id="ed-exit" class="ed-wood-btn ed-x-btn" title="Exit Editor">✕</button>
+            </div>
+            <button id="ed-save" class="ed-save">✓ Save Layout</button>
+          </div>
         </div>
-        <div class="ed-info"><span id="ed-comfort">🌸 0</span><span id="ed-status" class="ed-status"></span></div>
+        <div id="ed-status" class="ed-status"></div>
+
+        <!-- 3D-Anchored Speech Bubble & Footprint Tag (tracks selected building on canvas) -->
         <div id="ed-select" class="ed-select" hidden>
-          <button id="ed-confirm">✓ Confirm</button>
-          <button id="ed-rotate">🔄 Rotate 90°</button>
-          <button id="ed-bag">📥 Bag</button>
+          <button id="ed-confirm" class="ed-sel-btn confirm">
+            <img class="ed-circle-img" src="/assets/ui/ed_act_confirm.png" alt="✓" />
+            <span class="ed-lbl">Confirm</span>
+          </button>
+          <button id="ed-rotate" class="ed-sel-btn rotate">
+            <img class="ed-circle-img" src="/assets/ui/ed_act_rotate.png" alt="🔄" />
+            <span class="ed-lbl">Rotate 90°</span>
+          </button>
+          <button id="ed-bag" class="ed-sel-btn bag">
+            <img class="ed-circle-img" src="/assets/ui/ed_act_bag.png" alt="📥" />
+            <span class="ed-lbl">Put in Bag</span>
+          </button>
         </div>
-        <div class="ed-drawer">
+        <div id="ed-footprint-tag" class="ed-footprint-tag" hidden>3×3 Tiles</div>
+
+        <!-- Bottom Ornate Wood & Parchment Drawer -->
+        <div id="ed-drawer" class="ed-drawer">
           <div id="ed-tabs" class="ed-tabs">
-            <button data-tab="buildings">🏠 Buildings</button>
-            <button data-tab="wonders">🎡 Wonders</button>
-            <button data-tab="decor">🪑 Decor</button>
-            <button data-tab="tiles">🧱 Roads &amp; Water</button>
-            <button data-tab="skins">🎨 Skins</button>
+            <button data-tab="buildings"><img class="ed-tab-img" src="/assets/ui/ed_tab_buildings.png" alt="" /><span>Buildings <b id="ed-cnt-buildings"></b></span></button>
+            <button data-tab="wonders"><img class="ed-tab-img" src="/assets/ui/ed_tab_wonders.png" alt="" /><span>Wonders <b id="ed-cnt-wonders"></b></span></button>
+            <button data-tab="decor"><img class="ed-tab-img" src="/assets/ui/ed_tab_decor.png" alt="" /><span>Cute Decor <b id="ed-cnt-decor"></b></span></button>
+            <button data-tab="tiles"><img class="ed-tab-img" src="/assets/ui/ed_tab_tiles.png" alt="" /><span>Roads &amp; Water</span></button>
+            <button data-tab="skins"><img class="ed-tab-img" src="/assets/ui/ed_tab_skins.png" alt="" /><span>Ground Skins</span></button>
+          </div>
+          <div class="ed-filter-bar" id="ed-filter-bar">
+            <button type="button" id="ed-filter-all" class="ed-f-pill active">🔍 All Items</button>
+            <button type="button" id="ed-filter-unplaced" class="ed-f-toggle" aria-pressed="false">
+              <span class="ed-f-switch"><span class="ed-f-knob"></span></span>
+              <span>📦 Unplaced Only <b id="ed-unplaced-cnt">(0)</b></span>
+            </button>
+            <button type="button" id="ed-mode" class="ed-f-mode">📍 Drag</button>
+            <span class="ed-f-snap">Grid Snap: <b>ON ✅</b></span>
+            <button type="button" id="ed-drawer-collapse" class="ed-f-collapse" title="Collapse / Expand Drawer">▾</button>
           </div>
           <div id="ed-items" class="ed-items"></div>
         </div>
@@ -113,12 +191,15 @@
         </section>
       </div>
 
+      <div id="town-map-modal" class="modal-wrap town-map-modal" hidden></div>
+      <div id="hall-of-fame-modal" class="modal-wrap hall-of-fame-modal" hidden></div>
+
       <nav id="bottom-dock">
-        <button class="dock-btn active" data-dock="village"><span class="ico">🏡</span><span>Village</span></button>
-        <button class="dock-btn" data-dock="townhall" data-step="5"><span class="ico">🏛️</span><span>Town Hall</span></button>
-        <button class="dock-btn" data-dock="play"><span class="ico">🎮</span><span>Play</span></button>
-        <button class="dock-btn" data-dock="wardrobe"><span class="ico">👗</span><span>Wardrobe</span></button>
-        <button class="dock-btn" data-dock="gacha"><span class="ico">🗽</span><span>Gacha</span></button>
+        <button class="dock-btn active" data-dock="village"><span class="ico"><img src="/assets/ui/nav_ico_village.png" alt="Village" /></span><span>Village</span></button>
+        <button class="dock-btn" data-dock="townhall"><span class="ico"><img src="/assets/ui/nav_ico_townhall.png" alt="Town Hall" /></span><span>Town Hall</span></button>
+        <button class="dock-btn" data-dock="play"><span class="ico"><img src="/assets/ui/nav_ico_play.png" alt="Play" /></span><span>Play</span></button>
+        <button class="dock-btn" data-dock="wardrobe"><span class="ico"><img src="/assets/ui/nav_ico_wardrobe.png" alt="Wardrobe" /></span><span>Wardrobe</span></button>
+        <button class="dock-btn" data-dock="gacha"><span class="ico"><img src="/assets/ui/nav_ico_gacha.png" alt="Gacha" /></span><span>Gacha</span></button>
       </nav>
     </div>
 
@@ -194,6 +275,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/main.js?v=mockup17"></script>
 </body>
 </html>

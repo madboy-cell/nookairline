@@ -299,9 +299,10 @@ export function instanceLayout(entries) {
   return { islands, bridge };
 }
 
-export const islandOf = (layout, owner) => layout.islands.find((i) => i.owner === owner) || null;
+export const islandOf = (layout, owner) => (Array.isArray(layout?.islands) ? layout.islands.find((i) => i.owner === owner) || null : null);
 
 export function islandAt(layout, x, z) {
+  if (!Array.isArray(layout?.islands)) return null;
   for (const i of layout.islands) if (Math.abs(x - i.cx) < i.S / 2 && Math.abs(z) < i.S / 2) return i;
   return null;
 }
@@ -343,6 +344,7 @@ export function groundAt(layout, x, z, { canFly = false } = {}) {
 /** Server sanity clamp: keep a position inside the islands ∪ bridge (no building collision). */
 export function clampToArea(layout, x, z) {
   if (onBridge(layout, x, z) || islandAt(layout, x, z)) return { x, z, clamped: false };
+  if (!Array.isArray(layout?.islands)) return { x, z, clamped: false };
   let best = null;
   const consider = (px, pz) => { const d = Math.hypot(px - x, pz - z); if (!best || d < best.d) best = { x: px, z: pz, d }; };
   for (const i of layout.islands) {
@@ -351,17 +353,77 @@ export function clampToArea(layout, x, z) {
   }
   const b = layout.bridge;
   if (b) consider(Math.max(b.x0, Math.min(b.x1, x)), Math.max(b.z0 + 0.05, Math.min(b.z1 - 0.05, z)));
-  return { x: best.x, z: best.z, clamped: true };
+  return best ? { x: best.x, z: best.z, clamped: true } : { x, z, clamped: false };
+}
+
+export const BODY_RADIUS = 0.28;
+
+export function isWalkablePos(layout, x, z, { canFly = false, radius = BODY_RADIUS } = {}) {
+  if (!layout) return true;
+  for (const [ox, oz] of [[0, 0], [radius, 0], [-radius, 0], [0, radius * 0.6], [0, -radius * 0.6]]) {
+    if (!groundAt(layout, x + ox, z + oz, { canFly }).walkable) return false;
+  }
+  return true;
+}
+
+/**
+ * Find the nearest position to (x, z) whose full body circle is walkable.
+ * If (x, z) is inside a building footprint, tries the building's perimeter steps first.
+ */
+export function nearestWalkablePos(layout, x, z, { canFly = false, radius = BODY_RADIUS } = {}) {
+  if (!layout || isWalkablePos(layout, x, z, { canFly, radius })) return { x, z };
+  const g = groundAt(layout, x, z, { canFly });
+  if (g.building && g.island) {
+    const f = footprint(g.building.type, g.building.rot);
+    const c = cellToWorld(g.island, g.building.x, g.building.y, f.w, f.h);
+    const padX = f.w / 2 + radius + 0.12;
+    const padZ = f.h / 2 + radius + 0.12;
+    const candidates = [
+      { x: c.x, z: c.z + padZ },
+      { x: c.x - 0.6, z: c.z + padZ },
+      { x: c.x + 0.6, z: c.z + padZ },
+      { x: c.x, z: c.z - padZ },
+      { x: c.x + padX, z: c.z },
+      { x: c.x - padX, z: c.z },
+    ];
+    let best = null;
+    for (const pt of candidates) {
+      if (isWalkablePos(layout, pt.x, pt.z, { canFly, radius })) {
+        const d = Math.hypot(pt.x - x, pt.z - z);
+        if (!best || d < best.d) best = { x: pt.x, z: pt.z, d };
+      }
+    }
+    if (best) return { x: best.x, z: best.z };
+  }
+  for (let r = 0.25; r <= 18; r += 0.25) {
+    const steps = 24;
+    let best = null;
+    for (let i = 0; i < steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      const px = x + Math.cos(a) * r;
+      const pz = z + Math.sin(a) * r;
+      if (isWalkablePos(layout, px, pz, { canFly, radius })) {
+        // Prefer points south (+Z) or closer to the island center
+        const score = r + (pz < z ? 0.05 : 0);
+        if (!best || score < best.score) best = { x: px, z: pz, score };
+      }
+    }
+    if (best) return { x: best.x, z: best.z };
+  }
+  const isl = islandAt(layout, x, z) || layout.islands?.[0];
+  return isl ? { x: isl.cx, z: 2.5 } : { x, z };
 }
 
 export function spawnPoint(layout, owner, lineage) {
-  const isl = islandOf(layout, owner) || layout.islands[0];
+  const isl = islandOf(layout, owner) || (Array.isArray(layout?.islands) ? layout.islands[0] : null);
+  if (!isl) return { x: 0, z: 0 };
   const lane = lineage === 'dxb' ? 1.6 : -1.6;
-  return { x: isl.cx + lane, z: 2.5 };
+  return nearestWalkablePos(layout, isl.cx + lane, 2.5);
 }
 
 /** Nearest dock within `reach` metres of (x, z) on any island of the instance. */
 export function dockNear(layout, x, z, reach) {
+  if (!Array.isArray(layout?.islands)) return null;
   let best = null;
   for (const isl of layout.islands) {
     for (const b of isl.village.buildings) {
@@ -378,6 +440,7 @@ export function dockNear(layout, x, z, reach) {
 
 /** Placed building by uid anywhere in the instance + distance from (x, z) to its footprint. */
 export function findPlaced(layout, uid, x = 0, z = 0) {
+  if (!Array.isArray(layout?.islands)) return null;
   for (const isl of layout.islands) {
     const b = isl.village.buildings.find((q) => q.uid === uid);
     if (!b) continue;

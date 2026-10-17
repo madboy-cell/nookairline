@@ -1,0 +1,455 @@
+{
+  "generatedAt": "2026-10-16T17:37:52.322Z",
+  "sprites": {
+    "mono_villa_a": {
+      "file": "monopoly/mono_villa_a.png",
+      "w": 262,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.633
+    },
+    "mono_hotel_a": {
+      "file": "monopoly/mono_hotel_a.png",
+      "w": 242,
+      "h": 332,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.718
+    },
+    "mono_landmark_a": {
+      "file": "monopoly/mono_landmark_a.png",
+      "w": 142,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.671
+    },
+    "mono_pyramid_a": {
+      "file": "monopoly/mono_pyramid_a.png",
+      "w": 296,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.496
+    },
+    "mono_villa_b": {
+      "file": "monopoly/mono_villa_b.png",
+      "w": 274,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.609
+    },
+    "mono_hotel_b": {
+      "file": "monopoly/mono_hotel_b.png",
+      "w": 262,
+      "h": 326,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.712
+    },
+    "mono_landmark_b": {
+      "file": "monopoly/mono_landmark_b.png",
+      "w": 202,
+      "h": 329,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.648
+    },
+    "mono_pyramid_b": {
+      "file": "monopoly/mono_pyramid_b.png",
+      "w": 263,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.529
+    },
+    "mono_trap_ice_cube": {
+      "file": "monopoly/mono_trap_ice_cube.png",
+      "w": 270,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.759
+    },
+    "mono_trap_torii": {
+      "file": "monopoly/mono_trap_torii.png",
+      "w": 252,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.413
+    },
+    "mono_trap_mirror": {
+      "file": "monopoly/mono_trap_mirror.png",
+      "w": 222,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.527
+    },
+    "mono_trap_slipper": {
+      "file": "monopoly/mono_trap_slipper.png",
+      "w": 270,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.619
+    },
+    "mono_trap_waterway": {
+      "file": "monopoly/mono_trap_waterway.png",
+      "w": 280,
+      "h": 195,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.749
+    },
+    "mono_trap_fire": {
+      "file": "monopoly/mono_trap_fire.png",
+      "w": 299,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "flat": true,
+      "coverage": 0.249
+    },
+    "mono_trap_coral": {
+      "file": "monopoly/mono_trap_coral.png",
+      "w": 271,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.537
+    },
+    "mono_trap_lightning_rod": {
+      "file": "monopoly/mono_trap_lightning_rod.png",
+      "w": 158,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.374
+    },
+    "mono_dec_fountain": {
+      "file": "monopoly/mono_dec_fountain.png",
+      "w": 272,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.545
+    },
+    "mono_dec_shrine": {
+      "file": "monopoly/mono_dec_shrine.png",
+      "w": 404,
+      "h": 323,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.561
+    },
+    "mono_dec_boba": {
+      "file": "monopoly/mono_dec_boba.png",
+      "w": 271,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.692
+    },
+    "mono_dec_sakura": {
+      "file": "monopoly/mono_dec_sakura.png",
+      "w": 324,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.574
+    },
+    "mono_dec_hedge": {
+      "file": "monopoly/mono_dec_hedge.png",
+      "w": 359,
+      "h": 264,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.578
+    },
+    "mono_dec_start_gate": {
+      "file": "monopoly/mono_dec_start_gate.png",
+      "w": 319,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.586
+    },
+    "mono_ult_sm_eclipse": {
+      "file": "monopoly/mono_ult_sm_eclipse.png",
+      "w": 475,
+      "h": 721,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.637
+    },
+    "mono_ult_sm_aurora": {
+      "file": "monopoly/mono_ult_sm_aurora.png",
+      "w": 465,
+      "h": 723,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.599
+    },
+    "gacha_loom_pedestal": {
+      "file": "monopoly/gacha_loom_pedestal.png",
+      "w": 254,
+      "h": 376,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.526
+    },
+    "gacha_chandelier_arch": {
+      "file": "monopoly/gacha_chandelier_arch.png",
+      "w": 267,
+      "h": 343,
+      "anchorX": 0.5,
+      "anchorY": 1,
+      "coverage": 0.564
+    },
+    "gacha_curtain_wing": {
+      "file": "monopoly/gacha_curtain_wing.png",
+      "w": 184,
+      "h": 365,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.593
+    },
+    "gacha_vip_crowd": {
+      "file": "monopoly/gacha_vip_crowd.png",
+      "w": 350,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.595
+    },
+    "gacha_trunk_rare": {
+      "file": "monopoly/gacha_trunk_rare.png",
+      "w": 271,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.701
+    },
+    "gacha_trunk_epic": {
+      "file": "monopoly/gacha_trunk_epic.png",
+      "w": 269,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.679
+    },
+    "gacha_trunk_mythic": {
+      "file": "monopoly/gacha_trunk_mythic.png",
+      "w": 292,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.563
+    },
+    "gacha_trunk_super": {
+      "file": "monopoly/gacha_trunk_super.png",
+      "w": 282,
+      "h": 321,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.614
+    },
+    "nav_ico_village": {
+      "file": "monopoly/nav_ico_village.png",
+      "w": 235,
+      "h": 224,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.693
+    },
+    "nav_ico_townhall": {
+      "file": "monopoly/nav_ico_townhall.png",
+      "w": 208,
+      "h": 252,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.617
+    },
+    "nav_ico_play": {
+      "file": "monopoly/nav_ico_play.png",
+      "w": 263,
+      "h": 183,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.76
+    },
+    "nav_ico_wardrobe": {
+      "file": "monopoly/nav_ico_wardrobe.png",
+      "w": 196,
+      "h": 244,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.595
+    },
+    "nav_ico_gacha": {
+      "file": "monopoly/nav_ico_gacha.png",
+      "w": 219,
+      "h": 227,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.706
+    },
+    "ui_bubble_iridescent": {
+      "file": "monopoly/ui_bubble_iridescent.png",
+      "w": 216,
+      "h": 216,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.758
+    },
+    "ui_scroll_parchment": {
+      "file": "monopoly/ui_scroll_parchment.png",
+      "w": 332,
+      "h": 208,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.646
+    },
+    "ui_ribbon_gold_title": {
+      "file": "monopoly/ui_ribbon_gold_title.png",
+      "w": 344,
+      "h": 134,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.595
+    },
+    "ui_ribbon_crimson_seal": {
+      "file": "monopoly/ui_ribbon_crimson_seal.png",
+      "w": 308,
+      "h": 121,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.623
+    },
+    "ui_btn_roll_winged": {
+      "file": "monopoly/ui_btn_roll_winged.png",
+      "w": 308,
+      "h": 110,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.674
+    },
+    "ui_orb_ult_rainbow": {
+      "file": "monopoly/ui_orb_ult_rainbow.png",
+      "w": 190,
+      "h": 214,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.715
+    },
+    "ui_slot_gold_frame": {
+      "file": "monopoly/ui_slot_gold_frame.png",
+      "w": 203,
+      "h": 202,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.935
+    },
+    "stage_goddess_vakarine_rainbow": {
+      "file": "monopoly/stage_goddess_vakarine_rainbow.png",
+      "w": 397,
+      "h": 379,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.491
+    },
+    "stage_vip_table_4seat": {
+      "file": "monopoly/stage_vip_table_4seat.png",
+      "w": 408,
+      "h": 293,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.623
+    },
+    "stage_waterwheel_forge": {
+      "file": "monopoly/stage_waterwheel_forge.png",
+      "w": 496,
+      "h": 357,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.581
+    },
+    "stage_sakura_sky_nest": {
+      "file": "monopoly/stage_sakura_sky_nest.png",
+      "w": 487,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.53
+    },
+    "ed_tab_buildings": {
+      "file": "monopoly/ed_tab_buildings.png",
+      "w": 297,
+      "h": 315,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.681
+    },
+    "ed_tab_wonders": {
+      "file": "monopoly/ed_tab_wonders.png",
+      "w": 277,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.713
+    },
+    "ed_tab_decor": {
+      "file": "monopoly/ed_tab_decor.png",
+      "w": 281,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.549
+    },
+    "ed_tab_tiles": {
+      "file": "monopoly/ed_tab_tiles.png",
+      "w": 300,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.653
+    },
+    "ed_tab_skins": {
+      "file": "monopoly/ed_tab_skins.png",
+      "w": 311,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.629
+    },
+    "ed_act_confirm": {
+      "file": "monopoly/ed_act_confirm.png",
+      "w": 277,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.766
+    },
+    "ed_act_rotate": {
+      "file": "monopoly/ed_act_rotate.png",
+      "w": 276,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.765
+    },
+    "ed_act_bag": {
+      "file": "monopoly/ed_act_bag.png",
+      "w": 279,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.765
+    }
+  }
+}

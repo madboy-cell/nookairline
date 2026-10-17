@@ -11,7 +11,9 @@ import {
   FEATURED_OUTFIT, BOX2, BOX2_POOL, SHARD_OFFERS, SEASON_OUTFITS, MYTHIC_DICE, VIP_WONDERS, PET, petExpToNext, starsFromDupes, rollTrait, TRAITS,
   PET2, PERK_LINES, rollSlot, normalizeSlot, spentEssenceForStars, evolveCost, rerollCost,
   releaseValue, addBondXp, unlockedEmotesForBond, giftRoll, sanitizeNickname,
-  HUNGER, hungerZone, PET_MILESTONES, unlockedPosesForLevel, starsForLevel, MAX_TRAIT_SLOTS,
+  HUNGER, hungerZone, PET_MILESTONES, unlockedPosesForLevel, unlockedSelectablePosesForLevel, normalizeActivePoses,
+  starsForLevel, minLevelForStars, openSlotCountForPet, MAX_TRAIT_SLOTS,
+  SUPER_MYTHIC, SUPER_MYTHIC_POOL, superMythicEnabled, rollBox1Rarities, GIFT_PULL,
 } from '../shared/rpg_rules.js';
 import { grantExp, refreshDerived } from './economy_service.js';
 
@@ -84,6 +86,9 @@ export function migrateRpg(p) {
   p.gacha = { box1_pity: 0, box2_pity: 0, featured_outfit: FEATURED_OUTFIT, ...(p.gacha || {}) };
   if (!SEASON_OUTFITS.includes(p.gacha.featured_outfit)) p.gacha.featured_outfit = FEATURED_OUTFIT;
   for (const b of Object.values(BOX1_BANNERS)) p.gacha[b.pityKey] = p.gacha[b.pityKey] | 0;
+  p.gacha[SUPER_MYTHIC.PITY_KEY] = Math.max(0, Math.min(SUPER_MYTHIC.HARD_PITY - 1, p.gacha[SUPER_MYTHIC.PITY_KEY] | 0));
+  p.gacha.gifts_pending = Array.isArray(p.gacha.gifts_pending) ? p.gacha.gifts_pending.slice(0, GIFT_PULL.MAX_PENDING) : [];
+  p.badges = Array.isArray(p.badges) ? p.badges : [];
   p.bag_items = p.bag_items || {};
   p.star_essence = Math.max(0, p.star_essence | 0);
   p.pets = Array.isArray(p.pets) ? p.pets : [];
@@ -102,17 +107,31 @@ export function migrateRpg(p) {
     pet.exp = pet.exp | 0;
     pet.mood = pet.mood ?? PET.MAX_MOOD;
     pet.level = Math.max(1, pet.level | 0);
-    const stars = Math.max(1, Math.min(PET2.MAX_STARS, pet.stars ?? catRarity ?? 1));
+    const rawStars = Math.max(1, Math.min(PET2.MAX_STARS, pet.stars ?? catRarity ?? 1));
+    pet.star_dupes = Math.max(pet.star_dupes | 0, rawStars > catRarity ? PET.STAR_DUPES[rawStars] || 0 : 0);
+    const prevBondLv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Number(pet.bond_lv) || 1));
+    pet.bond_lv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Math.max(prevBondLv, minLevelForStars(rawStars))));
+    const stars = Math.max(rawStars, starsForLevel(pet.bond_lv));
     pet.stars = stars;
-    pet.star_dupes = Math.max(pet.star_dupes | 0, stars > catRarity ? PET.STAR_DUPES[stars] || 0 : 0);
     pet.essence = Math.max(0, Number(pet.essence) || 0);
-    pet.spent_essence = Math.max(0, Number(pet.spent_essence ?? spentEssenceForStars(stars)) || 0);
+    pet.spent_essence = Math.max(0, Number(pet.spent_essence ?? spentEssenceForStars(rawStars)) || 0);
     pet.visual_tier = Math.max(1, Math.min(stars, Number(pet.visual_tier) || stars));
     pet.nickname = sanitizeNickname(pet.nickname || '');
-    pet.bond_lv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Number(pet.bond_lv) || 1));
     pet.bond_xp = Math.max(0, Number(pet.bond_xp) || 0);
     if (pet.hunger != null) pet.hunger = Math.max(0, Math.min(HUNGER.MAX, Number(pet.hunger)));
     pet.costume_id = pet.costume_id || null;
+    if (Array.isArray(pet.active_poses)) {
+      if (pet.bond_lv > prevBondLv) {
+        const prevUnlocked = unlockedSelectablePosesForLevel(prevBondLv);
+        const nowUnlocked = unlockedSelectablePosesForLevel(pet.bond_lv);
+        const cur = new Set(pet.active_poses);
+        for (const pPose of nowUnlocked) {
+          if (!prevUnlocked.includes(pPose)) cur.add(pPose);
+        }
+        pet.active_poses = Array.from(cur);
+      }
+      pet.active_poses = normalizeActivePoses(pet.active_poses, pet.bond_lv);
+    }
     pet.last_gift_day = String(pet.last_gift_day || '');
     pet.last_harmony_day = String(pet.last_harmony_day || '');
     pet.last_interact_at = Number(pet.last_interact_at) || 0;
@@ -120,11 +139,12 @@ export function migrateRpg(p) {
     const t = Array.isArray(pet.traits) ? pet.traits.filter((x) => TRAITS[x]) : [];
     pet.traits = [0, 1, 2].map((k) => t[k] || null);
 
-    // Ensure V2 slots[0..2]
+    // Ensure V2.5 slots[0..1] (with slots[2] = null for backward-compatible 3-length array)
     const rawSlots = Array.isArray(pet.slots) ? pet.slots : [];
+    const openCount = openSlotCountForPet(pet);
     const slots = [null, null, null];
     const usedPerks = [];
-    for (let sIdx = 0; sIdx < stars; sIdx++) {
+    for (let sIdx = 0; sIdx < openCount; sIdx++) {
       const norm = normalizeSlot(rawSlots[sIdx]);
       if (norm && (!PERK_LINES[norm.stat] || !usedPerks.includes(norm.stat))) {
         slots[sIdx] = norm;
@@ -138,6 +158,14 @@ export function migrateRpg(p) {
         usedPerks.push(slots[sIdx].stat);
       }
     }
+    const maxLocks = Math.max(0, openCount - 1);
+    let lockCount = 0;
+    for (let sIdx = 0; sIdx < openCount; sIdx++) {
+      if (slots[sIdx]?.locked) {
+        if (lockCount < maxLocks) lockCount++;
+        else slots[sIdx].locked = false;
+      }
+    }
     pet.slots = slots;
 
     // Deduplicate if multiple legacy species mapped to the same canonical V2 species
@@ -147,10 +175,13 @@ export function migrateRpg(p) {
       migratedPets.push(pet);
     } else {
       if (pet.stars > existing.stars) {
-        for (let sIdx = existing.stars; sIdx < pet.stars; sIdx++) {
+        const prevOpen = openSlotCountForPet(existing);
+        existing.stars = pet.stars;
+        existing.bond_lv = Math.max(existing.bond_lv || 1, pet.bond_lv || 1, minLevelForStars(existing.stars));
+        const nextOpen = openSlotCountForPet(existing);
+        for (let sIdx = prevOpen; sIdx < nextOpen; sIdx++) {
           existing.slots[sIdx] = pet.slots[sIdx] || rollSlot(nLv, Math.random);
         }
-        existing.stars = pet.stars;
         existing.visual_tier = pet.stars;
         existing.spent_essence = spentEssenceForStars(pet.stars);
       }
@@ -184,6 +215,8 @@ function syncEquippedPet(p, pet) {
     level: pet.level || 1,
     hunger: pet.hunger ?? HUNGER.DEFAULT,
     costume_id: pet.costume_id || null,
+    active_poses: normalizeActivePoses(pet.active_poses, pet.bond_lv || 1),
+    slots: Array.isArray(pet.slots) ? pet.slots.slice(0, MAX_TRAIT_SLOTS) : [],
   } : null;
 }
 
@@ -213,13 +246,13 @@ export function findOwnedPet(p, { petUid, petId } = {}) {
 // ---------------------------------------------------------------------------------------------
 // Granting items (Gacha / Shard Shop / gifts): new → inventory, dupe → +1 dupe, dupe of a +10 → 🌟
 // ---------------------------------------------------------------------------------------------
-export function grantItem(p, id) {
+export function grantItem(p, id, { dupeShards = null } = {}) {
   const def = itemDef(id);
   if (!def) return { id, kind: 'none' };
   const owned = p.inventory[id];
   if (!owned) { p.inventory[id] = { refine: 0, dupes: 0, pity: 0 }; return { id, kind: 'new', rarity: def.rarity }; }
   if ((owned.refine | 0) >= MAX_REFINE) {
-    const shards = DUPE_SHARDS[def.rarity] || 0;
+    const shards = dupeShards ?? (DUPE_SHARDS[def.rarity] || 0);
     p.shards += shards;
     return { id, kind: 'shards', rarity: def.rarity, shards };
   }
@@ -330,12 +363,7 @@ function applyGuaranteedTrait(pet, trait) {
 // ---------------------------------------------------------------------------------------------
 // Gacha
 // ---------------------------------------------------------------------------------------------
-function rollRarity(rates, rng) {
-  const r = rng();
-  if (r < rates[3]) return 3;
-  if (r < rates[3] + rates[2]) return 2;
-  return 1;
-}
+// Rarity rolling lives in shared/rpg_rules.js → rollBox1Rarities() (Mythic pity + ✦ Super Mythic soft/hard pity).
 
 /** One Box 1 drop for `banner` at `rarity` → catalog id (outfit/accessory/dice or pet). */
 function box1Item(banner, rarity, rng, featuredOverride = null) {
@@ -399,28 +427,36 @@ export function gachaPull(p, { box, count, currency, banner, featuredOutfit }, r
     : null;
   const paid = payGacha(p, box, count, String(currency || ''));
   if (!paid.ok) return paid;
+  const res = rollAndGrant(p, { box, BN, bannerId, count, activeFeatured }, rng);
+  return { ...res, paid: paid.paid };
+}
+
+/** Rolls + grants `count` pulls into `p` (no payment). Shared by gacha_pull and gacha_gift_open. */
+function rollAndGrant(p, { box, BN, bannerId, count, activeFeatured }, rng) {
+  p.gacha = p.gacha || {};
   const B = box === 1 ? BOX1 : BOX2;
   const pityKey = box === 1 ? BN.pityKey : 'box2_pity';
   const rates = box === 1 ? BN.rates : B.RATES;
+  const smOn = box === 1 && !!BN.superMythic && superMythicEnabled();
+  const smKey = SUPER_MYTHIC.PITY_KEY;
 
-  // roll rarities first so the 10x Epic+ guarantee and the 40-pull pity can adjust them
-  const rarities = [];
-  let pity = p.gacha[pityKey] | 0, pityHit = false;
-  for (let i = 0; i < count; i++) {
-    let r = rollRarity(rates, rng);
-    pity++;
-    if (r < 3 && pity >= B.PITY) { r = 3; pityHit = true; }
-    if (r === 3) pity = 0;
-    rarities.push(r);
-  }
-  if (box === 1 && count === 10 && !rarities.some((r) => r >= BOX1.TEN_PULL_MIN_RARITY)) rarities[9] = BOX1.TEN_PULL_MIN_RARITY;
-  p.gacha[pityKey] = pity;
+  // roll rarities first so the 10x Epic+ guarantee, the 40-pull pity and the ✦ Super Mythic pity can adjust them
+  const roll = rollBox1Rarities({
+    count, rates, pity: p.gacha[pityKey] | 0, smPity: p.gacha[smKey] | 0, superMythic: smOn,
+    pityMax: B.PITY, tenPullMin: box === 1 ? BOX1.TEN_PULL_MIN_RARITY : null,
+  }, rng);
+  const { rarities, pityHit } = roll;
+  p.gacha[pityKey] = roll.pity;
+  if (smOn) p.gacha[smKey] = roll.smPity;
 
   const items = [];
   let shardsGained = 0;
   for (const r of rarities) {
     let out;
-    if (box === 1) {
+    if (box === 1 && r === SUPER_MYTHIC.RARITY) {
+      const id = pick(SUPER_MYTHIC_POOL, rng);
+      out = { ...grantItem(p, id, { dupeShards: SUPER_MYTHIC.DUPE_SHARDS }), rarity: SUPER_MYTHIC.RARITY, rarityKey: SUPER_MYTHIC.KEY, superMythic: true };
+    } else if (box === 1) {
       const id = box1Item(BN, r, rng, activeFeatured);
       out = BN.kind === 'pet' ? { ...grantPet(p, id, rng, { rarityRoll: r }), pet: true } : grantItem(p, id);
     }
@@ -439,7 +475,57 @@ export function gachaPull(p, { box, count, currency, banner, featuredOutfit }, r
     items.push(out);
   }
   refreshDerived(p);
-  return { ok: true, box, banner: bannerId, featuredOutfit: activeFeatured, count, items, shardsGained, pity: p.gacha[pityKey], pityMax: B.PITY, pityHit, paid: paid.paid, changed: box === 2 };
+  const smHit = items.some((x) => x.superMythic);
+  return {
+    ok: true, box, banner: bannerId, featuredOutfit: activeFeatured, count, items, shardsGained,
+    pity: p.gacha[pityKey], pityMax: B.PITY, pityHit, changed: box === 2,
+    superMythicOn: smOn, smPity: p.gacha[smKey] | 0, smPityMax: SUPER_MYTHIC.HARD_PITY, smHit, smPityHit: roll.smPityHit,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
+// 🎁 Gift a Pull (Dopamine Patch 1C) — sender pays from THEIR diamonds / 🎟️; only to the bound partner.
+// The pull is rolled when the recipient OPENS it (their pity, their featured wish), never at send time.
+// ---------------------------------------------------------------------------------------------
+export const isBoundPair = (a, b) => !!(a && b && a.id !== b.id && a.partner_id === b.id && b.partner_id === a.id);
+const cleanGiftMessage = (s) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, GIFT_PULL.MAX_MESSAGE);
+
+/** gacha_gift_send { count: 1|10, currency: 'diamonds'|'ticket', message? } */
+export function gachaGiftSend(sender, recipient, { count, currency, message } = {}, now = Date.now()) {
+  if (!isBoundPair(sender, recipient)) return fail('not_partner');
+  count = Number(count);
+  if (!GIFT_PULL.COUNTS.includes(count)) return fail('bad_count');
+  currency = String(currency || '');
+  if (!GIFT_PULL.CURRENCIES.includes(currency)) return fail('bad_currency');
+  recipient.gacha = recipient.gacha || {};
+  const pending = Array.isArray(recipient.gacha.gifts_pending) ? recipient.gacha.gifts_pending : (recipient.gacha.gifts_pending = []);
+  if (pending.length >= GIFT_PULL.MAX_PENDING) return fail('gift_box_full');
+  sender.bag_items = sender.bag_items || {};
+  const paid = payGacha(sender, 1, count, currency);
+  if (!paid.ok) return paid;
+  const gift = {
+    id: `g${now.toString(36)}${(pending.length + 1).toString(36)}${Math.floor((now % 997) * 7).toString(36)}`,
+    from: sender.id, fromName: sender.username || sender.id, count, message: cleanGiftMessage(message), at: now,
+  };
+  pending.push(gift);
+  return { ok: true, gift, paid: paid.paid, to: recipient.id };
+}
+
+/** gacha_gift_open { giftId } — `sender` may be null (offline / unbound later); the badge then waits for nobody. */
+export function gachaGiftOpen(p, sender, { giftId } = {}, rng = Math.random) {
+  const pending = p.gacha?.gifts_pending || [];
+  const idx = pending.findIndex((g) => g.id === String(giftId || ''));
+  if (idx < 0) return fail('no_gift');
+  const [gift] = pending.splice(idx, 1);
+  const BN = BOX1_BANNERS[GIFT_PULL.BANNER];
+  const activeFeatured = SEASON_OUTFITS.includes(p.gacha?.featured_outfit) ? p.gacha.featured_outfit : BN.featured;
+  const res = rollAndGrant(p, { box: 1, BN, bannerId: GIFT_PULL.BANNER, count: gift.count, activeFeatured }, rng);
+  let luckyCharm = false;
+  if (res.smHit && sender && sender.id === gift.from) {
+    sender.badges = Array.isArray(sender.badges) ? sender.badges : [];
+    if (!sender.badges.includes(GIFT_PULL.BADGE)) { sender.badges.push(GIFT_PULL.BADGE); luckyCharm = true; }
+  }
+  return { ...res, gift: { id: gift.id, from: gift.from, fromName: gift.fromName, message: gift.message, count: gift.count }, luckyCharm, paid: null };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -542,7 +628,7 @@ export function wardrobeEquip(p, { slot, itemId, hide }) {
 
 /**
  * pet_evolve { petUid?, petId? }
- * Evolves ★1 → ★2 (40 Essence) or ★2 → ★3 (120 Essence), unlocking the next random stat slot.
+ * Evolves ★1 → ★2 (40 Essence, Lv.10 + Slot 2) or ★2 → ★3 (120 Essence, Lv.20 Radiant Form).
  */
 export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
   const pet = findOwnedPet(p, { petUid, petId });
@@ -557,13 +643,28 @@ export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
   pet.spent_essence = (pet.spent_essence || 0) + cost;
   pet.stars = stars + 1;
   pet.visual_tier = pet.stars;
+  const prevLv = pet.bond_lv || 1;
+  pet.bond_lv = Math.max(prevLv, minLevelForStars(pet.stars));
+  if (Array.isArray(pet.active_poses) && pet.bond_lv > prevLv) {
+    const prevUnlocked = unlockedSelectablePosesForLevel(prevLv);
+    const nowUnlocked = unlockedSelectablePosesForLevel(pet.bond_lv);
+    const cur = new Set(pet.active_poses);
+    for (const pPose of nowUnlocked) {
+      if (!prevUnlocked.includes(pPose)) cur.add(pPose);
+    }
+    pet.active_poses = normalizeActivePoses(Array.from(cur), pet.bond_lv);
+  }
 
   if (!Array.isArray(pet.slots)) pet.slots = [null, null, null];
-  const usedPerks = pet.slots.filter((s) => s && PERK_LINES[s.stat]).map((s) => s.stat);
-  const newSlotIdx = pet.stars - 1;
-  pet.slots[newSlotIdx] = rollSlot(nestLevel(p), rng, { excludePerks: usedPerks });
+  let newSlotIdx = null;
+  if (pet.stars === 2 || !pet.slots[1]) {
+    const usedPerks = pet.slots.slice(0, MAX_TRAIT_SLOTS).filter((s) => s && PERK_LINES[s.stat]).map((s) => s.stat);
+    newSlotIdx = 1;
+    pet.slots[1] = pet.slots[1] || rollSlot(nestLevel(p), rng, { excludePerks: usedPerks });
+  }
+  pet.slots[2] = null;
 
-  addBondXp(pet, 15);
+  addBondXp(pet, 15, rng, nestLevel(p));
   syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
@@ -576,46 +677,59 @@ export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
     essence: pet.essence,
     spent_essence: pet.spent_essence,
     newSlotIdx,
-    newSlot: pet.slots[newSlotIdx],
+    newSlot: newSlotIdx != null ? pet.slots[newSlotIdx] : null,
     slots: pet.slots,
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
+    active_poses: pet.active_poses,
     cp: p.cp,
   };
 }
 
 /**
  * pet_lock_slot { petUid?, petId?, slotIdx, locked? }
- * Toggles lock on an open slot (cannot lock all open slots).
+ * Toggles lock on an open slot (cannot lock all open slots; maxLocks = openCount - 1).
  */
 export function petLockSlot(p, { petUid, petId, slotIdx, locked } = {}) {
   const pet = findOwnedPet(p, { petUid, petId });
   if (!pet) return fail('not_owned');
   const idx = Number(slotIdx);
-  const openCount = pet.stars || 1;
+  const openCount = openSlotCountForPet(pet);
   if (!Number.isInteger(idx) || idx < 0 || idx >= openCount) return fail('slot_not_open');
   if (!Array.isArray(pet.slots) || !pet.slots[idx]) return fail('slot_empty');
 
+  const maxLocks = Math.max(0, openCount - 1);
+  // Clamp any legacy excess locks on other slots first
+  let otherLocks = 0;
+  for (let i = 0; i < openCount; i++) {
+    if (i === idx) continue;
+    if (pet.slots[i]?.locked) {
+      if (otherLocks < maxLocks) otherLocks++;
+      else pet.slots[i].locked = false;
+    }
+  }
+
   const nextLocked = typeof locked === 'boolean' ? locked : !pet.slots[idx].locked;
   if (nextLocked) {
-    const currentLocks = pet.slots.slice(0, openCount).filter((s, i) => i !== idx && s?.locked).length;
-    if (currentLocks + 1 >= openCount) return fail('cannot_lock_all_slots', { maxLocks: openCount - 1 });
+    if (otherLocks + 1 >= openCount) return fail('cannot_lock_all_slots', { maxLocks });
   }
   pet.slots[idx].locked = nextLocked;
+  resyncIfEquipped(p, pet);
   return { ok: true, petUid: pet.uid, petId: pet.id, slotIdx: idx, locked: nextLocked, slots: pet.slots };
 }
 
 /**
  * pet_reroll { petUid?, petId?, locks?, confirmMythicWipe? }
- * Rerolls all open, unlocked stat slots on the pet.
- * Pricing: 0 locks = 1,500 🪙 + 60 🍓, 1 lock = 3,500 🪙 + 150 🍓, 2 locks = 7,500 🪙 + 350 🍓.
+ * Rerolls all open, unlocked stat slots on the pet (up to MAX_TRAIT_SLOTS = 2).
+ * Pricing: 0 locks = 1,500 🪙 + 60 🍓, 1 lock = 3,500 🪙 + 150 🍓.
  * Couple Harmony: if partner/friend is online in the same instance today, guarantees Epic+ on first unlocked slot + +20 Essence + +20 Bond XP.
  */
 export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, now = Date.now(), rng = Math.random, { partnerOnline = false } = {}) {
   const pet = findOwnedPet(p, { petUid, petId });
   if (!pet) return fail('not_owned');
-  const openCount = pet.stars || 1;
+  const openCount = openSlotCountForPet(pet);
   if (!Array.isArray(pet.slots)) pet.slots = [rollSlot(nestLevel(p), rng), null, null];
+  pet.slots[2] = null;
 
   if (Array.isArray(locks)) {
     for (let i = 0; i < openCount; i++) {
@@ -653,7 +767,7 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
     harmonyTriggered = true;
     pet.last_harmony_day = day;
     pet.essence = (pet.essence || 0) + PET2.COUPLE_HARMONY_ESSENCE;
-    addBondXp(pet, PET2.COUPLE_HARMONY_BOND_XP);
+    addBondXp(pet, PET2.COUPLE_HARMONY_BOND_XP, rng, nestLevel(p));
   }
 
   const usedPerks = [];
@@ -672,7 +786,7 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
     if (PERK_LINES[pet.slots[i].stat]) usedPerks.push(pet.slots[i].stat);
   }
 
-  addBondXp(pet, PET2.REROLL_BOND_XP);
+  addBondXp(pet, PET2.REROLL_BOND_XP, rng, nestLevel(p));
   syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
@@ -686,8 +800,11 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
     cost,
     harmonyTriggered,
     essence: pet.essence,
+    stars: pet.stars,
+    visual_tier: pet.visual_tier,
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
+    active_poses: pet.active_poses,
   };
 }
 
@@ -757,6 +874,19 @@ export function petSetVisualTier(p, { petUid, petId, tier } = {}) {
 }
 
 /**
+ * pet_set_poses { petUid?, petId?, poses }
+ * Updates the companion's active idle pose rotation playlist (e.g. ['front', 'sleep', 'happy']).
+ */
+export function petSetPoses(p, { petUid, petId, poses } = {}) {
+  const pet = findOwnedPet(p, { petUid, petId });
+  if (!pet) return fail('not_owned');
+  const effLv = pet.bond_lv || pet.level || 1;
+  pet.active_poses = normalizeActivePoses(poses, effLv);
+  resyncIfEquipped(p, pet);
+  return { ok: true, petUid: pet.uid, petId: pet.id, active_poses: pet.active_poses };
+}
+
+/**
  * pet_rename { petUid?, petId?, nickname }
  * Renames a pet (1–14 chars, or empty string to clear).
  */
@@ -781,14 +911,20 @@ export function petInteract(p, { petUid, petId } = {}, now = Date.now()) {
   }
   pet.last_interact_at = now;
   pet.mood = PET.MAX_MOOD;
-  const bondRes = addBondXp(pet, PET2.INTERACT_BOND_XP);
+  const bondRes = addBondXp(pet, PET2.INTERACT_BOND_XP, Math.random, nestLevel(p));
+  syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
+  refreshDerived(p);
   return {
     ok: true,
     petUid: pet.uid,
     petId: pet.id,
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
+    stars: pet.stars,
+    visual_tier: pet.visual_tier,
+    slots: pet.slots,
+    active_poses: pet.active_poses,
     leveledUp: bondRes.leveledUp,
     unlockedEmotes: unlockedEmotesForBond(pet.bond_lv),
   };
@@ -811,8 +947,10 @@ export function petClaimGift(p, { petUid, petId } = {}, now = Date.now(), rng = 
     p.shards += gift.stardust;
     p.star_essence = (p.star_essence | 0) + gift.stardust * 5;
   }
-  const bondRes = addBondXp(pet, 15);
+  const bondRes = addBondXp(pet, 15, rng, nestLevel(p));
+  syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
+  refreshDerived(p);
   return {
     ok: true,
     petUid: pet.uid,
@@ -820,6 +958,10 @@ export function petClaimGift(p, { petUid, petId } = {}, now = Date.now(), rng = 
     gift,
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
+    stars: pet.stars,
+    visual_tier: pet.visual_tier,
+    slots: pet.slots,
+    active_poses: pet.active_poses,
     leveledUp: bondRes.leveledUp,
   };
 }
@@ -827,9 +969,10 @@ export function petClaimGift(p, { petUid, petId } = {}, now = Date.now(), rng = 
 // ---------------------------------------------------------------------------------------------
 // Legacy Pet Sanctuary helpers kept for backward compatibility
 // ---------------------------------------------------------------------------------------------
-export function petFeed(p, { petUid, petId }) {
+export function petFeed(p, { petUid, petId, feedBond } = {}) {
   const pet = findOwnedPet(p, { petUid, petId });
   if (!pet) return fail('not_owned');
+  if (feedBond && pet.hunger == null) pet.hunger = HUNGER.DEFAULT;
   const isMaxed = pet.hunger != null
     ? (pet.hunger >= HUNGER.MAX && (pet.bond_lv || 1) >= PET2.BOND_MAX_LV && (pet.level || 1) >= PET.MAX_LEVEL && (pet.mood || 0) >= PET.MAX_MOOD)
     : (pet.level >= PET.MAX_LEVEL && pet.mood >= PET.MAX_MOOD);
@@ -840,8 +983,8 @@ export function petFeed(p, { petUid, petId }) {
   pet.mood = Math.min(PET.MAX_MOOD, (pet.mood ?? 75) + PET.FEED_MOOD);
   pet.hunger = Math.min(HUNGER.MAX, (pet.hunger ?? HUNGER.DEFAULT) + HUNGER.FEED_GAIN);
   const { mult } = hungerZone(pet.hunger);
-  const gainedBondXp = Math.round(15 * mult);
-  addBondXp(pet, gainedBondXp);
+  const gainedBondXp = Math.round(45 * mult);
+  const bondRes = addBondXp(pet, gainedBondXp, Math.random, nestLevel(p));
 
   let levels = 0;
   if (pet.level < PET.MAX_LEVEL) {
@@ -853,6 +996,7 @@ export function petFeed(p, { petUid, petId }) {
     }
     if (pet.level >= PET.MAX_LEVEL) pet.exp = 0;
   }
+  syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
   return {
@@ -864,6 +1008,12 @@ export function petFeed(p, { petUid, petId }) {
     hunger: pet.hunger,
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
+    stars: pet.stars,
+    visual_tier: pet.visual_tier,
+    slots: pet.slots,
+    active_poses: pet.active_poses,
+    expGained: gainedBondXp,
+    leveledUp: bondRes.leveledUp,
     levelsGained: levels,
     cost: PET.FEED_COST,
   };
@@ -885,8 +1035,9 @@ export function petOnlineTick(p, { petUid, petId } = {}, now = Date.now()) {
   const currentHunger = pet.hunger ?? HUNGER.DEFAULT;
   const { mult } = hungerZone(currentHunger);
   const expGained = Math.round(HUNGER.BASE_ONLINE_EXP_PER_MIN * mult);
-  const bondRes = addBondXp(pet, expGained);
+  const bondRes = addBondXp(pet, expGained, Math.random, nestLevel(p));
   pet.hunger = Math.max(0, currentHunger - HUNGER.ONLINE_DRAIN_PER_MIN);
+  syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
   return {
@@ -895,6 +1046,9 @@ export function petOnlineTick(p, { petUid, petId } = {}, now = Date.now()) {
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
     stars: pet.stars,
+    visual_tier: pet.visual_tier,
+    slots: pet.slots,
+    active_poses: pet.active_poses,
     hunger: pet.hunger,
     expGained,
     leveledUp: bondRes.leveledUp,
@@ -911,7 +1065,8 @@ export function grantPetActivityExp(p, baseExp = 50, reason = 'activity') {
   const currentHunger = pet.hunger ?? HUNGER.DEFAULT;
   const { mult, zone } = hungerZone(currentHunger);
   const expGained = Math.round(baseExp * mult);
-  const bondRes = addBondXp(pet, expGained);
+  const bondRes = addBondXp(pet, expGained, Math.random, nestLevel(p));
+  syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
   return {
@@ -926,6 +1081,9 @@ export function grantPetActivityExp(p, baseExp = 50, reason = 'activity') {
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
     stars: pet.stars,
+    visual_tier: pet.visual_tier,
+    slots: pet.slots,
+    active_poses: pet.active_poses,
     leveledUp: bondRes.leveledUp,
     reason,
   };
@@ -933,14 +1091,14 @@ export function grantPetActivityExp(p, baseExp = 50, reason = 'activity') {
 
 /**
  * pet_equip_costume { petUid?, petId?, costumeId }
- * Equips a pet costume slot (unlocked at Lv. 15 or ★2+).
+ * Equips a pet costume slot (strictly unlocked at Companion Lv. 15).
  */
 export function petEquipCostume(p, { petUid, petId, costumeId } = {}) {
   const pet = findOwnedPet(p, { petUid, petId });
   if (!pet) return fail('not_owned');
-  const lv = pet.bond_lv || pet.level || 1;
-  const stars = pet.stars || 1;
-  if (lv < 15 && stars < 2) {
+  const lv = Math.max(pet.bond_lv || 1, minLevelForStars(pet.stars || 1));
+  pet.bond_lv = lv;
+  if (lv < 15) {
     return fail('costume_slot_locked', { reqLv: 15 });
   }
   if (costumeId == null || costumeId === '') {

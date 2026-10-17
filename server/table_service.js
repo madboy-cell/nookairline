@@ -8,17 +8,23 @@
 //   • delivers queued room messages to sockets ('lobby' = every connected player)
 import { TableManager } from '../shared/universal_room.js';
 import { playerInfoFromProfile, podiumRewards, matchMods, PODIUM } from '../shared/monopoly_rules.js';
-import { applyExp } from '../shared/progression.js';
+import { applyExp, expToNext } from '../shared/progression.js';
+import { grantPetActivityExp } from './rpg_service.js';
+import { createCasinoAdapter } from './casino_service.js';
 
 export const TABLE_TYPES = new Set([
   'table_list', 'table_create', 'table_sit', 'table_leave', 'table_set_bot', 'table_ready', 'table_start', 'table_solo', 'table_rematch',
+  'table_set_option',
   'mono_roll', 'mono_ult', 'mono_buy', 'mono_event_choice',
+  'mono_pet_cast', 'mono_pet_arm', 'mono_pet_toggle_auto',
+  'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave',
 ]);
 export const isTableMessage = (type) => TABLE_TYPES.has(type);
 
 export const MATCH_EXP = [180, 140, 120, 100];       // base 1.00× player EXP by rank
 const MAX_MULTIPLIER = 3.0;                          // safety cap on the uncapped podium multiplier
 const dayKey = (now) => new Date(now).toISOString().slice(0, 10);
+const nextExp = (lv) => { const n = expToNext(lv); return Number.isFinite(n) ? n : 0; };   // 0 = max level
 
 /**
  * Full UNCAPPED Village & Gear multiplier for the post-match chest (§14.B "e.g. 2.4x"):
@@ -39,7 +45,11 @@ export function podiumMultiplier(profile, info, { patisseriePct = () => 0 } = {}
  * @param {object} [o.catalogs]         { outfits, accessories, diceSkins, petFamilyOf, petPctOf, patisseriePct }
  * @param {() => number} [o.rng] · [o.now] · [o.log] · [o.tickMs]
  */
-export function createTableService({ db, sendTo, onlineIds, pushProfile = () => {}, catalogs = {}, rng = Math.random, now = () => Date.now(), log = console, tickMs = 200 } = {}) {
+export function createTableService({
+  db, sendTo, onlineIds, pushProfile = () => {}, catalogs = {},
+  rng = Math.random, now = () => Date.now(), log = console, tickMs = 200,
+  onBigHit = () => {}, onHandSettled = () => {}, onMatchFinished = () => {},
+} = {}) {
   const info = (userId) => {
     const p = db.getProfile(userId);
     return p ? playerInfoFromProfile(p, catalogs) : null;
@@ -48,6 +58,7 @@ export function createTableService({ db, sendTo, onlineIds, pushProfile = () => 
   function payout(table, result) {
     const out = {};
     const seats = table.match.players;
+    const chaos = !!table.match.chaos;
     const t = now();
     for (const r of result.ranking) {
       const seat = seats[r.seat];
@@ -68,6 +79,7 @@ export function createTableService({ db, sendTo, onlineIds, pushProfile = () => 
         payoutsToday: daily.payouts,
         boardDiamonds: r.boardDiamonds || 0,
         luckBonus,
+        chaos,
       });
       prof.gold = (prof.gold || 0) + rw.gold;
       prof.berries = (prof.berries || 0) + rw.berries;
@@ -75,9 +87,12 @@ export function createTableService({ db, sendTo, onlineIds, pushProfile = () => 
       if (rw.ticketBonus > 0) {
         prof.bag_items = { ...(prof.bag_items || {}), ticket_standard: (prof.bag_items?.ticket_standard || 0) + rw.ticketBonus };
       }
-      daily.matches = (daily.matches || 0) + 1;
-      if (r.rank === 1) daily.wins++;
-      if (rw.podiumDiamonds > 0 || rw.dailyBonusDiamonds > 0) daily.payouts++;
+      // 🎉 Chaos Party matches never touch the daily counters (no cap use, no 1st-match bonus consumed)
+      if (!chaos) {
+        daily.matches = (daily.matches || 0) + 1;
+        if (r.rank === 1) daily.wins++;
+        if (rw.podiumDiamonds > 0 || rw.dailyBonusDiamonds > 0) daily.payouts++;
+      }
       prof.mono_daily = daily;
       const chest = rw.chestChance > 0 && rng() < rw.chestChance;
       let chestReward = null;
@@ -86,19 +101,66 @@ export function createTableService({ db, sendTo, onlineIds, pushProfile = () => 
         prof.bag_items = { ...(prof.bag_items || {}), [chestReward]: (prof.bag_items?.[chestReward] || 0) + 1 };
       }
       const exp = rw.exp || MATCH_EXP[r.rank - 1] || 0;
-      const lv = applyExp(prof.level || 1, prof.exp || 0, exp);
+      const levelBefore = prof.level || 1, levelExpBefore = prof.exp || 0;
+      const lv = applyExp(levelBefore, levelExpBefore, exp);
       const levelUpDiamonds = 50 * lv.levelsGained;
       prof.level = lv.level; prof.exp = lv.exp; prof.diamonds += levelUpDiamonds;
-      prof.mono_stats = { played: (prof.mono_stats?.played || 0) + 1, wins: (prof.mono_stats?.wins || 0) + (r.rank === 1 ? 1 : 0) };
+      prof.mono_stats = {
+        played: (prof.mono_stats?.played || 0) + 1,
+        wins: (prof.mono_stats?.wins || 0) + (r.rank === 1 ? 1 : 0),
+        goldWon: (prof.mono_stats?.goldWon || 0) + rw.gold,
+      };
+      let petExpRes = null;
+      if (Array.isArray(prof.pets) && prof.pets.length > 0) {
+        petExpRes = grantPetActivityExp(prof, 25, 'monopoly');
+      }
       db.markProfile(prof.id);
       pushProfile(prof);
-      out[seat.id] = { ...rw, multiplier, chest, chestReward, exp, levelsGained: lv.levelsGained, levelUpDiamonds };
+      try { onMatchFinished(prof); } catch (e) { log.error?.('[tables] onMatchFinished', e); }
+      out[seat.id] = {
+        ...rw, multiplier, chest, chestReward, exp, levelsGained: lv.levelsGained, levelUpDiamonds,
+        // podium EXP bar: before → after (levelExpNext 0 = max level)
+        levelBefore, levelExpBefore, levelExpNextBefore: nextExp(levelBefore),
+        level: lv.level, levelExp: lv.exp, levelExpNext: nextExp(lv.level),
+        petCombos: seat.petCombos || 0, petCasts: seat.petCasts || 0,
+        petExpGained: petExpRes?.ok ? petExpRes.expGained : 0,
+        chaos: !!chaos,
+      };
     }
     log.info?.(`[tables] ${table.id} ended (${result.reason}) winner=${table.match.players[result.winner]?.id}`);
     return out;
   }
 
-  const mgr = new TableManager({ now, playerInfo: info, onMatchEnd: payout, seedFn: () => (rng() * 2 ** 31) >>> 0 });
+  /** 🐾 persist the Auto/Manual pet toggle on the profile (default Auto when unset). */
+  function onPetAuto(userId, auto) {
+    const prof = db.getProfile(userId);
+    if (!prof) return;
+    prof.mono_pet_auto = !!auto;
+    db.markProfile(prof.id);
+  }
+
+  const casino = createCasinoAdapter({
+    db,
+    send: (userIds, msg) => {
+      const ids = Array.isArray(userIds) ? userIds : [userIds];
+      for (const id of ids) sendTo(id, msg);
+    },
+    humans: (t) => t.seats.filter((s) => s.kind === 'human' && s.userId).map((s) => s.userId),
+    rng,
+    now,
+    pushProfile,
+    onBigHit,
+    onHandSettled,
+  });
+
+  const mgr = new TableManager({
+    now,
+    playerInfo: info,
+    onMatchEnd: payout,
+    onPetAuto,
+    seedFn: () => (rng() * 2 ** 31) >>> 0,
+    games: { casino },
+  });
 
   function flush() {
     for (const { to, msg } of mgr.flush()) {

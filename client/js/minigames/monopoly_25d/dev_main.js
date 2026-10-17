@@ -41,12 +41,31 @@ async function boot() {
   applyUiScale();
   addEventListener('resize', applyUiScale);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+  const isTouch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 2));
   const size = () => renderer.setSize(canvas.clientWidth || innerWidth, canvas.clientHeight || innerHeight, false);
   size(); addEventListener('resize', size);
   await loadManifest(renderer);
 
   const profile = await loadProfile();
+  if (params.get('outfit')) {
+    if (!profile.equipped) profile.equipped = {};
+    profile.equipped.outfit = { id: params.get('outfit'), refine: 10 };
+  }
+  if (params.get('petCostume')) {
+    if (!profile.equipped) profile.equipped = {};
+    if (!profile.equipped.pet) profile.equipped.pet = { id: 'pet_night_fury' };
+    profile.equipped.pet.costume_id = params.get('petCostume');
+    const r = Number(params.get('petCostumeRarity')) || 3;
+    profile.equipped.pet.costume_rarity = r;
+    if (Array.isArray(profile.pets)) {
+      const ep = profile.pets.find((x) => x.id === profile.equipped.pet.id || x.uid === profile.equipped.pet.uid);
+      if (ep) {
+        ep.costume_id = params.get('petCostume');
+        ep.costume_rarity = r;
+      }
+    }
+  }
   let accessories = {};
   try { ({ ACCESSORIES: accessories } = await import('/shared/catalog_gear_pets.js')); } catch { /* catalog mid-refactor: stats default to 0 */ }
   const info = playerInfoFromProfile(profile, { outfits: OUTFITS, accessories });
@@ -54,7 +73,17 @@ async function boot() {
   const bridge = new MonopolyBridge({ container: app, renderer, room, toast, onExit: () => bridge.openHub() });
   bridge.ensureBoard();
   bridge.start();
-  window.__mono = { bridge, room, profile, info };
+  window.__mono = {
+    bridge, room, profile, info,
+    fillGauges(seat = 0, { ult = 100, petUlt = 100 } = {}) {
+      const t = room.mgr?.tableOf?.(profile.id);
+      if (t?.match?.players?.[seat]) {
+        t.match.players[seat].ult = ult;
+        t.match.players[seat].petUlt = petUlt;
+        bridge.refreshControls();
+      }
+    },
+  };
 
   if (params.get('solo')) room.send({ type: 'table_solo', diff: params.get('solo') });
   else bridge.openHub();

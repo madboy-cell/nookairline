@@ -32,11 +32,12 @@ function drive(mgr, clock, policy = () => null, maxMs = 3_600_000) {
   return false;
 }
 
-test('modes: Monopoly playable now; Casino / Moon Bunny / Cloud Dash locked to later phases', () => {
+test('modes: Monopoly + Casino playable (Phase 5); Moon Bunny / Cloud Dash locked to later phases', () => {
   assert.equal(MODES.monopoly.available, true);
-  for (const k of ['casino', 'moon_bunny', 'cloud_dash']) assert.equal(MODES[k].available, false);
+  assert.equal(MODES.casino.available, true);
+  for (const k of ['moon_bunny', 'cloud_dash']) assert.equal(MODES[k].available, false);
   const { mgr } = harness();
-  assert.equal(mgr.create('nook', { mode: 'casino' }).error, 'mode_locked');
+  assert.equal(mgr.create('nook', { mode: 'moon_bunny' }).error, 'mode_locked');
 });
 
 test('lobby: create → host seat 1; friend sits; bot seats; only the host can start; friend must be ready', () => {
@@ -205,3 +206,29 @@ test('tables with no connected humans are closed after the reconnect grace perio
   assert.equal(mgr.tables.has(tableId), false);
   assert.equal(mgr.byUser.has('nook'), false);
 });
+
+test('solo match survives brief socket disconnect on Round 15 and re-delivers podium on reconnect', () => {
+  const { mgr, clock, inbox } = harness({ onMatchEnd: () => ({ nook: { gold: 1800, diamonds: 220 } }) });
+  mgr.connect('nook');
+  const { tableId } = mgr.solo('nook', { diff: 'hard' });
+  const t = mgr.tables.get(tableId);
+  // Fast-forward to Round 15, seat 3 (Bot Mina) awaiting buy decision on Akiba
+  t.match.round = 15;
+  t.match.turn = { seat: 3, n: 60, rolled: true, ultUsed: false, petCastUsed: false };
+  t.match.pending = { kind: 'buy', seat: 3, tile: 2, price: 240, canSkip: true, options: [{ id: 'buy', label: 'Buy' }, { id: 'skip', label: 'Skip' }] };
+  // Brief socket drop right before Bot Mina's buy decision runs
+  mgr.disconnect('nook');
+  assert.equal(mgr.tables.has(tableId), true, 'solo table must NOT be deleted on brief disconnect');
+  clock.advance(5000);
+  mgr.tick();
+  assert.equal(t.status, 'ended', 'Bot Mina completes final turn and match ends');
+  mgr.flush();
+  // Browser reconnects within grace period
+  mgr.connect('nook');
+  const msgs = inbox('nook');
+  assert.ok(msgs.some((m) => m.type === 'table_state' && m.resumed && m.table.status === 'ended'));
+  const pod = msgs.find((m) => m.type === 'match_victory_podium');
+  assert.ok(pod, 'podium is re-sent upon reconnect');
+  assert.equal(pod.rewards?.gold, 1800);
+});
+

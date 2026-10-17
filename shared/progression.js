@@ -21,7 +21,7 @@ export function applyExp(level, exp, gained) {
 
 export function itemRarity(slot, itemId) {
   if (!itemId) return 0;
-  if (slot === 'outfit') return OUTFITS[itemId]?.rarity || 0;
+  if (slot === 'outfit') { const o = OUTFITS[itemId]; return o?.powerRarity || (typeof o?.rarity === 'number' ? o.rarity : 0); }
   if (slot === 'dice') return DICE_SKINS[itemId]?.rarity || 0;
   return ACCESSORIES[itemId]?.rarity || 0;
 }

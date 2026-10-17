@@ -191,7 +191,12 @@
         },
         {
           "name": "wnd_fountain",
-          "anchorY": 0
+          "anchorY": 0,
+          "opts": {
+            "pocketDilate": 2,
+            "pocketDilateMinLum": 220,
+            "pocketDilateMaxChroma": 18
+          }
         },
         {
           "name": "wnd_casino_dome",
@@ -314,7 +319,10 @@
         },
         {
           "name": "env_cloud",
-          "anchorY": 0
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
         },
         {
           "name": "env_pine",
@@ -565,7 +573,10 @@
         },
         {
           "name": "decal_water_lily_white",
-          "anchorY": 0.5
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
         }
       ]
     },
@@ -580,7 +591,10 @@
       "cells": [
         {
           "name": "decal_water_lotus_pink",
-          "anchorY": 0.5
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
         },
         {
           "name": "env_river_boulders_b",
@@ -604,15 +618,24 @@
         },
         {
           "name": "env_waterfall_mist",
-          "anchorY": 0.5
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
         },
         {
           "name": "env_cloud_fluffy_a",
-          "anchorY": 0.5
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
         },
         {
           "name": "env_cloud_fluffy_b",
-          "anchorY": 0.5
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
         }
       ]
     },
@@ -662,7 +685,13 @@
       "cells": [
         {
           "name": "dec_couple_hammock",
-          "anchorY": 0
+          "anchorY": 0,
+          "opts": {
+            "stripWarmGlow": true,
+            "pocketDilate": 18,
+            "pocketDilateMinLum": 180,
+            "pocketDilateMaxChroma": 85
+          }
         },
         {
           "name": "dec_koi_barrel_pond",
@@ -3440,6 +3469,2557 @@
           "name": "cliff_rim_turf_strip",
           "anchorY": 0
         }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2o_ortho_park_framing.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 180,
+      "minIslandRatio": 0.004,
+      "cells": [
+        {
+          "name": "env_arch_floral_ortho",
+          "anchorY": 0
+        },
+        {
+          "name": "env_fence_ortho_horizontal",
+          "anchorY": 0
+        },
+        {
+          "name": "env_hedge_ortho_horizontal",
+          "anchorY": 0
+        },
+        {
+          "name": "env_planter_ortho_horizontal",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_bench_ortho_front",
+          "anchorY": 0
+        },
+        {
+          "name": "decal_plaza_medallion_circle",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_4c_monopoly_event_emblems.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.015,
+      "exteriorStripBand": 28,
+      "exteriorStripMinLum": 158,
+      "exteriorStripMaxChroma": 48,
+      "stripWarmGlow": true,
+      "minPurePaperCore": 20,
+      "pocketDilate": 65,
+      "pocketDilateMinLum": 145,
+      "pocketDilateMaxChroma": 92,
+      "cells": [
+        {
+          "name": "mono_icon_start",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_icon_casino",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_icon_airdrop",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_icon_vault",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_icon_warp",
+          "anchorY": 0
+        },
+        {
+          "name": "mono_icon_arena",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1q_costumes_sm_bkk.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_sm_eclipse_dragon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_sm_eclipse_dragon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_sm_eclipse_dragon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_sm_aurora_empress_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_sm_aurora_empress_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_sm_aurora_empress_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_1r_costumes_sm_dxb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_sm_eclipse_dragon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_sm_eclipse_dragon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_sm_eclipse_dragon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_sm_aurora_empress_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_sm_aurora_empress_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "long"
+        },
+        {
+          "name": "dxb_sm_aurora_empress_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "long"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2p_architect_wonders_v2.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.005,
+      "cells": [
+        {
+          "name": "wnd_sakura_pagoda",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_mirage_palace",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_atlantis_sanctuary",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_aurora_observatory",
+          "anchorY": 0,
+          "opts": {
+            "snowCourtyard": true
+          }
+        },
+        {
+          "name": "wnd_tea_pavilion",
+          "anchorY": 0
+        },
+        {
+          "name": "wnd_sky_airship_dock",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2q_biome_decor_trees.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 3,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.005,
+      "cells": [
+        {
+          "name": "dec_sakura_drum_bridge",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_bamboo_shishi_odoshi",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_palm_oasis",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_sultan_bazaar_canopy",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_oasis_obelisk_fountain",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_siren_shell_fountain",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_coral_crystal_arch",
+          "anchorY": 0
+        },
+        {
+          "name": "env_tree_pine_snowy",
+          "anchorY": 0
+        },
+        {
+          "name": "dec_aurora_crystal_gazebo",
+          "anchorY": 0
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2r_monopoly_theme_grounds.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 300,
+      "minIslandRatio": 0.008,
+      "cells": [
+        {
+          "name": "mono_ground_brook_classic",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "mono_ground_pond_sakura",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "mono_ground_oasis_mirage",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "mono_ground_lagoon_atlantis",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "mono_ground_rink_aurora",
+          "anchorY": 0,
+          "opts": {
+            "keepHoles": true,
+            "exteriorStripBand": 16,
+            "exteriorStripMinLum": 152,
+            "exteriorStripMaxChroma": 32
+          }
+        },
+        {
+          "name": "dec_stone_arch_footbridge",
+          "anchorY": 0,
+          "opts": {
+            "exteriorStripBand": 26,
+            "exteriorStripMinLum": 182,
+            "exteriorStripMaxChroma": 78,
+            "stripWarmGlow": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2g_epic_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_valkyrie_diadem",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_valkyrie_diadem_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_valkyrie_diadem_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_starlight_mask",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_valkyrie_gauntlets",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_valkyrie_greaves",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2h_epic_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_lunar_valkyrie",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_kitsune_star_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_kitsune_star_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_valkyrie_mantle",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_valkyrie_mantle_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2i_mythic_fem_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_seraphim_rose_crown",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_seraphim_rose_crown_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_seraphim_rose_crown_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_seraphim_veil_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_seraphim_silk_gauntlets",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_seraphim_heels",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2j_mythic_fem_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_seraphim_rose_six",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_seraphim_nine_tails",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_seraphim_nine_tails_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_seraphim_stardust_veil",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_seraphim_stardust_veil_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2k_epic_fem1_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_sakura_princess_beret",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_sakura_princess_beret_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_sakura_princess_beret_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_sakura_blossom_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_sakura_lace_gloves",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_sakura_maryjanes",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2l_epic_fem1_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_sakura_fairy",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sakura_bunny_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sakura_bunny_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sakura_capelet",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sakura_capelet_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2m_epic_fem2_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_moonlight_swan_tiara",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_moonlight_swan_tiara_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_moonlight_swan_tiara_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_moonlight_butterfly_mask",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_moonlight_cuffs",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_moonlight_ballet_greaves",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2n_epic_fem2_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_moonlight_swan",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_moonlight_snowleopard_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_moonlight_snowleopard_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_moonlight_chiffon_cloak",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_moonlight_chiffon_cloak_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2o_mythic2_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_astral_eclipse_crown",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_astral_eclipse_crown_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_astral_eclipse_crown_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_astral_eclipse_visor",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_astral_eclipse_bracers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_astral_eclipse_sabaton",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2p_mythic2_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_astral_eclipse_six",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_astral_eclipse_comet_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_astral_eclipse_comet_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_astral_eclipse_regalia_cape",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_astral_eclipse_regalia_cape_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2q_epic3_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_sylvan_antler_circlet",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_sylvan_antler_circlet_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_sylvan_antler_circlet_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_sylvan_leaf_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_sylvan_wind_bracers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_sylvan_feather_boots",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2r_epic3_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_sylvan_emerald_zephyr",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sylvan_spirit_deer_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sylvan_spirit_deer_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sylvan_elven_cloak",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_sylvan_elven_cloak_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2s_epic4_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_crimson_kitsune_ears",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_crimson_kitsune_ears_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_crimson_kitsune_ears_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_crimson_kitsune_shades",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_crimson_shrine_gloves",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_crimson_shrine_greaves",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2t_epic4_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_crimson_foxfire",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_crimson_kitsune_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_crimson_kitsune_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_crimson_shrine_haori",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_crimson_shrine_haori_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2u_rare1_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_honey_bear_ears",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_honey_bear_ears_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_honey_bear_ears_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_honey_round_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_honey_bear_mittens",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_honey_bear_booties",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2v_rare1_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_honey_bee",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_honey_bear_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_honey_bear_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_honey_picnic_shawl",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_honey_picnic_shawl_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2w_rare2_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_cloudy_sheep_horns",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_cloudy_sheep_horns_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_cloudy_sheep_horns_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_cloudy_sleepy_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_cloudy_wool_mittens",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_cloudy_lamb_slippers",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2x_rare2_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_cloudy_puff",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_cloudy_sheep_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_cloudy_sheep_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_cloudy_fleece_capelet",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_cloudy_fleece_capelet_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2y_rare3_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_clover_beret",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_clover_beret_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_clover_beret_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_clover_wood_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_clover_garden_gloves",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_clover_leather_boots",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2z_rare3_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_clover_sprout",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_clover_raccoon_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_clover_raccoon_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_clover_traveler_cloak",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_clover_traveler_cloak_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2aa_rare4_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_berry_maid_headband",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_berry_maid_headband_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_berry_maid_headband_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_berry_pink_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_berry_polka_gloves",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_berry_ankle_boots",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ab_rare4_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_berry_cupid",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_berry_cat_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_berry_cat_tail_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_berry_apron_cape",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_berry_apron_cape_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ac_mythic3_aurora_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_aurora_spirit_hood",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_aurora_spirit_hood_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_aurora_spirit_hood_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "face_aurora_starlight_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_aurora_orb_mitts",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_aurora_spirit_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ad_mythic3_aurora_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 1200,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_aurora_crystal_wings",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_aurora_spirit_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_aurora_spirit_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_aurora_starlit_mantle",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_aurora_starlit_mantle_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ae_epic5_unicorn_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_unicorn_sleep_hood",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_unicorn_sleep_hood_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_unicorn_sleep_hood_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "face_unicorn_dream_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_unicorn_paw_mitts",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_unicorn_plush_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2af_epic5_unicorn_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_unicorn_dream_wings",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_unicorn_rainbow_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_unicorn_rainbow_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_unicorn_blanket_cape",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_unicorn_blanket_cape_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ag_epic6_starbunny_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 500,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_starbunny_nightcap",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_starbunny_nightcap_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_starbunny_nightcap_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "face_starbunny_bubble_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_starbunny_cuffs",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_starbunny_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ah_epic6_starbunny_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_starbunny_pillow",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_starbunny_pom_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_starbunny_pom_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_starbunny_duvet_cape",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_starbunny_duvet_cape_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ai_rare5_panda_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_panda_sleep_ears",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_panda_sleep_ears_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_panda_sleep_ears_back",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_panda_bamboo_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_panda_paw_mittens",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_panda_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2aj_rare5_panda_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_panda_pillow_wings",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_panda_pom_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_panda_pom_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_panda_flannel_shawl",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_panda_flannel_shawl_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2ak_rare6_ducky_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_ducky_shower_cap",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_ducky_shower_cap_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_ducky_shower_cap_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "face_ducky_round_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_ducky_terry_mitts",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_ducky_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2al_rare6_ducky_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_ducky_chick_wings",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_ducky_waddle_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_ducky_waddle_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_ducky_towel_cape",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_ducky_towel_cape_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2am_rare7_kitty_head_face_hands_feet.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_kitty_nightcap",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_kitty_nightcap_side",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "hat_kitty_nightcap_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "face_kitty_whisker_glasses",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "gloves_kitty_pajama_mitts",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "boots_kitty_slippers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v2an_rare7_kitty_wings_tail_cape.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_kitty_cotton_wings",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_kitty_sleepy_tail",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_kitty_sleepy_tail_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_kitty_pajama_capelet",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "back_kitty_pajama_capelet_back",
+          "anchorY": 0.5,
+          "faces": "right",
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_2s_rainbow_bridge_horizontal.jpg",
+      "pack": "village",
+      "rows": 3,
+      "cols": 1,
+      "holeMinArea": 60,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bridge_rainbow_front_arch",
+          "anchorY": 0
+        },
+        {
+          "name": "bridge_rainbow_back_rail",
+          "anchorY": 0
+        },
+        {
+          "name": "bridge_rainbow_deck_strip",
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3a_girly_costumes_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_sweetheart_patissier_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_magical_star_witch_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_swan_ballet_prima_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_alice_wonder_teaparty_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_sweetheart_patissier_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_magical_star_witch_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_swan_ballet_prima_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_alice_wonder_teaparty_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3a_girly_costumes_1_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_sweetheart_patissier_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_magical_star_witch_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_swan_ballet_prima_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_alice_wonder_teaparty_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3b_girly_costumes_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_fairy_blossom_nympha_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_lollipop_angel_nurse_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_pink_bean_kigurumi_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_henesys_mushroom_hoodie_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_fairy_blossom_nympha_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_lollipop_angel_nurse_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_pink_bean_kigurumi_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_henesys_mushroom_hoodie_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3b_girly_costumes_2_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_fairy_blossom_nympha_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_lollipop_angel_nurse_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_pink_bean_kigurumi_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_henesys_mushroom_hoodie_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3c_girly_costumes_3.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_slime_pudding_raincoat_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_peach_milk_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cinnamon_bunny_cardigan_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_strawberry_picnic_gingham_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_slime_pudding_raincoat_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_peach_milk_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_cinnamon_bunny_cardigan_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_strawberry_picnic_gingham_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3c_girly_costumes_3_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_slime_pudding_raincoat_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_peach_milk_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cinnamon_bunny_cardigan_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_strawberry_picnic_gingham_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3d_girly_costumes_4.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_lavender_sleepy_pajama_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_honey_bee_pinafore_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_sleepywood_onsen_yukata_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_aquaroad_sailor_uniform_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_lavender_sleepy_pajama_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_honey_bee_pinafore_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_sleepywood_onsen_yukata_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_aquaroad_sailor_uniform_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3d_girly_costumes_4_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_lavender_sleepy_pajama_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_honey_bee_pinafore_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_sleepywood_onsen_yukata_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_aquaroad_sailor_uniform_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3e_girly_boots_epic.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "boots_sweetheart_patissier", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_magical_star_witch", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_swan_ballet_prima", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_alice_wonder_teaparty", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_fairy_blossom_nympha", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_lollipop_angel_nurse", "anchorY": 0.5, "faces": "right" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3f_girly_boots_rare_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "boots_pink_bean_slippers", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_henesys_mushroom_sneakers", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_slime_pudding_wellies", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_peach_milk_maryjanes", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_cinnamon_bunny_loafers", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_strawberry_picnic_shoes", "anchorY": 0.5, "faces": "right" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3g_girly_boots_rare_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "boots_lavender_cloud_slippers", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_honey_bee_maryjanes", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_sleepywood_sakura_geta", "anchorY": 0.5, "faces": "right" },
+        { "name": "boots_aquaroad_sailor_shoes", "anchorY": 0.5, "faces": "right" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3h_boy_costumes_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_sweetheart_patissier_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_magical_star_witch_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_swan_ballet_prima_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_alice_wonder_teaparty_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_sweetheart_patissier_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_magical_star_witch_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_swan_ballet_prima_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_alice_wonder_teaparty_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3h_boy_costumes_1_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_sweetheart_patissier_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_magical_star_witch_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_swan_ballet_prima_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_alice_wonder_teaparty_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3i_boy_costumes_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_fairy_blossom_nympha_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_lollipop_angel_nurse_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_pink_bean_kigurumi_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_henesys_mushroom_hoodie_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_fairy_blossom_nympha_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_lollipop_angel_nurse_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_pink_bean_kigurumi_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_henesys_mushroom_hoodie_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3i_boy_costumes_2_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_fairy_blossom_nympha_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_lollipop_angel_nurse_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_pink_bean_kigurumi_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_henesys_mushroom_hoodie_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3j_boy_costumes_3.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_slime_pudding_raincoat_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_peach_milk_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cinnamon_bunny_cardigan_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_strawberry_picnic_gingham_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_slime_pudding_raincoat_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_peach_milk_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_cinnamon_bunny_cardigan_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_strawberry_picnic_gingham_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3j_boy_costumes_3_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_slime_pudding_raincoat_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_peach_milk_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cinnamon_bunny_cardigan_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_strawberry_picnic_gingham_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3k_boy_costumes_4.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_lavender_sleepy_pajama_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_honey_bee_pinafore_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_sleepywood_onsen_yukata_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_aquaroad_sailor_uniform_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_lavender_sleepy_pajama_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_honey_bee_pinafore_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_sleepywood_onsen_yukata_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_aquaroad_sailor_uniform_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3k_boy_costumes_4_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_lavender_sleepy_pajama_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_honey_bee_pinafore_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_sleepywood_onsen_yukata_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_aquaroad_sailor_uniform_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3l_scifi_girl_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_aether_valkyrie_seraph_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_neon_pulsar_idol_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_quantum_chrono_nav_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_mecha_bunny_striker_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_aether_valkyrie_seraph_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_neon_pulsar_idol_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_quantum_chrono_nav_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_epic_mecha_bunny_striker_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3l_scifi_girl_1_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_aether_valkyrie_seraph_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_neon_pulsar_idol_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_quantum_chrono_nav_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_mecha_bunny_striker_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3m_scifi_girl_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_eclipse_void_enforcer_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_starfleet_nova_cadet_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cyber_android_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_zero_g_astronaut_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_epic_eclipse_void_enforcer_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_starfleet_nova_cadet_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_cyber_android_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_zero_g_astronaut_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3m_scifi_girl_2_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_epic_eclipse_void_enforcer_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_starfleet_nova_cadet_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cyber_android_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_zero_g_astronaut_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3n_scifi_girl_3.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_plasma_angel_medic_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_synthwave_arcade_skater_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_biolum_xeno_botanist_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_omega_mecha_pilot_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_plasma_angel_medic_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_synthwave_arcade_skater_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_biolum_xeno_botanist_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_omega_mecha_pilot_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3n_scifi_girl_3_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_plasma_angel_medic_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_synthwave_arcade_skater_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_biolum_xeno_botanist_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_omega_mecha_pilot_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3o_scifi_girl_4.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_holo_neko_streamer_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cryo_crystal_scientist_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_solar_prism_envoy_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        null,
+        { "name": "dxb_rare_holo_neko_streamer_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_cryo_crystal_scientist_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "dxb_rare_solar_prism_envoy_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3o_scifi_girl_4_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "dxb_rare_holo_neko_streamer_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_cryo_crystal_scientist_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "dxb_rare_solar_prism_envoy_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3p_scifi_boy_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_aether_valkyrie_seraph_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_neon_pulsar_idol_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_quantum_chrono_nav_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_mecha_bunny_striker_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_aether_valkyrie_seraph_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_neon_pulsar_idol_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_quantum_chrono_nav_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_epic_mecha_bunny_striker_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3p_scifi_boy_1_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_aether_valkyrie_seraph_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_neon_pulsar_idol_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_quantum_chrono_nav_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_mecha_bunny_striker_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3q_scifi_boy_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_eclipse_void_enforcer_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_starfleet_nova_cadet_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cyber_android_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_zero_g_astronaut_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_epic_eclipse_void_enforcer_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_starfleet_nova_cadet_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_cyber_android_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_zero_g_astronaut_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3q_scifi_boy_2_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_epic_eclipse_void_enforcer_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_starfleet_nova_cadet_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cyber_android_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_zero_g_astronaut_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3r_scifi_boy_3.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_plasma_angel_medic_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_synthwave_arcade_skater_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_biolum_xeno_botanist_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_omega_mecha_pilot_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_plasma_angel_medic_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_synthwave_arcade_skater_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_biolum_xeno_botanist_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_omega_mecha_pilot_back", "anchorY": 0, "faces": "left", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3r_scifi_boy_3_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_plasma_angel_medic_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_synthwave_arcade_skater_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_biolum_xeno_botanist_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_omega_mecha_pilot_side", "anchorY": 0, "faces": "right", "hem": "short" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3s_scifi_boy_4.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_holo_neko_streamer_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cryo_crystal_scientist_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_solar_prism_envoy_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        null,
+        { "name": "bkk_rare_holo_neko_streamer_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_cryo_crystal_scientist_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        { "name": "bkk_rare_solar_prism_envoy_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3s_scifi_boy_4_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        { "name": "bkk_rare_holo_neko_streamer_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_cryo_crystal_scientist_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        { "name": "bkk_rare_solar_prism_envoy_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3t_creative_wings_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.002,
+      "optional": true,
+      "cells": [
+        { "name": "wings_nocturne_vampire_bat", "anchorY": 0.5, "faces": "right" },
+        { "name": "wings_chronos_clockwork_gears", "anchorY": 0.5, "faces": "right" },
+        { "name": "wings_abyssal_leviathan_fins", "anchorY": 0.5, "faces": "right" },
+        { "name": "wings_monarch_autumn_maple", "anchorY": 0.5, "faces": "right" },
+        { "name": "wings_cyber_matrix_holo", "anchorY": 0.5, "faces": "right" },
+        { "name": "wings_magma_drake_wyvern", "anchorY": 0.5, "faces": "right" }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3u_creative_wings_gloves_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.05,
+      "optional": true,
+      "cells": [
+        { "name": "wings_shadow_raven_crow", "anchorY": 0.5, "faces": "right", "minIslandRatio": 0.25 },
+        { "name": "wings_stained_glass_prism", "anchorY": 0.5, "faces": "right", "keepHoles": true, "minIslandRatio": 0.25 },
+        { "name": "wings_venom_alchemist_moth", "anchorY": 0.5, "faces": "right", "keepHoles": true, "minIslandRatio": 0.25 },
+        { "name": "gloves_nocturne_vampire_claws", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        { "name": "gloves_chronos_aether_gauntlets", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        { "name": "gloves_abyssal_tide_bracers", "anchorY": 0.5, "faces": "right", "keepHoles": true }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3v_creative_gloves_rare_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        { "name": "gloves_monarch_maple_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        { "name": "gloves_cyber_matrix_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        { "name": "gloves_magma_drake_gauntlets", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3v_creative_gloves_rare_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 5,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        { "name": "gloves_shadow_shinobi_wraps", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
+        { "name": "gloves_stained_glass_cuffs", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
+        null,
+        { "name": "gloves_venom_alchemist_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3w_creative_boots_1.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.005,
+      "optional": true,
+      "cells": [
+        { "name": "boots_nocturne_vampire_sabaton", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_chronos_steampunk_greaves", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_abyssal_siren_greaves", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_monarch_maple_boots", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_cyber_matrix_kicks", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_magma_drake_stompers", "anchorY": 0.9, "faces": "right", "keepHoles": true }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3x_creative_boots_2.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.005,
+      "optional": true,
+      "cells": [
+        { "name": "boots_shadow_shinobi_tabi", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_stained_glass_sabaton", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        { "name": "boots_venom_alchemist_boots", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v3y_hair_celestial_seraph.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 3,
+      "holeMinArea": 60,
+      "minIslandRatio": 0.15,
+      "optional": true,
+      "cells": [
+        { "name": "hair_celestial_seraph_front", "anchorY": 0.5, "faces": "right" },
+        { "name": "hair_celestial_seraph_side", "anchorY": 0.5, "faces": "right" },
+        { "name": "hair_celestial_seraph_back", "anchorY": 0.5, "faces": "left" }
       ]
     }
   ]

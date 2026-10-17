@@ -3,13 +3,17 @@
 // renderer. No I/O, no randomness: everything here is a pure function of its inputs.
 
 import { SEASON_SKILLS } from './season_skills.js';
+import { PET2, computePetPassives, minLevelForStars, computePetSoulLinkBonuses } from './pet_rules.js';
 
 export const MONO = Object.freeze({
   BOARD_N: 24,
   GRID_COLS: 6,                 // "8×6" perimeter = 24 tiles (Screen 10). Corners must be the 4 corner
   GRID_ROWS: 8,                 // events (0 START, 5 Casino, 12 Vault, 17 Arena) → 6 wide × 8 deep (portrait).
   START_CASH: 2000,
+  SEAT_COMP_CASH: 150,          // turn-order compensation: +150 🪙 per seat after the first (sim: seat skew 7% → ~1%)
   SALARY: 400,
+  UNDERDOG_GAP: 0.6,            // comeback boost: strictly last & net worth < 60% of leader
+  UNDERDOG_SALARY_BONUS: 0.5,   // +50% salary when underdog condition met
   START_BOOST: 3,               // ⚡ 2d6 Double-Dice charges at match start
   MAX_ROUNDS: 15,
   TURN_MS: 12000,               // server turn watchdog (§21.E.2)
@@ -26,6 +30,18 @@ export const MONO = Object.freeze({
   ULT_AIRDROP: 40,
   ULT_PER_TURN: 10,             // tunable: passive charge at the end of each own turn
   ULT_ON_RENT_PAID: 15,         // tunable: "rage" charge when you pay rent
+  PET_ULT_RATE: 0.75,           // 🐾 legacy default charge rate (superseded by bond scaling — see petMatchStats)
+  PET_ULT_SCALE: 0.50,          // 🐾 legacy default potency (superseded by bond scaling — see petMatchStats)
+  // 🐾 Soul-Link Combo (Dopamine Patch §2/§3): pets unlock at bond Lv1 and lerp to max bond level.
+  PET_BOND_MAX: PET2.BOND_MAX_LV,
+  PET_RATE_MIN: 0.55, PET_RATE_MAX: 0.90,       // charge rate × owner speed
+  PET_POT_MIN: 0.30,  PET_POT_MAX: 0.70,        // cast potency (cash scale)
+  PET_START_MIN: 45, PET_START_MAX: 50,         // starting gauge % (Lv1 → max). Sim-tuned so a Lv1 pet combos on the 1st owner ult
+  PET_BANK_MAX: 100,                            // overflow past 100% is banked and carried into the next fill
+  PET_MAX_CASTS: 2,                             // normal mode: max pet casts per match
+  PET_HOLD_TURNS: 2,                            // Auto: solo-cast after being full for 2 own turns
+  PET_COMBO_BONUS: 0.15,                        // combo = +15% potency
+  PUBLIC_POT_SQUEEZE: 0.5,                      // public tables: p' = 0.5 + (p − 0.5) × 0.5
   AIRDROP_CASH: 300,
   START_DIAMONDS: 10,           // 💎 +10 on each START lap pass (up to MAX_START_DIAMOND_LAPS)
   MAX_START_DIAMOND_LAPS: 4,    // max +40 💎 per match from laps
@@ -43,6 +59,49 @@ export const MONO = Object.freeze({
   PHOENIX_REVIVE_CASH: 500,
   COUPLE_SYNERGY: 0.15,         // +15% ultimate effect when the bound partner sits at the table
 });
+
+// 🎉 Chaos Party mode (Dopamine Patch §4) — couple / friend / solo tables only, never ranked.
+export const CHAOS = Object.freeze({
+  MAX_ROUNDS: 10,
+  ULT_GAIN: 2,                  // ×2 owner + pet gauge gain
+  PET_RATE: 1.0, PET_POT: 1.0, PET_START: 50,
+  COMBO_BONUS: 0.30,            // combo +30%, no pet-cast cap
+  DIAMOND_MULT: 0.5,            // ×0.5 💎 and NOT counted toward the daily diamond cap
+  EVENTS: ['meteor', 'rent_x2', 'swap', 'gold_rain'],
+  METEOR_TILES: 3,              // meteor rain: 3 random property tiles, built ones lose 1 level
+  GOLD_RAIN: 200,               // gold rain: +200 🪙 to every player
+  SEAT_COMP_CASH: 50,           // shorter + swingier match → smaller turn-order compensation than normal
+});
+
+/**
+ * Pet in-match numbers from bond level (Lv1 → PET_BOND_MAX lerp) + optional Companion Trait Slot bonuses. Pure.
+ * `publicTable` squeezes potency toward 0.5 (non-couple/friend multiplayer); chaos = everything max.
+ * @returns {{ rate:number, potency:number, start:number, baseRate?:number, basePotency?:number, baseStart?:number, bonuses?:object }}
+ */
+export function petMatchStats({ bond = 1, chaos = false, publicTable = false, pet = null } = {}) {
+  if (chaos) return { rate: CHAOS.PET_RATE, potency: CHAOS.PET_POT, start: CHAOS.PET_START };
+  const lv = Math.max(1, Math.min(MONO.PET_BOND_MAX, Math.floor(Number(bond) || 1)));
+  const t = (lv - 1) / Math.max(1, MONO.PET_BOND_MAX - 1);
+  const lerp = (a, b) => a + (b - a) * t;
+  const baseRate = +lerp(MONO.PET_RATE_MIN, MONO.PET_RATE_MAX).toFixed(4);
+  const basePotency = +lerp(MONO.PET_POT_MIN, MONO.PET_POT_MAX).toFixed(4);
+  const baseStart = Math.round(lerp(MONO.PET_START_MIN, MONO.PET_START_MAX));
+  let rate = baseRate;
+  let potency = basePotency;
+  let start = baseStart;
+  if (pet && Array.isArray(pet.slots)) {
+    const sl = computePetSoulLinkBonuses(pet);
+    rate = Math.min(1.0, rate + (sl.rateBonus || 0));
+    potency = Math.min(0.95, potency + (sl.potencyBonus || 0));
+    start = Math.min(90, Math.round(start + (sl.startBonus || 0)));
+  }
+  if (publicTable) potency = 0.5 + (potency - 0.5) * MONO.PUBLIC_POT_SQUEEZE;
+  return {
+    rate: +rate.toFixed(4),
+    potency: +potency.toFixed(4),
+    start,
+  };
+}
 
 // PvP "Fair-Play Tactical Cap" (§14.B): in-match bonuses are smoothly soft-capped, total ≤ +20%.
 export const PVP_CAPS = Object.freeze({
@@ -266,6 +325,21 @@ export function playerInfoFromProfile(p, { outfits = {}, accessories = {}, diceS
   const outfitId = p?.equipped?.outfit?.id || 'newbie_outfit';
   const def = outfits[outfitId] || {};
   const pet = p?.equipped?.pet || null;
+  const ownedPet = (Array.isArray(p?.pets) && pet?.id
+    ? p.pets.find((x) => x && (x.uid === pet.uid || x.id === pet.id))
+    : null) || pet;
+  const petCostume = ownedPet?.costume_id || pet?.costume_id || null;
+  const petCostumeDef = petCostume ? (outfits[petCostume] || {}) : null;
+  const petStars = Math.max(1, Number(ownedPet?.stars ?? pet?.stars) || 1);
+  const petBond = Math.max(1, Number(ownedPet?.bond_lv ?? pet?.bond_lv) || 1, minLevelForStars(petStars));
+  const baseStats = gearStats(p?.equipped, { outfits, accessories, diceSkins });
+  if (ownedPet && Array.isArray(ownedPet.slots)) {
+    const pp = computePetPassives(ownedPet);
+    baseStats.fortune += pp.fortune || 0;
+    baseStats.swiftness += pp.swiftness || 0;
+    baseStats.power += pp.power || 0;
+    baseStats.luck += pp.luck || 0;
+  }
   return {
     name: p?.username || p?.id,
     lineage: p?.lineage || 'bkk',
@@ -279,8 +353,15 @@ export function playerInfoFromProfile(p, { outfits = {}, accessories = {}, diceS
     petId: pet?.id || null,
     petFamily: pet?.id ? petFamilyOf(pet.id) : null,
     petPct: pet?.id ? petPctOf(pet) : 0,
+    petCostume,
+    petCostumeRarity: petCostumeDef?.rarity || (petCostume?.startsWith('s') ? 3 : petCostume?.startsWith('epic') ? 2 : 1),
+    petBond,
+    petStars,
+    petSlots: Array.isArray(ownedPet?.slots) ? ownedPet.slots.slice(0, 2) : null,
+    petAuto: p?.mono_pet_auto !== false,           // 🐾 Auto/Manual pet setting (default Auto)
     partnerId: p?.partner_id || null,
-    stats: gearStats(p?.equipped, { outfits, accessories, diceSkins }),
+    friendIds: Array.isArray(p?.friends) ? p.friends.map(String) : [],   // room-only (couple/friend table check)
+    stats: baseStats,
   };
 }
 
@@ -327,6 +408,7 @@ export function tableScaleForSeats(seats = []) {
  * - `coupleBonus` = ×1.25 when the player's bound partner/friend sits at the same table.
  * - `firstMatchToday` (or legacy `firstWinToday`) = +150 💎 + 1× 🎟️ Standard Summon Ticket.
  * - `boardDiamonds` = live in-board 💎 earned from START laps, Mini-Casino, Color Monopoly, and Arena duels.
+ * - `chaos` = 🎉 Chaos Party: all 💎 ×0.5, ignores (and never consumes) the daily cap and the daily 1st-match bonus.
  */
 export function podiumRewards(rank, {
   multiplier = 1,
@@ -338,17 +420,19 @@ export function podiumRewards(rank, {
   payoutsToday = 0,
   boardDiamonds = 0,
   luckBonus = 0,
+  chaos = false,
 } = {}) {
   const r = Math.max(1, Math.min(4, rank | 0)) - 1;
   const m = Math.max(1, multiplier);
   const ts = typeof tableScale === 'number' ? tableScale : tableScaleForSeats(seats);
   const cMult = coupleBonus ? COUPLE_PODIUM_MULT : 1;
   const scale = ts * cMult;
-  const underCap = (payoutsToday | 0) < PODIUM.MAX_DIAMOND_PAYOUTS;
-  const podiumDiamonds = underCap ? Math.round(PODIUM.DIAMONDS[r] * scale) : 0;
-  const isFirstBonus = Boolean(firstMatchToday || firstWinToday);
+  const dMult = chaos ? CHAOS.DIAMOND_MULT : 1;
+  const underCap = chaos || (payoutsToday | 0) < PODIUM.MAX_DIAMOND_PAYOUTS;
+  const podiumDiamonds = underCap ? Math.round(PODIUM.DIAMONDS[r] * scale * dMult) : 0;
+  const isFirstBonus = !chaos && Boolean(firstMatchToday || firstWinToday);
   const dailyBonusDiamonds = underCap && isFirstBonus ? PODIUM.FIRST_MATCH_DIAMONDS : 0;
-  const inBoardDiamonds = underCap ? Math.max(0, boardDiamonds | 0) : 0;
+  const inBoardDiamonds = underCap ? Math.round(Math.max(0, boardDiamonds | 0) * dMult) : 0;
   const diamonds = podiumDiamonds + dailyBonusDiamonds + inBoardDiamonds;
   const baseChest = Array.isArray(PODIUM.CHEST_CHANCE) ? PODIUM.CHEST_CHANCE[r] : 0;
   const chestChance = baseChest > 0
@@ -358,6 +442,7 @@ export function podiumRewards(rank, {
     rank: r + 1,
     tableScale: +ts.toFixed(4),
     coupleBonus: !!coupleBonus,
+    ...(chaos ? { chaos: true } : {}),
     gold: Math.round(PODIUM.GOLD[r] * scale * m),
     berries: Math.round(PODIUM.BERRIES[r] * scale * m),
     diamonds,

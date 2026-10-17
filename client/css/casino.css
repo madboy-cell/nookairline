@@ -1,0 +1,2461 @@
+/* client/css/casino.css — Grand Starlight Casino & Voice Call Systems (Screens 09, 12, 13, 17, 25) */
+/* Style-2 (Tree of Savior × Cookie Run: Kingdom) Grand Starlight Ballroom, Emerald Felt, & Carved Mahogany UI */
+
+/* ------------------------------------------------------------------------- Table Hub Additions */
+.hub-casino-picker {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.hub-casino-picker .hub-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.hub-casino-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------------- Casino Root & Ballroom Backdrops */
+#casino-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  z-index: 1000;
+  background: radial-gradient(circle at 50% 18%, #3c2159 0%, #241238 45%, #12081e 100%);
+  color: #fff8e7;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  font-family: 'Nunito', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+#casino-root[hidden] {
+  display: none !important;
+}
+
+.casino-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.casino-act-alias,
+.roulette-target-alias {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Full-Bleed Palace Ballroom Backdrops */
+.casino-ballroom-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.ballroom-art-img {
+  width: 100%;
+  height: 58%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.roulette-ballroom-bg .ballroom-art-img {
+  height: 54%;
+}
+.ballroom-floor-vignette {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(24, 12, 42, 0.08) 0%,
+    rgba(36, 18, 66, 0.12) 42%,
+    rgba(46, 26, 84, 0.88) 56%,
+    #251545 100%
+  );
+}
+.roulette-ballroom-bg .ballroom-floor-vignette {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 8, 26, 0.05) 0%,
+    rgba(16, 12, 38, 0.18) 38%,
+    rgba(14, 34, 28, 0.92) 52%,
+    #0c2419 100%
+  );
+}
+
+/* ------------------------------------------------------------------------- Top HUD Overlay (Screens 12 & 13) */
+.casino-header {
+  position: relative;
+  z-index: 10;
+  padding: 8px 10px 4px;
+  flex-shrink: 0;
+}
+
+.pokdeng-hud-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.casino-call-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.casino-call-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(20, 22, 34, 0.88);
+  border: 1.5px solid rgba(114, 212, 148, 0.65);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #f4f8ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+.call-phone-ico {
+  font-size: 11px;
+  filter: hue-rotate(85deg);
+}
+.call-gem {
+  color: #56f09f;
+  font-weight: 900;
+}
+.call-phase-sep {
+  opacity: 0.45;
+}
+.casino-phase-text {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #ffe27a;
+  letter-spacing: 0.3px;
+}
+.casino-phase-bar {
+  width: 34px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.casino-phase-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #3fb950);
+  transition: width 0.1s linear;
+}
+
+.casino-leave-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(26, 20, 38, 0.88) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  flex: 0 0 26px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.casino-hud-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.casino-table-plaque {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(24, 24, 38, 0.88);
+  border: 1.5px solid rgba(190, 178, 214, 0.48);
+  border-radius: 11px;
+  padding: 4px 10px 4px 7px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+.plaque-slot-ico {
+  font-size: 17px;
+  line-height: 1;
+}
+.plaque-lines {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.12;
+}
+.casino-round-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #e2d8f0;
+}
+.casino-round-badge small {
+  opacity: 0.75;
+  font-size: 9px;
+}
+.casino-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+
+.casino-currency-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.casino-curr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(22, 22, 36, 0.9);
+  border: 1.5px solid rgba(186, 174, 212, 0.45);
+  border-radius: 999px;
+  padding: 3px 8px 3px 5px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+.casino-curr-pill img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+/* ------------------------------------------------------------------------- Playing Cards (.card & .casino-card) */
+.card,
+.casino-card {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 48px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f2e7 100%);
+  border: 1.5px solid #3a2415;
+  border-radius: 6px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.55), inset 0 1px 0 #fff;
+  font-weight: 900;
+  margin: 0 -2px;
+  user-select: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.casino-cards .casino-card:first-child {
+  transform: rotate(-6deg);
+}
+.casino-cards .casino-card:last-child {
+  transform: rotate(6deg);
+}
+.card.card-red,
+.casino-card.card-red {
+  color: #d62828;
+}
+.card.card-black,
+.casino-card.card-black {
+  color: #1c2128;
+}
+.card-corner {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.card-corner small {
+  font-size: 8px;
+  line-height: 0.9;
+}
+.card-pip {
+  font-size: 19px;
+  line-height: 1;
+  margin-top: 10px;
+}
+.card.is-pok-card,
+.casino-card.is-pok-card {
+  border: 2px solid #eab344;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.85), 0 3px 6px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, #ffffff 0%, #fff4d2 100%);
+}
+.card.card-back,
+.casino-card.card-back {
+  background: linear-gradient(135deg, #8898ff 0%, #61c7ff 50%, #b589ff 100%);
+  border: 2px solid #ffffff;
+  color: #ffffff;
+}
+.casino-card.card-back.is-dealer-glow {
+  box-shadow: 0 0 12px #73e8ff, 0 0 4px #ffffff;
+}
+.casino-card.card-back.is-pink-back {
+  background: linear-gradient(135deg, #ff8da8 0%, #df4b6d 100%);
+  border-color: #fff0f3;
+}
+.card-back-inner {
+  width: 24px;
+  height: 36px;
+  border: 1px dashed rgba(255, 255, 255, 0.75);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------------- Screen 12: Royal Pok-Deng */
+.pokdeng-felt {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  padding: 0 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: visible;
+  background: transparent;
+}
+
+/* Mochi Cat Dealer & Crystal Slipper Shoe (#casino-dealer) */
+.casino-dealer-station {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 6;
+  margin-bottom: -52px;
+  flex-shrink: 0;
+}
+.dealer-mascot-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dealer-name-pill {
+  background: rgba(24, 22, 34, 0.92);
+  border: 1.5px solid rgba(255, 255, 255, 0.38);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  margin-bottom: -6px;
+  transform: translateX(-28px);
+  z-index: 3;
+}
+.dealer-mascot-img {
+  height: clamp(92px, 14.5dvh, 124px);
+  width: auto;
+  aspect-ratio: 184 / 124;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  animation: dealer-bob 3s ease-in-out infinite;
+}
+@keyframes dealer-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+.casino-dealer-bubble {
+  position: absolute;
+  top: -8px;
+  left: calc(50% + 14px);
+  width: 128px;
+  background: #ffffff;
+  color: #23140b;
+  border: 2.5px solid #2b180d;
+  border-radius: 14px 14px 14px 3px;
+  padding: 6px 9px;
+  font-size: 11.5px;
+  font-weight: 900;
+  line-height: 1.18;
+  text-align: center;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
+  z-index: 8;
+}
+.dealer-plaque {
+  margin-top: -16px;
+  transform: translateX(-14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 7;
+}
+.dealer-glow-cards .casino-card {
+  width: 30px;
+  height: 40px;
+  margin: 0 -3px;
+}
+.dealer-ribbon {
+  display: none !important;
+}
+
+/* 3/4 Perspective Curved Emerald-Felt & Carved Golden-Mahogany Oval Table */
+.pokdeng-table-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(256px, 43.5dvh, 364px);
+  flex: 0 1 clamp(256px, 43.5dvh, 364px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: clamp(12px, 2.2dvh, 22px);
+  box-sizing: border-box;
+}
+
+.pokdeng-table-oval {
+  position: relative;
+  width: 92%;
+  height: 70%;
+  min-height: 175px;
+  max-height: 254px;
+  background: radial-gradient(ellipse at 50% 42%, #1d8a64 0%, #14694b 62%, #0d4a34 100%);
+  border: 11px solid #d4963a;
+  outline: 3px solid #3a2415;
+  border-radius: 50% / 48%;
+  box-shadow:
+    0 12px 0 #7a491c,
+    0 15px 0 #3a2415,
+    0 22px 30px rgba(0, 0, 0, 0.72),
+    inset 0 0 0 3px #8a5320,
+    inset 0 6px 20px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  z-index: 2;
+}
+.pokdeng-felt-inner-ring {
+  position: absolute;
+  inset: 10px;
+  border: 1.5px solid rgba(255, 224, 130, 0.42);
+  border-radius: 50% / 48%;
+  pointer-events: none;
+}
+.pokdeng-table-apron {
+  width: 58%;
+  height: clamp(16px, 2.4dvh, 22px);
+  margin-top: -4px;
+  background: linear-gradient(180deg, #985e2b 0%, #6b3d16 100%);
+  border: 2.5px solid #3a2415;
+  border-radius: 0 0 40px 40px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65);
+  z-index: 1;
+}
+
+/* Center Gold Coin Pile, Lightning 2x Medallion & Pot Pill */
+.pokdeng-center-pot {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 5;
+  pointer-events: none;
+}
+.center-pot-visuals {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pot-pile-art {
+  width: 140px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55));
+}
+.pot-mult-badge {
+  position: absolute;
+  bottom: -2px;
+  right: 8px;
+  background: rgba(24, 20, 14, 0.92);
+  color: #ffe27a;
+  border: 1.5px solid #eab344;
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 900;
+}
+.center-pot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(18, 36, 28, 0.92);
+  border: 1.5px solid rgba(234, 179, 68, 0.7);
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+}
+.center-pot-pill img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+.center-pot-pill b {
+  color: #ffffff;
+}
+
+/* 4 Seated Chibis + Armchairs AROUND the Table Perimeter + Cards ON the Felt */
+.casino-seats-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.pokdeng-table-stage .casino-seat {
+  position: absolute;
+  pointer-events: auto;
+}
+
+/* Outer Chibi + Velvet Chair container */
+.casino-seat-character {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.casino-velvet-chair {
+  position: absolute;
+  bottom: 12px;
+  width: 96px;
+  height: 108px;
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+}
+.casino-avatar-wrap {
+  position: relative;
+  width: 120px;
+  height: 128px;
+  z-index: 2;
+  overflow: visible;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.55));
+}
+.casino-avatar-wrap .s2-outfit-rig-thumb {
+  width: 100%;
+  height: 100%;
+}
+.casino-seat-header {
+  position: relative;
+  z-index: 9;
+  margin-top: -14px;
+}
+.casino-seat-name {
+  display: inline-block;
+  background: rgba(20, 18, 30, 0.94);
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  padding: 2px 11px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+}
+
+/* Companion Pets beside foreground chairs */
+.casino-seat-pet {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  z-index: 10;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
+}
+.casino-seat-pet.pet-pos-0 {
+  bottom: 2px;
+  left: -12px;
+}
+.casino-seat-pet.pet-pos-3 {
+  bottom: 2px;
+  right: -10px;
+}
+
+.casino-emote-bubble.heart {
+  position: absolute;
+  top: 4px;
+  right: -2px;
+  width: 34px;
+  height: 30px;
+  background: #ffffff;
+  border: 2px solid #3a2415;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  z-index: 7;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* Seat 1: Upper-Left (Leo) */
+.casino-seat.seat-pos-1 {
+  top: -18px;
+  left: -6px;
+}
+.casino-seat.seat-pos-1 .casino-seat-felt-zone {
+  position: absolute;
+  top: 72px;
+  left: 96px;
+}
+
+/* Seat 2: Upper-Right (Mina) */
+.casino-seat.seat-pos-2 {
+  top: -14px;
+  right: -6px;
+}
+.casino-seat.seat-pos-2 .casino-seat-felt-zone {
+  position: absolute;
+  top: 68px;
+  right: 92px;
+}
+
+/* Seat 0: Lower-Left Hero (Nook / Player) */
+.casino-seat.seat-pos-0 {
+  bottom: 6px;
+  left: -2px;
+  z-index: 8;
+}
+.casino-seat.seat-pos-0 .casino-avatar-wrap {
+  width: 136px;
+  height: 146px;
+}
+.casino-seat.seat-pos-0 .casino-velvet-chair {
+  width: 108px;
+  height: 118px;
+}
+.casino-seat.seat-pos-0 .casino-seat-felt-zone {
+  position: absolute;
+  top: -8px;
+  left: 114px;
+}
+
+/* Seat 3: Lower-Right Couple/Friend (Beam / Neen) */
+.casino-seat.seat-pos-3 {
+  bottom: 6px;
+  right: -2px;
+  z-index: 8;
+}
+.casino-seat.seat-pos-3 .casino-avatar-wrap {
+  width: 134px;
+  height: 144px;
+}
+.casino-seat.seat-pos-3 .casino-velvet-chair {
+  width: 106px;
+  height: 116px;
+}
+.casino-seat.seat-pos-3 .casino-seat-felt-zone {
+  position: absolute;
+  top: -8px;
+  right: 112px;
+}
+
+/* Inner Felt Zone for each seat's cards & score ribbon */
+.casino-seat-felt-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 6;
+}
+.casino-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pokdeng-bust-badge {
+  background: linear-gradient(180deg, #ff9933 0%, #c93b14 100%);
+  color: #ffffff;
+  border: 1.5px solid #ffe49e;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 10.5px;
+  font-weight: 900;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  margin-bottom: -4px;
+  z-index: 5;
+  white-space: nowrap;
+}
+.casino-hand-info {
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffffff;
+  background: rgba(16, 32, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: -4px;
+  z-index: 4;
+  white-space: nowrap;
+}
+.casino-hand-info:empty {
+  display: none;
+}
+.casino-hand-info.is-pok-ribbon {
+  background: linear-gradient(180deg, #ffe066 0%, #d48817 100%);
+  color: #2b1103;
+  border: 1.5px solid #fff6c2;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.65);
+  font-size: 10.5px;
+  padding: 1px 10px;
+}
+.casino-seat-bet {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: #ffe27a;
+  font-weight: 900;
+  background: rgba(12, 26, 18, 0.85);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.mini-coin-ico {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+}
+.casino-settle {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.text-green { color: #56f06f; }
+.text-red { color: #ff6b6b; }
+.text-gold { color: #ffd700; }
+
+/* ------------------------------------------------------------------------- Screen 12 Bottom Deck */
+.pokdeng-footer {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(180deg, rgba(34, 34, 52, 0.96) 0%, rgba(20, 20, 32, 0.99) 100%);
+  border-top: 2px solid rgba(180, 168, 210, 0.38);
+  border-radius: 22px 22px 0 0;
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.65);
+}
+
+.pokdeng-chip-rack {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pokdeng-chip-pill {
+  position: relative;
+  flex: 1;
+  height: 34px !important;
+  width: auto !important;
+  border-radius: 999px !important;
+  background: rgba(16, 18, 28, 0.92) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 10px 0 3px !important;
+  gap: 5px;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 12px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5) !important;
+}
+.pokdeng-chip-pill.chip-max {
+  color: #ffb830;
+}
+.pokdeng-chip-pill.selected {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.65), 0 3px 6px rgba(0, 0, 0, 0.6) !important;
+  transform: translateY(-2px);
+}
+.chip-art-ico {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.pokdeng-chip-pill .chip-inner {
+  border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+.pokdeng-info-btn {
+  width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  flex: 0 0 30px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  background: linear-gradient(180deg, #56617a 0%, #32394a 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  font-style: italic;
+}
+
+.pokdeng-candy-tray {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 8px;
+}
+.pokdeng-candy-tray .casino-btn {
+  min-height: 54px;
+  border-radius: 16px;
+  padding: 4px 8px;
+}
+.btn-art-ico {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+.btn-crown-ico {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+.pokdeng-candy-tray .btn-lbl {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.04;
+  text-align: center;
+}
+.pokdeng-candy-tray .btn-lbl b {
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+.pokdeng-candy-tray .btn-lbl span,
+.pokdeng-candy-tray .btn-lbl small {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* ------------------------------------------------------------------------- Screen 13: Zeus Lightning Roulette */
+.roulette-hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  padding: clamp(4px, 0.8dvh, 8px) 10px 2px;
+}
+.roulette-hud-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+}
+.roulette-call-pill {
+  padding: 2px 10px;
+  font-size: 10px;
+}
+.roulette-hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2.5px;
+  position: relative;
+}
+.roulette-hud-right .casino-leave-btn {
+  position: static;
+  transform: none;
+  margin-top: 1px;
+}
+
+/* Upper 2.5D Circular Roulette Table Diorama (.roulette-wheel-area) */
+.roulette-wheel-area {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px 2px;
+  flex: 0 1 27.5dvh;
+  min-height: 126px;
+  max-height: 224px;
+  box-sizing: border-box;
+}
+
+/* Horizontal Wrap Lightning Multiplier Banners (#roulette-strikes) */
+.roulette-strikes {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  z-index: 6;
+  margin-bottom: 2px;
+  max-width: 100%;
+}
+.roulette-strike-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1.5px 9px;
+  border-radius: 999px;
+  font-size: clamp(9.5px, 1.3dvh, 11px);
+  font-weight: 900;
+  color: #ffffff;
+  background: linear-gradient(180deg, rgba(44, 28, 12, 0.94) 0%, rgba(22, 14, 6, 0.96) 100%);
+  border: 1.5px solid #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.65);
+  white-space: nowrap;
+}
+.roulette-strike-item.strike-red .strike-num { color: #ff5b57; }
+.roulette-strike-item.strike-gold .strike-num { color: #ffe066; }
+.roulette-strike-item.strike-green {
+  border-color: #56f09f;
+  box-shadow: 0 0 10px rgba(86, 240, 159, 0.55);
+}
+.roulette-strike-item.strike-green .strike-num { color: #56f09f; }
+
+/* Floating Lightning Win Plaque */
+.roulette-lightning-win-plaque {
+  position: absolute;
+  top: clamp(26px, 3.8dvh, 52px);
+  left: 8px;
+  background: linear-gradient(180deg, rgba(42, 30, 14, 0.95) 0%, rgba(22, 14, 6, 0.98) 100%);
+  border: 2px solid #ffd700;
+  border-radius: 10px;
+  padding: 2.5px 8px;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.65);
+  z-index: 8;
+  line-height: 1.12;
+}
+.lwin-top {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: clamp(9.5px, 1.35dvh, 11px);
+  font-weight: 900;
+  color: #ffe885;
+}
+.lwin-top img {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+.lwin-sub {
+  font-size: clamp(8.5px, 1.2dvh, 10px);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+/* 2.5D Circular Emerald-Felt & Gold Roulette Table Stage */
+.roulette-circular-stage {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  height: clamp(114px, 21dvh, 200px);
+  min-height: 112px;
+  max-height: 204px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.roulette-dealer-wrap {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 42%;
+  z-index: 4;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.roulette-dealer-img {
+  height: 100%;
+  width: auto;
+  aspect-ratio: 96 / 84;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
+}
+
+.roulette-circular-table {
+  position: relative;
+  width: min(86%, 360px);
+  height: 75%;
+  min-height: 86px;
+  max-height: 156px;
+  background: radial-gradient(ellipse at 50% 42%, #1d7e52 0%, #115234 68%, #0a3621 100%);
+  border: clamp(6px, 1dvh, 9px) solid #8a4f22;
+  outline: 2.5px solid #eab344;
+  border-radius: 50%;
+  box-shadow:
+    0 9px 0 #4d290e,
+    0 14px 20px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 2px #eab344,
+    inset 0 5px 12px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 3;
+  box-sizing: border-box;
+}
+.roulette-table-felt-ring {
+  position: absolute;
+  inset: 7px;
+  border: 1.5px solid rgba(255, 224, 130, 0.48);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.roulette-wheel-wrap {
+  position: relative;
+  margin-top: -12%;
+  height: 84%;
+  width: auto;
+  aspect-ratio: 196 / 126;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+.roulette-wheel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75));
+}
+.roulette-wheel-wrap.is-spinning .roulette-wheel-img {
+  animation: wheel-spin-pulse 0.7s linear infinite;
+}
+@keyframes wheel-spin-pulse {
+  0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 12px #ffd700); }
+  50% { transform: scale(1.04) rotate(4deg); filter: drop-shadow(0 0 18px #fff2a6); }
+  100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 12px #ffd700); }
+}
+
+.roulette-felt-chips.left {
+  position: absolute;
+  bottom: 10%;
+  left: 8%;
+  height: 38%;
+  width: auto;
+  object-fit: contain;
+  z-index: 6;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
+}
+.roulette-felt-callouts {
+  position: absolute;
+  bottom: 6%;
+  right: 6%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  z-index: 7;
+}
+.felt-callout-pill {
+  font-size: clamp(8px, 1.15dvh, 9.5px);
+  font-weight: 900;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+}
+.felt-callout-pill.gold {
+  background: rgba(24, 22, 16, 0.92);
+  border: 1.5px solid #ffd700;
+  color: #ffe885;
+}
+.felt-callout-pill.red {
+  background: linear-gradient(180deg, #b82623 0%, #6e1210 100%);
+  border: 1.5px solid #ff8b88;
+}
+
+/* 4 Seated Chibis Around the Circular Roulette Table */
+.roulette-table-seat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 6;
+  height: 58%;
+}
+.r-seat-chair {
+  position: absolute;
+  bottom: 4%;
+  height: 80%;
+  width: auto;
+  object-fit: contain;
+  z-index: 1;
+}
+.r-seat-avatar {
+  position: relative;
+  height: 100%;
+  width: auto;
+  aspect-ratio: 112 / 122;
+  z-index: 2;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+.r-seat-avatar .s2-outfit-rig-thumb {
+  width: 100%;
+  height: 100%;
+}
+.r-seat-pet {
+  position: absolute;
+  bottom: -2px;
+  height: 46%;
+  width: auto;
+  object-fit: contain;
+  z-index: 4;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+}
+.r-seat-name {
+  display: none;
+}
+
+/* Seat 0: Left Foreground (Nook + Nyx Dragon) */
+.roulette-table-seat.r-seat-0 {
+  bottom: 2px;
+  left: -2px;
+  z-index: 7;
+}
+.roulette-table-seat.r-seat-0 .r-seat-pet {
+  left: -6px;
+}
+
+/* Seat 3: Right Foreground (Elsa/Beam + Capybara) */
+.roulette-table-seat.r-seat-3 {
+  bottom: 2px;
+  right: -2px;
+  z-index: 7;
+}
+.roulette-table-seat.r-seat-3 .r-seat-pet {
+  right: 12px;
+  bottom: 18%;
+  height: 36%;
+}
+
+/* Seat 2: Upper-Right Cheering Chibi */
+.roulette-table-seat.r-seat-2 {
+  top: 6%;
+  right: 3%;
+  z-index: 2;
+  transform: scale(0.78);
+}
+.r-seat-emotes {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 6;
+}
+.r-emote {
+  width: 28px;
+  height: 24px;
+  background: #ffffff;
+  border: 2px solid #3a2415;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* Seat 1: Upper-Left */
+.roulette-table-seat.r-seat-1 {
+  top: 8%;
+  left: 3%;
+  z-index: 2;
+  transform: scale(0.74);
+  opacity: 0.88;
+}
+
+.roulette-winning-orb {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 2px solid #ffd700;
+  font-size: clamp(10px, 1.35dvh, 11.5px);
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.85), 0 0 12px rgba(255, 215, 0, 0.7);
+  white-space: nowrap;
+  z-index: 15;
+}
+.roulette-winning-orb.red { background: #c92522; color: #fff; }
+.roulette-winning-orb.black { background: #1c2128; color: #fff; }
+.roulette-winning-orb.green { background: #1f7a34; color: #fff; }
+
+/* Middle Spin History & Countdown Strip (.roulette-top-strip) */
+.roulette-top-strip {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  padding: clamp(2px, 0.45dvh, 4px) 8px;
+  flex-shrink: 0;
+}
+.roulette-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(20, 18, 28, 0.94);
+  border: 1.5px solid #d49a2a;
+  border-radius: 999px;
+  padding: 2.5px 9px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.65);
+}
+.roulette-history::-webkit-scrollbar {
+  display: none;
+}
+.roulette-hist-badge {
+  font-size: clamp(8.5px, 1.25dvh, 9.5px);
+  font-weight: 800;
+  color: #e8e2d5;
+  white-space: nowrap;
+}
+.roulette-hist-badge.red b { color: #ff6b6b; }
+.roulette-hist-badge.green b { color: #56f09f; }
+.roulette-hist-badge.black b { color: #ffffff; }
+
+.roulette-strip-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.roulette-countdown {
+  font-size: clamp(9px, 1.3dvh, 10px);
+  font-weight: 900;
+  color: #ffe27a;
+  background: rgba(24, 22, 28, 0.94);
+  border: 1.5px solid #d49a2a;
+  border-radius: 999px;
+  padding: 2.5px 9px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.65);
+}
+.strip-mini-btn {
+  flex: 0 0 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: 10px !important;
+  background: rgba(24, 22, 28, 0.92) !important;
+  border: 1px solid rgba(212, 154, 42, 0.65) !important;
+}
+
+/* Perspective Horizontal European Roulette Betting Felt (#roulette-grid) */
+.roulette-felt {
+  position: relative;
+  z-index: 4;
+  flex: 1 1 38dvh;
+  min-height: 158px;
+  padding: clamp(2px, 0.45dvh, 4px) 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.roulette-grid-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(18px, 0.84fr) minmax(66px, 3.1fr) minmax(20px, 0.95fr) minmax(20px, 0.95fr);
+  gap: clamp(2px, 0.45dvh, 4px);
+  background: radial-gradient(ellipse at 50% 40%, #1b734b 0%, #0e452b 100%);
+  border: clamp(3.5px, 0.65dvh, 5px) solid #8a4f22;
+  outline: 2px solid #eab344;
+  border-radius: 14px;
+  padding: clamp(4px, 0.75dvh, 7px) clamp(5px, 1.3vw, 8px);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 2px rgba(234, 179, 68, 0.65),
+    inset 0 4px 12px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+
+.roulette-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: clamp(9.5px, 1.38dvh, 11.5px);
+  user-select: none;
+  min-height: 0;
+  height: 100%;
+  white-space: nowrap;
+  transition: filter 0.1s, transform 0.08s;
+  box-sizing: border-box;
+}
+.roulette-cell:active {
+  filter: brightness(1.25);
+}
+
+/* Top 0 Starlight Crown Banner */
+.roulette-cell.zero-banner {
+  background: linear-gradient(180deg, rgba(28, 108, 66, 0.92) 0%, rgba(16, 68, 40, 0.96) 100%);
+  border: 1.5px solid #eab344;
+  color: #ffe885;
+  width: 86%;
+  margin: 0 auto;
+  min-height: 0;
+  height: 100%;
+  border-radius: 8px 8px 3px 3px;
+  font-size: clamp(9.5px, 1.4dvh, 11.5px);
+}
+
+/* Horizontal 12×3 Board Body */
+.roulette-board-body {
+  display: grid;
+  grid-template-columns: clamp(22px, 6vw, 28px) 1fr clamp(26px, 7vw, 32px);
+  gap: 2px;
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+.roulette-cell.zero-wing {
+  background: linear-gradient(180deg, #1e7a48 0%, #125230 100%);
+  border: 1.5px solid #eab344;
+  color: #ffffff;
+  border-radius: 10px 3px 3px 10px;
+  font-size: clamp(10px, 1.4dvh, 11.5px);
+  min-height: 0;
+  height: 100%;
+}
+.roulette-numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  min-height: 0;
+  height: 100%;
+}
+.roulette-cols-col {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  min-height: 0;
+  height: 100%;
+}
+
+.roulette-cell.num-cell {
+  min-height: 0;
+  height: 100%;
+  font-size: clamp(9.5px, 1.38dvh, 11.5px);
+  border-radius: 3px;
+  border: 1px solid rgba(234, 179, 68, 0.62);
+}
+.roulette-cell.num-cell.red {
+  background: linear-gradient(180deg, #c9332b 0%, #8f1c16 100%);
+  color: #ffffff;
+}
+.roulette-cell.num-cell.black {
+  background: linear-gradient(180deg, #242a32 0%, #12161b 100%);
+  color: #f0f6fc;
+}
+.roulette-cell.struck {
+  border: 1.5px solid #ffd700 !important;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.9), inset 0 0 6px rgba(255, 215, 0, 0.55);
+  color: #fff8c4 !important;
+}
+@keyframes winning-cell-spotlight-kf {
+  0%, 100% {
+    outline: 2px solid #ffffff;
+    box-shadow: 0 0 12px #ffd700, inset 0 0 8px rgba(255, 224, 102, 0.75);
+    filter: brightness(1.18);
+  }
+  50% {
+    outline: 2.5px solid #ffe578;
+    box-shadow: 0 0 20px #ffffff, 0 0 14px #ffd700, inset 0 0 12px rgba(255, 255, 255, 0.85);
+    filter: brightness(1.36);
+  }
+}
+.roulette-cell.winning-cell {
+  outline: 2px solid #ffffff;
+  box-shadow: 0 0 14px #ffd700, inset 0 0 8px rgba(255, 224, 102, 0.75);
+  z-index: 5;
+  animation: winning-cell-spotlight-kf 0.9s ease-in-out infinite;
+}
+
+.roulette-dozens-row {
+  display: grid;
+  grid-template-columns: 0.58fr 1fr 1fr 1fr 0.58fr;
+  gap: 3px;
+  min-height: 0;
+  height: 100%;
+}
+.roulette-outside-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  min-height: 0;
+  height: 100%;
+}
+.roulette-cell.outside {
+  background: rgba(14, 54, 34, 0.92);
+  border: 1.5px solid rgba(229, 178, 71, 0.72);
+  color: #ffe9a8;
+  font-size: clamp(9px, 1.3dvh, 10.5px);
+  min-height: 0;
+  height: 100%;
+}
+.roulette-cell.outside.is-lightning-dozen {
+  color: #ffe066;
+  border-color: #ffd700;
+}
+
+.bet-chip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 4;
+}
+.roulette-cell.outside .bet-chip {
+  left: auto;
+  right: 4px;
+  width: auto;
+}
+.bet-chip img {
+  width: clamp(17px, 2.5dvh, 23px);
+  height: clamp(17px, 2.5dvh, 23px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.75));
+}
+.bet-chip b {
+  position: absolute;
+  font-size: 7.5px;
+  color: #fff;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000;
+}
+
+/* ------------------------------------------------------------------------- Screen 13 Bottom Deck */
+.roulette-footer {
+  position: relative;
+  z-index: 10;
+  padding: clamp(4px, 0.7dvh, 6px) 8px clamp(5px, 0.85dvh, 8px);
+  background: linear-gradient(180deg, rgba(16, 62, 40, 0.96) 0%, rgba(9, 36, 22, 0.99) 100%);
+  border-top: 2px solid #d49a2a;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3px, 0.55dvh, 6px);
+  flex-shrink: 0;
+}
+
+.roulette-chip-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.chip-rack-arrow {
+  color: #f0b840;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 0 2px;
+}
+.roulette-pill-rack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  flex: 1;
+}
+.roulette-chip-pill {
+  position: relative;
+  height: clamp(28px, 4.2dvh, 36px) !important;
+  width: 100% !important;
+  border-radius: 999px !important;
+  border: 2px solid rgba(255, 255, 255, 0.75) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  padding: 0 6px !important;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(11px, 1.55dvh, 12.5px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55), 0 4px 8px rgba(0, 0, 0, 0.55) !important;
+}
+.roulette-chip-pill.pill-green {
+  background: linear-gradient(180deg, #32a866 0%, #196b3d 100%) !important;
+}
+.roulette-chip-pill.pill-blue {
+  background: linear-gradient(180deg, #4b61b8 0%, #273578 100%) !important;
+}
+.roulette-chip-pill.pill-gold {
+  background: linear-gradient(180deg, #f2be42 0%, #b57314 100%) !important;
+}
+.roulette-chip-pill.pill-red {
+  background: linear-gradient(180deg, #d94636 0%, #8f1d14 100%) !important;
+}
+.roulette-chip-pill.selected {
+  transform: translateY(-2px);
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.85), 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+}
+.r-pill-ico {
+  width: clamp(14px, 2.2dvh, 18px);
+  height: clamp(14px, 2.2dvh, 18px);
+  object-fit: contain;
+}
+.roulette-chip-pill .chip-inner {
+  border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Chunky 3D Candy Action Buttons */
+.casino-action-tray {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.roulette-action-tray {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.18fr;
+  gap: 6px;
+}
+.casino-btn {
+  flex: 1;
+  min-height: clamp(36px, 5.2dvh, 44px);
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  font-weight: 900;
+  font-size: clamp(11px, 1.55dvh, 12px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 3px 8px;
+  text-shadow: 0 2px 0 #1f1209, 0 -1px 0 #1f1209, 1.5px 0 0 #1f1209, -1.5px 0 0 #1f1209, 0 3px 5px rgba(0, 0, 0, 0.65);
+  transition: transform 0.08s, filter 0.1s;
+  box-sizing: border-box;
+}
+.roulette-action-tray .casino-btn {
+  min-height: clamp(34px, 5dvh, 42px);
+  font-size: clamp(11px, 1.5dvh, 12px);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.roulette-action-tray .casino-btn.slate {
+  background: linear-gradient(180deg, #4b7069 0%, #294540 100%);
+  border-color: rgba(182, 224, 214, 0.65);
+  box-shadow: 0 3px 0 #152623, 0 4px 8px rgba(0, 0, 0, 0.55);
+}
+.roulette-action-tray .casino-btn.cheer-wide .btn-lbl {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  text-align: center;
+}
+.roulette-action-tray .casino-btn.cheer-wide .btn-lbl b {
+  font-size: clamp(11px, 1.5dvh, 12px);
+}
+.roulette-action-tray .casino-btn.cheer-wide .btn-lbl small {
+  font-size: clamp(9px, 1.25dvh, 10px);
+}
+
+.casino-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  filter: brightness(0.95);
+}
+.casino-btn:disabled {
+  opacity: 0.88;
+  cursor: pointer;
+}
+
+.casino-btn.green {
+  background: linear-gradient(180deg, #62e878 0%, #2ca844 55%, #1d7d30 100%);
+  border-color: #b4ffbe;
+  box-shadow: 0 4px 0 #0e4a1a, 0 5px 10px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+.casino-btn.gold {
+  background: linear-gradient(180deg, #ffe578 0%, #eba324 55%, #c4760c 100%);
+  border-color: #fff6c4;
+  color: #ffffff;
+  text-shadow: 0 2px 0 #3a1a04, 0 -1px 0 #3a1a04, 1.5px 0 0 #3a1a04, -1.5px 0 0 #3a1a04, 0 3px 5px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.68), 0 4px 0 #784204, 0 5px 10px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.65);
+}
+.casino-btn.pink {
+  background: linear-gradient(180deg, #ff8ac2 0%, #e0488e 55%, #b02466 100%);
+  border-color: #ffc4e1;
+  box-shadow: 0 4px 0 #630d35, 0 5px 10px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+.casino-btn.pink.is-cheering {
+  outline: 2px solid #ffd700;
+  box-shadow: 0 0 12px #ffd700, 0 4px 0 #630d35;
+}
+.casino-btn.plain {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f0f6fc;
+}
+
+/* ------------------------------------------------------------------------- Voice Call UI */
+#incoming-call-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 440px;
+  z-index: 9999;
+  background: rgba(22, 27, 34, 0.98);
+  border: 2px solid #3fb950;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #f0f6fc;
+  box-sizing: border-box;
+  animation: slide-down 0.2s ease-out;
+}
+#incoming-call-banner[hidden] {
+  display: none !important;
+}
+@keyframes slide-down {
+  from { transform: translate(-50%, -20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.incoming-call-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.incoming-call-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3fb950;
+}
+.incoming-call-sub {
+  font-size: 11px;
+  color: #ffd700;
+}
+.incoming-call-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.incoming-call-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.incoming-call-btn.accept { background: #238636; color: #fff; }
+.incoming-call-btn.decline { background: #da3633; color: #fff; }
+
+#voice-call-pill {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9990;
+  background: rgba(22, 27, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f6fc;
+  transition: border-color 0.2s;
+}
+#voice-call-pill[hidden] {
+  display: none !important;
+}
+#voice-call-pill[data-speaking="local"],
+#voice-call-pill[data-speaking="both"] {
+  border-color: #3fb950;
+  box-shadow: 0 0 8px rgba(63, 185, 80, 0.6);
+}
+#voice-call-pill[data-speaking="remote"] {
+  border-color: #58a6ff;
+  box-shadow: 0 0 8px rgba(88, 166, 255, 0.6);
+}
+
+.voice-call-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.voice-call-reward {
+  color: #ffd700;
+}
+.voice-call-actions {
+  display: flex;
+  gap: 4px;
+}
+.voice-pill-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.voice-pill-btn.hangup {
+  background: #da3633;
+}
+
+/* ------------------------------------------------------------------------- Pok-Deng Phase Prompt & Countdown Banner */
+.pokdeng-phase-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px 7px;
+  margin-bottom: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(28, 18, 42, 0.94) 0%, rgba(16, 10, 26, 0.96) 100%);
+  border: 2px solid #e6b84c;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  color: #fffdf5;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.pokdeng-phase-banner.phase-betting {
+  border-color: #ffd700;
+  background: linear-gradient(180deg, rgba(44, 28, 12, 0.95) 0%, rgba(26, 16, 6, 0.97) 100%);
+}
+.pokdeng-phase-banner.is-my-turn {
+  border-color: #56f07c;
+  background: linear-gradient(180deg, rgba(16, 52, 30, 0.96) 0%, rgba(10, 32, 18, 0.98) 100%);
+  box-shadow: 0 0 14px rgba(86, 240, 124, 0.45), 0 3px 10px rgba(0, 0, 0, 0.6);
+}
+.pokdeng-countdown-pill {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #ffdf6b 0%, #d99316 100%);
+  color: #2b1704;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid #3a2415;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+.pokdeng-phase-prompt {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff8e6;
+}
+.pokdeng-phase-prompt b {
+  color: #ffe373;
+}
+.pokdeng-banner-bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 2px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pokdeng-banner-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #56f07c 0%, #ffd700 60%, #ff6b6b 100%);
+  transition: width 0.2s linear;
+}
+.pokdeng-deal-fast-btn {
+  padding: 0 11px !important;
+  height: 34px !important;
+  width: auto !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #ffe066 0%, #e09112 100%) !important;
+  border: 2px solid #3a2415 !important;
+  color: #2b1604 !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.3px;
+  -webkit-text-stroke: 0 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 3px 0 #7a4805, 0 4px 8px rgba(0, 0, 0, 0.45) !important;
+  white-space: nowrap;
+}
+.pokdeng-deal-fast-btn span {
+  -webkit-text-stroke: 0 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  color: #2b1604 !important;
+}
+.pokdeng-deal-fast-btn:disabled {
+  opacity: 0.45;
+  filter: grayscale(0.4);
+}
+@keyframes casino-action-pulse {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-2px) scale(1.03); filter: brightness(1.12); }
+}
+.candy-btn.pulse-action {
+  animation: casino-action-pulse 1.1s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------------- Persistent Stage & FX Overlay Layer */
+.casino-stage-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.casino-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 95;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------------- Pok-Deng Mochi 3D Flying Card Deal & HIT Animations */
+.casino-card.is-awaiting-deal {
+  opacity: 0 !important;
+  transform: scale(0.72) !important;
+}
+@keyframes card-land-pop-kf {
+  0% { transform: scale(1.26) translateY(-5px); filter: brightness(1.3) drop-shadow(0 0 12px rgba(255, 224, 102, 0.9)); }
+  60% { transform: scale(0.95) translateY(1px); }
+  100% { transform: scale(1) translateY(0); filter: brightness(1); }
+}
+.casino-card.card-landed-pop {
+  animation: card-land-pop-kf 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.casino-card.hit-card-landed-glow {
+  box-shadow: 0 0 16px rgba(86, 240, 124, 0.9), 0 0 6px #ffd700, 0 3px 6px rgba(0, 0, 0, 0.65) !important;
+}
+
+@keyframes dealer-paw-throw-kf {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  30% { transform: translateY(-6px) scale(1.06, 0.96) rotate(-5deg); filter: drop-shadow(0 0 14px rgba(255, 230, 128, 0.9)); }
+  65% { transform: translateY(2px) scale(0.97, 1.04) rotate(4deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+.dealer-mascot-img.dealer-paw-throw {
+  animation: dealer-paw-throw-kf 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes shoe-burst-kf {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
+}
+.shoe-deal-burst {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #8ce8ff 45%, rgba(255, 215, 0, 0) 72%);
+  box-shadow: 0 0 14px #8ce8ff, 0 0 24px #ffd700;
+  animation: shoe-burst-kf 0.38s ease-out forwards;
+  pointer-events: none;
+}
+
+.pokdeng-flying-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 46px;
+  perspective: 500px;
+  will-change: transform;
+  pointer-events: none;
+  z-index: 96;
+}
+.pokdeng-flying-card.is-hit-flight {
+  width: 38px;
+  height: 52px;
+  filter: drop-shadow(0 0 12px rgba(255, 224, 102, 0.95));
+}
+.flying-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.flying-card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  border: 2px solid #3a2415;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+.flying-card-back {
+  background: linear-gradient(135deg, #ff9ebb 0%, #e05288 100%);
+  border-color: #fff6d6;
+  color: #fffdf7;
+  font-size: 16px;
+}
+.flying-card-front {
+  background: linear-gradient(180deg, #fffdf9 0%, #f5ebd6 100%);
+  transform: rotateY(180deg);
+  padding: 2px 3px;
+  justify-content: space-between;
+}
+.flying-card-front.card-red {
+  color: #d62828;
+}
+.flying-card-front.card-black {
+  color: #1f242d;
+}
+.flying-card-front .card-corner {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+.flying-card-front .card-pip {
+  font-size: 15px;
+  line-height: 1;
+}
+
+@keyframes sparkle-fade-kf {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.95; }
+  100% { transform: translate(-50%, -50%) scale(0.15); opacity: 0; }
+}
+.flying-card-sparkle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #ffe066 60%, rgba(255, 215, 0, 0) 100%);
+  box-shadow: 0 0 8px #ffd700;
+  animation: sparkle-fade-kf 0.35s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes action-callout-float-kf {
+  0% { transform: translate(-50%, 6px) scale(0.65); opacity: 0; }
+  22% { transform: translate(-50%, -6px) scale(1.12); opacity: 1; }
+  80% { transform: translate(-50%, -18px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -28px) scale(0.9); opacity: 0; }
+}
+.pokdeng-action-callout {
+  position: absolute;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #ffffff;
+  border: 2px solid #3a2415;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65);
+  text-shadow: 0 1.5px 0 #1f1209;
+  white-space: nowrap;
+  z-index: 98;
+  animation: action-callout-float-kf 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.pokdeng-action-callout.is-hit {
+  background: linear-gradient(180deg, #56f07c 0%, #1e8738 100%);
+  border-color: #d4ffdf;
+}
+.pokdeng-action-callout.is-stay {
+  background: linear-gradient(180deg, #ffe066 0%, #c97a10 100%);
+  border-color: #fff6c4;
+}
+
+.casino-flying-coin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 8px #ffd700);
+  pointer-events: none;
+  z-index: 99;
+}
+
+/* ------------------------------------------------------------------------- Roulette Player Bet Banner & Fast-Spin Button */
+@keyframes roulette-bet-pulse-kf {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.45), 0 3px 10px rgba(0, 0, 0, 0.55); border-color: #ffd700; }
+  50% { box-shadow: 0 0 18px rgba(255, 224, 102, 0.95), 0 3px 12px rgba(0, 0, 0, 0.7); border-color: #ffffff; }
+}
+.roulette-phase-banner {
+  margin-bottom: 2px;
+}
+.roulette-phase-banner.needs-bet-pulse {
+  animation: roulette-bet-pulse-kf 1.35s ease-in-out infinite;
+}
+.roulette-grid-container.needs-bet-glow {
+  box-shadow:
+    0 0 16px rgba(255, 215, 0, 0.48),
+    0 8px 18px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 2px rgba(255, 224, 102, 0.85);
+}
+.roulette-spin-fast-btn {
+  flex: 0 0 auto !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+}
+
+/* Compact 3-card Pok-Deng hand fan so Seat 0 and Seat 3 never touch */
+.casino-seat .casino-cards .casino-card:nth-child(3) {
+  margin-left: -8px;
+}
+
+/* ------------------------------------------------------------------------- Roulette Monopoly-Style Camera Zoom & 60fps Ivory Ball Physics */
+#casino-roulette .roulette-wheel-area,
+#casino-roulette .roulette-circular-stage,
+#casino-roulette .roulette-circular-table,
+#casino-roulette .roulette-wheel-wrap,
+#casino-roulette .roulette-table-seat,
+#casino-roulette .roulette-top-strip,
+#casino-roulette .roulette-felt,
+#casino-roulette .roulette-felt-callouts,
+#casino-roulette .roulette-felt-chips,
+#casino-roulette .roulette-lightning-win-plaque {
+  transition:
+    transform 0.82s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+#casino-roulette.is-spin-zoom .roulette-wheel-area {
+  z-index: 30;
+}
+#casino-roulette.is-spin-zoom .roulette-circular-stage {
+  transform: translateY(44px) scale(1.36);
+  z-index: 30;
+}
+#casino-roulette.is-spin-zoom .roulette-wheel-wrap {
+  transform: scale(1.18);
+}
+#casino-roulette.is-spin-zoom .roulette-felt-callouts,
+#casino-roulette.is-spin-zoom .roulette-felt-chips,
+#casino-roulette.is-spin-zoom .roulette-lightning-win-plaque {
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+}
+#casino-roulette.is-spin-zoom .roulette-table-seat.r-seat-0 {
+  transform: translateX(-22px) translateY(8px) scale(0.9);
+  opacity: 0.82;
+}
+#casino-roulette.is-spin-zoom .roulette-table-seat.r-seat-3 {
+  transform: translateX(22px) translateY(8px) scale(0.9);
+  opacity: 0.82;
+}
+#casino-roulette.is-spin-zoom .roulette-table-seat.r-seat-1,
+#casino-roulette.is-spin-zoom .roulette-table-seat.r-seat-2 {
+  opacity: 0.68;
+}
+#casino-roulette.is-spin-zoom .roulette-top-strip {
+  transform: translateY(58px) scale(0.94);
+  opacity: 0.28;
+}
+#casino-roulette.is-spin-zoom .roulette-felt {
+  transform: translateY(68px) scale(0.9);
+  opacity: 0.32;
+  filter: saturate(0.75) brightness(0.75);
+  pointer-events: none;
+}
+
+.roulette-wheel-rotor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+.roulette-inner-rotor-ring {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 55%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(209, 44, 38, 0.72) 0deg 9.7deg,
+    rgba(24, 28, 36, 0.78) 9.7deg 19.4deg,
+    rgba(255, 215, 0, 0.55) 19.4deg 20.4deg
+  );
+  border: 2px solid rgba(255, 224, 115, 0.85);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.55), inset 0 0 10px rgba(0, 0, 0, 0.75);
+  transform: translate(-50%, -50%) scaleY(0.45);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.35s ease;
+}
+.roulette-wheel-wrap.is-spinning .roulette-inner-rotor-ring {
+  opacity: 0.72;
+}
+.roulette-wheel-wrap .roulette-wheel-img {
+  position: relative;
+  z-index: 2;
+}
+.roulette-wheel-wrap.is-spinning .roulette-wheel-img {
+  animation: none !important;
+  filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.85)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.8));
+}
+
+.roulette-ball-track {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+.roulette-ball {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #ffffff 0%, #fffbe8 45%, #d8ccb8 82%, #8c7b65 100%);
+  border: 1.5px solid #3a2415;
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.85),
+    0 0 10px rgba(255, 255, 255, 0.95),
+    0 0 16px rgba(255, 224, 115, 0.85);
+  will-change: transform;
+  z-index: 11;
+}
+.roulette-ball .ball-shine {
+  position: absolute;
+  top: 2px;
+  left: 2.5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.roulette-ball-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 224, 115, 0.55) 55%, rgba(255, 215, 0, 0) 100%);
+  filter: blur(1.5px);
+  will-change: transform, opacity;
+  z-index: 10;
+}
+.roulette-pocket-highlight {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 14px #ffd700, inset 0 0 8px #ffffff;
+  z-index: 9;
+}
+.roulette-pocket-highlight.red { background: rgba(217, 54, 44, 0.78); }
+.roulette-pocket-highlight.black { background: rgba(28, 34, 44, 0.85); }
+.roulette-pocket-highlight.green { background: rgba(34, 168, 76, 0.82); }
+
+@keyframes ball-shockwave-kf {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+}
+.roulette-ball-shockwave {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid #ffe578;
+  box-shadow: 0 0 14px #ffd700;
+  pointer-events: none;
+  z-index: 12;
+}
+.roulette-ball-shockwave.is-active {
+  animation: ball-shockwave-kf 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.roulette-spin-float-pill {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2.5px 11px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(28, 18, 44, 0.96) 0%, rgba(14, 9, 24, 0.98) 100%);
+  border: 1.5px solid #ffd700;
+  color: #fff6c4;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 215, 0, 0.5);
+  z-index: 14;
+}
+.roulette-spin-float-pill.is-landed {
+  background: linear-gradient(180deg, #228b46 0%, #125227 100%);
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(86, 240, 124, 0.9), 0 4px 10px rgba(0, 0, 0, 0.85);
+}
+
+/* ------------------------------------------------------------------------- Crystal-Clear Round Result Showcase Banners (Roulette & Pok-Deng) */
+@keyframes result-showcase-pop-kf {
+  0% { transform: translate(-50%, 8px) scale(0.82); opacity: 0; }
+  65% { transform: translate(-50%, -2px) scale(1.03); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+.casino-result-showcase {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(24, 16, 40, 0.97) 0%, rgba(12, 8, 22, 0.99) 100%);
+  border: 2.5px solid #ffd700;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.88),
+    0 0 22px rgba(255, 215, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  animation: result-showcase-pop-kf 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  max-width: 94%;
+  box-sizing: border-box;
+}
+.casino-result-showcase.is-win {
+  border-color: #56f07c;
+  background: linear-gradient(180deg, rgba(16, 58, 34, 0.97) 0%, rgba(8, 32, 18, 0.99) 100%);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.88),
+    0 0 26px rgba(86, 240, 124, 0.8),
+    0 0 12px #ffd700;
+}
+.casino-result-showcase.is-lose {
+  border-color: #ff8b88;
+}
+
+/* Roulette Result Showcase Banner */
+.roulette-result-showcase {
+  bottom: 2px;
+  padding: 5px 12px 5px 7px;
+}
+.roulette-result-medallion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(46px, 7.2dvh, 56px);
+  height: clamp(42px, 6.6dvh, 52px);
+  padding: 2px 6px;
+  border-radius: 12px;
+  border: 2px solid #ffd700;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+  line-height: 1.05;
+}
+.roulette-result-medallion.red {
+  background: linear-gradient(180deg, #e0322b 0%, #8f1612 100%);
+  color: #ffffff;
+}
+.roulette-result-medallion.black {
+  background: linear-gradient(180deg, #2d3540 0%, #11151a 100%);
+  color: #ffffff;
+}
+.roulette-result-medallion.green {
+  background: linear-gradient(180deg, #28a454 0%, #12592a 100%);
+  color: #ffffff;
+}
+.rmed-num {
+  font-size: clamp(14px, 2.2dvh, 18px);
+  font-weight: 900;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
+}
+.rmed-col {
+  font-size: clamp(8.5px, 1.2dvh, 10px);
+  font-weight: 900;
+  color: #ffe885;
+}
+.roulette-result-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.16;
+  min-width: 0;
+}
+.rres-tags {
+  font-size: clamp(8.5px, 1.2dvh, 10px);
+  font-weight: 900;
+  color: #ffe27a;
+  letter-spacing: 0.4px;
+}
+.rres-outcome {
+  font-size: clamp(11.5px, 1.7dvh, 13.5px);
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1.5px 2px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+.casino-result-showcase.is-win .rres-outcome {
+  color: #7aff9e;
+}
+.rres-sub {
+  font-size: clamp(8.5px, 1.2dvh, 10px);
+  font-weight: 800;
+  color: #dcd4ea;
+  white-space: nowrap;
+}
+
+/* Pok-Deng Result Showcase Banner */
+.pokdeng-result-showcase {
+  top: clamp(6px, 1.8dvh, 18px);
+  gap: 8px;
+  padding: 5px 14px;
+  z-index: 30;
+}
+.result-showcase-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.12;
+}
+.rs-kicker {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #ffe27a;
+  letter-spacing: 0.3px;
+}
+.rs-main {
+  font-size: clamp(10.5px, 1.55dvh, 12.5px);
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+}
+.casino-result-showcase.is-win .player-badge .rs-main {
+  color: #7aff9e;
+}
+.result-showcase-divider {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #ffd700;
+  opacity: 0.85;
+  padding: 0 2px;
+}
+
+
+

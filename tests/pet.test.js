@@ -77,7 +77,7 @@ test('Pet V2 Catalog: strictly 4 launch pets, IP-safe naming, and all 110 sliced
   }
 });
 
-test('Pet V2 Evolution & Visual Tiers: ★1 -> ★2 (40 Essence) -> ★3 (120 Essence), unlocks slots, toggles appearance', () => {
+test('Pet V2.5 Evolution & Visual Tiers: ★1 -> ★2 (40 Essence, Lv.10 + Slot 2) -> ★3 (120 Essence, Lv.20 Radiant), toggles appearance', () => {
   const p = rpg.migrateRpg(createStarterProfile('evo_qa', '1234', 'dxb'));
   const pet = p.pets[0];
   assert.equal(pet.id, 'pet_ragdoll');
@@ -90,9 +90,11 @@ test('Pet V2 Evolution & Visual Tiers: ★1 -> ★2 (40 Essence) -> ★3 (120 Es
   assert.equal(r2.ok, true);
   assert.equal(r2.stars, 2);
   assert.equal(r2.visual_tier, 2);
+  assert.ok(pet.bond_lv >= 10, '★2 Awakened guarantees at least Companion Lv. 10');
   assert.equal(pet.essence, 0);
   assert.equal(pet.spent_essence, 40);
   assert.ok(pet.slots[1] && pet.slots[1].stat, 'Slot 2 unlocked on ★2 evolution');
+  assert.equal(pet.slots.filter(Boolean).length, 2, 'Strictly 2 trait slots open at ★2');
   assert.equal(p.equipped.pet.stars, 2);
 
   pet.essence = 120;
@@ -100,8 +102,9 @@ test('Pet V2 Evolution & Visual Tiers: ★1 -> ★2 (40 Essence) -> ★3 (120 Es
   assert.equal(r3.ok, true);
   assert.equal(r3.stars, 3);
   assert.equal(r3.visual_tier, 3);
+  assert.ok(pet.bond_lv >= 20, '★3 Radiant guarantees at least Companion Lv. 20 (unlocking Lv.15 Costume Soul-Link & Cast pose)');
   assert.equal(pet.spent_essence, 160);
-  assert.ok(pet.slots[2] && pet.slots[2].stat, 'Slot 3 unlocked on ★3 evolution');
+  assert.equal(pet.slots.filter(Boolean).length, 2, 'MAX_TRAIT_SLOTS = 2 preserved at ★3');
   assert.equal(rpg.petEvolve(p, { petUid: pet.uid }).error, 'max_stars');
 
   // Toggle visual tier between ★1 Cute, ★2 Awakened, and ★3 Radiant without losing CP
@@ -114,42 +117,42 @@ test('Pet V2 Evolution & Visual Tiers: ★1 -> ★2 (40 Essence) -> ★3 (120 Es
   assert.equal(rpg.petSetVisualTier(p, { petUid: pet.uid, tier: 4 }).error, 'invalid_visual_tier');
 });
 
-test('Pet V2 Lock Reroll, Mythic Overwrite Guard & Couple Harmony Daily Bonus', () => {
-  const p = fresh('nook'); // Nyx is ★3
+test('Pet V2.5 2-Slot Lock Reroll, Mythic Overwrite Guard & Couple Harmony Daily Bonus', () => {
+  const p = fresh('nook'); // Nyx is ★3 (Lv.20, 2 open trait slots)
   p.gold = 100_000;
   p.berries = 5_000;
   const nyx = p.pets.find((x) => x.id === 'pet_nyx');
   assert.equal(nyx.stars, 3);
+  assert.ok(nyx.bond_lv >= 20);
+  assert.equal(nyx.slots.filter(Boolean).length, 2);
 
-  // Cannot lock all 3 open slots
+  // Cannot lock all 2 open slots (maxLocks = 1) and Slot 2 (idx 2) is not open
   nyx.slots[0].locked = true;
-  nyx.slots[1].locked = true;
-  assert.equal(rpg.petLockSlot(p, { petUid: nyx.uid, slotIdx: 2, locked: true }).error, 'cannot_lock_all_slots');
+  nyx.slots[1].locked = false;
+  assert.equal(rpg.petLockSlot(p, { petUid: nyx.uid, slotIdx: 1, locked: true }).error, 'cannot_lock_all_slots');
+  assert.equal(rpg.petLockSlot(p, { petUid: nyx.uid, slotIdx: 2, locked: true }).error, 'slot_not_open');
 
   // Mythic overwrite protection when an unlocked slot holds a Mythic line
   nyx.slots[0] = { stat: 'power', tier: 'mythic', value: 0.16, locked: false };
   nyx.slots[1] = { stat: 'swiftness', tier: 'epic', value: 0.11, locked: false };
-  nyx.slots[2] = { stat: 'fortune', tier: 'rare', value: 0.07, locked: false };
   assert.equal(rpg.petReroll(p, { petUid: nyx.uid }, NOW).error, 'mythic_unlocked');
 
-  // Lock Slot 0 (1 lock = 3,500 Gold + 150 Berries) and Lock Slot 1 (2 locks = 7,500 Gold + 350 Berries)
+  // Lock Slot 0 (1 lock = 3,500 Gold + 150 Berries) and reroll Slot 1
   assert.equal(rpg.petLockSlot(p, { petUid: nyx.uid, slotIdx: 0, locked: true }).ok, true);
-  assert.equal(rpg.petLockSlot(p, { petUid: nyx.uid, slotIdx: 1, locked: true }).ok, true);
 
   const goldBefore = p.gold;
   const berriesBefore = p.berries;
   const essBefore = nyx.essence;
   const rr = rpg.petReroll(p, { petUid: nyx.uid }, NOW, fixed(0.05), { partnerOnline: true });
   assert.equal(rr.ok, true);
-  assert.equal(rr.lockCount, 2);
-  assert.deepEqual(rr.cost, { gold: 7500, berries: 350 });
-  assert.equal(p.gold, goldBefore - 7500);
-  assert.equal(p.berries, berriesBefore - 350);
+  assert.equal(rr.lockCount, 1);
+  assert.deepEqual(rr.cost, { gold: 3500, berries: 150 });
+  assert.equal(p.gold, goldBefore - 3500);
+  assert.equal(p.berries, berriesBefore - 150);
   assert.equal(rr.harmonyTriggered, true);
   assert.equal(nyx.essence, essBefore + PET2.COUPLE_HARMONY_ESSENCE);
   assert.equal(nyx.slots[0].stat, 'power');
-  assert.equal(nyx.slots[1].stat, 'swiftness');
-  assert.ok(['epic', 'mythic'].includes(nyx.slots[2].tier), 'Couple Harmony guarantees Epic+ on unlocked slot');
+  assert.ok(['epic', 'mythic'].includes(nyx.slots[1].tier), 'Couple Harmony guarantees Epic+ on unlocked slot');
 
   // Second reroll on the same UTC day does not re-trigger Couple Harmony bonus
   const rr2 = rpg.petReroll(p, { petUid: nyx.uid, confirmMythicWipe: true }, NOW + 1000, fixed(0.5), { partnerOnline: true });
@@ -234,4 +237,57 @@ test('Pet V2 Legacy Migration: 18 V1 species map cleanly into the 4 canonical V2
   assert.equal(migrated.pets.pet_ragdoll.stars, 2);
   const passives = computePetPassives(migrated.pets.pet_nyx);
   assert.ok(passives.swiftness > 0 || passives.fortune >= 0);
+});
+
+test('Pet V2.5 Reconciliation: ★3Lv9 + 2/1 Locked save repairs to Lv20, 1/1 Locked, unlocks Lv15 Costume & merges Monopoly passives', async () => {
+  const { playerInfoFromProfile } = await import('../shared/monopoly_rules.js');
+  const { OUTFITS } = await import('../shared/costumes_catalog.js');
+  const { ACCESSORIES } = await import('../shared/catalog_gear_pets.js');
+
+  const p = createStarterProfile('nook_legacy', '1234', 'bkk');
+  p.inventory.s11_zeus_olympus = { refine: 10, dupes: 0 };
+  p.pets = [{
+    uid: 'pet1',
+    id: 'pet_nyx',
+    stars: 3,
+    visual_tier: 3,
+    bond_lv: 9,
+    bond_xp: 235,
+    active_poses: ['front', 'sleep'],
+    slots: [
+      { stat: 'power', tier: 'mythic', value: 0.16, locked: true },
+      { stat: 'swiftness', tier: 'epic', value: 0.11, locked: true },
+      { stat: 'double_jackpot', tier: 'epic', value: 0.10, locked: false },
+    ],
+  }];
+  p.equipped.pet = { uid: 'pet1', id: 'pet_nyx', stars: 3, visual_tier: 3, bond_lv: 9 };
+
+  rpg.migrateRpg(p);
+  const nyx = p.pets[0];
+  assert.equal(nyx.bond_lv, 20, '★3 Radiant pet reconciled from Lv.9 to Lv.20');
+  assert.deepEqual(nyx.active_poses, ['front', 'sleep', 'happy', 'cast'], 'Happy (Lv.10) & Cast (Lv.15) poses auto-added on level reconciliation');
+  assert.equal(nyx.slots.filter(Boolean).length, 2, 'Strictly 2 open trait slots');
+  assert.equal(nyx.slots.slice(0, 2).filter((s) => s?.locked).length, 1, 'Clamped 2/1 Locked down to 1/1 Locked');
+
+  // Lv.15 Costume Soul-Link is now unlocked and can link s11_zeus_olympus
+  const linkRes = rpg.petEquipCostume(p, { petUid: nyx.uid, costumeId: 's11_zeus_olympus' });
+  assert.equal(linkRes.ok, true);
+  assert.equal(p.equipped.pet.costume_id, 's11_zeus_olympus');
+
+  // Sky Monopoly playerInfoFromProfile merges 2-slot pet passives + Lv.20 Soul-Link scaling + Trait Soul-Link Bonuses
+  const { petMatchStats } = await import('../shared/monopoly_rules.js');
+  const { computePetSoulLinkBonuses } = await import('../shared/pet_rules.js');
+  const info = playerInfoFromProfile(p, { outfits: OUTFITS, accessories: ACCESSORIES });
+  assert.equal(info.petBond, 20);
+  assert.equal(info.petCostume, 's11_zeus_olympus');
+  assert.ok(info.stats.power >= 16, 'Mythic Power (+16%) from Pet Slot 1 merged into Monopoly stats');
+  assert.ok(info.stats.swiftness >= 11, 'Epic Swiftness (+11%) from Pet Slot 2 merged into Monopoly stats');
+
+  const slBonuses = computePetSoulLinkBonuses(nyx);
+  assert.equal(slBonuses.potencyPct, 16, 'Mythic Power gives +16% Echo');
+  assert.equal(slBonuses.ratePct, 11, 'Epic Swiftness gives +11% Charge');
+  const baseMs = petMatchStats({ bond: 20 });
+  const boostedMs = petMatchStats({ bond: 20, pet: nyx });
+  assert.ok(boostedMs.potency > baseMs.potency);
+  assert.ok(boostedMs.rate > baseMs.rate);
 });

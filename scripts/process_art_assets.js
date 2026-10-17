@@ -68,17 +68,52 @@ function sampleBackground(px, w, h) {
 
 const dist = (px, i, bg) => Math.max(Math.abs(px[i] - bg[0]), Math.abs(px[i + 1] - bg[1]), Math.abs(px[i + 2] - bg[2]));
 
+const lum = (px, i) => 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+
 export function matteCell(px, w, h, opts = {}) {
   const bg = opts.bg || sampleBackground(px, w, h);
   const N = w * h;
   const isBg = new Uint8Array(N);          // 1 = transparent background
   const queue = new Int32Array(N);
   let head = 0, tail = 0;
+  const isVillage = opts.pack === 'village' || Boolean(opts.smartInkMatte);
+  const baseTol = opts.tolerance ?? (isVillage ? 22 : TOLERANCE);
+
+  if (opts.snowCourtyard) {
+    const ox = opts.keepRect ? opts.keepRect[0] : 0;
+    const oy = opts.keepRect ? opts.keepRect[1] : 0;
+    const cx = 255;
+    for (let cy = 248; cy < 376; cy++) {
+      const y = oy + cy;
+      if (y < 0 || y >= h) continue;
+      for (let cellX = 72; cellX <= 438; cellX++) {
+        const x = ox + cellX;
+        if (x < 0 || x >= w) continue;
+        const yTop = 250 + Math.abs(cellX - cx) * 0.08;
+        const scallop = Math.sin(cellX * 0.14) * 2.2 + Math.cos(cellX * 0.07) * 1.4;
+        const yBot = (cellX <= cx
+          ? 273 + (cellX - 70) * (93 / 185)
+          : 366 - (cellX - cx) * (92 / 185)) + scallop;
+        if (cy < yTop || cy > yBot) continue;
+        const i = (y * w + x) * 4;
+        if (dist(px, i, bg) <= 38) {
+          const rem = yBot - cy;
+          if (rem <= 2.4) {
+            px[i] = 58; px[i + 1] = 36; px[i + 2] = 21;
+          } else if (rem <= 7.0) {
+            px[i] = 176; px[i + 1] = 204; px[i + 2] = 235;
+          } else {
+            px[i] = 214; px[i + 1] = 232; px[i + 2] = 250;
+          }
+        }
+      }
+    }
+  }
 
   // 1. exterior flood fill seeded from all border pixels
   const seed = (x, y) => {
     const p = y * w + x;
-    if (!isBg[p] && dist(px, p * 4, bg) <= TOLERANCE) { isBg[p] = 1; queue[tail++] = p; }
+    if (!isBg[p] && dist(px, p * 4, bg) <= baseTol) { isBg[p] = 1; queue[tail++] = p; }
   };
   for (let x = 0; x < w; x++) { seed(x, 0); seed(x, h - 1); }
   for (let y = 0; y < h; y++) { seed(0, y); seed(w - 1, y); }
@@ -91,103 +126,196 @@ export function matteCell(px, w, h, opts = {}) {
     if (y < h - 1) seed(x, y + 1);
   }
 
-  // 2. enclosed background-coloured holes become transparent too — but ONLY if they are as
-  //    flat/pure as the real background (true gaps between spokes, inside a swing frame).
-  //    Painted whites (clouds, marble, a white dome) have gouache shading -> higher mean/
-  //    spread of distance-from-bg -> kept opaque.
-  //    JPEG ringing hugs the ink lines and inflates the stats of real pockets, so a region
-  //    also passes if its ERODED CORE (pixels >= CORE_INSET px from the region edge) is
-  //    near-perfect background.
-  //    opts.glowHoles: enclosed pale regions that are NOT flat (a painted glow pool, e.g. the
-  //    centre of the fairy mushroom ring) are colour-to-alpha'd into a soft translucent glow
-  //    instead of staying an opaque white blob.
-  const softAlpha = new Float32Array(N).fill(1);   // < 1 = translucent glow pixel
-  const glowSeed = new Uint8Array(N);              // enclosed glow pools (opts.glow)
-  const holeMin = opts.keepHoles ? Infinity : (opts.holeMinArea ?? Infinity);
-  if (Number.isFinite(holeMin)) {
-    const holeTol = opts.holeTolerance ?? TOLERANCE;
-    const CORE_INSET = opts.coreInset ?? 2;
-    const seen = new Uint8Array(N);
-    const inRegion = new Uint8Array(N);
-    const depth = new Uint8Array(N);
-    const hist = new Uint32Array(holeTol + 1);
-    const coreHist = new Uint32Array(holeTol + 1);
-    for (let s = 0; s < N; s++) {
-      if (isBg[s] || seen[s] || dist(px, s * 4, bg) > holeTol) continue;
-      head = 0; tail = 0; queue[tail++] = s; seen[s] = 1;
-      hist.fill(0);
-      let sum = 0;
-      while (head < tail) {
-        const p = queue[head++];
-        const d = Math.min(holeTol, dist(px, p * 4, bg));
-        sum += d; hist[d]++;
-        const x = p % w, y = (p / w) | 0;
-        for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
-          if (q >= 0 && !seen[q] && !isBg[q] && dist(px, q * 4, bg) <= holeTol) { seen[q] = 1; queue[tail++] = q; }
+  // 1b. For 2.5D ink-outlined village/monopoly sprites, strip exterior JPEG mosquito ringing,
+  //     die-cut sticker borders, or lamp glow halos outside the #3a2415 dark sepia ink contour.
+  const bandDist = new Int16Array(N).fill(-1);
+  if (isVillage && (opts.exteriorStripBand ?? 6) > 0) {
+    const haloMaxBand = opts.exteriorStripBand ?? 6;
+    const haloMinLum = opts.exteriorStripMinLum ?? 172;
+    const haloMaxChroma = opts.exteriorStripMaxChroma ?? 36;
+    head = 0; tail = 0;
+    for (let p = 0; p < N; p++) if (isBg[p]) { bandDist[p] = 0; queue[tail++] = p; }
+    while (head < tail) {
+      const p = queue[head++];
+      if (bandDist[p] >= haloMaxBand) continue;
+      const x = p % w, y = (p / w) | 0;
+      for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
+        if (q < 0 || isBg[q] || bandDist[q] !== -1) continue;
+        const qi = q * 4;
+        const l = lum(px, qi);
+        const ch = Math.max(px[qi], px[qi + 1], px[qi + 2]) - Math.min(px[qi], px[qi + 1], px[qi + 2]);
+        if ((l >= haloMinLum && ch <= haloMaxChroma) || (opts.stripWarmGlow && l >= 200 && ch <= 95)) {
+          isBg[q] = 1;
+          bandDist[q] = bandDist[p] + 1;
+          queue[tail++] = q;
         }
       }
-      if (tail < holeMin) continue;
-      let acc = 0, p95 = 0;
-      for (let d = 0; d <= holeTol; d++) { acc += hist[d]; if (acc >= tail * 0.95) { p95 = d; break; } }
-      let flat = sum / tail <= (opts.holeMaxMean ?? 4) && p95 <= (opts.holeMaxP95 ?? 10);
-
-      // eroded-core statistics (iterative 4-neighbour erosion, CORE_INSET passes)
-      const region = queue.slice(0, tail);
-      for (const p of region) { inRegion[p] = 1; depth[p] = 0; }
-      for (let pass = 1; pass <= CORE_INSET; pass++) {
-        for (const p of region) {
-          if (depth[p] !== pass - 1) continue;
-          const x = p % w, y = (p / w) | 0;
-          const ok = x > 0 && x < w - 1 && y > 0 && y < h - 1 &&
-            inRegion[p - 1] && inRegion[p + 1] && inRegion[p - w] && inRegion[p + w] &&
-            depth[p - 1] >= pass - 1 && depth[p + 1] >= pass - 1 && depth[p - w] >= pass - 1 && depth[p + w] >= pass - 1;
-          if (ok) depth[p] = pass;
-        }
-      }
-      coreHist.fill(0);
-      let coreN = 0, coreSum = 0;
-      for (const p of region) if (depth[p] >= CORE_INSET) { const d = Math.min(holeTol, dist(px, p * 4, bg)); coreHist[d]++; coreSum += d; coreN++; }
-      let coreP95 = 0;
-      if (coreN) { acc = 0; for (let d = 0; d <= holeTol; d++) { acc += coreHist[d]; if (acc >= coreN * 0.95) { coreP95 = d; break; } } }
-      const coreMean = coreN ? coreSum / coreN : 99;
-      const coreFlat = coreN >= tail * 0.20 && coreMean <= (opts.coreMaxMean ?? 2.5) && coreP95 <= (opts.coreMaxP95 ?? 6);
-
-      // ink-wall check: a real pocket is walled in by the dark ink outline; a painted
-      // specular highlight (egg shine, glass glint) fades into light paint instead.
-      let wallN = 0, wallInk = 0;
-      for (const p of region) {
-        const x = p % w, y = (p / w) | 0;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const nx = x + dx, ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= w || ny >= h || inRegion[ny * w + nx]) continue;
-          let mx = 0;
-          for (let k = 1; k <= 4; k++) {
-            const sx = x + dx * k, sy = y + dy * k;
-            if (sx < 0 || sy < 0 || sx >= w || sy >= h) break;
-            mx = Math.max(mx, dist(px, (sy * w + sx) * 4, bg));
-          }
-          wallN++; if (mx >= 110) wallInk++;
-        }
-      }
-      const inkWalled = wallN > 0 && wallInk / wallN >= (opts.holeMinInkWall ?? 0.6);
-      for (const p of region) inRegion[p] = 0;
-
-      if ((flat || coreFlat) && inkWalled) {
-        for (const p of region) isBg[p] = 1;
-        if (opts.debugHoles) console.log(`    removed pocket: ${tail}px mean ${(sum / tail).toFixed(1)} p95 ${p95} core ${coreMean.toFixed(1)}/${coreP95}`);
-      } else if (opts.glow && opts.glow.pools) {
-        for (const p of region) glowSeed[p] = 1;
-        if (opts.debugHoles) console.log(`    glow pool -> soft alpha: ${tail}px mean ${(sum / tail).toFixed(1)}`);
-      } else if (opts.debugHoles) console.log(`    kept painted white region: ${tail}px mean ${(sum / tail).toFixed(1)} p95 ${p95} core ${coreMean.toFixed(1)}/${coreP95}`);
     }
   }
 
-  // 2b. opts.glow = { t, band }: painted glows (lamp halo, pet-egg aura, mushroom-ring pool)
-  //     fade from the object colour into the white paper with no ink line, so the hard matte
-  //     leaves an opaque cream halo. Flood from the background (and enclosed glow pools) into
-  //     pale pixels (dist <= t) up to `band` px deep and colour-to-alpha them: alpha = dist/t,
-  //     colour un-mixed from white. Ink lines (dist >> t) stop the flood, so the object body
-  //     stays fully opaque.
+  // 2. enclosed background-coloured holes become transparent too — but ONLY if they are as
+  //    flat/pure as the real background (true gaps between spokes, inside a swing frame).
+  const softAlpha = new Float32Array(N).fill(1);   // < 1 = translucent glow pixel
+  const glowSeed = new Uint8Array(N);              // enclosed glow pools (opts.glow)
+  const holeMin = opts.keepHoles ? Infinity : (isVillage ? (opts.smartHoleMinArea ?? 14) : (opts.holeMinArea ?? Infinity));
+  if (Number.isFinite(holeMin)) {
+    if (isVillage) {
+      const holeTol = opts.holeTolerance ?? 24;
+      const seen = new Uint8Array(N);
+      const inReg = new Uint8Array(N);
+      for (let s = 0; s < N; s++) {
+        if (isBg[s] || seen[s] || dist(px, s * 4, bg) > holeTol) continue;
+        head = 0; tail = 0; queue[tail++] = s; seen[s] = 1;
+        let sumD = 0, minD = 999, sumChroma = 0, purePaperCount = 0;
+        while (head < tail) {
+          const p = queue[head++];
+          const i = p * 4;
+          const d = dist(px, i, bg);
+          const ch = Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2]);
+          sumD += d;
+          if (d < minD) minD = d;
+          sumChroma += ch;
+          if (d <= 5 && ch <= 6) purePaperCount++;
+          const x = p % w, y = (p / w) | 0;
+          for (const nb of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
+            if (nb >= 0 && !seen[nb] && !isBg[nb] && dist(px, nb * 4, bg) <= holeTol) {
+              seen[nb] = 1; queue[tail++] = nb;
+            }
+          }
+        }
+        if (tail < holeMin) continue;
+        const reg = queue.slice(0, tail);
+        for (const p of reg) inReg[p] = 1;
+        let wallN = 0, stepWall = 0, yellowTouch = 0, greenTouch = 0;
+        for (const p of reg) {
+          const x = p % w, y = (p / w) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h || inReg[ny * w + nx]) continue;
+            let maxD = 0, touchesYellow = false, touchesGreen = false;
+            for (let k = 1; k <= 7; k++) {
+              const tx = x + dx * k, ty = y + dy * k;
+              if (tx < 0 || ty < 0 || tx >= w || ty >= h) break;
+              const ti = (ty * w + tx) * 4;
+              if (k <= 4) maxD = Math.max(maxD, dist(px, ti, bg));
+              if (px[ti] > 180 && px[ti + 1] > 110 && px[ti + 2] < 105 && px[ti] - px[ti + 2] > 70) touchesYellow = true;
+              if (px[ti + 1] > px[ti] + 10 && px[ti + 1] > px[ti + 2] + 12 && px[ti + 1] > 90) touchesGreen = true;
+            }
+            wallN++;
+            if (maxD >= 70) stepWall++;
+            if (touchesYellow) yellowTouch++;
+            if (touchesGreen) greenTouch++;
+          }
+        }
+        for (const p of reg) inReg[p] = 0;
+        const sw = stepWall / Math.max(1, wallN);
+        const meanChroma = sumChroma / tail;
+        const isDaisyPetal = tail <= 70 && purePaperCount <= 16 && (yellowTouch / Math.max(1, wallN)) >= 0.06 && (greenTouch / Math.max(1, wallN)) >= 0.12;
+        const ruleA = !isDaisyPetal && minD <= 6 && meanChroma <= 13.5 && sw >= 0.76;
+        const ruleB = !isDaisyPetal && purePaperCount >= (opts.minPurePaperCore ?? 120) && sw >= (opts.minRuleBSw ?? 0.48);
+
+        if (ruleA || ruleB) {
+          for (const p of reg) isBg[p] = 1;
+          let dHead = 0, dTail = 0;
+          for (const p of reg) { queue[dTail++] = p; bandDist[p] = 0; }
+          const maxDil = opts.pocketDilate ?? (ruleB ? 8 : 2);
+          const dilMinLum = opts.pocketDilateMinLum ?? 185;
+          const dilMaxChroma = opts.pocketDilateMaxChroma ?? (ruleB ? 48 : 28);
+          while (dHead < dTail) {
+            const p = queue[dHead++];
+            if (bandDist[p] >= maxDil) continue;
+            const x = p % w, y = (p / w) | 0;
+            for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
+              if (q < 0 || isBg[q]) continue;
+              const qi = q * 4;
+              const l = lum(px, qi);
+              const ch = Math.max(px[qi], px[qi + 1], px[qi + 2]) - Math.min(px[qi], px[qi + 1], px[qi + 2]);
+              if ((l >= 185 && ch <= 28) || (l >= dilMinLum && ch <= dilMaxChroma)) {
+                isBg[q] = 1;
+                bandDist[q] = bandDist[p] + 1;
+                queue[dTail++] = q;
+              }
+            }
+          }
+        } else if (opts.glow && opts.glow.pools) {
+          for (const p of reg) glowSeed[p] = 1;
+        }
+      }
+    } else {
+      const holeTol = opts.holeTolerance ?? TOLERANCE;
+      const CORE_INSET = opts.coreInset ?? 2;
+      const seen = new Uint8Array(N);
+      const inRegion = new Uint8Array(N);
+      const depth = new Uint8Array(N);
+      const hist = new Uint32Array(holeTol + 1);
+      const coreHist = new Uint32Array(holeTol + 1);
+      for (let s = 0; s < N; s++) {
+        if (isBg[s] || seen[s] || dist(px, s * 4, bg) > holeTol) continue;
+        head = 0; tail = 0; queue[tail++] = s; seen[s] = 1;
+        hist.fill(0);
+        let sum = 0;
+        while (head < tail) {
+          const p = queue[head++];
+          const d = Math.min(holeTol, dist(px, p * 4, bg));
+          sum += d; hist[d]++;
+          const x = p % w, y = (p / w) | 0;
+          for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
+            if (q >= 0 && !seen[q] && !isBg[q] && dist(px, q * 4, bg) <= holeTol) { seen[q] = 1; queue[tail++] = q; }
+          }
+        }
+        if (tail < holeMin) continue;
+        let acc = 0, p95 = 0;
+        for (let d = 0; d <= holeTol; d++) { acc += hist[d]; if (acc >= tail * 0.95) { p95 = d; break; } }
+        let flat = sum / tail <= (opts.holeMaxMean ?? 4) && p95 <= (opts.holeMaxP95 ?? 10);
+
+        const region = queue.slice(0, tail);
+        for (const p of region) { inRegion[p] = 1; depth[p] = 0; }
+        for (let pass = 1; pass <= CORE_INSET; pass++) {
+          for (const p of region) {
+            if (depth[p] !== pass - 1) continue;
+            const x = p % w, y = (p / w) | 0;
+            const ok = x > 0 && x < w - 1 && y > 0 && y < h - 1 &&
+              inRegion[p - 1] && inRegion[p + 1] && inRegion[p - w] && inRegion[p + w] &&
+              depth[p - 1] >= pass - 1 && depth[p + 1] >= pass - 1 && depth[p - w] >= pass - 1 && depth[p + w] >= pass - 1;
+            if (ok) depth[p] = pass;
+          }
+        }
+        coreHist.fill(0);
+        let coreN = 0, coreSum = 0;
+        for (const p of region) if (depth[p] >= CORE_INSET) { const d = Math.min(holeTol, dist(px, p * 4, bg)); coreHist[d]++; coreSum += d; coreN++; }
+        let coreP95 = 0;
+        if (coreN) { acc = 0; for (let d = 0; d <= holeTol; d++) { acc += coreHist[d]; if (acc >= coreN * 0.95) { coreP95 = d; break; } } }
+        const coreMean = coreN ? coreSum / coreN : 99;
+        const coreFlat = coreN >= tail * 0.20 && coreMean <= (opts.coreMaxMean ?? 2.5) && coreP95 <= (opts.coreMaxP95 ?? 6);
+
+        let wallN = 0, wallInk = 0;
+        for (const p of region) {
+          const x = p % w, y = (p / w) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h || inRegion[ny * w + nx]) continue;
+            let mx = 0;
+            for (let k = 1; k <= 4; k++) {
+              const sx = x + dx * k, sy = y + dy * k;
+              if (sx < 0 || sy < 0 || sx >= w || sy >= h) break;
+              mx = Math.max(mx, dist(px, (sy * w + sx) * 4, bg));
+            }
+            wallN++; if (mx >= 110) wallInk++;
+          }
+        }
+        const inkWalled = wallN > 0 && wallInk / wallN >= (opts.holeMinInkWall ?? 0.6);
+        for (const p of region) inRegion[p] = 0;
+
+        if ((flat || coreFlat) && inkWalled) {
+          for (const p of region) isBg[p] = 1;
+        } else if (opts.glow && opts.glow.pools) {
+          for (const p of region) glowSeed[p] = 1;
+        }
+      }
+    }
+  }
+
+  // 2b. opts.glow = { t, band }
   if (opts.glow) {
     const T = opts.glow.t ?? 72, BAND = opts.glow.band ?? 40;
     const gd = new Int16Array(N).fill(-1);
@@ -209,8 +337,6 @@ export function matteCell(px, w, h, opts = {}) {
   }
 
   // 3. label islands (8-connected). Keep only islands whose centroid lies inside keepRect
-  //    (the true cell when we crop with an overlap margin), then drop tiny specks
-  //    relative to the largest kept island.
   const label = new Int32Array(N).fill(-1);
   const sizes = [], cx = [], cy = [];
   for (let s = 0; s < N; s++) {
@@ -237,11 +363,10 @@ export function matteCell(px, w, h, opts = {}) {
   const minIsland = Math.max(6, largest * (opts.minIslandRatio ?? 0.01));
   for (let p = 0; p < N; p++) if (!isBg[p] && (!inCell[label[p]] || sizes[label[p]] < minIsland)) isBg[p] = 1;
 
-  // 4. build RGBA with soft, white-unmixed edges (2px band: JPEG ringing beside the ink
-  //    is often 2px wide) + translucent glow pixels from step 2b.
+  // 4. build RGBA with inward-ink reference un-mixing & color de-fringing
   const out = new Uint8ClampedArray(N * 4);
   let minX = w, minY = h, maxX = -1, maxY = -1;
-  const bgAt = (x, y) => x >= 0 && y >= 0 && x < w && y < h && isBg[y * w + x];
+  const bgAt = (x, y) => x < 0 || y < 0 || x >= w || y >= h || isBg[y * w + x];
   for (let p = 0; p < N; p++) {
     if (isBg[p]) continue;
     const x = p % w, y = (p / w) | 0;
@@ -250,11 +375,36 @@ export function matteCell(px, w, h, opts = {}) {
     const near2 = !near1 && (bgAt(x - 2, y) || bgAt(x + 2, y) || bgAt(x, y - 2) || bgAt(x, y + 2) ||
       bgAt(x - 1, y - 1) || bgAt(x + 1, y - 1) || bgAt(x - 1, y + 1) || bgAt(x + 1, y + 1));
     let a = softAlpha[p];
-    if (near1) a = Math.min(a, Math.max(0.08, dist(px, i, bg) / EDGE_RAMP));
-    else if (near2) a = Math.min(a, Math.max(0.3, dist(px, i, bg) / EDGE_RAMP));
-    a = Math.min(1, a);
-    if (a < 0.02) continue;
-    for (let c = 0; c < 3; c++) out[i + c] = a < 1 ? (px[i + c] - bg[c] * (1 - a)) / a : px[i + c];
+    if (isVillage && (near1 || near2)) {
+      let bestP = p, bestL = lum(px, i);
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const np = ny * w + nx;
+          if (isBg[np]) continue;
+          const nl = lum(px, np * 4);
+          if (nl < bestL) { bestL = nl; bestP = np; }
+        }
+      }
+      const bi = bestP * 4;
+      const refDist = Math.max(95, dist(px, bi, bg));
+      const curDist = dist(px, i, bg);
+      if (near1) a = Math.min(a, Math.max(0, (curDist - 12) / (refDist * 0.92)));
+      else a = Math.min(a, Math.max(0.35, (curDist - 8) / (refDist * 0.80)));
+      a = Math.min(1, a);
+      if (a < 0.05) continue;
+      for (let c = 0; c < 3; c++) {
+        const u = a < 1 ? (px[i + c] - bg[c] * (1 - a)) / a : px[i + c];
+        out[i + c] = Math.max(0, Math.min(u, px[bi + c] + 12));
+      }
+    } else {
+      if (near1) a = Math.min(a, Math.max(0.08, dist(px, i, bg) / EDGE_RAMP));
+      else if (near2) a = Math.min(a, Math.max(0.3, dist(px, i, bg) / EDGE_RAMP));
+      a = Math.min(1, a);
+      if (a < 0.02) continue;
+      for (let c = 0; c < 3; c++) out[i + c] = a < 1 ? (px[i + c] - bg[c] * (1 - a)) / a : px[i + c];
+    }
     out[i + 3] = Math.round(a * 255);
     if (x < minX) minX = x; if (x > maxX) maxX = x;
     if (y < minY) minY = y; if (y > maxY) maxY = y;

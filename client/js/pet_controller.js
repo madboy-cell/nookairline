@@ -5,6 +5,7 @@ import { FacingState, PET_FACING, PetFollower, damp } from '/shared/locomotion.j
 import {
   PETS, POSE_KEYS, petLocomotion, normalizePetId, resolvePetSpriteKey, resolvePetHeight, resolvePetPoseSize,
 } from '/shared/pet_catalog.js';
+import { normalizeActivePoses } from '/shared/pet_rules.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { blobShadowTexture } from './chibi_rig.js';
 import { PetActionDriver } from './pet_actions.js';
@@ -18,6 +19,8 @@ const LOCO = {
 
 export const NUZZLE_RADIUS = 2.2;
 const IDLE_TRICK_EVERY = 6.5;
+
+const _scratchEuler = new THREE.Euler();
 
 const emojiTexCache = new Map();
 const nameplateTexCache = new Map();
@@ -166,14 +169,16 @@ function unpackPetInit(petOrId, opts = {}) {
     const canonicalId = normalizePetId(rawId);
     const stars = Math.max(1, Math.min(3, Number(petOrId.stars) || 1));
     const visualTier = Math.max(1, Math.min(stars, Number(petOrId.visual_tier) || stars));
+    const bondLv = Math.max(1, Number(petOrId.bond_lv || petOrId.level || opts.bondLv) || 1);
     return {
       rawId,
       petId: canonicalId,
       stars,
       visualTier,
       nickname: String(petOrId.nickname || opts.nickname || ''),
-      bondLv: Math.max(1, Number(petOrId.bond_lv || petOrId.level || opts.bondLv) || 1),
+      bondLv,
       costumeId: petOrId.costume_id || opts.costumeId || null,
+      activePoses: normalizeActivePoses(petOrId.active_poses || petOrId.activePoses || opts.active_poses || opts.activePoses, bondLv),
       uid: petOrId.uid || null,
     };
   }
@@ -181,14 +186,16 @@ function unpackPetInit(petOrId, opts = {}) {
   const canonicalId = normalizePetId(rawId);
   const stars = Math.max(1, Math.min(3, Number(opts.stars) || PETS[rawId]?.rarity || 1));
   const visualTier = Math.max(1, Math.min(stars, Number(opts.visual_tier || opts.visualTier) || stars));
+  const bondLv = Math.max(1, Number(opts.bond_lv || opts.level || opts.bondLv) || 1);
   return {
     rawId,
     petId: canonicalId,
     stars,
     visualTier,
     nickname: String(opts.nickname || ''),
-    bondLv: Math.max(1, Number(opts.bond_lv || opts.level || opts.bondLv) || 1),
+    bondLv,
     costumeId: opts.costume_id || opts.costumeId || null,
+    activePoses: normalizeActivePoses(opts.active_poses || opts.activePoses, bondLv),
     uid: opts.uid || null,
   };
 }
@@ -204,6 +211,7 @@ export class PetController {
     this.nickname = init.nickname;
     this.bondLv = init.bondLv;
     this.costumeId = init.costumeId;
+    this.activePoses = init.activePoses;
     this.costumeTrailTimer = 0;
 
     const pdef = PETS[this.petId] || PETS.pet_ragdoll;
@@ -219,6 +227,8 @@ export class PetController {
     this.mirror = 1;
     this.t = Math.random() * 10;
     this.idleFor = 0;
+    this.poseTimer = 1.8 + Math.random() * 1.4;
+    this.lastCyclePose = 'front';
     this.trick = null;
     this.nuzzle = null;
     this.heartCooldown = 0;
@@ -296,6 +306,7 @@ export class PetController {
     this.visualTier = next.visualTier;
     this.bondLv = next.bondLv;
     this.costumeId = next.costumeId;
+    this.activePoses = next.activePoses;
 
     const pdef = PETS[this.petId] || PETS.pet_ragdoll;
     this.family = pdef.family;
@@ -391,6 +402,11 @@ export class PetController {
 
   act(kind, dur) {
     this.actions.act(kind, dur);
+  }
+
+  setActivePoses(poses) {
+    this.activePoses = normalizeActivePoses(poses, this.bondLv);
+    this.poseTimer = 0.25;
   }
 
   setLifted(lifted) {
@@ -504,23 +520,64 @@ export class PetController {
       this.applyView(targetPose, shown.right);
     }
 
-    // Idle tricks after 6.5s of standing still (only triggered if pose is unlocked for bondLv)
+    // Idle pose rotation among player-selected activePoses (zero array allocation per frame)
     const moving = speed > 0.1;
-    this.idleFor = moving ? 0 : this.idleFor + dt;
-    if (!this.trick && !this.nuzzle && this.actions.mode === 'idle' && !this.actions.activeAction && this.idleFor > IDLE_TRICK_EVERY) {
-      const kinds = ['ear_wiggle', 'musical_purr'];
-      if (this.bondLv >= 5) kinds.push('snooze_pose');
-      if (this.bondLv >= 10) kinds.push('happy_pose');
-      if (this.bondLv >= 15) kinds.push('cast_pose');
-      if (this.bondLv >= 25) kinds.push('flip_trick');
-      const pick = kinds[(Math.random() * kinds.length) | 0];
-      this.trick = { kind: pick, t: 0 };
+    if (moving) {
       this.idleFor = 0;
-      if (pick === 'happy_pose') this.actions.act('happy', 1.3);
-      else if (pick === 'snooze_pose') { this.bubble('💤'); if (Math.random() < 0.4) this.actions.act('sleep'); }
-      else if (pick === 'musical_purr') this.fx?.emit('fx_note', f.x, this.height, f.z, 3);
-      else if (pick === 'cast_pose') this.actions.act('cast');
-      else if (pick === 'flip_trick') this.actions.act('flip');
+      this.poseTimer = 1.1 + Math.random() * 1.1;
+    } else {
+      this.idleFor += dt;
+      if (!this.nuzzle && this.actions.mode !== 'lifted') {
+        const poses = this.activePoses?.length ? this.activePoses : null;
+        const len = poses ? poses.length : 1;
+        if (len === 1) {
+          const only = poses ? poses[0] : 'front';
+          if (only === 'sleep') {
+            if (this.idleFor > 0.45 && this.actions.mode !== 'sleep' && !this.actions.activeAction) {
+              this.actions.act('sleep');
+            }
+          } else if (only === 'front') {
+            if (this.actions.mode === 'sleep') this.actions.act('front');
+            if (!this.trick && !this.actions.activeAction && this.idleFor > IDLE_TRICK_EVERY) {
+              this.idleFor = 0;
+              if (Math.random() < 0.5) {
+                this.trick = { kind: 'ear_wiggle', t: 0 };
+              } else {
+                this.fx?.emit('fx_note', f.x, this.height, f.z, 3);
+              }
+            }
+          } else {
+            if (this.actions.mode === 'sleep') this.actions.act('front');
+            this.poseTimer -= dt;
+            if (this.poseTimer <= 0 && !this.actions.activeAction) {
+              this.poseTimer = 3.2 + Math.random() * 1.6;
+              this.actions.act(only, only === 'flip' ? 0.95 : 2.2);
+            }
+          }
+        } else {
+          this.poseTimer -= dt;
+          if (this.poseTimer <= 0 && !this.actions.activeAction) {
+            let idx = (Math.random() * len) | 0;
+            if (poses[idx] === this.lastCyclePose) {
+              idx = (idx + 1 + ((Math.random() * (len - 1)) | 0)) % len;
+            }
+            const pick = poses[idx];
+            this.lastCyclePose = pick;
+            this.poseTimer = 3.5 + Math.random() * 2.2;
+            if (pick === 'front') {
+              this.actions.act('front');
+            } else if (pick === 'sleep') {
+              this.actions.act('sleep');
+            } else if (pick === 'happy') {
+              this.actions.act('happy', 2.4);
+            } else if (pick === 'cast') {
+              this.actions.act('cast', 2.2);
+            } else if (pick === 'flip') {
+              this.actions.act('flip', 0.95);
+            }
+          }
+        }
+      }
     }
 
     // Costume Soul-Link trail FX (when moving speed > 0.1, emit 1 trail particle every 0.28s)
@@ -654,8 +711,8 @@ export class PetController {
     }
 
     if (cam) {
-      const e = new THREE.Euler().setFromQuaternion(cam.quaternion, 'YXZ');
-      this.billboard.rotation.set(e.x * 0.55, e.y, 0, 'YXZ');
+      _scratchEuler.setFromQuaternion(cam.quaternion, 'YXZ');
+      this.billboard.rotation.set(_scratchEuler.x * 0.55, _scratchEuler.y, 0, 'YXZ');
     }
   }
 

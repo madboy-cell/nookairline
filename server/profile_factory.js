@@ -2,6 +2,9 @@
 import crypto from 'node:crypto';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { normalizeVillage, validateLayout, syncBuildingLevels, computeComfort } from '../shared/village_rules.js';
+import { OUTFITS } from '../shared/costumes_catalog.js';
+import { ACCESSORIES, PET_IDS } from '../shared/catalog_gear_pets.js';
+import { HAIRSTYLES, HAIR_COLORS } from '../shared/hair_catalog.js';
 
 export const LINEAGES = ['bkk', 'dxb', 'boy', 'girl'];
 export const STARTER_PET = { bkk: 'pet_nyx', dxb: 'pet_ragdoll', boy: 'pet_nyx', girl: 'pet_ragdoll' }; // Screen 24 starter eggs
@@ -17,30 +20,31 @@ export function verifyPassword(password, salt, hash) {
   return ref.length === test.length && crypto.timingSafeEqual(ref, test);
 }
 
-// Starter 24x24 island (Section 21.M.2), adjusted to the locked Step 2 footprints:
-//   • Shrine is 2×2 → moved from (10,10) to (9,10) so it no longer covers the avenue (x = 11..12).
-//   • Dock is 3×2 and must touch water → moved from (18,19) to (18,13), the canal's south bank.
+// Starter 18x18 cozy pocket island (Section 21.M.2), adjusted to the locked Step 2 footprints:
+//   • Central 2-wide N–S cobblestone avenue at x = 8..9 (y = 5..15) + Castle crossroad arms at y = 5.
+//   • E–W crystal water canal at y = 9 (x = 0..17) with central stone footbridge at x = 8..9.
 function starterTiles() {
   const tiles = [];
-  for (let y = 9; y <= 18; y++) for (let x = 11; x <= 12; x++) if (y !== 12) tiles.push({ x, y, t: 'road_cobble' });
-  for (let x = 0; x <= 23; x++) tiles.push({ x, y: 12, t: x === 11 || x === 12 ? 'bridge' : 'water' });
+  for (let y = 5; y <= 15; y++) for (let x = 8; x <= 9; x++) if (y !== 9) tiles.push({ x, y, t: 'road_cobble' });
+  for (const x of [6, 7, 10, 11]) tiles.push({ x, y: 5, t: 'road_cobble' });
+  for (let x = 0; x <= 17; x++) tiles.push({ x, y: 9, t: x === 8 || x === 9 ? 'bridge' : 'water' });
   return tiles;
 }
 
 function starterVillage(now = Date.now()) {
   return normalizeVillage({
-    grid_size: 24,
+    grid_size: 18,
     castle_lv: 1,
     mood: 'auto',
     ground: 'ground_classic',
     levels: { mint: 1, shrine: 1, patisserie: 1, nest: 1, dock: 1 },
     buildings: [
-      { uid: 'castle', type: 'castle', x: 10, y: 4, rot: 0 },
-      { uid: 'mint', type: 'mint', x: 4, y: 6, rot: 0 },
-      { uid: 'patisserie', type: 'patisserie', x: 16, y: 6, rot: 0 },
-      { uid: 'shrine', type: 'shrine', x: 9, y: 10, rot: 0 },
-      { uid: 'nest', type: 'nest', x: 5, y: 13, rot: 0 },
-      { uid: 'dock', type: 'dock', x: 18, y: 13, rot: 0 },
+      { uid: 'castle', type: 'castle', x: 7, y: 1, rot: 0 },
+      { uid: 'mint', type: 'mint', x: 2, y: 3, rot: 0 },
+      { uid: 'patisserie', type: 'patisserie', x: 13, y: 3, rot: 0 },
+      { uid: 'shrine', type: 'shrine', x: 6, y: 7, rot: 0 },
+      { uid: 'nest', type: 'nest', x: 2, y: 10, rot: 0 },
+      { uid: 'dock', type: 'dock', x: 13, y: 10, rot: 0 },
     ],
     tiles: starterTiles(),
     last_harvest_at: now,
@@ -62,10 +66,15 @@ export function migrateProfile(p, now = Date.now()) {
   if (!check.ok) {
     // last resort: keep levels / ownership, restore the starter positions
     const fresh = starterVillage(now);
+    v.grid_size = fresh.grid_size;
     v.buildings = fresh.buildings; v.tiles = fresh.tiles;
     check = validateLayout(v, v);
   }
   if (check.ok) { v.buildings = check.buildings; v.tiles = check.tiles; }
+  v.decor = v.decor || {};
+  for (const k of ['dec_heaven_winged_pillar', 'dec_heaven_cloud_arch', 'dec_heaven_divine_tree', 'dec_heaven_lotus_fountain', 'dec_heaven_seraph_harp']) {
+    if (!v.decor[k]) v.decor[k] = 2;
+  }
   syncBuildingLevels(v);
   v.comfort = computeComfort(v);
   p.village = v;
@@ -194,16 +203,16 @@ export function seedProfiles() {
     equipped: {
       outfit: eq('s11_zeus_olympus', 10), hat: eq('hat_glowing_bunny', 10), face: eq('face_rosegold_shades', 8),
       gloves: eq('gloves_vorax_cyan', 10), boots: eq('boots_hermes_greaves', 10), wings: eq('wings_golden_seraphim', 9),
-      pet: { id: 'pet_nyx', stars: 3, visual_tier: 3, nickname: 'Nyx', bond_lv: 7, level: 20 },
+      pet: { id: 'pet_nyx', stars: 3, visual_tier: 3, nickname: 'Nyx', bond_lv: 20, level: 20 },
     },
     pets: [
       {
         id: 'pet_nyx', stars: 3, visual_tier: 3, essence: 30, spent_essence: 160, nickname: 'Nyx',
-        bond_lv: 7, bond_xp: 120, last_gift_day: '', last_harmony_day: '', last_interact_at: 0,
+        bond_lv: 20, bond_xp: 120, last_gift_day: '', last_harmony_day: '', last_interact_at: 0,
         slots: [
           { stat: 'power', tier: 'mythic', value: 0.16, locked: true },
           { stat: 'swiftness', tier: 'epic', value: 0.11, locked: false },
-          { stat: 'double_jackpot', tier: 'epic', value: 0.10, locked: false },
+          null,
         ],
         level: 20, mood: 100, traits: ['double_jackpot', 'mach_wing', 'treasure_sniffer'],
       },
@@ -221,8 +230,8 @@ export function seedProfiles() {
     castle_lv: 6, levels: { mint: 7, patisserie: 6, shrine: 5, nest: 4, dock: 5 },
     wonders: { wnd_ferris: { stars: 1 }, wnd_onsen: { stars: 1 } },
     decor: { dec_swing: 1, dec_picnic: 1, dec_gramophone: 1 },
-    place: [['wnd_ferris', 14, 16], ['wnd_onsen', 4, 17], ['dec_swing', 14, 9], ['dec_picnic', 7, 17], ['dec_gramophone', 13, 9]],
-    roads: [...range(7, 15).map((x) => [x, 8]), ...range(8, 14).map((x) => [x, 20])],
+    place: [['wnd_ferris', 11, 13], ['wnd_onsen', 2, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 13], ['dec_gramophone', 10, 6]],
+    roads: [...range(5, 10).map((x) => [x, 16]), ...range(5, 10).map((x) => [x, 17]), [5, 5], [12, 5], [10, 7], [10, 8]],
   });
 
   const neen = seed('neen', 'dxb', {
@@ -238,12 +247,12 @@ export function seedProfiles() {
     equipped: {
       outfit: eq('s8_glacial_elsa', 10), hat: eq('hat_glowing_bunny', 10), face: eq('face_rosegold_shades', 8),
       gloves: eq('gloves_cat_mittens', 10), boots: eq('boots_hermes_greaves', 9), wings: eq('wings_golden_seraphim', 10),
-      pet: { id: 'pet_ragdoll', stars: 2, visual_tier: 2, nickname: 'Mochi Princess', bond_lv: 8, level: 20 },
+      pet: { id: 'pet_ragdoll', stars: 2, visual_tier: 2, nickname: 'Mochi Princess', bond_lv: 10, level: 20 },
     },
     pets: [
       {
         id: 'pet_ragdoll', stars: 2, visual_tier: 2, essence: 50, spent_essence: 40, nickname: 'Mochi Princess',
-        bond_lv: 8, bond_xp: 90, last_gift_day: '', last_harmony_day: '', last_interact_at: 0,
+        bond_lv: 10, bond_xp: 90, last_gift_day: '', last_harmony_day: '', last_interact_at: 0,
         slots: [
           { stat: 'fortune', tier: 'mythic', value: 0.16, locked: true },
           { stat: 'cozy_purr', tier: 'epic', value: 0.12, locked: false },
@@ -265,9 +274,9 @@ export function seedProfiles() {
     castle_lv: 8, levels: { mint: 8, patisserie: 7, shrine: 6, nest: 6, dock: 7 },
     wonders: { wnd_ferris: { stars: 2 }, wnd_fountain: { stars: 1 }, wnd_world_tree: { stars: 1 } },
     decor: { dec_swing: 1, dec_picnic: 1, dec_tent: 1, dec_cat_cushion: 1, dec_birdbath_lamp: 1 },
-    place: [['wnd_ferris', 14, 16], ['wnd_fountain', 4, 17], ['wnd_world_tree', 1, 0], ['dec_swing', 14, 9], ['dec_picnic', 7, 17],
-      ['dec_tent', 19, 1], ['dec_cat_cushion', 13, 9], ['dec_birdbath_lamp', 8, 9]],
-    roads: [...range(7, 15).map((x) => [x, 8]), [13, 10]],
+    place: [['wnd_ferris', 11, 13], ['wnd_fountain', 5, 13], ['wnd_world_tree', 1, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 10],
+      ['dec_tent', 15, 0], ['dec_cat_cushion', 10, 6], ['dec_birdbath_lamp', 5, 6]],
+    roads: [[5, 5], [12, 5], [10, 7], [10, 8], ...range(6, 10).map((x) => [x, 16]), [10, 12]],
   });
 
   const mochi = seed('mochi', 'dxb', { level: 12, friends: ['nook', 'neen', 'leo'], ftue_step: 3 });
@@ -285,7 +294,14 @@ const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 function seedVillage({ castle_lv, levels, wonders, decor, place, roads }) {
   const now = Date.now();
   const v = starterVillage(now - 2 * 3600_000);   // 2 h of production waiting so QA can harvest at once
-  Object.assign(v, { castle_lv, levels: { ...v.levels, ...levels }, wonders, decor });
+  const heavenDecor = {
+    dec_heaven_winged_pillar: 2,
+    dec_heaven_cloud_arch: 2,
+    dec_heaven_divine_tree: 2,
+    dec_heaven_lotus_fountain: 2,
+    dec_heaven_seraph_harp: 2,
+  };
+  Object.assign(v, { castle_lv, levels: { ...v.levels, ...levels }, wonders, decor: { ...heavenDecor, ...decor } });
   for (const [type, x, y] of place) v.buildings.push({ uid: `${type}_seed`, type, x, y, rot: 0 });
   for (const [x, y] of roads) v.tiles.push({ x, y, t: 'road_cobble' });
   const check = validateLayout(v, v);
@@ -302,6 +318,234 @@ export function upgradeSeedVillage(existing) {
   if (!fresh || existing.village?.levels) return false;
   existing.village = fresh.village;
   return true;
+}
+
+export const TOWNHALL_BOT_DEFS = Object.freeze([
+  Object.freeze({
+    id: 'aria',
+    username: 'aria',
+    lineage: 'dxb',
+    body: 'girl',
+    level: 22,
+    title: 'Starlight Idol',
+    partner_id: 'sora',
+    couple_streak: 14,
+    arcade_best: 1120,
+    goldWon: 42000,
+    castle_lv: 5,
+    levels: { mint: 5, patisserie: 5, shrine: 4, nest: 4, dock: 4 },
+  }),
+  Object.freeze({
+    id: 'sora',
+    username: 'sora',
+    lineage: 'bkk',
+    body: 'boy',
+    level: 24,
+    title: 'Astral Knight',
+    partner_id: 'aria',
+    couple_streak: 14,
+    arcade_best: 1280,
+    goldWon: 58000,
+    castle_lv: 5,
+    levels: { mint: 6, patisserie: 5, shrine: 5, nest: 4, dock: 5 },
+  }),
+  Object.freeze({
+    id: 'luna',
+    username: 'luna',
+    lineage: 'dxb',
+    body: 'girl',
+    level: 19,
+    title: 'Sakura Weaver',
+    partner_id: 'kai',
+    couple_streak: 9,
+    arcade_best: 940,
+    goldWon: 31000,
+    castle_lv: 4,
+    levels: { mint: 4, patisserie: 4, shrine: 4, nest: 3, dock: 3 },
+  }),
+  Object.freeze({
+    id: 'kai',
+    username: 'kai',
+    lineage: 'bkk',
+    body: 'boy',
+    level: 21,
+    title: 'Sky Explorer',
+    partner_id: 'luna',
+    couple_streak: 9,
+    arcade_best: 1050,
+    goldWon: 36500,
+    castle_lv: 4,
+    levels: { mint: 5, patisserie: 4, shrine: 4, nest: 4, dock: 4 },
+  }),
+]);
+
+const BOY_HAIRS = [
+  'hair_boy_fluffy', 'hair_spiky_hero', 'hair_parted_curtains', 'hair_wolf_shag',
+  'hair_half_up_bun', 'hair_royal_prince_feather', 'hair_royal_starlight_bob', 'hair_celestial_seraph',
+];
+const GIRL_HAIRS = [
+  'hair_girl_waves', 'hair_bob_blunt', 'hair_high_ponytail', 'hair_twin_tails',
+  'hair_double_buns', 'hair_hime_straight', 'hair_braided_crown', 'hair_half_up_bun',
+  'hair_royal_drill_ribbons', 'hair_royal_sakura_braid', 'hair_royal_starlight_bob',
+  'hair_royal_butterfly_updo', 'hair_royal_moon_ponytail', 'hair_celestial_empress', 'hair_celestial_seraph',
+];
+const PET_NICKNAMES = {
+  pet_ragdoll: ['Mochi', 'Milky', 'Peach', 'Yuki', 'Puff'],
+  pet_nyx: ['Nyx', 'Toothless', 'Astra', 'Eclipse', 'Volt'],
+  pet_kitsune: ['Inari', 'Sakura', 'Kitsu', 'Kon', 'Miko'],
+  pet_skywhale: ['Bubbles', 'Lumi', 'Zephyr', 'Cloudy', 'Sora'],
+};
+
+function pickRandom(arr, rng = Math.random) {
+  if (!arr || !arr.length) return null;
+  return arr[Math.floor(rng() * arr.length)];
+}
+
+/**
+ * Equips a bot profile with a randomized, visually rich costume (outfit, hair, dye, 5 accessory slots, and companion pet).
+ */
+export function randomizeBotCostume(p, rng = Math.random, usedOutfits = new Set(), usedPets = new Set()) {
+  if (!p) return p;
+  const isGirl = p.lineage === 'dxb' || p.appearance?.body === 'girl';
+  const body = isGirl ? 'girl' : 'boy';
+
+  // 1. Random Outfit (exclude newbie_outfit and respect boy/girl lean)
+  const allOutfitIds = Object.keys(OUTFITS).filter((id) => {
+    if (id === 'newbie_outfit') return false;
+    const def = OUTFITS[id];
+    if (def?.lean && def.lean !== body) return false;
+    return true;
+  });
+  const unusedOutfits = allOutfitIds.filter((id) => !usedOutfits.has(id));
+  const outfitId = pickRandom(unusedOutfits.length ? unusedOutfits : allOutfitIds, rng) || 'rare_royal_scholar';
+  usedOutfits.add(outfitId);
+  const outfitRefine = 4 + Math.floor(rng() * 7); // +4..+10
+
+  // 2. Random Hairstyle & Hair Dye
+  const hairPool = (isGirl ? GIRL_HAIRS : BOY_HAIRS).filter((id) => HAIRSTYLES[id]);
+  const hairId = pickRandom(hairPool, rng) || (isGirl ? 'hair_girl_waves' : 'hair_boy_fluffy');
+  const hDef = HAIRSTYLES[hairId];
+  const colorKeys = Object.keys(HAIR_COLORS);
+  const hairColor = (hDef?.defaultColor && rng() < 0.5)
+    ? hDef.defaultColor
+    : (pickRandom(colorKeys, rng) || 'chestnut');
+
+  p.appearance = { body, hair: hairId, hairColor };
+  p.owned_hairs = Array.from(new Set([...(p.owned_hairs || []), hairId]));
+  p.unlocked_hair_colors = Array.from(new Set([...(p.unlocked_hair_colors || []), hairColor]));
+
+  // 3. Random Accessories across hat, face, gloves, boots, wings
+  const bySlot = { hat: [], face: [], gloves: [], boots: [], wings: [] };
+  for (const [accId, def] of Object.entries(ACCESSORIES)) {
+    if (bySlot[def.slot]) bySlot[def.slot].push(accId);
+  }
+
+  p.inventory = p.inventory || { newbie_outfit: { refine: 0, dupes: 0 } };
+  p.inventory[outfitId] = { refine: outfitRefine, dupes: 0 };
+
+  const slotChance = { hat: 0.82, face: 0.65, gloves: 0.85, boots: 0.85, wings: 0.88 };
+  const equipped = {
+    outfit: eq(outfitId, outfitRefine),
+    hat: null,
+    face: null,
+    gloves: null,
+    boots: null,
+    wings: null,
+    pet: null,
+  };
+
+  for (const slot of ['hat', 'face', 'gloves', 'boots', 'wings']) {
+    if (rng() <= slotChance[slot] && bySlot[slot].length) {
+      const itemId = pickRandom(bySlot[slot], rng);
+      const ref = 3 + Math.floor(rng() * 8); // +3..+10
+      p.inventory[itemId] = { refine: ref, dupes: 0 };
+      equipped[slot] = eq(itemId, ref);
+    }
+  }
+
+  // 4. Random Companion Pet
+  const unusedPetIds = PET_IDS.filter((id) => !usedPets.has(id));
+  const petId = pickRandom(unusedPetIds.length ? unusedPetIds : PET_IDS, rng) || 'pet_ragdoll';
+  usedPets.add(petId);
+  const stars = 1 + Math.floor(rng() * 3); // ★1..★3
+  const visualTier = stars;
+  const petLevel = 10 + Math.floor(rng() * 11); // Lv 10..20
+  const bondLv = 5 + Math.floor(rng() * 16);
+  const nickname = pickRandom(PET_NICKNAMES[petId], rng) || 'Buddy';
+  const petUid = `pet_${p.id}_${petId}`;
+
+  const petObj = {
+    uid: petUid,
+    id: petId,
+    stars,
+    visual_tier: visualTier,
+    essence: 20,
+    spent_essence: stars === 3 ? 120 : stars === 2 ? 40 : 0,
+    nickname,
+    bond_lv: bondLv,
+    bond_xp: 50,
+    last_gift_day: '',
+    last_harmony_day: '',
+    last_interact_at: 0,
+    slots: [
+      { stat: isGirl ? 'fortune' : 'power', tier: stars >= 3 ? 'mythic' : 'epic', value: stars >= 3 ? 0.15 : 0.11, locked: false },
+      { stat: 'swiftness', tier: 'rare', value: 0.08, locked: false },
+      null,
+    ],
+    level: petLevel,
+    mood: 100,
+    traits: ['cozy_purr', 'mach_wing', null],
+  };
+
+  p.pets = [petObj];
+  equipped.pet = {
+    uid: petUid,
+    id: petId,
+    stars,
+    visual_tier: visualTier,
+    nickname,
+    bond_lv: bondLv,
+    level: petLevel,
+  };
+  p.equipped = equipped;
+  p.cp = recalcPlayerCP(p);
+  return p;
+}
+
+/**
+ * Creates the 4 Town Hall citizen bot accounts with randomized costumes and villages.
+ */
+export function seedTownHallBots(rng = Math.random) {
+  const usedOutfits = new Set();
+  const usedPets = new Set();
+  const allBotIds = TOWNHALL_BOT_DEFS.map((d) => d.id);
+
+  return TOWNHALL_BOT_DEFS.map((def) => {
+    const p = seed(def.username, def.lineage, {
+      is_bot: true,
+      level: def.level,
+      title: def.title,
+      titles: [def.title],
+      partner_id: def.partner_id,
+      couple_streak: def.couple_streak,
+      friends: ['nook', 'neen', 'mochi', 'leo', ...allBotIds.filter((id) => id !== def.id)],
+      arcade_best: def.arcade_best,
+      mono_stats: { goldWon: def.goldWon },
+      ftue_step: 3,
+      a2hs_claimed: true,
+      founder: false,
+    });
+    p.village = seedVillage({
+      castle_lv: def.castle_lv,
+      levels: def.levels,
+      wonders: { wnd_fountain: { stars: 1 } },
+      decor: { dec_swing: 1, dec_picnic: 1 },
+      place: [['wnd_fountain', 5, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 10]],
+      roads: [[5, 5], [12, 5], [10, 7], [10, 8]],
+    });
+    randomizeBotCostume(p, rng, usedOutfits, usedPets);
+    return p;
+  });
 }
 
 /** Strip secrets before sending a profile to any client. */
@@ -321,7 +565,7 @@ export function publicProfile(p, { self = false } = {}) {
   if (self) return { ...rest, yard_pets };
   return {
     id: p.id, username: p.username, lineage: p.lineage, appearance: p.appearance, title: p.title, level: p.level, cp: p.cp,
-    equipped: p.equipped, partner_id: p.partner_id, couple_streak: p.couple_streak, yard_pets,
+    equipped: p.equipped, partner_id: p.partner_id, couple_streak: p.couple_streak, is_bot: !!p.is_bot, yard_pets,
   };
 }
 

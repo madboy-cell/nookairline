@@ -15,7 +15,7 @@ import {
 } from './profile_factory.js';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { FISHING } from '../shared/catalog_landmarks.js';
-import { instanceLayout, clampToArea, spawnPoint, dockNear, findPlaced, buildCellIndex } from '../shared/village_rules.js';
+import { instanceLayout, clampToArea, spawnPoint, dockNear, findPlaced, buildCellIndex, isWalkablePos, nearestWalkablePos } from '../shared/village_rules.js';
 import * as eco from './economy_service.js';
 import * as rpg from './rpg_service.js';
 // Step 4: Universal 4-Seat Table Hub + 2.5D Sky Monopoly (table_* / mono_* messages, podium payouts)
@@ -24,13 +24,20 @@ import { OUTFITS } from '../shared/costumes_catalog.js';
 import { ACCESSORIES, DICE_SKINS, getPetDef } from '../shared/catalog_gear_pets.js';
 import { petPassivePct } from '../shared/rpg_rules.js';
 import { CORE } from '../shared/catalog_landmarks.js';
+// Phase 5: Daily RPG Service, WebRTC Voice Calls, Town Hall
+import { ensurePhase5, createDailyService } from './daily_service.js';
+import { createVoiceCallService } from './voice_call_service.js';
+import { createTownHallBotController } from './town_hall_bots.js';
+import { TOWNHALL } from '../shared/phase5_rules.js';
 
-// Step 3 & Step 3.5 actions (Section 11 row 4 / Section 23.3) — routed through onAction like the village_* actions.
+// Step 3 & Step 3.5 & Step 5 actions — routed through onAction like the village_* actions.
 const RPG_ACTIONS = new Set([
   'wardrobe_equip', 'gacha_pull', 'gacha_set_featured', 'shard_exchange', 'blacksmith_forge', 'pet_feed', 'pet_reroll_trait', 'pet_breed_couple',
   'pet_evolve', 'pet_reroll', 'pet_lock_slot', 'pet_infuse', 'pet_release', 'pet_set_visual_tier', 'pet_rename', 'pet_interact', 'pet_claim_gift',
-  'pet_online_tick', 'pet_equip_costume', 'pet_adopt',
+  'pet_online_tick', 'pet_equip_costume', 'pet_adopt', 'pet_set_poses',
   'hair_classic_buy', 'hair_gacha_pull', 'hair_dye_unlock', 'hair_equip',
+  // Phase 5 actions
+  'hall_list', 'hall_worship', 'cheer_claim', 'owl_send_gift', 'owl_claim_mail', 'vip_card_buy', 'vip_card_use', 'passport_state', 'passport_claim', 'founder_claim',
 ]);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,6 +92,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     upgradeSeedVillage(p);
     migrateProfile(p, boot);
     rpg.migrateRpg(p);
+    ensurePhase5(p);
     p.cp = recalcPlayerCP(p);
     db.markProfile(p.id);
   }
@@ -228,12 +236,73 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   };
   function pushProfile(p) { send(sockets.get(p.id), { type: 'profile_update', profile: publicProfile(p, { self: true }), serverNow: Date.now() }); }
 
+  const broadcastAll = (msg) => {
+    const data = JSON.stringify(msg);
+    for (const s of sockets.values()) {
+      if (s?.readyState === 1) s.send(data);
+    }
+  };
+
+  const dailyService = createDailyService({
+    db,
+    now: () => Date.now(),
+    sendTo: (userId, msg) => send(sockets.get(userId), msg),
+    broadcastAll,
+    pushProfile,
+    rng,
+    listProfiles: () => [...db.profiles.values()],
+  });
+
+  const voiceService = createVoiceCallService({
+    getProfile: (id) => db.getProfile(id),
+    isOnline: (id) => sockets.has(id) && sockets.get(id)?.readyState === 1,
+    send: (id, msg) => send(sockets.get(id), msg),
+    now: () => Date.now(),
+    canCall: (caller, callee, nowMs) => dailyService.canCall(caller, callee, nowMs),
+    grant: (userId, { diamonds, exp }) => {
+      const p = db.getProfile(userId);
+      if (!p) return;
+      if (diamonds) p.diamonds = (p.diamonds || 0) + diamonds;
+      if (exp) eco.grantExp(p, exp);
+      db.markProfile(p.id);
+      pushProfile(p);
+    },
+  });
+
+  const voiceTicker = setInterval(() => {
+    voiceService.tick();
+  }, 1000);
+
+  const townHallBots = createTownHallBotController({
+    db,
+    instances,
+    presence,
+    sockets,
+    broadcast,
+    rng: Math.random,
+  });
+
   // Step 4 tables: authoritative 4-seat rooms, bots, 12 s watchdog, Victory Podium payouts.
   const tables = createTableService({
     db, log, rng,
     sendTo: (id, msg) => send(sockets.get(id), msg),
     onlineIds: () => sockets.keys(),
     pushProfile,
+    onBigHit: ({ winnerId, winnerName, mult, number }) => {
+      dailyService.emitCheer({
+        winnerId,
+        winnerName,
+        achievement: `hit ⚡ ${mult}× on #${number} at Zeus Roulette`,
+      });
+    },
+    onHandSettled: (prof) => {
+      dailyService.bumpQuest(prof, 'play');
+      pushProfile(prof);
+    },
+    onMatchFinished: (prof) => {
+      dailyService.bumpQuest(prof, 'play');
+      pushProfile(prof);
+    },
     catalogs: {
       outfits: OUTFITS, accessories: ACCESSORIES, diceSkins: DICE_SKINS,
       petFamilyOf: (id) => { try { return getPetDef(id)?.family || null; } catch { return null; } },
@@ -263,7 +332,21 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     for (const id of [...layouts.keys()]) if (ownersOf(id).includes(owner)) layouts.delete(id);
     const p = db.getProfile(owner);
     for (const id of [`village:${owner}`, isCouple(p) ? instanceFor(p) : null]) {
-      if (id && instances.has(id)) broadcast(id, { type: 'village_updated', owner, village: publicVillage(p.village), layout: layoutWire(layoutFor(id)) });
+      if (id && instances.has(id)) {
+        const L = layoutFor(id);
+        broadcast(id, { type: 'village_updated', owner, village: publicVillage(p.village), layout: layoutWire(L) });
+        for (const memberId of instances.get(id)) {
+          const s = presence.get(memberId);
+          const mp = db.getProfile(memberId);
+          const canFly = !!mp?.equipped?.wings?.id;
+          if (s && !isWalkablePos(L, s.x, s.z, { canFly })) {
+            const safe = nearestWalkablePos(L, s.x, s.z, { canFly });
+            s.x = safe.x; s.z = safe.z; s.vx = 0; s.vz = 0;
+            send(sockets.get(memberId), { type: 'position_correct', x: s.x, z: s.z });
+            broadcast(id, { type: 'player_moved', id: memberId, x: s.x, z: s.z, vx: 0, vz: 0, right: s.right, back: s.back }, memberId);
+          }
+        }
+      }
     }
   }
 
@@ -272,13 +355,77 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     return { ...publicProfile(p), x: s.x, z: s.z, vx: s.vx, vz: s.vz, right: s.right, back: s.back };
   };
 
-  const snapshotFor = (ws) => ({
-    type: 'instance_snapshot',
-    instanceId: ws.instanceId,
-    players: [...(instances.get(ws.instanceId) || [])].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
-  });
+  const snapshotFor = (ws) => {
+    const s = presence.get(ws.userId);
+    return {
+      type: 'instance_snapshot',
+      instanceId: ws.instanceId,
+      layout: ws.instanceId === TOWNHALL.ID ? { kind: 'townhall', size: 36 } : layoutWire(layoutFor(ws.instanceId)),
+      self: s ? { x: s.x, z: s.z } : undefined,
+      players: [...(instances.get(ws.instanceId) || [])].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
+    };
+  };
+
+  function switchInstance(ws, to) {
+    const p = db.getProfile(ws.userId);
+    if (!p) return;
+    const targetId = (to === 'townhall') ? TOWNHALL.ID : instanceFor(p);
+    if (ws.instanceId === targetId) return;
+
+    // Leave current instance
+    const oldId = ws.instanceId;
+    if (oldId) {
+      const members = instances.get(oldId);
+      members?.delete(ws.userId);
+      if (members && !members.size && oldId !== TOWNHALL.ID) {
+        instances.delete(oldId);
+        layouts.delete(oldId);
+      }
+      broadcast(oldId, { type: 'player_left', id: ws.userId });
+    }
+
+    // Join target instance
+    ws.instanceId = targetId;
+    if (!instances.has(targetId)) instances.set(targetId, new Set());
+    instances.get(targetId).add(ws.userId);
+
+    const s = presence.get(ws.userId);
+    const now = Date.now();
+    let layoutPayload;
+    let selfPos;
+    if (targetId === TOWNHALL.ID) {
+      layoutPayload = { kind: 'townhall', size: 36 };
+      selfPos = { x: 0, z: 6 };
+      if (s) {
+        Object.assign(s, { x: 0, z: 6, vx: 0, vz: 0, t: now, instanceId: targetId });
+      } else {
+        presence.set(ws.userId, { x: 0, z: 6, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: targetId });
+      }
+    } else {
+      const L = layoutFor(targetId);
+      layoutPayload = layoutWire(L);
+      const sp = spawnPoint(L, p.id, p.lineage);
+      selfPos = { x: sp.x, z: sp.z };
+      if (s) {
+        Object.assign(s, { x: sp.x, z: sp.z, vx: 0, vz: 0, t: now, instanceId: targetId });
+      } else {
+        presence.set(ws.userId, { x: sp.x, z: sp.z, vx: 0, vz: 0, right: p.lineage !== 'dxb', back: false, t: now, instanceId: targetId });
+      }
+    }
+
+    send(ws, {
+      type: 'instance_snapshot',
+      instanceId: targetId,
+      layout: layoutPayload,
+      self: selfPos,
+      players: [...instances.get(targetId)].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
+    });
+    broadcast(targetId, { type: 'player_joined', player: playerState(ws.userId) }, ws.userId);
+  }
 
   function join(ws, p) {
+    ensurePhase5(p);
+    dailyService.onDailyLogin(p);
     const old = sockets.get(p.id);
     if (old && old !== ws) { send(old, { type: 'kicked', reason: 'Signed in on another device' }); old.close(4001, 'replaced'); }
     sockets.set(p.id, ws);
@@ -288,9 +435,13 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     instances.get(ws.instanceId).add(p.id);
     const L = layoutFor(ws.instanceId);
     const prev = presence.get(p.id);
+    const canFly = !!p.equipped?.wings?.id;
     if (!prev || prev.instanceId !== ws.instanceId) {
       const sp = spawnPoint(L, p.id, p.lineage);   // couples spawn on their own islands, never stacked
       presence.set(p.id, { x: sp.x, z: sp.z, vx: 0, vz: 0, right: p.lineage !== 'dxb', back: false, t: Date.now(), instanceId: ws.instanceId });
+    } else if (!isWalkablePos(L, prev.x, prev.z, { canFly })) {
+      const safe = nearestWalkablePos(L, prev.x, prev.z, { canFly });
+      prev.x = safe.x; prev.z = safe.z; prev.vx = 0; prev.vz = 0;
     }
     const now = Date.now();
     const offline = eco.computeOfflineGains(p, now, p.last_active_ts, { coupled: isCouple(p) });
@@ -303,16 +454,18 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     send(ws, snapshotFor(ws));
     broadcast(ws.instanceId, { type: 'player_joined', player: playerState(p.id) }, p.id);
     tables.connect(p.id);
+    voiceService.onReconnect(p.id);
     log.info(`[ws] ${p.id} joined ${ws.instanceId} (${sockets.size} online)`);
   }
 
   function leave(ws) {
     if (!ws.userId || sockets.get(ws.userId) !== ws) return;
+    voiceService.onDisconnect(ws.userId);
     sockets.delete(ws.userId);
     tables.disconnect(ws.userId);
     const members = instances.get(ws.instanceId);
     members?.delete(ws.userId);
-    if (members && !members.size) { instances.delete(ws.instanceId); layouts.delete(ws.instanceId); }
+    if (members && !members.size && ws.instanceId !== TOWNHALL.ID) { instances.delete(ws.instanceId); layouts.delete(ws.instanceId); }
     broadcast(ws.instanceId, { type: 'player_left', id: ws.userId });
     const p = db.getProfile(ws.userId);
     if (p) { p.last_active_ts = Date.now(); db.markProfile(p.id); }
@@ -322,17 +475,34 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   function onMove(ws, m) {
     if (![m.x, m.z, m.vx, m.vz].every(finite)) return;
     const s = presence.get(ws.userId);
+    if (!s) return;
     const now = Date.now();
-    let { x, z } = clampToArea(layoutFor(ws.instanceId), m.x, m.z);
+    let x, z;
+    if (ws.instanceId === TOWNHALL.ID) {
+      x = Math.max(-18, Math.min(18, m.x));
+      z = Math.max(-18, Math.min(18, m.z));
+    } else {
+      const clamped = clampToArea(layoutFor(ws.instanceId), m.x, m.z);
+      x = clamped.x;
+      z = clamped.z;
+    }
     // speed sanity: reject teleports beyond what max speed allows since the last accepted step
     const dt = Math.min(1, (now - s.t) / 1000);
-    const allowed = NET.MAX_SPEED * dt + 0.6;
+    const allowed = NET.MAX_SPEED * dt + 1.2;
     const moved = Math.hypot(x - s.x, z - s.z);
     let corrected = x !== m.x || z !== m.z;
     if (moved > allowed) {
       const k = allowed / moved;
       x = s.x + (x - s.x) * k; z = s.z + (z - s.z) * k;
       corrected = true;
+    }
+    if (corrected && ws.instanceId !== TOWNHALL.ID) {
+      const L = layoutFor(ws.instanceId);
+      const p = db.getProfile(ws.userId);
+      const canFly = !!p?.equipped?.wings?.id;
+      if (!isWalkablePos(L, x, z, { canFly })) {
+        ({ x, z } = nearestWalkablePos(L, x, z, { canFly }));
+      }
     }
     const sp = Math.hypot(m.vx, m.vz), maxV = NET.MAX_SPEED;
     const vk = sp > maxV ? maxV / sp : 1;
@@ -355,14 +525,18 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   function onAction(ws, m) {
     const p = db.getProfile(ws.userId);
     const now = Date.now();
-    if (now - (ws.lastAction || 0) < NET.ACTION_COOLDOWN_MS && m.type !== 'fishing_reel_complete' && m.type !== 'pet_online_tick') {
+    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state';
+    if (now - (ws.lastAction || 0) < NET.ACTION_COOLDOWN_MS && !noCooldown) {
       return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, ok: false, error: 'slow_down' });
     }
-    if (m.type !== 'pet_online_tick') ws.lastAction = now;
+    if (!noCooldown) ws.lastAction = now;
     const coupled = isCouple(p);
     switch (m.type) {
-      case 'village_harvest_all':
-        return reply(ws, p, m.type, m, eco.harvestAll(p, now, { coupled, rng }));
+      case 'village_harvest_all': {
+        const r = eco.harvestAll(p, now, { coupled, rng });
+        if (r.ok) dailyService.bumpQuest(p, 'harvest');
+        return reply(ws, p, m.type, m, r);
+      }
       case 'village_save_grid':
         return reply(ws, p, m.type, m, eco.saveLayout(p, m.layout), { changed: true });
       case 'village_set_mood':
@@ -400,6 +574,14 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
           banner: m.banner == null ? undefined : String(m.banner),
           featuredOutfit: m.featuredOutfit == null ? undefined : String(m.featuredOutfit),
         }, rng);
+        if (r.ok && Array.isArray(r.items)) {
+          for (const it of r.items) {
+            if (it.rarity === 3) {
+              const name = it.name || OUTFITS[it.id]?.name || ACCESSORIES[it.id]?.name || getPetDef(it.id)?.name || it.id;
+              dailyService.emitCheer({ winnerId: p.id, winnerName: p.username, achievement: `pulled ${name} ✨ Mythic` });
+            }
+          }
+        }
         return reply(ws, p, m.type, m, r, { changed: !!r.changed });
       }
       case 'gacha_set_featured': {
@@ -414,14 +596,13 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         const r = rpg.blacksmithForge(p, { itemId: String(m.itemId), useBerries: !!m.useBerries, useScroll: !!m.useScroll }, now, rng);
         reply(ws, p, m.type, m, r);
         if (r.ok && r.sovereign) {
-          const banner = { type: 'global_cheer_banner', winnerName: p.username, achievement: `forged ${r.itemId} to +10 Sovereign`, cheerId: crypto.randomBytes(4).toString('hex') };
-          for (const s of sockets.values()) send(s, banner);
+          dailyService.emitCheer({ winnerId: p.id, winnerName: p.username, achievement: `forged ${r.itemId} to +10 Sovereign` });
         }
         if (r.ok && r.success) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
       case 'pet_feed':
-        return reply(ws, p, m.type, m, rpg.petFeed(p, { petUid: m.petUid == null ? undefined : String(m.petUid), petId: m.petId == null ? undefined : String(m.petId) }));
+        return reply(ws, p, m.type, m, rpg.petFeed(p, { petUid: m.petUid == null ? undefined : String(m.petUid), petId: m.petId == null ? undefined : String(m.petId), feedBond: Boolean(m.feedBond) }));
       case 'pet_reroll_trait':
         return reply(ws, p, m.type, m, rpg.petRerollTrait(p, { petUid: m.petUid == null ? undefined : String(m.petUid), petId: m.petId == null ? undefined : String(m.petId), slotIdx: m.slotIdx }, rng));
       case 'pet_breed_couple': {
@@ -478,6 +659,16 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
+      case 'pet_set_poses': {
+        const r = rpg.petSetPoses(p, {
+          petUid: m.petUid == null ? undefined : String(m.petUid),
+          petId: m.petId == null ? undefined : String(m.petId),
+          poses: Array.isArray(m.poses) ? m.poses : undefined,
+        });
+        reply(ws, p, m.type, m, r);
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
       case 'pet_rename': {
         const r = rpg.petRename(p, {
           petUid: m.petUid == null ? undefined : String(m.petUid),
@@ -488,11 +679,14 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
-      case 'pet_interact':
-        return reply(ws, p, m.type, m, rpg.petInteract(p, {
+      case 'pet_interact': {
+        const r = rpg.petInteract(p, {
           petUid: m.petUid == null ? undefined : String(m.petUid),
           petId: m.petId == null ? undefined : String(m.petId),
-        }, now));
+        }, now);
+        if (r.ok) dailyService.bumpQuest(p, 'pet');
+        return reply(ws, p, m.type, m, r);
+      }
       case 'pet_claim_gift':
         return reply(ws, p, m.type, m, rpg.petClaimGift(p, {
           petUid: m.petUid == null ? undefined : String(m.petUid),
@@ -532,8 +726,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok) {
           const cel = r.items?.find((it) => it.tier === 'celestial' && it.kind === 'new');
           if (cel) {
-            const banner = { type: 'global_cheer_banner', winnerName: p.username, achievement: `pulled ${cel.name} ✨ Celestial Hair`, cheerId: crypto.randomBytes(4).toString('hex') };
-            for (const s of sockets.values()) send(s, banner);
+            dailyService.emitCheer({ winnerId: p.id, winnerName: p.username, achievement: `pulled ${cel.name} ✨ Celestial Hair` });
           }
           broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         }
@@ -555,12 +748,34 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
+      // --- Phase 5: Hall of Fame, Cheer, Owl Gifts, VIP, Passport, Founder ---------
+      case 'hall_list':
+        return reply(ws, p, m.type, m, dailyService.hallList(p));
+      case 'hall_worship':
+        return reply(ws, p, m.type, m, dailyService.hallWorship(p));
+      case 'cheer_claim':
+        return reply(ws, p, m.type, m, dailyService.cheerClaim(p, m));
+      case 'owl_send_gift':
+        return reply(ws, p, m.type, m, dailyService.owlSendGift(p, m));
+      case 'owl_claim_mail':
+        return reply(ws, p, m.type, m, dailyService.owlClaimMail(p, m));
+      case 'vip_card_buy':
+        return reply(ws, p, m.type, m, dailyService.vipCardBuy(p, m));
+      case 'vip_card_use':
+        return reply(ws, p, m.type, m, dailyService.vipCardUse(p, m));
+      case 'passport_state':
+        return reply(ws, p, m.type, m, dailyService.passportState(p));
+      case 'passport_claim':
+        return reply(ws, p, m.type, m, dailyService.passportClaim(p, m));
+      case 'founder_claim':
+        return reply(ws, p, m.type, m, dailyService.founderClaim(p, m));
       default: return null;
     }
   }
 
   /** Finger Pick-Up & Drop: the player lifts their own Chibi or Pet and drops it anywhere walkable. */
   function onPickupDrop(ws, m) {
+    if (ws.instanceId === TOWNHALL.ID) return;
     const p = db.getProfile(ws.userId);
     const now = Date.now();
     const isPetDrop = m.targetId === 'pet';
@@ -571,11 +786,11 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     }
     ws.lastDrop = now;
     const L = layoutFor(ws.instanceId);
-    const { x, z } = clampToArea(L, m.x, m.z);
+    let { x, z } = clampToArea(L, m.x, m.z);
     let prop = null, buff = { buff: null };
     if (typeof m.propId === 'string') {
       const hit = findPlaced(L, m.propId, x, z);
-      if (hit && hit.d <= 1.6) {
+      if (hit && hit.d <= 2.4) {
         prop = { uid: hit.building.uid, type: hit.building.type, owner: hit.island.owner };
         if (isPetDrop) {
           const eqPet = rpg.findOwnedPet(p, {});
@@ -591,6 +806,10 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       }
     }
     if (!isPetDrop) {
+      const canFly = !!p.equipped?.wings?.id;
+      if (!isWalkablePos(L, x, z, { canFly })) {
+        ({ x, z } = nearestWalkablePos(L, x, z, { canFly }));
+      }
       const s = presence.get(ws.userId);
       Object.assign(s, { x, z, vx: 0, vz: 0, t: now });
     }
@@ -601,6 +820,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
   // --- Dock fishing: loot rolled at cast, revealed after the reel minigame -----------
   function onFishing(ws, m) {
+    if (ws.instanceId === TOWNHALL.ID) return;
     const p = db.getProfile(ws.userId);
     const now = Date.now();
     const L = layoutFor(ws.instanceId);
@@ -673,10 +893,30 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
           case 'auth_resume': {
             // wake from background: resend authoritative state in one round trip
             const p = db.getProfile(ws.userId);
-            send(ws, { type: 'resume_ok', profile: publicProfile(p, { self: true }), self: presence.get(ws.userId), layout: layoutWire(layoutFor(ws.instanceId)), serverNow: now });
+            if (p) {
+              ensurePhase5(p);
+              dailyService.onDailyLogin(p);
+            }
+            if (ws.instanceId === TOWNHALL.ID) {
+              switchInstance(ws, 'home');
+            }
+            const L = layoutFor(ws.instanceId);
+            send(ws, { type: 'resume_ok', profile: publicProfile(p, { self: true }), self: presence.get(ws.userId), layout: layoutWire(L), serverNow: now });
             send(ws, snapshotFor(ws));
+            tables.connect(ws.userId);
+            voiceService.onReconnect(ws.userId);
             break;
           }
+          case 'instance_switch':
+            switchInstance(ws, m.to);
+            break;
+          case 'call_invite':
+          case 'call_accept':
+          case 'call_decline':
+          case 'call_hangup':
+          case 'call_signal':
+            voiceService.handle(ws.userId, m);
+            break;
           case 'chibi_pickup_drop': onPickupDrop(ws, m); break;
           case 'fishing_cast':
           case 'fishing_reel_complete': onFishing(ws, m); break;
@@ -710,13 +950,15 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
   async function close() {
     clearInterval(heartbeat);
+    clearInterval(voiceTicker);
+    townHallBots.close();
     tables.close();
     for (const ws of wss.clients) ws.terminate();
     await new Promise((r) => wss.close(r));
     await new Promise((r) => server.close(r));
     await db.close();
   }
-  return { port: actualPort, close, db, app, tables };
+  return { port: actualPort, close, db, app, tables, townHallBots };
 }
 
 // Run directly: `npm start`

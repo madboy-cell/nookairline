@@ -27,13 +27,21 @@ export {
   giftRoll,
   sanitizeNickname,
   petStatBonus,
+  computePetPassives,
   migratePetsState,
   MAX_TRAIT_SLOTS,
   HUNGER,
   hungerZone,
   PET_MILESTONES,
   unlockedPosesForLevel,
+  SELECTABLE_PET_POSES,
+  unlockedSelectablePosesForLevel,
+  normalizeActivePoses,
   starsForLevel,
+  minLevelForStars,
+  openSlotCountForPet,
+  slotSoulLinkBonus,
+  computePetSoulLinkBonuses,
 } from './pet_rules.js';
 
 // ---------------------------------------------------------------------------------------------
@@ -108,15 +116,109 @@ export const FEATURED_SHARE = 0.5;
 export const BOX1 = {
   COST_1: 150, COST_10: 1350,           // 💎
   TICKET: 'ticket_standard',            // 1 ticket = 1 pull
+  // ★1–★3 split. On the Super-Mythic banner these are CONDITIONAL on "not Super Mythic", so the
+  // effective (displayed) rates are these × (1 − 0.5%) — see `box1DisplayRates()`; totals stay 100%.
   RATES: { 3: 0.03, 2: 0.17, 1: 0.80 },
   PITY: 40,                             // 40th pull without a Mythic = Mythic
   TEN_PULL_MIN_RARITY: 2,               // 10x = guaranteed Epic+
 };
 
+// ---------------------------------------------------------------------------------------------
+// ✦ Super Mythic tier (Dopamine Patch 1A) — Season banner only; own pity counter `p.gacha.sm_pity`.
+// Power in a match = Mythic (flex, not pay-to-win): the item def's `rarity` stays whatever the costume
+// catalog says; the gacha reports it as rarity 4 / rarityKey 'super_mythic' for the reveal.
+// ---------------------------------------------------------------------------------------------
+export const SUPER_MYTHIC = {
+  KEY: 'super_mythic',
+  RARITY: 4,                 // numeric tier used in gacha results (above ★3 Mythic)
+  BASE_RATE: 0.005,          // 0.5 %
+  SOFT_PITY_START: 75,       // pull #75 gets base + 6 %
+  SOFT_PITY_STEP: 0.06,      // +6 % per pull from #75
+  HARD_PITY: 90,             // pull #90 is guaranteed
+  PITY_KEY: 'sm_pity',
+  IDS: ['sm_eclipse_dragon', 'sm_aurora_empress'],
+  DUPE_SHARDS: 200,
+};
+
+
+/** 🎁 Gift a Pull (Dopamine Patch 1C): sender pays, bound partner opens on the runway (Season banner). */
+export const GIFT_PULL = {
+  COUNTS: [1, 10],
+  CURRENCIES: ['diamonds', 'ticket'],
+  MAX_MESSAGE: 60,
+  MAX_PENDING: 20,
+  BADGE: 'lucky_charm',
+  BANNER: 'season',
+};
+/** 💞 Couple runway layer (Dopamine Patch 1B.5). */
+export const RUNWAY_COUPLE = {
+  DUO_WINDOW_MS: 10_000,      // both partners pull within 10 s → shared Duo Show (odds unchanged)
+  CHEER_KINDS: ['hearts', 'flash'],
+  CHEER_MIN_GAP_MS: 150,
+  WATCH_WINDOW_MS: 90_000,    // cheers / front-row joins are accepted this long after a pull
+};
+const isSuperMythicDef = (k, d) => SUPER_MYTHIC.IDS.includes(k) || d?.superMythic === true || d?.rarity === SUPER_MYTHIC.RARITY || d?.rarity === SUPER_MYTHIC.KEY;
+export const isSuperMythicId = (id) => isSuperMythicDef(id, OUTFITS[id]);
+/** Super Mythic items actually present in the costume catalog (empty → the tier is gated off). */
+export const SUPER_MYTHIC_POOL = SUPER_MYTHIC.IDS.filter((k) => OUTFITS[k]);
+export const superMythicEnabled = () => SUPER_MYTHIC_POOL.length > 0;
+/** Chance (0..1) that pull number `pullNo` (1-based, since the last Super Mythic) is a Super Mythic. */
+export function superMythicRate(pullNo) {
+  const n = pullNo | 0;
+  if (n >= SUPER_MYTHIC.HARD_PITY) return 1;
+  if (n < SUPER_MYTHIC.SOFT_PITY_START) return SUPER_MYTHIC.BASE_RATE;
+  return Math.min(1, SUPER_MYTHIC.BASE_RATE + SUPER_MYTHIC.SOFT_PITY_STEP * (n - SUPER_MYTHIC.SOFT_PITY_START + 1));
+}
+/**
+ * One authoritative tier roll using a SINGLE uniform `u` in [0,1): Super Mythic owns the TOP slice
+ * [1 − smRate, 1); the rest is rescaled onto the ★3/★2/★1 split. Returns 4 | 3 | 2 | 1.
+ */
+export function rollTierWithSuperMythic(u, rates, smPullNo, enabled = true) {
+  const sm = enabled ? superMythicRate(smPullNo) : 0;
+  if (sm > 0 && u >= 1 - sm) return SUPER_MYTHIC.RARITY;
+  const v = sm > 0 ? u / (1 - sm) : u;
+  if (v < rates[3]) return 3;
+  if (v < rates[3] + rates[2]) return 2;
+  return 1;
+}
+/** Base (pity 0) displayed rates incl. Super Mythic; always sums to 1. */
+export function box1DisplayRates(ratesOrBanner = BOX1.RATES, withSuperMythic = superMythicEnabled()) {
+  const rates = (ratesOrBanner && typeof ratesOrBanner === 'object' && ratesOrBanner.rates) ? ratesOrBanner.rates : (ratesOrBanner || BOX1.RATES);
+  const sm = withSuperMythic ? SUPER_MYTHIC.BASE_RATE : 0;
+  const k = 1 - sm;
+  return { super_mythic: sm, [SUPER_MYTHIC.RARITY]: sm, 3: rates[3] * k, 2: rates[2] * k, 1: rates[1] * k };
+}
+/**
+ * Roll `count` Box 1 rarities with the 40-pull Mythic pity, the Super Mythic soft/hard pity and the 10x Epic+
+ * guarantee. Exactly ONE rng() call per pull. A Super Mythic also resets the Mythic pity (it is "Mythic+").
+ * @returns {{ rarities: number[], pity: number, smPity: number, pityHit: boolean, smPityHit: boolean }}
+ */
+export function rollBox1Rarities({ count = 1, rates = BOX1.RATES, pity = 0, smPity = 0, superMythic = false, pityMax = BOX1.PITY, tenPullMin = BOX1.TEN_PULL_MIN_RARITY } = {}, rng = Math.random) {
+  const rarities = [];
+  let pityHit = false, smPityHit = false;
+  pity |= 0; smPity |= 0;
+  for (let i = 0; i < count; i++) {
+    const pullNo = superMythic ? smPity + 1 : 0;
+    let r = rollTierWithSuperMythic(rng(), rates, pullNo, superMythic);
+    pity++;
+    if (superMythic) smPity++;
+    if (r === SUPER_MYTHIC.RARITY) {
+      if (superMythicRate(pullNo) >= 1) smPityHit = true;
+      smPity = 0; pity = 0;
+    } else {
+      if (r < 3 && pity >= pityMax) { r = 3; pityHit = true; }
+      if (r === 3) pity = 0;
+    }
+    rarities.push(r);
+  }
+  if (count === 10 && tenPullMin && !rarities.some((r) => r >= tenPullMin)) rarities[9] = tenPullMin;
+  return { rarities, pity, smPity, pityHit, smPityHit };
+}
+
 const dicePool = (rarity) => DICE_IDS.filter((k) => DICE_SKINS[k].rarity === rarity);
 const poolOf = (rarity) => [
   ...Object.keys(ACCESSORIES).filter((k) => !ACCESSORIES[k].starterCosmetic && ACCESSORIES[k].rarity === rarity),
-  ...Object.keys(OUTFITS).filter((k) => OUTFITS[k].rarity === rarity && k !== 'newbie_outfit'),
+  ...Object.keys(OUTFITS).filter((k) => OUTFITS[k].rarity === rarity && k !== 'newbie_outfit' && !isSuperMythicDef(k, OUTFITS[k])),
   ...dicePool(rarity),
 ];
 export const BOX1_POOL = { 1: poolOf(1), 2: poolOf(2), 3: poolOf(3) };
@@ -129,7 +231,7 @@ const petPool = () => [...PET_IDS];
 export const BOX1_BANNERS = {
   season: {
     name: '🌟 Season 1–11: Starlight Kingdom', kind: 'item', pityKey: 'box1_pity',
-    rates: BOX1.RATES, pool: BOX1_POOL, featured: FEATURED_OUTFIT, featuredShare: FEATURED_SHARE,
+    rates: BOX1.RATES, pool: BOX1_POOL, featured: FEATURED_OUTFIT, featuredShare: FEATURED_SHARE, superMythic: true,
   },
   relics: {
     name: '🪽 Wings & Relics', kind: 'item', pityKey: 'box1_relics_pity',
@@ -162,7 +264,7 @@ export const BOX2 = {
 };
 export const BOX2_POOL = {
   blueprints: [...CORE_LANDMARKS],
-  decor: Object.keys(DECOR).filter((k) => !DECOR[k].series2),
+  decor: Object.keys(DECOR),
   2: Object.keys(WONDERS).filter((k) => WONDERS[k].rarity === 2),
   3: Object.keys(WONDERS).filter((k) => WONDERS[k].rarity === 3),
 };
@@ -183,7 +285,7 @@ export const SHARD_OFFERS = {
   mythic_dice:        { cost: 150, name: 'Any ★3 Mythic 3D Dice Skin', pick: 'dice' },
   accessory_dupe_box: { cost: 80, name: 'Any +10 Accessory Dupe Pick Box', pick: 'accessory' },
 };
-export const SEASON_OUTFITS = Object.keys(OUTFITS).filter((k) => OUTFITS[k].season);
+export const SEASON_OUTFITS = Object.keys(OUTFITS).filter((k) => OUTFITS[k].season && !isSuperMythicDef(k, OUTFITS[k]));
 export const MYTHIC_DICE = DICE_IDS.filter((k) => DICE_SKINS[k].rarity === 3);
 export const VIP_WONDERS = Object.keys(WONDERS).filter((k) => WONDERS[k].w === 4 && WONDERS[k].h === 4);
 

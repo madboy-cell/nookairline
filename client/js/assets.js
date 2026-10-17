@@ -52,7 +52,7 @@ export function loadSprite(name) {
       if (info.tile) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }
       texture.generateMipmaps = true;
       texture.minFilter = THREE.LinearMipmapLinearFilter;
-      resolve({ texture, w: info.w, h: info.h, anchorY: info.anchorY ?? 0.5, faces: info.faces || 'right', hem: info.hem || 'short', fallback: false });
+      resolve({ texture, w: info.w, h: info.h, anchorY: info.anchorY ?? 0.5, faces: info.faces || 'right', hem: info.hem || 'short', headDiam: info.headDiam, headCX: info.headCX, headTop: info.headTop, eyeX: info.eyeX, eyeY: info.eyeY, eyeSpan: info.eyeSpan, fallback: false });
     }, undefined, useFallback);
   });
   cache.set(name, p);

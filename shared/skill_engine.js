@@ -108,6 +108,21 @@ export function runActions(ctx, actions = []) {
   return n;
 }
 
+/**
+ * 🛡️ A Barrier Shield blocks a hostile Pet ult (Dopamine Patch §3). One shield makes the target immune to the
+ * rest of that cast. Owner ults keep their existing behaviour (shields only block rent).
+ */
+function shieldBlocks(ctx, p) {
+  if (!ctx.isPetUlt || !p || p.seat === ctx.seat) return false;
+  ctx.blocked ||= new Set();
+  if (ctx.blocked.has(p.seat)) return true;
+  if (!(p.shields > 0)) return false;
+  p.shields--;
+  ctx.blocked.add(p.seat);
+  ctx.ops.ev({ t: 'shield_break', seat: p.seat, by: ctx.seat, byPet: true, skillId: ctx.skillId });
+  return true;
+}
+
 function runAction(ctx, a) {
   const { m, seat, ops, scale } = ctx;
   const me = m.players[seat];
@@ -116,6 +131,7 @@ function runAction(ctx, a) {
     case 'APPLY_PLAYER_STATUS': {
       let n = 0;
       for (const p of resolvePlayers(m, seat, a.target)) {
+        if (shieldBlocks(ctx, p)) { n++; continue; }
         p.status = { ...a.status, id: ctx.skillId, owner: seat, fresh: p.seat === seat };
         ops.ev({ t: 'status', seat: p.seat, by: seat, status: p.status });
         n++;
@@ -124,8 +140,11 @@ function runAction(ctx, a) {
     }
     case 'PLACE_TILE_MODIFIER': {
       let n = 0;
+      const turnsLeft = ctx.isPetUlt && a.modifier?.turnsLeft
+        ? Math.max(1, Math.round(a.modifier.turnsLeft * 0.67))
+        : a.modifier?.turnsLeft;
       for (const i of resolveTiles(m, seat, a)) {
-        m.tiles[i].modifier = { ...a.modifier, id: ctx.skillId, owner: seat };
+        m.tiles[i].modifier = { ...a.modifier, ...(turnsLeft != null ? { turnsLeft } : {}), id: ctx.skillId, owner: seat };
         ops.ev({ t: 'modifier', tile: i, by: seat, modifier: m.tiles[i].modifier });
         n++;
       }
@@ -135,6 +154,7 @@ function runAction(ctx, a) {
       let n = 0;
       for (const p of resolvePlayers(m, seat, a.target)) {
         if (p.bankrupt) continue;
+        if (shieldBlocks(ctx, p)) { n++; continue; }
         let steps = a.steps ?? 0;
         if (a.pullTowardCaster) {
           const d = stepsBetween(p.pos, me.pos);
@@ -164,6 +184,7 @@ function runAction(ctx, a) {
     case 'TRANSFER_CASH': {
       let n = 0;
       for (const p of resolvePlayers(m, seat, a.from)) {
+        if (shieldBlocks(ctx, p)) { n++; continue; }
         const amt = a.pct ? Math.round(p.cash * a.pct * scale) : cash(a.amount);
         if (amt > 0) { ops.pay(p.seat, seat, amt, 'skill'); n++; }
       }
@@ -192,7 +213,6 @@ function runAction(ctx, a) {
         ops.ev({ t: 'modifier', tile: i, by: seat, modifier: null });
         n++;
       }
-      for (const p of rivalsOf(m, seat)) if (tileSide(p.pos) === side && p.shields > 0) { p.shields = 0; n++; ops.ev({ t: 'shield_break', seat: p.seat, by: seat }); }
       return n;
     }
     case 'STEAL_PROPERTY': {
@@ -233,10 +253,17 @@ function runAction(ctx, a) {
       const n = runActions(ctx, pick.actions);
       return n || runActions(ctx, pick.fallback || []);
     }
-    case 'CHOICE':
+    case 'CHOICE': {
+      if (ctx.autoChoice && a.options?.length) {
+        const opt = a.options[0];
+        ops.ev({ t: 'choice', seat, id: opt.id, label: opt.label, byPet: true });
+        return runActions(ctx, opt.actions) || runActions(ctx, opt.fallback || []);
+      }
       ops.setPending({ kind: 'choice', seat, skillId: ctx.skillId, options: a.options.map((o) => ({ id: o.id, label: o.label })) });
       return 1;
+    }
     case 'WARP_PICK':
+      if (ctx.isPetUlt) return 0;              // pets never open a tile picker (would clobber the owner's choice)
       ops.setPending({ kind: 'warp_any', seat, canSkip: false, options: TILES.map((t) => ({ id: t.i, label: t.name })) });
       m.turn.rolled = true;                   // Magic Carpet replaces this turn's roll
       return 1;
@@ -253,11 +280,21 @@ export function playerSkill(p) {
   return { id: `generic_${r}`, ...GENERIC_SKILLS[r] };
 }
 
-/** Executes the caster's ultimate. Returns effects count. */
-export function castUltimate(m, seat, ops, { scale = 1 } = {}) {
+/** Skill definition for a seated player's Soul-Linked Pet: its costume's ultimate, else the generic Lv1 skill
+ *  (pets Soul-Link from bond Lv1 — Dopamine Patch §3). Null only when the seat has no pet at all. */
+export function petSkill(p) {
+  if (!p?.petCostume) return p?.petId ? { id: 'generic_1', ...GENERIC_SKILLS[1] } : null;
+  const mythic = SEASON_SKILLS[p.petCostume];
+  if (mythic) return { id: p.petCostume, ...mythic };
+  const r = (p.petCostumeRarity || (p.petCostume?.startsWith('epic') ? 2 : 1)) >= 2 ? 2 : 1;
+  return { id: `generic_${r}`, ...GENERIC_SKILLS[r] };
+}
+
+/** Executes the caster's ultimate (or Pet Soul-Link ultimate when `skill` is provided). Returns effects count. */
+export function castUltimate(m, seat, ops, { scale = 1, skill: overrideSkill = null, autoChoice = false, isPetUlt = false } = {}) {
   const p = m.players[seat];
-  const skill = playerSkill(p);
-  const ctx = { m, seat, ops, scale, skillId: skill.id };
+  const skill = overrideSkill || playerSkill(p);
+  const ctx = { m, seat, ops, scale, skillId: skill.id, autoChoice, isPetUlt };
   const mono = skill.monopoly || {};
   const base = mono.baseCash ? runActions(ctx, [{ action: 'GAIN_CASH', amount: mono.baseCash }]) : 0;
   if (mono.requiresOwnedTile && !ownedTiles(m, seat).length) return base + runActions(ctx, mono.fallback || []);

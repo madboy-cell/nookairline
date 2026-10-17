@@ -52,6 +52,154 @@
         { "name": "mono_dec_hedge", "anchorY": 0 },
         { "name": "mono_dec_start_gate", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 30 } } }
       ]
+    },
+    {
+      "src": "art_src/sheet_4a_ult_sm.jpg",
+      "pack": "monopoly",
+      "rows": 1,
+      "cols": 2,
+      "holeMinArea": 200,
+      "minIslandRatio": 0.004,
+      "optional": true,
+      "cells": [
+        { "name": "mono_ult_sm_eclipse", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 30 } } },
+        { "name": "mono_ult_sm_aurora", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 30 } } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_gacha_opera.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 80,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "gacha_loom_pedestal", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 28, "pools": true } } },
+        { "name": "gacha_chandelier_arch", "anchorY": 1, "opts": { "glow": { "t": 56, "band": 28, "pools": true } } },
+        { "name": "gacha_curtain_wing", "anchorY": 0.5 },
+        { "name": "gacha_vip_crowd", "anchorY": 0, "opts": { "glow": { "t": 56, "band": 24 } } },
+        { "name": "gacha_trunk_rare", "anchorY": 0 },
+        { "name": "gacha_trunk_epic", "anchorY": 0 },
+        { "name": "gacha_trunk_mythic", "anchorY": 0 },
+        { "name": "gacha_trunk_super", "anchorY": 0 }
+      ]
+    },
+    {
+      "src": "art_src/sheet_ui_mock_chrome.jpg",
+      "pack": "monopoly",
+      "rows": 3,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "nav_ico_village", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "nav_ico_townhall", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "nav_ico_play", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "nav_ico_wardrobe", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 25 } },
+        { "name": "nav_ico_gacha", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_bubble_iridescent", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_scroll_parchment", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_ribbon_gold_title", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_ribbon_crimson_seal", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_btn_roll_winged", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_orb_ult_rainbow", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ui_slot_gold_frame", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_ui_mock_stages.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "stage_goddess_vakarine_rainbow", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "stage_vip_table_4seat", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40 } },
+        { "name": "stage_waterwheel_forge", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40 } },
+        { "name": "stage_sakura_sky_nest", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40 } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_ui_village_editor.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "ed_tab_buildings", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ed_tab_wonders", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 20 } },
+        { "name": "ed_tab_decor", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 20 } },
+        { "name": "ed_tab_tiles", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ed_tab_skins", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ed_act_confirm", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ed_act_rotate", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "ed_act_bag", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_phase5_casino_townhall.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.004,
+      "cells": [
+        { "name": "casino_dealer_pokdeng", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "casino_dealer_roulette", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "casino_roulette_wheel", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_arch_monopoly", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_owl_postbox", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_statue_pedestal", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "vip_card_telelink", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "vip_card_black_sovereign", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_townhall_touchup.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.002,
+      "cells": [
+        { "name": "th_fountain_vakarine", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_medallion_starlight", "anchorY": 0.5, "meta": { "flat": true }, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_balustrade_marble", "anchorY": 0, "opts": { "interior": true, "closeRadius": 2, "keepHoles": false, "holeMinArea": 50 } },
+        { "name": "th_colonnade_arch", "anchorY": 0, "opts": { "interior": true, "closeRadius": 2, "keepHoles": false, "holeMinArea": 80 } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_townhall_heavy_garden.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.001,
+      "cells": [
+        { "name": "th_garden_parterre_wide", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_sakura_island", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_wisteria_pergola", "anchorY": 0, "opts": { "interior": true, "closeRadius": 2, "keepHoles": false, "holeMinArea": 60 } },
+        { "name": "th_garden_topiary_arc", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_pond_oasis", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_hedge_cluster", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_lantern_grove", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "th_garden_floral_carpet", "anchorY": 0.5, "meta": { "flat": true }, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
     }
   ]
 }
+

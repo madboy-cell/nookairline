@@ -75,9 +75,9 @@ async function partA() {
     const okB = await B.wait((m) => m.type === 'auth_ok');
     check('both agents join the Twin Sky-Islands instance', okN.instanceId === 'couple:neen|nook' && okB.instanceId === okN.instanceId);
     const L = okN.layout;
-    check('layout: neen island at X=0, nook at X=+40, bridge centre +20 (Section 21.B)', L.islands[0].owner === 'neen' && L.islands[0].cx === 0 && L.islands[1].cx === 40 && L.bridge?.cx === 20);
+    check('layout: neen island at X=0, nook at X=+26, bridge centre +13 (Section 21.B)', L.islands[0].owner === 'neen' && L.islands[0].cx === 0 && L.islands[1].cx === 26 && L.bridge?.cx === 13);
     check('seeded villages: comfort 4,850 / 6,660, CP 15,420 each', okN.profile.village.comfort === 4850 && okB.profile.village.comfort === 6660 && okN.profile.cp === 15420 && okB.profile.cp === 15420);
-    check('nook spawns on his own island, neen on hers', Math.abs(okN.self.x - 40) < 3 && Math.abs(okB.self.x) < 3);
+    check('nook spawns on his own island, neen on hers', Math.abs(okN.self.x - 26) < 3 && Math.abs(okB.self.x) < 3);
     check('serverNow sent for the authoritative clock', Number.isFinite(okN.serverNow));
 
     // --- harvest 🪙 / 🍓 / 💎 ---
@@ -95,27 +95,27 @@ async function partA() {
     // --- grid editor save (Screen 02) ---
     const v = pN.village;
     const layout = { buildings: v.buildings.map(({ uid, type, x, y, rot }) => ({ uid, type, x, y, rot })), tiles: v.tiles.map((t) => ({ ...t })), ground: 'ground_sakura' };
-    Object.assign(layout.buildings.find((b) => b.type === 'dec_gramophone'), { x: 20, y: 9 });
-    layout.tiles.push({ x: 2, y: 2, t: 'road_sakura' }, { x: 3, y: 2, t: 'road_cream' });
+    Object.assign(layout.buildings.find((b) => b.type === 'dec_gramophone'), { x: 15, y: 7 });
+    layout.tiles.push({ x: 2, y: 1, t: 'road_sakura' }, { x: 3, y: 1, t: 'road_cream' });
     const updP = B.wait((m) => m.type === 'village_updated' && m.owner === 'nook');
     const save = await N.act('village_save_grid', { layout });
     check('nook saves an edited layout (move decor + paint 2 tiles + Sakura skin)', save.ok && save.comfort === 4860, `comfort ${save.comfort}`);
     const upd = await updP;
-    check('partner receives the live village_updated broadcast', upd.village.ground === 'ground_sakura' && upd.village.buildings.find((b) => b.type === 'dec_gramophone').x === 20);
+    check('partner receives the live village_updated broadcast', upd.village.ground === 'ground_sakura' && upd.village.buildings.find((b) => b.type === 'dec_gramophone').x === 15);
     const badLayout = JSON.parse(JSON.stringify(layout));
-    Object.assign(badLayout.buildings.find((b) => b.type === 'dock'), { x: 14, y: 2 });
+    Object.assign(badLayout.buildings.find((b) => b.type === 'dock'), { x: 11, y: 1 });
     const bad = await N.act('village_save_grid', { layout: badLayout });
     check('invalid layout rejected server-side (dock away from water)', !bad.ok && bad.error === 'dock_needs_water');
     const steal = JSON.parse(JSON.stringify(layout));
-    steal.buildings.push({ type: 'wnd_casino_dome', x: 0, y: 18, rot: 0 });
+    steal.buildings.push({ type: 'wnd_fountain', x: 11, y: 0, rot: 0 });
     check('cannot place a Wonder you do not own', (await N.act('village_save_grid', { layout: steal })).error === 'not_owned');
 
     // --- couple bridge: move across ---
     let x = okN.self.x;
     N.send({ type: 'move_step', x, z: 3.0, vx: 0, vz: 0, right: false, back: false });
-    for (let i = 0; i < 70 && x > 18; i++) { x -= 0.32; N.send({ type: 'move_step', x, z: 3.0, vx: -4.5, vz: 0, right: false, back: false }); await sleep(72); }
-    const seen = await B.wait((m) => m.type === 'player_moved' && m.id === 'nook' && m.x < 20, 3000).catch(() => null);
-    check('nook walks onto the Rainbow Heart Bridge (x≈18–20) and neen sees it', !!seen, seen ? `x=${seen.x.toFixed(2)}` : '');
+    for (let i = 0; i < 70 && x > 13; i++) { x -= 0.32; N.send({ type: 'move_step', x, z: 3.0, vx: -4.5, vz: 0, right: false, back: false }); await sleep(72); }
+    const seen = await B.wait((m) => m.type === 'player_moved' && m.id === 'nook' && m.x < 15, 3000).catch(() => null);
+    check('nook walks onto the Rainbow Heart Bridge (x≈11–15) and neen sees it', !!seen, seen ? `x=${seen.x.toFixed(2)}` : '');
     N.send({ type: 'move_step', x: x, z: -6, vx: 0, vz: 0, right: false, back: false });
     const corr = await N.wait((m) => m.type === 'position_correct' && m.z > 1.5, 2000).catch(() => null);
     check('stepping off the bridge into the sky is clamped back', !!corr, corr ? `z=${corr.z.toFixed(2)}` : '');
@@ -127,7 +127,7 @@ async function partA() {
     check('blessing is once per day', (await N.act('village_bless_partner')).error === 'already_blessed_today');
 
     // --- finger pick-up & drop into the Onsen ---
-    N.send({ type: 'chibi_pickup_drop', targetId: 'nook', x: 33.5, z: 8.35, propId: 'wnd_onsen_seed' });
+    N.send({ type: 'chibi_pickup_drop', targetId: 'nook', x: 20.5, z: 6.5, propId: 'wnd_onsen_seed' });
     const drop = await N.wait((m) => m.type === 'drop_result', 2000);
     check('drop Chibi into the Capybara Onsen -> +15% Blacksmith buff for 1 h', drop.ok && drop.buff === 'blacksmith' && drop.pct === 15);
     check('partner sees the drop (player_dropped)', !!(await B.wait((m) => m.type === 'player_dropped' && m.id === 'nook', 2000).catch(() => null)));
@@ -141,11 +141,11 @@ async function partA() {
 
     // --- co-op fishing on nook's dock ---
     await sleep(900);
-    N.send({ type: 'chibi_pickup_drop', targetId: 'nook', x: 47.5, z: 3.3 });
-    await N.wait((m) => m.type === 'drop_result' && m.x === 47.5, 2000);
+    N.send({ type: 'chibi_pickup_drop', targetId: 'nook', x: 31.5, z: 3.3 });
+    await N.wait((m) => m.type === 'drop_result' && m.x === 31.5, 2000);
     await sleep(900);
-    B.send({ type: 'chibi_pickup_drop', targetId: 'neen', x: 46.2, z: 3.4 });
-    await B.wait((m) => m.type === 'drop_result' && m.x === 46.2, 2000);
+    B.send({ type: 'chibi_pickup_drop', targetId: 'neen', x: 30.2, z: 3.4 });
+    await B.wait((m) => m.type === 'drop_result' && m.x === 30.2, 2000);
     const berriesBefore = N.profile().berries;
     N.send({ type: 'fishing_cast', bait: true });
     const cast = await N.wait((m) => m.type === 'fishing_cast_ok', 2000);
@@ -175,9 +175,9 @@ async function partA() {
     check('castle upgrade needs landmark levels (nook Lv6→7 needs 10, has 27 ✓) & gold', (await N.act('village_upgrade', { target: 'castle' })).ok);
     check('blueprint upgrade without cards refused', (await N.act('village_upgrade', { target: 'mint' })).error === 'not_enough_cards');
     const ex = await N.act('village_expand_cloud');
-    check('Cloud Territory tier 1 (Castle Lv2 + 2,500 🪙) expands nook to 26×26', ex.ok && ex.grid_size === 26);
-    const upd2 = await B.wait((m) => m.type === 'village_updated' && m.owner === 'nook' && m.layout?.islands.some((i) => i.owner === 'nook' && i.S === 26), 2000).catch(() => null);
-    check('partner layout re-centres nook\'s island (PartnerCenterX = 12 + 16 + 13 = 41)', upd2?.layout.islands.find((i) => i.owner === 'nook').cx === 41);
+    check('Cloud Territory tier 1 (Castle Lv2 + 2,500 🪙) expands nook to 20×20', ex.ok && ex.grid_size === 20);
+    const upd2 = await B.wait((m) => m.type === 'village_updated' && m.owner === 'nook' && m.layout?.islands.some((i) => i.owner === 'nook' && i.S === 20), 2000).catch(() => null);
+    check('partner layout re-centres nook\'s island (PartnerCenterX = 9 + 8 + 10 = 27)', upd2?.layout.islands.find((i) => i.owner === 'nook').cx === 27);
     check('mood switch persists', (await N.act('village_set_mood', { mood: 'night' })).ok && N.profile().village.mood === 'night');
 
     N.close(); B.close();
@@ -186,7 +186,7 @@ async function partA() {
     await srv.close();
     const saved = JSON.parse(fs.readFileSync(path.join(tmp, 'db.json'), 'utf8'));
     const n = saved.profiles.find((p) => p.id === 'nook');
-    check('everything persisted to the JSON DB on shutdown', n.village.grid_size === 26 && n.village.ground === 'ground_sakura' && n.fish_codex && Object.keys(n.fish_codex).length >= 1);
+    check('everything persisted to the JSON DB on shutdown', n.village.grid_size === 20 && n.village.ground === 'ground_sakura' && n.fish_codex && Object.keys(n.fish_codex).length >= 1);
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
@@ -247,14 +247,14 @@ async function partB() {
     const moved = await nook.evaluate(() => {
       const ed = window.__neora.world.editor;
       const b = ed.draft.buildings.find((q) => q.type === 'dec_swing');
-      ed.pushUndo(); ed.selected = b.uid; b.x = 19; b.y = 10; ed.refresh();
+      ed.pushUndo(); ed.selected = b.uid; b.x = 14; b.y = 7; ed.refresh();
       return { valid: ed.valid, x: b.x };
     });
     check('editor: move a prop -> green valid footprint', moved.valid);
     const blocked = await nook.evaluate(() => {
       const ed = window.__neora.world.editor;
       const b = ed.draft.buildings.find((q) => q.type === 'dec_swing');
-      const keep = { x: b.x, y: b.y }; b.x = 10; b.y = 4; ed.refresh();
+      const keep = { x: b.x, y: b.y }; b.x = 7; b.y = 1; ed.refresh();
       const status = document.getElementById('ed-status').textContent; const v = ed.valid;
       Object.assign(b, keep); ed.refresh();
       return { v, status };
@@ -263,37 +263,37 @@ async function partB() {
     await nook.screenshot({ path: path.join(SHOTS, '05_editor_moved.png') });
     await nook.click('#ed-save');
     await nook.waitForFunction(() => !window.__neora.world.editMode, { timeout: 5000 }).then(() => check('✅ Save Layout persists and exits edit mode', true)).catch(() => check('✅ Save Layout persists and exits edit mode', false));
-    await beam.waitForFunction(() => window.__neora.world.layout.islands.find((i) => i.owner === 'nook').village.buildings.find((b) => b.type === 'dec_swing').x === 19, { timeout: 5000 })
+    await beam.waitForFunction(() => window.__neora.world.layout.islands.find((i) => i.owner === 'nook').village.buildings.find((b) => b.type === 'dec_swing').x === 14, { timeout: 5000 })
       .then(() => check("beam's view updates nook's island live", true)).catch(() => check("beam's view updates nook's island live", false));
 
     // road speed boost
-    await tp(nook, 39.5, 5.5);
+    await tp(nook, 25.5, 3.5);
     const road = true;
     const dr = await dbg(nook);
     check('standing on the cobblestone avenue = +15% speed', road && dr.onRoad && dr.speedMult === 1.15);
 
     // walk across the Rainbow Heart Bridge to beam's island
-    await tp(nook, 36, 3.5);
+    await tp(nook, 18.5, 3.5);
     await nook.keyboard.down('ArrowLeft');
     const t0 = Date.now();
     let s = await dbg(nook);
-    while (Date.now() - t0 < 30000 && s.x > 10.5) { await sleep(200); s = await dbg(nook); }
+    while (Date.now() - t0 < 30000 && s.x > 8.5) { await sleep(200); s = await dbg(nook); }
     await nook.keyboard.up('ArrowLeft');
-    check('nook walks across the Rainbow Heart Bridge onto beam\'s island', s.x < 11.5, `x=${s.x}`);
+    check('nook walks across the Rainbow Heart Bridge onto beam\'s island', s.x < 9.5, `x=${s.x}`);
     await sleep(600);
     await beam.screenshot({ path: path.join(SHOTS, '06_bridge_crossed_beam_view.png') });
     await nook.screenshot({ path: path.join(SHOTS, '06b_bridge_crossed_nook_view.png') });
     const seenByBeam = (await dbg(beam)).remotes.find((r) => r.id === 'nook');
-    check('beam sees nook arrive on her island', seenByBeam && seenByBeam.x < 13, JSON.stringify(seenByBeam));
+    check('beam sees nook arrive on her island', seenByBeam && seenByBeam.x < 10, JSON.stringify(seenByBeam));
 
     // collision: walking into the castle stops
-    await tp(nook, 39.5, 9.5);
+    await tp(nook, 25.5, -2.5);
     await nook.keyboard.down('ArrowUp'); await sleep(6000); await nook.keyboard.up('ArrowUp');
     const sc = await dbg(nook);
     check('buildings block movement (stops south of the castle footprint)', sc.z > -4.3, `z=${sc.z}`);
 
     // finger pick-up (real long-press on the chibi)
-    await tp(nook, 38, 3.5);
+    await tp(nook, 24, 3.5);
     await sleep(800);
     const scr = await nook.evaluate(() => { const w = window.__neora.world, L = w.local; return w.worldToScreen(L.x, 0.7, L.z); });
     await nook.mouse.move(scr.x, scr.y); await nook.mouse.down();
@@ -307,7 +307,7 @@ async function partB() {
     check('release drops it back on walkable ground', !(await dbg(nook)).lifted);
 
     // fishing HUD at nook's dock
-    await tp(nook, 47.5, 3.3);
+    await tp(nook, 31.5, 3.3);
     await nook.waitForFunction(() => !document.getElementById('fish-open').hidden, { timeout: 4000 }).then(() => check('🎣 Fish! button appears next to the dock', true)).catch(() => check('🎣 Fish! button appears next to the dock', false));
     await sleep(300);
     await nook.click('#fish-open');
@@ -332,7 +332,7 @@ async function partB() {
     await nook.click('#fish-close');
 
     // bottom-right cliff & overhanging grass rim inspection shot
-    await tp(beam, 11.0, 11.2);
+    await tp(beam, 7.0, 8.2);
     await sleep(350);
     await beam.screenshot({ path: path.join(SHOTS, '10_bottom_edge_cliff.png') });
 

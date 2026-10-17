@@ -9,7 +9,7 @@ import { FxEngine } from './fx_engine.js';
 import { VillagePlaza } from './village_plaza.js';
 import { Mover, RemoteSmoother, MOVE } from '/shared/locomotion.js';
 import { ROAD_SPEED_BOOST, FISHING, footprint } from '/shared/catalog_landmarks.js';
-import { groundAt, islandAt, onBridge, dockNear, findPlaced, utcDay } from '/shared/village_rules.js';
+import { groundAt, islandAt, onBridge, dockNear, findPlaced, utcDay, clampToArea, isWalkablePos, nearestWalkablePos } from '/shared/village_rules.js';
 import { getEquippedWalkFx, getTrailOffset, TRAIL_INTERVAL, shouldEmitRemoteStep, shouldEmitRemoteTrail } from '/shared/walk_fx.js';
 
 export const CAMERA_PRESETS = {
@@ -50,8 +50,9 @@ function buildSkyClouds(scene) {
 export class WorldEngine {
   constructor(canvas) {
     this.canvas = canvas;
+    const isTouch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: false });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 2));
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(CAMERA.BASE_FOV, 1, 0.5, 260);
@@ -81,13 +82,59 @@ export class WorldEngine {
     this.onLongPressBuilding = null;
     this.onDrop = null;            // ({ x, z, propId, targetId }) => void
     this.onDockNear = null;        // (bool) => void
+    this.townHallScene = null;     // TownHallScene (if townhall active)
+    this.onLandmarksCheck = null;  // (x, z) => void (landmarks trigger check hook)
+    this._townhallMode = false;
+    this._townhallLayout = null;
     this.frame = 0; this.fps = 0; this._fpsT = 0; this._fpsN = 0; this._dockT = 0;
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.bindInput();
   }
 
-  get layout() { return this.plaza.layout; }
+  getInstanceKind() {
+    if (this._townhallMode || this.layout?.kind === 'townhall') return 'townhall';
+    return this.layout?.kind || 'village';
+  }
+
+  walkTo(x, z) {
+    if (this.getInstanceKind() === 'townhall') {
+      x = THREE.MathUtils.clamp(x, -18, 18);
+      z = THREE.MathUtils.clamp(z, -18, 18);
+    } else if (this.layout) {
+      const cl = clampToArea(this.layout, x, z);
+      x = cl.x;
+      z = cl.z;
+    }
+    this.input.tapTarget = { x, z };
+    this.fx.emit('fx_star', x, 0.1, z, 3, { speed: 0.4, up: 0.6, size: 0.18, life: 0.5 });
+  }
+
+  checkLandmarksTrigger(x, z) {
+    if (x == null && this.local) { x = this.local.x; z = this.local.z; }
+    return this.onLandmarksCheck ? this.onLandmarksCheck(x, z) : null;
+  }
+
+  setTownHallMode(active, layout = null) {
+    this._townhallMode = !!active;
+    if (active) {
+      this._townhallLayout = layout || { kind: 'townhall', size: 36 };
+      if (this.townHallScene) this.townHallScene.setActive(true);
+      if (this.plaza?.root) this.plaza.root.visible = false;
+      for (const yp of this.yardPets) yp.dispose(this.scene);
+      this.yardPets = [];
+    } else {
+      this._townhallLayout = null;
+      if (this.townHallScene) this.townHallScene.setActive(false);
+      if (this.plaza?.root) this.plaza.root.visible = true;
+      if (this.local?.profile) this.syncYardPets(this.local.profile);
+    }
+  }
+
+  get layout() {
+    if (this._townhallMode || this._townhallLayout) return this._townhallLayout || { kind: 'townhall', size: 36 };
+    return this.plaza.layout;
+  }
 
   // Horizontal-FOV lock (Section 17.A.2) so the board/village never clips on narrow phones.
   resize() {
@@ -227,6 +274,9 @@ export class WorldEngine {
 
   setLocalPosition(x, z) {
     if (!this.local) return;
+    if (this.layout && this.getInstanceKind() !== 'townhall' && !this.walkable(x, z)) {
+      ({ x, z } = this.nearestWalkable(x, z));
+    }
     this.local.x = x; this.local.z = z;
     this.local.rig.setPosition(x, z);
   }
@@ -310,7 +360,7 @@ export class WorldEngine {
         this.press = null;
         return;
       }
-      if (this.editMode && this.editor?.active) {
+      if (this.editor?.active) {
         p.editor = this.editor.pointerDown(this.raycastGround(e.clientX, e.clientY, true));
         return;
       }
@@ -347,12 +397,14 @@ export class WorldEngine {
       if (this.lift?.id === e.pointerId) { this.endLift(e.type === 'pointercancel'); return; }
       if (p?.editor) { this.editor.pointerUp(); return; }
       if (!p || p.moved || e.type === 'pointercancel' || p.consumed) return;
-      if (this.editMode) return;
+      if (this.editMode || this.editor?.active) return;
       if (this.isOverLocalPet(e.clientX, e.clientY) && this.onPetTap) {
         this.onPetTap();
         return;
       }
-      const picked = this.plaza.pick(e.clientX, e.clientY);
+      const picked = this.getInstanceKind() === 'townhall' && this.townHallScene
+        ? this.townHallScene.pick(e.clientX, e.clientY)
+        : this.plaza.pick(e.clientX, e.clientY);
       const hit = this.raycastGround(e.clientX, e.clientY);
       if (picked && this.onPick?.(picked, hit)) return;
       if (hit) { this.input.tapTarget = { x: hit.x, z: hit.z }; this.fx.emit('fx_star', hit.x, 0.1, hit.z, 3, { speed: 0.4, up: 0.6, size: 0.18, life: 0.5 }); }
@@ -380,7 +432,11 @@ export class WorldEngine {
     const t = -ray.ray.origin.y / ray.ray.direction.y;
     if (!(t > 0)) return null;
     const p = ray.ray.origin.clone().addScaledVector(ray.ray.direction, t);
-    if (anywhere || !this.layout) return p;
+    if (anywhere) return p;
+    if (this.getInstanceKind() === 'townhall') {
+      return Math.abs(p.x) <= 18 && Math.abs(p.z) <= 18 ? p : null;
+    }
+    if (!this.layout) return p;
     return islandAt(this.layout, p.x, p.z) || onBridge(this.layout, p.x, p.z) ? p : null;
   }
 
@@ -485,7 +541,8 @@ export class WorldEngine {
       const hit = findPlaced(this.layout, propId, x, z);
       const f = footprint(g.building.type, g.building.rot);
       z = hit.center.z + f.h / 2 + 0.35; x = hit.center.x;
-    } else if (!g?.walkable) {
+      if (!this.walkable(x, z)) ({ x, z } = this.nearestWalkable(x, z));
+    } else if (!this.walkable(x, z)) {
       ({ x, z } = this.nearestWalkable(x, z));
     }
     this.setLocalPosition(x, z);
@@ -495,29 +552,26 @@ export class WorldEngine {
   }
 
   nearestWalkable(x, z) {
-    for (let r = 0.5; r < 12; r += 0.5) {
-      for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
-        const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
-        if (groundAt(this.layout, px, pz, { canFly: this.canFly }).walkable) return { x: px, z: pz };
-      }
+    if (this.getInstanceKind() === 'townhall') {
+      return { x: THREE.MathUtils.clamp(x, -17.5, 17.5), z: THREE.MathUtils.clamp(z, -17.5, 17.5) };
     }
-    return { x: this.local.x, z: this.local.z };
+    if (!this.layout) return { x, z };
+    return nearestWalkablePos(this.layout, x, z, { canFly: this.canFly, radius: BODY_R });
   }
 
   // ------------------------------------------------------------------ movement
   walkable(x, z) {
-    if (!this.layout) return true;
-    const fly = this.canFly;
-    // body circle: centre + 4 rim samples so the chibi can't clip into a footprint corner
-    for (const [ox, oz] of [[0, 0], [BODY_R, 0], [-BODY_R, 0], [0, BODY_R * 0.6], [0, -BODY_R * 0.6]]) {
-      if (!groundAt(this.layout, x + ox, z + oz, { canFly: fly }).walkable) return false;
+    if (this.getInstanceKind() === 'townhall') {
+      const half = 18 - BODY_R;
+      return x >= -half && x <= half && z >= -half && z <= half;
     }
-    return true;
+    if (!this.layout) return true;
+    return isWalkablePos(this.layout, x, z, { canFly: this.canFly, radius: BODY_R });
   }
 
   /** Combined input direction in world XZ (-Z = up the screen). */
   readInput() {
-    if (this.editMode || this.lift) return { ix: 0, iz: 0 };
+    if (this.editMode || this.editor?.active || this.lift) return { ix: 0, iz: 0 };
     const k = this.input.keys;
     let ix = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
     let iz = (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0);
@@ -535,8 +589,20 @@ export class WorldEngine {
 
   // ------------------------------------------------------------------ loop
   start() {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.clock.getDelta();
+    });
+    let wasHidden = false;
     const tick = () => {
       this.raf = requestAnimationFrame(tick);
+      if (typeof document !== 'undefined' && document.hidden) {
+        wasHidden = true;
+        return;
+      }
+      if (wasHidden) {
+        wasHidden = false;
+        this.clock.getDelta();
+      }
       const dt = Math.min(0.05, this.clock.getDelta());
       // Step 4 scene hook: a minigame (e.g. Sky Monopoly) takes over the shared canvas; the village pauses.
       if (this.activeScene) { this.activeScene.update(dt); this.activeScene.render(); return; }
@@ -551,8 +617,8 @@ export class WorldEngine {
     this._fpsT += dt; this._fpsN++;
     if (this._fpsT >= 0.5) { this.fps = Math.round(this._fpsN / this._fpsT); this._fpsT = 0; this._fpsN = 0; }
 
-    // long-press: 0.25 s on your Chibi or Pet = Finger Pick-Up · 0.40 s on a building = Edit Grid
-    if (this.press && !this.editMode) {
+    // long-press: 0.25 s on your Chibi or Pet = Finger Pick-Up · 0.40 s on a building = Quick-Move / Edit Grid
+    if (this.press && !this.editMode && !this.editor?.active) {
       const held = (performance.now() - this.press.t) / 1000;
       if ((this.press.onChibi || this.press.onPet) && held >= HOLD.PICKUP_S) {
         const id = this.press.id;
@@ -564,7 +630,14 @@ export class WorldEngine {
         const pk = this.plaza.pick(this.press.x, this.press.y);
         const id = this.press.id; this.press = null;
         if (pk?.kind === 'building' && pk.owner === this.local?.id && this.onLongPressBuilding?.(pk)) {
-          const p = this._pointers.get(id); if (p) p.consumed = true;
+          const p = this._pointers.get(id);
+          if (p) {
+            p.consumed = true;
+            if (this.editor?.active) {
+              p.editor = this.editor.pointerDown(this.raycastGround(p.x, p.y, true));
+            }
+          }
+          navigator.vibrate?.(18);
         }
       }
     }
@@ -572,8 +645,15 @@ export class WorldEngine {
     const L = this.local;
     const tint = this.plaza.moodTint;
     if (L) {
+      if (!this.lift && !this.editMode && !this.editor?.active && this.layout && this.getInstanceKind() !== 'townhall' && !this.walkable(L.x, L.z)) {
+        const safe = this.nearestWalkable(L.x, L.z);
+        L.x = safe.x; L.z = safe.z;
+        L.rig.setPosition(L.x, L.z);
+        const f = L.rig.facing;
+        this.onLocalMove?.({ x: +L.x.toFixed(3), z: +L.z.toFixed(3), vx: 0, vz: 0, right: f.right, back: f.back }, true);
+      }
       const { ix, iz } = this.readInput();
-      const here = this.layout ? groundAt(this.layout, L.x, L.z, { canFly: this.canFly }) : { road: false };
+      const here = this.layout && this.getInstanceKind() !== 'townhall' ? groundAt(this.layout, L.x, L.z, { canFly: this.canFly }) : { road: false };
       L.speedMult = here.road ? ROAD_SPEED_BOOST : 1;             // +15% on roads & bridges
       L.mover.update(dt, ix, iz, MOVE.BASE_SPEED * L.speedMult);
       if (!this.lift) {
@@ -596,12 +676,13 @@ export class WorldEngine {
       // footstep dust on each heel strike
       const s = Math.sign(Math.sin(L.rig.legPhase * 2));
       const walkFx = getEquippedWalkFx(L.profile?.equipped);
+      const refineLv = Number(L.profile?.equipped?.outfit?.refine) || 0;
       if (moving && s !== L.lastStepSign) {
         if (walkFx) {
-          this.fx.emit(walkFx.stepCell, L.x, 0.05, L.z + 0.1, 2, {
+          this.fx.emit(walkFx.stepCell, L.x, 0.06, L.z + 0.1, 2, {
             speed: walkFx.speed,
             up: walkFx.up,
-            size: walkFx.size,
+            size: (walkFx.size ?? 0.28) * 1.15,
             life: walkFx.life,
             gravity: walkFx.gravity,
             tint: walkFx.tint,
@@ -612,24 +693,48 @@ export class WorldEngine {
       }
       L.lastStepSign = s;
 
-      // movement trail while walking at speed
+      // movement trail while walking at speed, or gentle ambient Mythic aura while idle
       if (moving && walkFx && L.rig.walkWeight > 0.6) {
         L.trailTimer = (L.trailTimer || 0) + dt;
         if (L.trailTimer >= TRAIL_INTERVAL) {
           L.trailTimer -= TRAIL_INTERVAL;
           const off = getTrailOffset(L.mover.vx, L.mover.vz, 0.15);
-          this.fx.emit(walkFx.trailCell, L.x + off.x, 0.08, L.z + off.z, 1, {
-            speed: (walkFx.speed ?? 0.3) * 0.4,
-            up: (walkFx.up ?? 0.4) * 0.5,
-            size: (walkFx.size ?? 0.25) * 0.8,
-            life: (walkFx.life ?? 0.6) * 0.8,
+          this.fx.emit(walkFx.trailCell, L.x + off.x, 0.10, L.z + off.z, 1, {
+            speed: (walkFx.speed ?? 0.3) * 0.45,
+            up: (walkFx.up ?? 0.4) * 0.55,
+            size: (walkFx.size ?? 0.26) * 0.92,
+            life: (walkFx.life ?? 0.6) * 0.85,
             gravity: walkFx.gravity ?? 0.2,
-            spread: 0.1,
+            spread: 0.12,
             tint: walkFx.tint,
           });
         }
       } else {
         L.trailTimer = 0;
+        if (!moving && walkFx && !this.lift) {
+          L.auraTimer = (L.auraTimer || 0) + dt;
+          if (L.auraTimer >= 0.55) {
+            L.auraTimer -= 0.55;
+            L.auraFlip = !L.auraFlip;
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 0.18 + Math.random() * 0.14;
+            const cell = L.auraFlip ? walkFx.stepCell : walkFx.trailCell;
+            this.fx.emit(cell, L.x + Math.cos(ang) * rad, 0.26 + Math.random() * 0.55, L.z + Math.sin(ang) * rad, 1, {
+              speed: 0.16,
+              up: 0.38,
+              size: (walkFx.size ?? 0.26) * 0.88,
+              life: 0.85,
+              gravity: -0.05,
+              spread: 0.08,
+              tint: walkFx.tint,
+            });
+            if (refineLv >= 7 && L.auraFlip) {
+              this.fx.emit('fx_star', L.x - Math.cos(ang) * 0.22, 0.55 + Math.random() * 0.45, L.z - Math.sin(ang) * 0.22, 1, {
+                speed: 0.14, up: 0.42, size: 0.22, life: 0.75, gravity: -0.08, tint: [1.25, 1.05, 0.45],
+              });
+            }
+          }
+        }
       }
 
       if (moving) this.followDetached = false;
@@ -655,10 +760,13 @@ export class WorldEngine {
 
       // dock proximity for the fishing HUD (4 Hz is plenty)
       this._dockT += dt;
-      if (this._dockT > 0.25 && this.layout) {
+      if (this._dockT > 0.25 && this.layout && this.getInstanceKind() !== 'townhall') {
         this._dockT = 0;
         this.onDockNear?.(!!dockNear(this.layout, L.x, L.z, FISHING.DOCK_REACH - 0.3));
       }
+
+      // landmarks trigger check hook (Town Hall scene / POIs)
+      if (this.onLandmarksCheck) this.onLandmarksCheck(L.x, L.z);
     }
 
     for (const r of this.remotes.values()) {
@@ -675,16 +783,17 @@ export class WorldEngine {
       if (!moving && r.rig.facing.right !== r.right && !r.rig.facing.turning) r.rig.facing.set(r.right, r.rig.facing.back);
 
       const rWalkFx = getEquippedWalkFx(r.data?.equipped);
+      const rRefineLv = Number(r.data?.equipped?.outfit?.refine) || 0;
 
       // remote footstep dust on each heel strike
       const rs = Math.sign(Math.sin(r.rig.legPhase * 2));
       if (moving && rs !== r.lastStepSign) {
         if (shouldEmitRemoteStep(this.fx.activeCount)) {
           if (rWalkFx) {
-            this.fx.emit(rWalkFx.stepCell, r.smooth.x, 0.05, r.smooth.z + 0.1, 1, {
+            this.fx.emit(rWalkFx.stepCell, r.smooth.x, 0.06, r.smooth.z + 0.1, 1, {
               speed: rWalkFx.speed,
               up: rWalkFx.up,
-              size: rWalkFx.size,
+              size: (rWalkFx.size ?? 0.28) * 1.15,
               life: rWalkFx.life,
               gravity: rWalkFx.gravity,
               tint: rWalkFx.tint,
@@ -696,26 +805,52 @@ export class WorldEngine {
       }
       r.lastStepSign = rs;
 
-      // remote movement trail
+      // remote movement trail or gentle ambient Mythic aura while idle
       if (moving && rWalkFx && r.rig.walkWeight > 0.6) {
         r.trailTimer = (r.trailTimer || 0) + dt;
         if (r.trailTimer >= TRAIL_INTERVAL) {
           r.trailTimer -= TRAIL_INTERVAL;
           if (shouldEmitRemoteTrail(this.fx.activeCount)) {
             const off = getTrailOffset(vx, vz, 0.15);
-            this.fx.emit(rWalkFx.trailCell, r.smooth.x + off.x, 0.08, r.smooth.z + off.z, 1, {
-              speed: (rWalkFx.speed ?? 0.3) * 0.4,
-              up: (rWalkFx.up ?? 0.4) * 0.5,
-              size: (rWalkFx.size ?? 0.25) * 0.8,
-              life: (rWalkFx.life ?? 0.6) * 0.8,
+            this.fx.emit(rWalkFx.trailCell, r.smooth.x + off.x, 0.10, r.smooth.z + off.z, 1, {
+              speed: (rWalkFx.speed ?? 0.3) * 0.45,
+              up: (rWalkFx.up ?? 0.4) * 0.55,
+              size: (rWalkFx.size ?? 0.26) * 0.92,
+              life: (rWalkFx.life ?? 0.6) * 0.85,
               gravity: rWalkFx.gravity ?? 0.2,
-              spread: 0.1,
+              spread: 0.12,
               tint: rWalkFx.tint,
             });
           }
         }
       } else {
         r.trailTimer = 0;
+        if (!moving && rWalkFx && !r.rig.lifted) {
+          r.auraTimer = (r.auraTimer || 0) + dt;
+          if (r.auraTimer >= 0.65) {
+            r.auraTimer -= 0.65;
+            if (shouldEmitRemoteTrail(this.fx.activeCount)) {
+              r.auraFlip = !r.auraFlip;
+              const ang = Math.random() * Math.PI * 2;
+              const rad = 0.18 + Math.random() * 0.14;
+              const cell = r.auraFlip ? rWalkFx.stepCell : rWalkFx.trailCell;
+              this.fx.emit(cell, r.smooth.x + Math.cos(ang) * rad, 0.26 + Math.random() * 0.55, r.smooth.z + Math.sin(ang) * rad, 1, {
+                speed: 0.16,
+                up: 0.38,
+                size: (rWalkFx.size ?? 0.26) * 0.88,
+                life: 0.85,
+                gravity: -0.05,
+                spread: 0.08,
+                tint: rWalkFx.tint,
+              });
+              if (rRefineLv >= 7 && r.auraFlip) {
+                this.fx.emit('fx_star', r.smooth.x - Math.cos(ang) * 0.22, 0.55 + Math.random() * 0.45, r.smooth.z - Math.sin(ang) * 0.22, 1, {
+                  speed: 0.14, up: 0.42, size: 0.22, life: 0.75, gravity: -0.08, tint: [1.25, 1.05, 0.45],
+                });
+              }
+            }
+          }
+        }
       }
 
       r.pet?.update(dt, { x: r.smooth.x, z: r.smooth.z, vx, vz, speed, moving, right: r.rig.facing.right, idleFor: r.idleFor }, this.camera);
@@ -738,7 +873,11 @@ export class WorldEngine {
     this.camera.lookAt(this.camTarget.x, CHIBI_HEIGHT * 0.4, this.camTarget.z);
 
     for (const c of this.env.clouds) { c.position.x += c.userData.speed * dt; if (c.position.x > 95) c.position.x = -55; }
-    this.plaza.update(dt, this.camera, this.pitch);
+    if (this.getInstanceKind() === 'townhall') {
+      this.townHallScene?.update?.(dt, this.camera);
+    } else {
+      this.plaza.update(dt, this.camera, this.pitch);
+    }
     this.fx.update(dt);
   }
 
@@ -748,7 +887,7 @@ export class WorldEngine {
     if (!L) return null;
     const f = L.rig.facing;
     const dir = `${f.back ? 'N' : 'S'}${f.right ? 'E' : 'W'}`;
-    const g = this.layout ? groundAt(this.layout, L.x, L.z, { canFly: this.canFly }) : {};
+    const g = this.layout && this.getInstanceKind() !== 'townhall' ? groundAt(this.layout, L.x, L.z, { canFly: this.canFly }) : {};
     return {
       fps: this.fps,
       x: +L.x.toFixed(2), z: +L.z.toFixed(2),
@@ -761,7 +900,7 @@ export class WorldEngine {
       petNuzzle: !!L.pet?.nuzzle,
       onRoad: !!g.road, speedMult: L.speedMult, lifted: !!this.lift, editMode: this.editMode,
       pitchDeg: +THREE.MathUtils.radToDeg(this.pitch).toFixed(1), camDist: +this.camDist.toFixed(1),
-      islands: this.layout?.islands.map((i) => ({ owner: i.owner, cx: i.cx, S: i.S, buildings: i.village.buildings.length })) || [],
+      islands: this.layout?.islands?.map((i) => ({ owner: i.owner, cx: i.cx, S: i.S, buildings: i.village?.buildings?.length || 0 })) || [],
       bridge: !!this.layout?.bridge, mood: this.plaza.mood,
       remotes: [...this.remotes.values()].map((r) => ({ id: r.id, x: +r.smooth.x.toFixed(2), z: +r.smooth.z.toFixed(2), back: r.rig.facing.back, right: r.rig.facing.right })),
     };

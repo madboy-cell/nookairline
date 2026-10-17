@@ -88,7 +88,12 @@ function main() {
   const cfgArg = process.argv.indexOf('--config');
   const cfgPath = path.resolve(ROOT, cfgArg > 0 ? process.argv[cfgArg + 1] : 'scripts/art_sheets_4a.json');
   const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-  const manifest = { generatedAt: new Date().toISOString(), sprites: {} };
+  // MERGE with the existing manifest: other scripts (e.g. build_ult_art_pack.mjs) register sprites here too,
+  // and overwriting it used to silently delete every Mythic ult monument.
+  const manifestPath = path.join(PACK_DIR, 'manifest_4a.json');
+  let prevSprites = {};
+  try { prevSprites = JSON.parse(fs.readFileSync(manifestPath, 'utf8')).sprites || {}; } catch { /* first run */ }
+  const manifest = { generatedAt: new Date().toISOString(), sprites: { ...prevSprites } };
   const contact = [];
   let ok = 0, warn = 0;
 

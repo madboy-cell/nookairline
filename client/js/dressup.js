@@ -48,7 +48,7 @@ export async function startDressUp(params) {
     }
   }
 
-  const items = [...new Set([...Object.keys(ATTACH), ...Object.keys(ACCESSORIES).filter((k) => ['hat', 'face', 'gloves', 'boots'].includes(SLOT_OF(k)))])];
+  const items = [...new Set([...Object.keys(ATTACH), ...Object.keys(ACCESSORIES).filter((k) => ['hat', 'face', 'gloves', 'boots', 'wings'].includes(SLOT_OF(k)))])];
   $('du-item').innerHTML = `<option value="">no item</option>` + items.map((k) => `<option value="${k}">${SLOT_OF(k)} • ${ACCESSORIES[k]?.name || k}</option>`).join('');
   if (params.get('item') === 'none') $('du-item').value = '';
   else if (params.get('item') && items.includes(params.get('item'))) $('du-item').value = params.get('item');

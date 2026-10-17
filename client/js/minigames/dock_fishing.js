@@ -43,8 +43,8 @@ export class DockFishing {
     if (!on && this.state === 'idle') this.close();
   }
 
-  open() { $('fishing-panel').hidden = false; this.reset(); this.renderCodex(); }
-  close() { if (this.state === 'reeling' || this.state === 'waiting' || this.state === 'bite') return; $('fishing-panel').hidden = true; this.stop(); }
+  open() { $('fishing-panel').hidden = false; $('hud')?.classList.add('fishing-open'); this.reset(); this.renderCodex(); }
+  close() { if (this.state === 'reeling' || this.state === 'waiting' || this.state === 'bite') return; $('fishing-panel').hidden = true; $('hud')?.classList.remove('fishing-open'); this.stop(); }
   get isOpen() { return !$('fishing-panel').hidden; }
 
   reset() {

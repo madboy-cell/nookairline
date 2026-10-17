@@ -8,9 +8,9 @@
 //   • Lv 2–9 yields: straight line between the documented Lv 1 and Lv 10 values.
 
 export const TILE_SIZE = 1.0;               // metres per grid tile
-export const BASE_GRID = 24;
+export const BASE_GRID = 18;
 export const MAX_GRID = 32;
-export const BRIDGE_GAP = 16.0;             // Rainbow Heart Bridge span (m), fixed for every tier (Section 21.B)
+export const BRIDGE_GAP = 8.0;              // Rainbow Heart Bridge span (8m), fixed for every tier (Section 21.B)
 export const MAX_CORE_LV = 10;
 export const MAX_CASTLE_LV = 30;
 export const MAX_WONDER_STARS = 5;
@@ -107,6 +107,30 @@ export const WONDERS = {
     kind: 'wonder', sprite: 'wnd_world_tree', name: 'Golden Starlight World-Tree', emoji: '🌳', w: 4, h: 4, rarity: 3,
     perDay: (s) => Math.floor(lerpStar(5, 15, s)), effect: '+5–15 💎 daily • +15–30% stats in Moon Bunny & Cloud Dash',
   },
+  wnd_sakura_pagoda: {
+    kind: 'wonder', sprite: 'wnd_sakura_pagoda', name: 'Kyoto Five-Tier Sakura Pagoda', emoji: '⛩️', w: 4, h: 4, rarity: 3, series3: true,
+    matchYieldPct: (s) => lerpStar(20, 45, s), effect: '+20–45% Post-Match Gold & Sakura Blessing',
+  },
+  wnd_mirage_palace: {
+    kind: 'wonder', sprite: 'wnd_mirage_palace', name: "Sultan's Golden Mirage Palace", emoji: '🕌', w: 4, h: 4, rarity: 3, series3: true,
+    matchYieldPct: (s) => lerpStar(25, 50, s), effect: '+25–50% Oasis Gold Yield • +10% Monopoly Start Cash',
+  },
+  wnd_atlantis_sanctuary: {
+    kind: 'wonder', sprite: 'wnd_atlantis_sanctuary', name: 'Atlantis Pearl-Shell Palace', emoji: '🐚', w: 4, h: 4, rarity: 3, series3: true,
+    perDay: (s) => Math.floor(lerpStar(8, 20, s)), effect: '+8–20 💎 Daily Pearl Tribute • +20% Fishing Chest Luck',
+  },
+  wnd_aurora_observatory: {
+    kind: 'wonder', sprite: 'wnd_aurora_observatory', name: 'Starlight Aurora Observatory', emoji: '🔭', w: 4, h: 4, rarity: 3, series3: true,
+    perDay: (s) => Math.floor(lerpStar(8, 20, s)), effect: '+8–20 💎 Daily Astral Reading • +15% Star-Force Focus',
+  },
+  wnd_tea_pavilion: {
+    kind: 'wonder', sprite: 'wnd_tea_pavilion', name: 'Floating Matcha & Koi Tea House', emoji: '🍵', w: 3, h: 3, rarity: 2, series3: true,
+    blacksmithPct: (s) => lerpStar(15, 25, s), buffMs: 3600_000, effect: '+15–25% Cozy Tea Harmony & Blacksmith Focus for 1h',
+  },
+  wnd_sky_airship_dock: {
+    kind: 'wonder', sprite: 'wnd_sky_airship_dock', name: 'Royal Starlight Airship Harbor', emoji: '🛳️', w: 3, h: 3, rarity: 2, series3: true,
+    matchYieldPct: (s) => lerpStar(15, 35, s), effect: '+15–35% Sky-Harbor Trade Gold & Offline Storage',
+  },
 };
 export const WONDER_DUPE_SHARDS = { 2: 25, 3: 100 };
 
@@ -134,18 +158,33 @@ export const DECOR = {
   dec_berry_wheelbarrow:   { kind: 'decor', sprite: 'dec_berry_wheelbarrow', name: 'Star-Berry Harvest Wheelbarrow', emoji: '🍓', w: 1, h: 1, series2: true, buff: { storagePct: 2 }, effect: '+2% Offline Storage Cap' },
   dec_starlight_telescope: { kind: 'decor', sprite: 'dec_starlight_telescope', name: 'Brass Starlight Stargazer Telescope', emoji: '🔭', w: 1, h: 1, series2: true, buff: { fortunePct: 2 }, effect: '+2% Starlight Fortune' },
   dec_owl_mailbox:         { kind: 'decor', sprite: 'dec_owl_mailbox', name: 'Sleepy Owl Postbox & Parcel Stack', emoji: '📮', w: 1, h: 1, series2: true, buff: { swiftnessPct: 2 }, effect: '+2% Swiftness' },
+  dec_sakura_drum_bridge:   { kind: 'decor', sprite: 'dec_sakura_drum_bridge', name: 'Kyoto Red-Lacquer Drum Bridge', emoji: '🌉', w: 2, h: 1, series3: true, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr' },
+  dec_bamboo_shishi_odoshi: { kind: 'decor', sprite: 'dec_bamboo_shishi_odoshi', name: 'Kyoto Bamboo Water-Spout Rockery', emoji: '🎍', w: 2, h: 2, series3: true, buff: { petMoodPct: 3 }, effect: '+3% Pet Mood & Zen Serenity' },
+  dec_sultan_bazaar_canopy: { kind: 'decor', sprite: 'dec_sultan_bazaar_canopy', name: "Silk-Draped Sultan's Oasis Tent", emoji: '🎪', w: 2, h: 2, series3: true, seats: 2, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr • 2-Chibi Lounge' },
+  dec_oasis_obelisk_fountain: { kind: 'decor', sprite: 'dec_oasis_obelisk_fountain', name: 'Golden Sun-Disc Obelisk Fountain', emoji: '☀️', w: 2, h: 2, series3: true, buff: { fortunePct: 3 }, effect: '+3% Fortune' },
+  dec_siren_shell_fountain: { kind: 'decor', sprite: 'dec_siren_shell_fountain', name: 'Atlantis Giant Clam & Harp Fountain', emoji: '🐚', w: 2, h: 2, series3: true, buff: { luckPct: 3 }, effect: '+3% Luck & Pearl Sparkle' },
+  dec_coral_crystal_arch:   { kind: 'decor', sprite: 'dec_coral_crystal_arch', name: 'Glowing Coral & Sea-Glass Archway', emoji: '🪸', w: 2, h: 1, series3: true, buff: { berriesPct: 3 }, effect: '+3% Star-Berries/hr' },
+  dec_aurora_crystal_gazebo: { kind: 'decor', sprite: 'dec_aurora_crystal_gazebo', name: 'Glacial Crystal Swan Gazebo', emoji: '🦢', w: 2, h: 2, series3: true, seats: 2, buff: { traitLuckPct: 3 }, effect: '+3% Pet Trait Roll Luck' },
+  dec_stone_arch_footbridge: { kind: 'decor', sprite: 'dec_stone_arch_footbridge', name: 'Royal Carved Stone Arch Footbridge', emoji: '🌉', w: 2, h: 2, series3: true, buff: { comfortBonus: 40 }, effect: '+40 Comfort • Brook Crossing' },
+  dec_heaven_winged_pillar:  { kind: 'decor', sprite: 'dec_heaven_winged_pillar', name: 'Celestial Winged Sun-Orb Pillar', emoji: '🏛️', w: 1, h: 1, series3: true, buff: { fortunePct: 3 }, effect: '+3% Celestial Fortune' },
+  dec_heaven_cloud_arch:     { kind: 'decor', sprite: 'dec_heaven_cloud_arch', name: 'Heavenly Winged Cloud Archway', emoji: '🪽', w: 2, h: 1, series3: true, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr' },
+  dec_heaven_divine_tree:    { kind: 'decor', sprite: 'dec_heaven_divine_tree', name: 'Sacred Pearl-Blossom Heaven Tree', emoji: '🌳', w: 2, h: 2, series3: true, buff: { berriesPct: 3 }, effect: '+3% Star-Berries/hr' },
+  dec_heaven_lotus_fountain: { kind: 'decor', sprite: 'dec_heaven_lotus_fountain', name: 'Celestial Lotus & Cloud Basin', emoji: '🪷', w: 2, h: 2, series3: true, buff: { luckPct: 3 }, effect: '+3% Divine Wish Luck' },
+  dec_heaven_seraph_harp:    { kind: 'decor', sprite: 'dec_heaven_seraph_harp', name: 'Golden Seraphim Angel-Wing Lyre', emoji: '🪉', w: 1, h: 1, series3: true, buff: { petMoodPct: 3 }, effect: '+3% Seraphim Harmony & Pet Mood' },
 };
 // Couple Love Pavilion: not placeable — rendered at BridgeCenterX when a couple bridge is visible.
 export const LOVE_PAVILION = { sprite: 'dec_love_pavilion', name: 'Couple Love Pavilion', harmonyPct: 25 };
 
 export const ENV_PROPS_25D = {
-  trees: ['env_tree_oak_a', 'env_tree_oak_b', 'env_tree_sakura_a', 'env_tree_sakura_b', 'env_tree_fruit_apple', 'env_tree_golden_maple', 'env_pine'],
-  bushes: ['env_bush_mixed_large', 'env_bush_roses_pink', 'env_bush_daisies_white', 'env_bush_hydrangea_blue', 'env_hedge_boxwood_straight', 'env_hedge_boxwood_corner', 'env_flowerbed_planter', 'env_sunflower_clump'],
-  fences: ['env_fence_wood_stone_straight', 'env_fence_wood_stone_corner', 'env_fence_wood_stone_gate', 'env_wall_stone_low'],
-  lamps: ['env_streetlamp_iron', 'env_streetlamp_double', 'env_string_lights_post', 'env_signpost'],
-  water: ['env_river_boulders_a', 'env_river_boulders_b', 'env_river_cattails', 'decal_water_lily_white', 'decal_water_lotus_pink'],
-  bridges: ['bridge_stone_deck', 'env_bridge_parapet_side', 'env_bridge_pillar_cap', 'bridge_wood_deck', 'bridge_rainbow_arch'],
-  cliffs: ['cliff_grass_lip_strip', 'cliff_side_strata_strip', 'cliff_waterfall_strip', 'env_waterfall_mist', 'env_cloud_fluffy_a', 'env_cloud_fluffy_b'],
+  trees: ['env_tree_oak_a', 'env_tree_oak_b', 'env_tree_sakura_a', 'env_tree_sakura_b', 'env_tree_fruit_apple', 'env_tree_golden_maple', 'env_pine', 'env_tree_palm_oasis', 'env_tree_pine_snowy', 'dec_heaven_divine_tree'],
+  bushes: ['env_bush_mixed_large', 'env_bush_roses_pink', 'env_bush_daisies_white', 'env_bush_hydrangea_blue', 'env_hedge_boxwood_straight', 'env_hedge_boxwood_corner', 'env_hedge_ortho_horizontal', 'env_flowerbed_planter', 'env_planter_ortho_horizontal', 'env_sunflower_clump'],
+  fences: ['env_fence_wood_stone_straight', 'env_fence_wood_stone_corner', 'env_fence_wood_stone_gate', 'env_fence_ortho_horizontal', 'env_arch_floral_ortho', 'env_wall_stone_low', 'dec_bench_ortho_front', 'decal_plaza_medallion_circle', 'dec_heaven_winged_pillar', 'dec_heaven_cloud_arch'],
+  lamps: ['env_streetlamp_iron', 'env_streetlamp_double', 'env_string_lights_post', 'env_signpost', 'dec_heaven_seraph_harp'],
+  water: ['env_river_boulders_a', 'env_river_boulders_b', 'env_river_cattails', 'decal_water_lily_white', 'decal_water_lotus_pink', 'dec_heaven_lotus_fountain'],
+  bridges: ['bridge_stone_deck', 'env_bridge_parapet_side', 'env_bridge_pillar_cap', 'bridge_wood_deck', 'bridge_rainbow_arch', 'bridge_rainbow_front_arch', 'bridge_rainbow_back_rail', 'bridge_rainbow_deck_strip', 'dec_stone_arch_footbridge', 'dec_sakura_drum_bridge'],
+  cliffs: ['cliff_grass_lip_strip', 'cliff_side_strata_strip', 'cliff_waterfall_strip', 'cliff_wall_strip', 'cliff_rim_turf_strip', 'cliff_heaven_cloud_wall', 'env_waterfall_mist', 'env_cloud_fluffy_a', 'env_cloud_fluffy_b'],
+  monopolyEmblems: ['mono_icon_start', 'mono_icon_casino', 'mono_icon_airdrop', 'mono_icon_vault', 'mono_icon_warp', 'mono_icon_arena'],
+  monopolyGrounds: ['mono_ground_brook_classic', 'mono_ground_pond_sakura', 'mono_ground_oasis_mirage', 'mono_ground_lagoon_atlantis', 'mono_ground_rink_aurora'],
 };
 
 export const COMFORT = { CASTLE_PER_LV: 150, CORE_PER_LV: 100, WONDER_PER_STAR: 300, DECOR_FIRST: 120, DECOR_DUPE: 30, DECOR_CAP: 2400, TILE: 5, TILE_CAP: 500, YIELD_DIV: 200, YIELD_CAP_PCT: 50 };
@@ -174,10 +213,10 @@ export const MOODS = ['auto', 'sunny', 'sakura', 'sunset', 'night'];
 
 /** Cloud Territory expansion tiers (Section 2.A.2). Index 0 = base island. */
 export const EXPANSION_TIERS = [
-  { size: 24, castleLv: 1, gold: 0 },
-  { size: 26, castleLv: 2, gold: 2500 },
-  { size: 28, castleLv: 4, gold: 8000 },
-  { size: 30, castleLv: 7, gold: 25000 },
+  { size: 18, castleLv: 1, gold: 0 },
+  { size: 20, castleLv: 2, gold: 2500 },
+  { size: 24, castleLv: 4, gold: 8000 },
+  { size: 28, castleLv: 7, gold: 25000 },
   { size: 32, castleLv: 10, gold: 60000 },
 ];
 

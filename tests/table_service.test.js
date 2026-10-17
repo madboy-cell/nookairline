@@ -82,3 +82,57 @@ test('lobby broadcasts reach every online player', () => {
   close();
 });
 
+test('podium payload contract: every field read by hud.showPodium is present with valid type', () => {
+  const { svc, db, close } = setup(() => 0.01); // low rng so chest triggers
+  db.getProfile('nook').exp = 99999; // trigger level up if applicable
+  const table = { id: 't_contract', mode: 'public', matchMode: 'normal', match: { players: [{ seat: 0, id: 'nook', isBot: false }, { seat: 1, id: 'b', isBot: true, botDiff: 'hard' }] } };
+  const result = { reason: 'rounds', winner: 0, ranking: [{ seat: 0, rank: 1, boardDiamonds: 25 }, { seat: 1, rank: 2, boardDiamonds: 0 }] };
+  const rw = svc._payout(table, result).nook;
+  const requiredNumberKeys = [
+    'gold', 'berries', 'diamonds', 'podiumDiamonds', 'dailyBonusDiamonds',
+    'boardDiamonds', 'ticketBonus', 'multiplier', 'tableScale',
+    'exp', 'levelsGained', 'levelUpDiamonds',
+  ];
+  for (const k of requiredNumberKeys) {
+    assert.equal(typeof rw[k], 'number', `rw.${k} must be a number`);
+    assert.ok(Number.isFinite(rw[k]), `rw.${k} must be finite`);
+  }
+  assert.equal(typeof rw.coupleBonus, 'boolean');
+  assert.equal(typeof rw.chaos, 'boolean');
+  assert.equal(rw.chest, true, 'chest rolled true at rng=0.01');
+  assert.ok(['ticket_standard', 'random_dupe_box'].includes(rw.chestReward), 'chestReward is a valid chest item id');
+  close();
+});
+
+test('Chaos Party payout: 0.5x diamonds and does NOT count toward the 6/day diamond cap', () => {
+  const { svc, db, close } = setup();
+  const table = { id: 't_chaos', matchMode: 'chaos', match: { chaos: true, players: [{ seat: 0, id: 'nook', isBot: false }, { seat: 1, id: 'b', isBot: true, botDiff: 'insane' }] } };
+  const result = { reason: 'rounds', winner: 0, ranking: [{ seat: 0, rank: 1, boardDiamonds: 20 }, { seat: 1, rank: 2, boardDiamonds: 0 }] };
+  const rw1 = svc._payout(table, result).nook;
+  assert.equal(rw1.chaos, true);
+  assert.ok(rw1.diamonds > 0, 'Chaos awards 0.5x diamonds');
+  assert.equal(db.getProfile('nook').mono_daily.payouts, 0, 'Chaos match did NOT consume daily cap');
+  // Even after 6 capped normal matches, Chaos still awards its 0.5x diamonds
+  db.getProfile('nook').mono_daily.payouts = 6;
+  const rw2 = svc._payout(table, result).nook;
+  assert.ok(rw2.diamonds > 0, 'Chaos still awards diamonds after daily cap');
+  close();
+});
+
+test('mono_pet_toggle_auto persists mono_pet_auto on the player profile', () => {
+  const { svc, db, close } = setup();
+  for (const k of ['mono_pet_cast', 'mono_pet_arm', 'mono_pet_toggle_auto', 'table_set_option']) {
+    assert.ok(isTableMessage(k), `${k} is routed to table_service`);
+  }
+  db.getProfile('nook').equipped.pet = { id: 'pet_nyx', bond_lv: 5, costume_id: 's1_naga_sovereign' };
+  svc.connect('nook');
+  svc.handle('nook', { type: 'table_solo', diff: 'hard', matchMode: 'chaos' });
+  const t = [...svc.mgr.tables.values()][0];
+  assert.equal(t.match.chaos, true, 'solo table launched in Chaos mode');
+  svc.handle('nook', { type: 'mono_pet_toggle_auto', auto: false });
+  assert.equal(db.getProfile('nook').mono_pet_auto, false);
+  assert.equal(t.match.players[0].petAuto, false);
+  close();
+});
+
+

@@ -6,17 +6,22 @@ import {
   MAX_REFINE, DUPE_SHARDS, itemDef, itemSlot, FORGE, forgeChance, scrollAllowed, forgeReady,
   FEATURED_OUTFIT, FEATURED_SHARE, BOX1, BOX1_BANNERS, DEFAULT_BANNER, BOX1_POOL, BOX2, BOX2_POOL,
   SHARD_OFFERS, SEASON_OUTFITS, MYTHIC_DICE, VIP_WONDERS, PET, petExpToNext, nextStarDupes, TRAITS, petPassivePct,
+  normalizeActivePoses, minLevelForStars, starsForLevel,
+  SUPER_MYTHIC, SUPER_MYTHIC_POOL, superMythicEnabled, box1DisplayRates, GIFT_PULL,
 } from '/shared/rpg_rules.js';
+import { getRunway, tierOf, SM_TIER } from './runway_reveal.js';
 
 import { ACCESSORIES, DICE_SKINS, PETS, PET_FAMILIES } from '/shared/catalog_gear_pets.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
+import { SEASON_SKILLS, skillFor } from '/shared/season_skills.js';
+import { THEMES } from '/shared/monopoly_rules.js';
 import { HAIRSTYLES, HAIR_COLORS, HAIR_TIERS, HAIR_DYE_TIERS, hairSpriteName } from '/shared/hair_catalog.js';
 import { SLOTS, slotCP } from '/shared/progression.js';
 import { WONDERS, DECOR, CORE, CORE_LANDMARKS, BLUEPRINT_CARDS } from '/shared/catalog_landmarks.js';
 
 import {
   fmtNum, escapeHtml, SLOT_LABELS, BAG_ITEM_CATALOG, SHARD_OFFER_VISUALS, resolveShardOfferMeta,
-  resolveItemVisual, renderIconThumb, renderStatGrid, renderPaperDollHeroStage, renderPaperDollDomLayers,
+  resolveItemVisual, shortenGearName, renderIconThumb, renderOutfitThumbLayers, renderStatGrid, renderPaperDollHeroStage, renderPaperDollDomLayers,
   getPaperDollStageState, renderStarForceArc,
   mountLivePaperDollStage, stopWardrobePreview, cyclePaperDollView, togglePaperDollWalk,
 } from './ui_components.js';
@@ -26,9 +31,27 @@ import {
 import {
   PET_CATALOG_V2, resolvePetSpriteKey, resolvePetUiScale,
 } from '/shared/pet_catalog.js';
+import { spriteInfo } from './assets.js';
 
 function formatPetStarProgress(pet) {
   return formatPetStarProgressV2(pet);
+}
+
+function renderCostumeSkillCard(costumeId, rarityOverride = null) {
+  if (!costumeId || !OUTFITS[costumeId]) return '';
+  const def = OUTFITS[costumeId];
+  const sk = skillFor(costumeId, rarityOverride || def.rarity || 1);
+  if (!sk) return '';
+  const turfName = sk.homeTheme && THEMES[sk.homeTheme] ? THEMES[sk.homeTheme].name : null;
+  return `
+    <div class="rpg-costume-skill-banner">
+      <div class="rpg-costume-skill-head">
+        <span>${escapeHtml(sk.icon || '⚡')} Ultimate Skill: ${escapeHtml(sk.name)}</span>
+        ${turfName ? `<span class="rpg-costume-skill-turf">🏠 Turf: ${escapeHtml(turfName)} (+15%)</span>` : ''}
+      </div>
+      <div class="rpg-costume-skill-desc">${escapeHtml(sk.desc || '')}</div>
+    </div>
+  `;
 }
 
 /**
@@ -92,8 +115,28 @@ export function buildGachaPrizePool(gtab, bannerId, profile = {}) {
       ? (SEASON_OUTFITS.includes(profile?.gacha?.featured_outfit) ? profile.gacha.featured_outfit : bannerDef.featured)
       : null;
 
+    const smOn = Boolean(bannerDef.superMythic) && superMythicEnabled();
+    const shownRates = smOn ? box1DisplayRates(bannerDef.rates, true) : bannerDef.rates;
+    if (smOn) {
+      const smPct = (SUPER_MYTHIC.BASE_RATE / SUPER_MYTHIC_POOL.length) * 100;
+      for (const id of SUPER_MYTHIC_POOL) {
+        const def = OUTFITS[id] || {};
+        const vis = resolveItemVisual(id, lineage);
+        const owned = Boolean(inv[id]);
+        const refine = inv[id]?.refine | 0;
+        out.push({
+          key: id, id, rarity: SM_TIER, superMythic: true, name: def.name || vis.name || id, shortName: def.name || vis.name || id,
+          url: vis.url, filter: vis.filter || 'none', ratePct: smPct, rateLabel: `${smPct.toFixed(2)}%`, tag: null,
+          owned, ownedLabel: owned ? (refine > 0 ? `+${refine}` : '✓') : null, kind: 'outfit', slot: 'outfit',
+          cp: Math.round(slotCP('outfit', id, 0)),
+          stageTitle: `✦ SUPER MYTHIC OUTFIT SET • ${smPct.toFixed(2)}% DROP • PITY ${SUPER_MYTHIC.HARD_PITY}`,
+          stageSub: `${escapeHtml(def.name || id)} (Mythic power, legendary runway + live aura)${owned ? ' <span class="s2-badge-gold">✓ OWNED</span>' : ''}`,
+        });
+      }
+    }
+
     for (const rarity of [3, 2, 1]) {
-      const tierRate = bannerDef.rates[rarity] || 0;
+      const tierRate = shownRates[rarity] || 0;
       const rawIds = [...(bannerDef.pool[rarity] || [])];
       const rateUpSet = new Set(bannerDef.rateUp || []);
       rawIds.sort((a, b) => {
@@ -139,7 +182,8 @@ export function buildGachaPrizePool(gtab, bannerId, profile = {}) {
         const rateStr = pct < 1 ? `${pct.toFixed(2)}%` : `${pct.toFixed(1)}%`;
         const fullName = def.name || vis.name || id;
         const shortName = fullName.replace(/^Season\s*\d+:\s*/i, '');
-        const skillStr = isOutfit && def.skill?.name ? ` • ⚡ ${escapeHtml(def.skill.name)}` : '';
+        const outfitSkill = isOutfit ? skillFor(id, rarity) : null;
+        const skillStr = outfitSkill?.name ? ` • ${escapeHtml(outfitSkill.icon || '⚡')} ${escapeHtml(outfitSkill.name)}` : '';
         const tierLabel = rarity === 3 ? 'MYTHIC' : rarity === 2 ? 'EPIC' : 'RARE';
         const kindLabel = isOutfit ? 'OUTFIT SET' : isDice ? '3D DICE SKIN' : (SLOT_LABELS[slot] || 'GEAR').toUpperCase();
 
@@ -288,22 +332,27 @@ export function buildGachaPrizePool(gtab, bannerId, profile = {}) {
   return out;
 }
 
-function renderGachaPrizePoolHtml(pool, activeKey = null) {
+function renderGachaPrizePoolHtml(pool, activeKey = null, p = null) {
   if (!pool || !pool.length) return '';
+  const lineage = p?.lineage === 'dxb' ? 'dxb' : 'bkk';
   const tilesHtml = pool.map((entry) => {
     const isSelected = activeKey === entry.key;
+    const isOutfitEntry = entry.kind === 'outfit';
     const filterStyle = entry.filter && entry.filter !== 'none' ? `filter:${entry.filter};` : '';
+    const thumbContentHtml = isOutfitEntry
+      ? renderOutfitThumbLayers(entry.id, { lineage, appearance: p?.appearance, url: entry.url, filter: entry.filter, alt: entry.shortName })
+      : `<img src="${entry.url}" alt="${escapeHtml(entry.shortName)}" loading="lazy" decoding="async" style="${filterStyle}" />`;
     return `
       <button type="button"
               class="s2-pool-tile s2-rarity-${entry.rarity} ${isSelected ? 'is-selected' : ''} ${entry.owned ? 'is-owned' : ''}"
               data-gacha-preview="${escapeHtml(entry.key)}"
               title="${escapeHtml(entry.name)} (${entry.rateLabel})">
         <div class="s2-pool-tile-top">
-          <span class="s2-pool-stars">${'★'.repeat(entry.rarity)}</span>
+          <span class="s2-pool-stars">${entry.rarity === SM_TIER ? '✦ SUPER' : '★'.repeat(entry.rarity)}</span>
           <span class="s2-pool-rate">${entry.tag ? `<b>${escapeHtml(entry.tag)}</b> ` : ''}${escapeHtml(entry.rateLabel)}</span>
         </div>
-        <div class="s2-pool-thumb-wrap">
-          <img src="${entry.url}" alt="${escapeHtml(entry.shortName)}" loading="lazy" decoding="async" style="${filterStyle}" />
+        <div class="s2-pool-thumb-wrap ${isOutfitEntry ? 's2-thumb-has-hair' : ''}">
+          ${thumbContentHtml}
           ${entry.ownedLabel ? `<span class="s2-pool-owned-badge">${escapeHtml(entry.ownedLabel)}</span>` : ''}
         </div>
         <div class="s2-pool-name">${escapeHtml(entry.shortName)}</div>
@@ -314,7 +363,7 @@ function renderGachaPrizePoolHtml(pool, activeKey = null) {
   return `
     <div class="s2-pool-section" id="gacha-prize-pool">
       <div class="s2-pool-header">
-        <span class="s2-pool-title">🎁 Prize Pool (★3 Mythic → ★1 Rare)</span>
+        <span class="s2-pool-title">🎁 Prize Pool (✦ Super Mythic → ★1 Rare)</span>
         ${activeKey
           ? `<button type="button" class="s2-pool-reset-btn" data-gacha-preview-reset="1">↺ Reset Stage</button>`
           : `<span class="s2-pool-hint">👆 Tap any item to preview</span>`}
@@ -333,6 +382,8 @@ function resolveGachaItem(item, lineage = 'bkk') {
     : item.id;
   const vis = resolveItemVisual(lookupId, lineage);
   let rarity = item.rarity || vis.rarity || 1;
+  if (tierOf({ ...item, rarity }) === SM_TIER) rarity = SM_TIER;
+  else if (typeof rarity !== 'number') rarity = Number(rarity) || 1;
   let kindBadge = '';
 
   if (isPet) {
@@ -405,6 +456,11 @@ export class RpgUI {
     this.selectedPetUid = null;
     this.selectedTraitSlot = 0;
     this.selectedPicks = {}; // offerId -> pickId
+    this.closetDrawerOpen = false;
+    this.poolDrawerOpen = false;
+    this.forgeDrawerOpen = false;
+    this.selectedGiftRibbon = 'pink';
+    this.founderModalOpen = false;
 
     // Results state
     this.lastGachaResult = null;
@@ -443,18 +499,43 @@ export class RpgUI {
     }, 60_000);
   }
 
-  handlePetOnlineTickReply(res) {
+  patchPetReply(res) {
     if (!res || !res.ok) return;
     const p = this.profile;
-    if (p && Array.isArray(p.pets)) {
-      const pet = p.pets.find((x) => x.uid === res.petUid || x.id === res.petId);
+    if (!p) return;
+    const petUid = res.petUid;
+    const petId = res.petId;
+    if (Array.isArray(p.pets) && (petUid || petId)) {
+      const pet = p.pets.find((x) => (petUid && x.uid === petUid) || (petId && x.id === petId));
       if (pet) {
         if (res.bond_lv != null) pet.bond_lv = res.bond_lv;
         if (res.bond_xp != null) pet.bond_xp = res.bond_xp;
         if (res.stars != null) pet.stars = res.stars;
+        if (res.visual_tier != null) pet.visual_tier = res.visual_tier;
         if (res.hunger != null) pet.hunger = res.hunger;
+        if (res.mood != null) pet.mood = res.mood;
+        if (res.essence != null) pet.essence = res.essence;
+        if (res.spent_essence != null) pet.spent_essence = res.spent_essence;
+        if (res.nickname !== undefined) pet.nickname = res.nickname;
+        if (res.costume_id !== undefined) pet.costume_id = res.costume_id;
+        if (Array.isArray(res.slots)) pet.slots = res.slots;
+        if (Array.isArray(res.active_poses)) pet.active_poses = res.active_poses;
+        if (p.equipped?.pet && (p.equipped.pet.uid === pet.uid || p.equipped.pet.id === pet.id)) {
+          if (res.bond_lv != null) p.equipped.pet.bond_lv = res.bond_lv;
+          if (res.stars != null) p.equipped.pet.stars = res.stars;
+          if (res.visual_tier != null) p.equipped.pet.visual_tier = res.visual_tier;
+          if (res.hunger != null) p.equipped.pet.hunger = res.hunger;
+          if (res.nickname !== undefined) p.equipped.pet.nickname = res.nickname;
+          if (res.costume_id !== undefined) p.equipped.pet.costume_id = res.costume_id;
+          if (Array.isArray(res.active_poses)) p.equipped.pet.active_poses = res.active_poses;
+        }
       }
     }
+  }
+
+  handlePetOnlineTickReply(res) {
+    if (!res || !res.ok) return;
+    this.patchPetReply(res);
     const worldPet = this.world?.local?.pet || (typeof window !== 'undefined' && (window.__neora?.world?.local?.pet || window.world?.local?.pet));
     if (res.expGained > 0 && worldPet?.bubble) {
       worldPet.bubble('+EXP ♥');
@@ -511,6 +592,35 @@ export class RpgUI {
     }
   }
 
+  onGiftReceived(gift) {
+    const p = this.profile;
+    if (p && gift) {
+      p.gacha = p.gacha || {};
+      p.gacha.gifts_pending = Array.isArray(p.gacha.gifts_pending) ? p.gacha.gifts_pending : [];
+      if (!p.gacha.gifts_pending.some((g) => g.id === gift.id)) p.gacha.gifts_pending.push(gift);
+    }
+    if (this.isOpen && this.currentView === 'gacha') this.render();
+  }
+
+  playRunwayForResult(r) {
+    if (!r || !Array.isArray(r.items) || !r.items.length) return;
+    const p = this.profile || {};
+    try {
+      const rw = getRunway();
+      rw.play({
+        items: r.items,
+        pullId: r.pullId || null,
+        look: { id: p.id, username: p.username, lineage: p.lineage, appearance: p.appearance, equipped: p.equipped },
+        pity: { sm: r.smPity ?? (p.gacha?.[SUPER_MYTHIC.PITY_KEY] | 0), smMax: r.smPityMax || SUPER_MYTHIC.HARD_PITY },
+      }).finally(() => {
+        if (this.isOpen) this.render();
+      });
+    } catch (e) {
+      console.warn('[gacha] runway fallback:', e);
+      this.toast(`✨ Summoned ${r.items.length} item${r.items.length > 1 ? 's' : ''}!`);
+    }
+  }
+
   get profile() {
     return (this.getProfile ? this.getProfile() : null) || this.cachedProfile || {};
   }
@@ -544,13 +654,17 @@ export class RpgUI {
 
     this.currentView = view;
     this.currentOpts = opts || {};
+    if (opts && opts.giftTo) {
+      this.giftToRecipient = opts.giftTo;
+    }
 
     if (view === 'wardrobe') {
-      if (opts.tab) this.selectedWTab = opts.tab;
+      this.closetDrawerOpen = Boolean(opts.openCloset || opts.tab === 'accessories' || opts.slot);
+      if (opts.tab) this.selectedWTab = opts.tab === 'accessories' ? 'fashion' : opts.tab;
       if (opts.slot) this.selectedSlot = opts.slot;
-      else if (this.selectedWTab === 'fashion' && this.selectedSlot !== 'outfit') this.selectedSlot = 'outfit';
-      else if (this.selectedWTab === 'accessories' && this.selectedSlot === 'outfit') this.selectedSlot = 'hat';
+      else if (this.selectedWTab === 'fashion' && !this.selectedSlot) this.selectedSlot = 'outfit';
     } else if (view === 'gacha') {
+      this.poolDrawerOpen = false;
       if (opts.tab) {
         if (opts.tab !== this.selectedGTab) {
           this.lastGachaResult = null;
@@ -563,20 +677,91 @@ export class RpgUI {
         this.selectedBanner = opts.banner;
       }
     } else if (view === 'forge') {
+      this.forgeDrawerOpen = false;
       if (opts.itemId) this.selectedForgeItem = opts.itemId;
     } else if (view === 'pets') {
       if (opts.petUid) this.selectedPetUid = opts.petUid;
     }
 
+    if (typeof document !== 'undefined') {
+      document.body?.classList?.toggle('rpg-open', true);
+      const dockMap = { wardrobe: 'wardrobe', gacha: 'gacha', forge: 'wardrobe', pets: 'wardrobe' };
+      const targetDock = dockMap[view];
+      if (targetDock) {
+        document.querySelectorAll('#bottom-dock .dock-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.dock === targetDock);
+        });
+      }
+    }
+
     this.el.hidden = false;
     this.render();
+    this._startPoseCycleTimer();
   }
 
   close() {
+    this._stopPoseCycleTimer();
     if (!this.el) return;
     this.el.hidden = true;
     this.currentView = null;
     stopWardrobePreview();
+    if (typeof document !== 'undefined') {
+      document.body?.classList?.toggle('rpg-open', false);
+      const activeDock = document.querySelector('#bottom-dock .dock-btn.active');
+      if (activeDock && (activeDock.dataset.dock === 'wardrobe' || activeDock.dataset.dock === 'gacha')) {
+        document.querySelectorAll('#bottom-dock .dock-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.dock === 'village');
+        });
+      }
+    }
+  }
+
+  _startPoseCycleTimer() {
+    this._stopPoseCycleTimer();
+    if (typeof window === 'undefined') return;
+    this._poseCycleTimer = setInterval(() => {
+      if (!this.isOpen || (this.currentView !== 'pets' && this.currentView !== 'wardrobe')) return;
+      const pet = this.resolveActivePet();
+      if (!pet) return;
+      const rawStars = Math.max(1, Math.min(3, Number(pet.stars ?? PETS[pet.id]?.rarity) || 1));
+      const bondLv = Math.max(1, Math.min(30, Math.max(Number(pet.bond_lv) || 1, minLevelForStars(rawStars))));
+      const poses = normalizeActivePoses(pet.active_poses, bondLv);
+      if (poses.length <= 1) return;
+      let idx = (Math.random() * poses.length) | 0;
+      if (poses[idx] === this.petPreviewPose) {
+        idx = (idx + 1 + ((Math.random() * (poses.length - 1)) | 0)) % poses.length;
+      }
+      const nextPose = poses[idx];
+      this.petPreviewPose = nextPose;
+      const stagePose = nextPose === 'flip' ? 'happy' : nextPose;
+      const stars = Math.max(rawStars, starsForLevel(bondLv));
+      const visualTier = Math.max(1, Math.min(stars, Number(pet.visual_tier) || stars));
+      const sprKey = resolvePetSpriteKey(pet.id, visualTier, stagePose);
+      if (!spriteInfo(sprKey)) return;
+      const url = `/assets/pets/${sprKey}.png`;
+      const scale = resolvePetUiScale(pet.id, stars, visualTier, stagePose);
+
+      // Update Sanctuary Stage or Wardrobe Stage <img> directly in-place (zero innerHTML rebuild)
+      const stageImg = this.el?.querySelector('.pet-v2-stage-pet, .s2-pd-pet');
+      if (stageImg) {
+        stageImg.src = url;
+        stageImg.style.setProperty('--pet-ui-scale', String(scale));
+        stageImg.classList.toggle('pet-v2-flip-spin', nextPose === 'flip');
+      }
+      if (this.currentView === 'pets' && this.el) {
+        const btns = this.el.querySelectorAll('.pet-v2-pose-btn[data-pet-pose]');
+        for (const b of btns) {
+          b.classList.toggle('is-previewing', b.dataset.petPose === nextPose);
+        }
+      }
+    }, 3400);
+  }
+
+  _stopPoseCycleTimer() {
+    if (this._poseCycleTimer) {
+      clearInterval(this._poseCycleTimer);
+      this._poseCycleTimer = null;
+    }
   }
 
   onProfile(profile) {
@@ -626,6 +811,7 @@ export class RpgUI {
         }
         this.toast(`⚠️ ${msg || res.error || 'Action failed'}`);
       } else {
+        this.patchPetReply(res);
         if (type === 'pet_online_tick') {
           this.handlePetOnlineTickReply(res);
         } else if (type === 'pet_equip_costume') {
@@ -670,16 +856,18 @@ export class RpgUI {
     if (!this.el || this._eventsBound) return;
     this._eventsBound = true;
 
-    this.el.addEventListener('change', (e) => {
-      if (e.target.id === 'pet-costume-select') {
-        const pet = this.resolveActivePet();
-        if (!pet) return;
-        const costumeId = e.target.value;
-        this.send('pet_equip_costume', { petUid: pet.uid, petId: pet.id, costumeId }, (r) => {
-          this.handlePetEquipCostumeReply(r);
-        });
-      }
-    });
+    if (typeof document !== 'undefined' && !this._docDockBound) {
+      this._docDockBound = true;
+      document.addEventListener('click', (e) => {
+        if (!this.isOpen) return;
+        const dockBtn = e.target.closest('#bottom-dock .dock-btn[data-dock]');
+        if (!dockBtn) return;
+        const dock = dockBtn.dataset.dock;
+        if (dock === 'village' || dock === 'play' || dock === 'townhall') {
+          this.close();
+        }
+      });
+    }
 
     this.el.addEventListener('click', (e) => {
       if (e.target.closest('#rpg-close') || e.target.classList.contains('rpg-backdrop')) {
@@ -687,6 +875,166 @@ export class RpgUI {
         return;
       }
       if (this.busy) return;
+
+      // Progressive Disclosure Drawer Toggles (Closet / Pool / Forge)
+      if (e.target.closest('[data-toggle-closet-drawer]')) {
+        this.closetDrawerOpen = !this.closetDrawerOpen;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-closet-close]')) {
+        this.closetDrawerOpen = false;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-toggle-pool-drawer]')) {
+        this.poolDrawerOpen = !this.poolDrawerOpen;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-pool-close]')) {
+        this.poolDrawerOpen = false;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-toggle-forge-drawer]')) {
+        this.forgeDrawerOpen = !this.forgeDrawerOpen;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-forge-drawer-close]')) {
+        this.forgeDrawerOpen = false;
+        this.render();
+        return;
+      }
+
+      // VIP Card Buy
+      const vipBuyBtn = e.target.closest('[data-act="vip-buy"]');
+      if (vipBuyBtn) {
+        const card = vipBuyBtn.dataset.vipCard;
+        const payload = { card };
+        if (card === 'telelink_box') {
+          payload.target = this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
+        }
+        this.executeAction('vip_card_buy', payload, () => {
+          this.toast(`💳 Purchased VIP Card: ${card}!`);
+        });
+        return;
+      }
+
+      // VIP Card Gift (buy asGift)
+      const vipGiftBtn = e.target.closest('[data-act="vip-gift"]');
+      if (vipGiftBtn) {
+        const card = vipGiftBtn.dataset.vipCard;
+        this.executeAction('vip_card_buy', { card, asGift: true }, () => {
+          this.toast(`🎁 Purchased VIP Card as Gift to Bag: ${card}!`);
+        });
+        return;
+      }
+
+      // VIP Card Use
+      const vipUseBtn = e.target.closest('[data-act="vip-use"]');
+      if (vipUseBtn) {
+        const card = vipUseBtn.dataset.vipCard;
+        const payload = { card };
+        if (card === 'telelink_box') {
+          payload.target = this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
+        }
+        this.executeAction('vip_card_use', payload, () => {
+          this.toast(`✨ Activated VIP Card: ${card}!`);
+        });
+        return;
+      }
+
+      // Partner Gift Ribbon
+      const ribbonBtn = e.target.closest('[data-ribbon]') || e.target.closest('[data-gift-ribbon]');
+      if (ribbonBtn) {
+        this.selectedGiftRibbon = ribbonBtn.dataset.ribbon || ribbonBtn.dataset.giftRibbon;
+        this.render();
+        return;
+      }
+
+      // Owl Send Gift
+      const owlSendBtn = e.target.closest('[data-act="owl-send"]') || e.target.closest('[data-owl-dispatch]');
+      if (owlSendBtn) {
+        const toEl = this.el?.querySelector('#owl-to');
+        const to = toEl?.value;
+        if (!to) {
+          this.toast('⚠️ Please select a recipient (partner or friend)!');
+          return;
+        }
+        const s1Val = this.el?.querySelector('#owl-slot1')?.value;
+        const s2Val = this.el?.querySelector('#owl-slot2')?.value;
+        let slot1 = undefined;
+        let slot2 = undefined;
+        if (s1Val) {
+          const parts = s1Val.split(':');
+          if (parts[0] === 'gear') slot1 = { kind: 'gear', itemId: parts[2], mode: parts[1] };
+          else if (parts[0] === 'decor') slot1 = { kind: 'decor', decId: parts[1] };
+        }
+        if (s2Val) {
+          const parts = s2Val.split(':');
+          if (parts[0] === 'bag') slot2 = { kind: 'bag', key: parts[1] };
+          else if (parts[0] === 'berries') slot2 = { kind: 'berries', amount: Math.min(200, parseInt(parts[1], 10) || 50) };
+        }
+        if (!slot1 && !slot2) {
+          this.toast('⚠️ Please attach at least one gift item in Slot 1 or Slot 2!');
+          return;
+        }
+        const note = (this.el?.querySelector('#owl-note')?.value || '').trim().slice(0, 80);
+        const ribbon = this.selectedGiftRibbon || 'pink';
+        const payload = { to, ribbon };
+        if (slot1) payload.slot1 = slot1;
+        if (slot2) payload.slot2 = slot2;
+        if (note) payload.note = note;
+
+        this.executeAction('owl_send_gift', payload, (r) => {
+          this.toast(`🦉 Royal Owl dispatched your gift! Postage: ${r.postage || 50} 🍓`);
+        });
+        return;
+      }
+
+      // Owl Claim Mail
+      const owlClaimBtn = e.target.closest('[data-act="owl-claim"]');
+      if (owlClaimBtn) {
+        const mailId = owlClaimBtn.dataset.mailId;
+        this.executeAction('owl_claim_mail', { mailId }, () => {
+          this.toast('🎁 Claimed gift from Royal Owl Inbox!');
+        });
+        return;
+      }
+
+      // Daily Passport Claim
+      const passportClaimBtn = e.target.closest('[data-act="passport-claim"]');
+      if (passportClaimBtn) {
+        const quest = passportClaimBtn.dataset.quest;
+        this.executeAction('passport_claim', { quest }, () => {
+          this.toast(`📜 Claimed passport quest: ${quest}!`);
+        });
+        return;
+      }
+
+      // Open / Close Founder Modal
+      if (e.target.closest('[data-act="open-founder"]')) {
+        this.founderModalOpen = true;
+        this.render();
+        return;
+      }
+      if (e.target.closest('[data-act="close-founder"]')) {
+        this.founderModalOpen = false;
+        this.render();
+        return;
+      }
+
+      // Founder Claim
+      const founderClaimBtn = e.target.closest('[data-act="founder-claim"]');
+      if (founderClaimBtn) {
+        const code = (this.el?.querySelector('#founder-code')?.value || '').trim();
+        this.executeAction('founder_claim', code ? { code } : {}, () => {
+          this.toast('🎉 Founder\'s Pack Claimed! Equipped \'Sky Party Founder\' title!');
+        });
+        return;
+      }
 
       // View Navigation Tabs
       const viewBtn = e.target.closest('[data-view]');
@@ -699,10 +1047,15 @@ export class RpgUI {
       // Wardrobe Sub-Tabs
       const wtabBtn = e.target.closest('[data-wtab]');
       if (wtabBtn) {
-        const tab = wtabBtn.dataset.wtab;
-        this.selectedWTab = tab;
-        if (tab === 'fashion') this.selectedSlot = 'outfit';
-        else if (tab === 'accessories' && this.selectedSlot === 'outfit') this.selectedSlot = 'hat';
+        const rawTab = wtabBtn.dataset.wtab;
+        if (rawTab === 'accessories') {
+          this.selectedWTab = 'fashion';
+          if (this.selectedSlot === 'outfit') this.selectedSlot = 'hat';
+          this.closetDrawerOpen = true;
+        } else {
+          this.selectedWTab = rawTab;
+          if (rawTab === 'fashion') this.closetDrawerOpen = false;
+        }
         this.render();
         return;
       }
@@ -712,8 +1065,8 @@ export class RpgUI {
       if (slotCard && !e.target.closest('[data-hide]') && !e.target.closest('[data-goforge]')) {
         const slot = slotCard.dataset.slot;
         this.selectedSlot = slot;
-        if (slot === 'outfit') this.selectedWTab = 'fashion';
-        else this.selectedWTab = 'accessories';
+        this.selectedWTab = 'fashion';
+        this.closetDrawerOpen = true;
         this.render();
         return;
       }
@@ -808,18 +1161,16 @@ export class RpgUI {
         return;
       }
 
-      // Gacha Pulls
+      // Gacha Pulls (all routed through the Grand Royal Opera Runway reveal; no inline spoiler box)
       const pull1Btn = e.target.closest('#pull-1');
       if (pull1Btn) {
         if (this.selectedGTab === 'box1') {
           this.executeAction('gacha_pull', { box: 1, count: 1, currency: 'diamonds', banner: this.selectedBanner }, (r) => {
-            this.lastGachaResult = r;
-            this.toast(`✨ Summoned ${r.items.length} item!`);
+            this.playRunwayForResult(r);
           });
         } else {
           this.executeAction('gacha_pull', { box: 2, count: 1, currency: 'gold' }, (r) => {
-            this.lastGachaResult = r;
-            this.toast(`🏰 Drawn ${r.items.length} architect item!`);
+            this.playRunwayForResult(r);
           });
         }
         return;
@@ -829,13 +1180,11 @@ export class RpgUI {
       if (pull10Btn) {
         if (this.selectedGTab === 'box1') {
           this.executeAction('gacha_pull', { box: 1, count: 10, currency: 'diamonds', banner: this.selectedBanner }, (r) => {
-            this.lastGachaResult = r;
-            this.toast('✨ 10x Goddess Summon Complete!');
+            this.playRunwayForResult(r);
           });
         } else {
           this.executeAction('gacha_pull', { box: 2, count: 10, currency: 'gold' }, (r) => {
-            this.lastGachaResult = r;
-            this.toast('🏰 10x Architect Summon Complete!');
+            this.playRunwayForResult(r);
           });
         }
         return;
@@ -844,8 +1193,7 @@ export class RpgUI {
       const pull10BerriesBtn = e.target.closest('#pull-10-berries');
       if (pull10BerriesBtn) {
         this.executeAction('gacha_pull', { box: 2, count: 10, currency: 'berries' }, (r) => {
-          this.lastGachaResult = r;
-          this.toast('🍓 10x Berry Architect Summon Complete!');
+          this.playRunwayForResult(r);
         });
         return;
       }
@@ -856,8 +1204,7 @@ export class RpgUI {
         const payload = { box, count: 1, currency: 'ticket' };
         if (box === 1) payload.banner = this.selectedBanner;
         this.executeAction('gacha_pull', payload, (r) => {
-          this.lastGachaResult = r;
-          this.toast('🎟️ Ticket Summon Complete!');
+          this.playRunwayForResult(r);
         });
         return;
       }
@@ -1104,6 +1451,9 @@ export class RpgUI {
       } else if (e.target.id === 'pet-confirm-mythic') {
         this.confirmMythicWipe = e.target.checked;
         this.render();
+      } else if (e.target.id === 'pet-costume-select') {
+        this.previewPetCostumeId = e.target.value;
+        this.render();
       } else if (e.target.id === 'gacha-featured-wish') {
         const outfitId = e.target.value;
         if (outfitId && SEASON_OUTFITS.includes(outfitId)) {
@@ -1112,9 +1462,28 @@ export class RpgUI {
             this.toast(`🌟 Rate-Up Wish set to ${OUTFITS[outfitId]?.name || outfitId}! (50% of ★3 Mythic drops)`);
           });
         }
+      } else if (e.target.id === 'owl-to') {
+        this.giftToRecipient = e.target.value;
+        const isPartner = Boolean(this.profile?.partner_id && e.target.value === this.profile.partner_id);
+        const amtEl = this.el?.querySelector('#owl-postage-amount');
+        const hintEl = this.el?.querySelector('#owl-postage-hint');
+        if (amtEl) amtEl.textContent = isPartner ? '25' : '50';
+        if (hintEl) hintEl.textContent = isPartner ? '50% Couple Discount!' : 'Standard Owl Delivery';
+      } else if (e.target.id === 'owl-slot1') {
+        this.owlSlot1Val = e.target.value;
+        this.render();
+      } else if (e.target.id === 'owl-slot2') {
+        this.owlSlot2Val = e.target.value;
+        this.render();
       } else if (e.target.dataset.pick) {
         this.selectedPicks[e.target.dataset.pick] = e.target.value;
         this.render();
+      }
+    });
+
+    this.el.addEventListener('input', (e) => {
+      if (e.target.id === 'owl-note') {
+        this.owlNoteText = e.target.value;
       }
     });
   }
@@ -1145,6 +1514,11 @@ export class RpgUI {
     const diamonds = p.diamonds || 0;
     const shards = p.shards || 0;
     const isForgeReady = forgeReady(p);
+    const lineage = p.lineage === 'dxb' ? 'dxb' : 'bkk';
+    const eqOut = p.equipped?.outfit?.id || (typeof p.equipped?.outfit === 'string' ? p.equipped.outfit : null);
+    const avaSpr = eqOut && eqOut !== 'newbie_outfit' ? `${lineage}_${eqOut}_front` : `${lineage}_base_front`;
+    const isGirl = p.appearance?.body === 'girl' || (!p.appearance?.body && lineage === 'dxb');
+    const hairId = p.appearance?.hair || (isGirl ? 'hair_girl_waves' : 'hair_boy_fluffy');
 
     let bodyHtml = '';
     if (view === 'wardrobe') bodyHtml = this.renderWardrobe(p);
@@ -1154,38 +1528,52 @@ export class RpgUI {
 
     this.el.innerHTML = `
       <div class="rpg-backdrop"></div>
-      <div class="rpg-panel parchment">
-        <button id="rpg-close" class="rpg-x-btn" aria-label="Close">✕</button>
+      <div class="rpg-panel parchment s2-view-${view}">
+        <header class="rpg-header-bar">
+          <div class="rpg-header-strip">
+            <div class="rpg-player-mini">
+              <div class="rpg-player-ava">
+                ${renderOutfitThumbLayers(eqOut || 'newbie_outfit', { lineage, appearance: p.appearance, headCrop: true })}
+              </div>
+              <div class="rpg-player-txt">
+                <b>${escapeHtml(p.username || 'Player')}</b>
+                <small>Lv.${p.level || 1}</small>
+              </div>
+            </div>
 
-        <nav class="rpg-top-bar">
-          <button class="rpg-view-tab ${view === 'wardrobe' ? 'active' : ''}" data-view="wardrobe">
-            <span class="ico">👗</span><span>Wardrobe</span>
-          </button>
-          <button class="rpg-view-tab ${view === 'gacha' ? 'active' : ''}" data-view="gacha">
-            <span class="ico">🗽</span><span>Gacha</span>
-          </button>
-          <button class="rpg-view-tab ${view === 'forge' ? 'active' : ''}" data-view="forge" title="[🔨 Blacksmith +10]">
-            <span class="ico">🔨</span><span>Forge</span>${isForgeReady ? '<span class="rpg-red-dot"></span>' : ''}
-          </button>
-          <button class="rpg-view-tab ${view === 'pets' ? 'active' : ''}" data-view="pets">
-            <span class="ico">🐾</span><span>Pets</span>
-          </button>
-        </nav>
+            <div class="rpg-currencies">
+              <div class="rpg-curr-item" title="Gold">
+                <img src="/assets/ui/icon_gold.png" alt="Gold" /><span>${fmtNum(gold)}</span>
+              </div>
+              <div class="rpg-curr-item" title="Star-Berries">
+                <img src="/assets/ui/icon_berry.png" alt="Berries" /><span>${fmtNum(berries)}</span>
+              </div>
+              <div class="rpg-curr-item" title="Diamonds">
+                <img src="/assets/ui/icon_diamond.png" alt="Diamonds" /><span>${fmtNum(diamonds)}</span>
+              </div>
+              <div class="rpg-curr-item" title="Starlight Shards">
+                <img src="/assets/ui/icon_shard.png" alt="Shards" /><span>${fmtNum(shards)}</span>
+              </div>
+            </div>
 
-        <div class="rpg-currencies">
-          <div class="rpg-curr-item" title="Gold">
-            <img src="/assets/ui/icon_gold.png" alt="Gold" /><span>${fmtNum(gold)}</span>
+            <button id="rpg-close" class="rpg-x-btn" aria-label="Close">✕</button>
           </div>
-          <div class="rpg-curr-item" title="Star-Berries">
-            <img src="/assets/ui/icon_berry.png" alt="Berries" /><span>${fmtNum(berries)}</span>
-          </div>
-          <div class="rpg-curr-item" title="Diamonds">
-            <img src="/assets/ui/icon_diamond.png" alt="Diamonds" /><span>${fmtNum(diamonds)}</span>
-          </div>
-          <div class="rpg-curr-item" title="Starlight Shards">
-            <img src="/assets/ui/icon_shard.png" alt="Shards" /><span>${fmtNum(shards)}</span>
-          </div>
-        </div>
+
+          <nav class="rpg-top-bar">
+            <button class="rpg-view-tab ${view === 'wardrobe' ? 'active' : ''}" data-view="wardrobe">
+              <span class="ico">👗</span><span>Wardrobe</span>
+            </button>
+            <button class="rpg-view-tab ${view === 'gacha' ? 'active' : ''}" data-view="gacha">
+              <span class="ico">🗽</span><span>Gacha</span>
+            </button>
+            <button class="rpg-view-tab ${view === 'forge' ? 'active' : ''}" data-view="forge" title="[🔨 Blacksmith +10]">
+              <span class="ico">🔨</span><span>Forge</span>${isForgeReady ? '<span class="rpg-red-dot"></span>' : ''}
+            </button>
+            <button class="rpg-view-tab ${view === 'pets' ? 'active' : ''}" data-view="pets">
+              <span class="ico">🐾</span><span>Pets</span>
+            </button>
+          </nav>
+        </header>
 
         <div id="rpg-body" class="rpg-body">
           ${bodyHtml}
@@ -1207,7 +1595,7 @@ export class RpgUI {
       if (nextPoolEl) nextPoolEl.scrollTop = prevPoolScroll;
     }
 
-    if (view === 'wardrobe') {
+    if (view === 'wardrobe' && (this.selectedWTab === 'fashion' || this.selectedWTab === 'accessories' || this.selectedWTab === 'hair')) {
       mountLivePaperDollStage(this.el, p);
     } else {
       stopWardrobePreview();
@@ -1224,10 +1612,9 @@ export class RpgUI {
     const inv = p.inventory || {};
 
     const tabsHtml = `
-      <div class="rpg-sub-tabs">
-        <button class="rpg-sub-tab ${wtab === 'fashion' ? 'active' : ''}" data-wtab="fashion">👗 Fashion</button>
-        <button class="rpg-sub-tab ${wtab === 'accessories' ? 'active' : ''}" data-wtab="accessories">👑 Accessories</button>
-        <button class="rpg-sub-tab ${wtab === 'hair' ? 'active' : ''}" data-wtab="hair">💇 Hair Studio</button>
+      <div class="rpg-sub-tabs s2-folder-tabs">
+        <button class="rpg-sub-tab ${wtab === 'fashion' || wtab === 'accessories' ? 'active' : ''}" data-wtab="fashion">👗 Fashion</button>
+        <button class="rpg-sub-tab ${wtab === 'hair' ? 'active' : ''}" data-wtab="hair">💇‍♀️ Hair</button>
         <button class="rpg-sub-tab ${wtab === 'pets' ? 'active' : ''}" data-wtab="pets">🐾 Pets</button>
         <button class="rpg-sub-tab ${wtab === 'bag' ? 'active' : ''}" data-wtab="bag">🎒 Bag &amp; VIP</button>
       </div>
@@ -1242,7 +1629,7 @@ export class RpgUI {
       const ownedEntries = Object.entries(inv).filter(([id]) => itemSlot(id) === curSlot);
       const isUnequippable = curSlot !== 'outfit';
 
-      // Slot filter pills for quick switching inside Fashion / Accessories tab (incl. 3D Dice Skins)
+      // Slot filter pills for quick switching inside Closet Drawer (incl. 3D Dice Skins)
       const slotPillsHtml = [...SLOTS, 'dice'].map((s) => `
         <button class="s2-slot-pill ${curSlot === s ? 'active' : ''}" data-slot="${s}">
           ${SLOT_LABELS[s]}
@@ -1251,23 +1638,29 @@ export class RpgUI {
 
       const itemsGridHtml = ownedEntries.length ? ownedEntries.map(([id, itemData]) => {
         const def = itemDef(id);
-        const vis = resolveItemVisual(id, lineage);
         const name = def?.name || id;
         const rarity = def?.rarity || 1;
         const refine = itemData.refine | 0;
         const dupes = itemData.dupes | 0;
         const isCurEquipped = equipped[curSlot]?.id === id;
         const cpVal = Math.round(slotCP(curSlot, id, refine));
+        const outfitSk = curSlot === 'outfit' ? skillFor(id, rarity) : null;
+        const skillPillHtml = outfitSk ? `
+          <div class="rpg-closet-skill-pill">
+            ${escapeHtml(outfitSk.icon || '⚡')} <b>${escapeHtml(outfitSk.name)}:</b> ${escapeHtml(outfitSk.desc || '')}
+          </div>
+        ` : '';
 
         return `
           <div class="rpg-item-card s2-closet-card rpg-rarity-${rarity} ${isCurEquipped ? 'equipped' : ''}" data-equip="${id}">
-            ${renderIconThumb(id, { lineage, size: 58, refine, stars: rarity, badgeText: dupes > 0 ? `x${dupes}` : null })}
+            ${renderIconThumb(id, { lineage, appearance: p.appearance, size: 58, refine, stars: rarity, badgeText: dupes > 0 ? `x${dupes}` : null })}
             <div class="s2-closet-meta">
               <div class="rpg-item-name">${escapeHtml(name)}</div>
               <div class="s2-closet-sub">
                 <span class="rpg-stars">${'★'.repeat(rarity)}</span>
                 <span class="s2-cp-mini">+${cpVal} CP</span>
               </div>
+              ${skillPillHtml}
               <div class="s2-closet-actions">
                 ${isCurEquipped
                   ? '<span class="rpg-equipped-badge">✓ EQUIPPED</span>'
@@ -1285,64 +1678,54 @@ export class RpgUI {
 
       return `
         ${tabsHtml}
-        ${renderPaperDollHeroStage(p, curSlot)}
-        ${renderStatGrid(p)}
+        <div class="s2-avatar-parchment-card">
+          ${renderPaperDollHeroStage(p, curSlot, this.petPreviewPose)}
+          ${renderCostumeSkillCard(equipped.outfit?.id)}
+          ${renderStatGrid(p)}
 
-        <div class="rpg-card rpg-inventory-panel">
-          <div class="rpg-inventory-head">
-            <span class="rpg-card-title">👗 Closet: ${SLOT_LABELS[curSlot]} (${ownedEntries.length})</span>
-            ${isUnequippable ? `
-              <button class="rpg-unequip-btn btn-gold small" data-unequip="${curSlot}" style="width:auto;padding:4px 10px;margin:0;" ${equipped[curSlot]?.id ? '' : 'disabled'}>
-                Unequip ${SLOT_LABELS[curSlot]}
-              </button>
-            ` : ''}
+          <div class="s2-wardrobe-candy-row">
+            <button type="button" class="s2-candy-btn s2-candy-pink" data-wtab="bag">
+              <span>🎁 Send Gift</span>
+            </button>
+            <button type="button" class="s2-candy-btn s2-candy-gold" data-wtab="hair">
+              <span>💇‍♀️ Hair Studio</span>
+            </button>
+            <button type="button" class="s2-candy-btn s2-candy-blue" data-toggle-closet-drawer="1">
+              <span>🗂️ ${this.closetDrawerOpen ? 'Hide Closet' : `Closet (${ownedEntries.length})`}</span>
+            </button>
+            <button type="button" class="s2-candy-btn s2-candy-amber" data-view="forge" title="[🔨 Blacksmith +10]">
+              <span>🔨 Forge +10</span>${forgeReady(p) ? '<span class="rpg-red-dot"></span>' : ''}
+            </button>
           </div>
-          <div class="s2-slot-pills-bar">${slotPillsHtml}</div>
-          <div class="rpg-items-grid">
-            ${itemsGridHtml}
+        </div>
+
+        <div class="s2-closet-drawer ${this.closetDrawerOpen ? 'is-open' : ''}">
+          <div class="s2-drawer-backdrop" data-closet-close="1"></div>
+          <div class="rpg-card rpg-inventory-panel s2-sheet-card">
+            <div class="rpg-inventory-head">
+              <span class="rpg-card-title">👗 Closet: ${SLOT_LABELS[curSlot]} (${ownedEntries.length})</span>
+              <div class="s2-drawer-head-actions">
+                ${isUnequippable ? `
+                  <button class="rpg-unequip-btn btn-gold small" data-unequip="${curSlot}" style="width:auto;padding:4px 10px;margin:0;" ${equipped[curSlot]?.id ? '' : 'disabled'}>
+                    Unequip ${SLOT_LABELS[curSlot]}
+                  </button>
+                ` : ''}
+                <button type="button" class="s2-drawer-close-btn" data-closet-close="1" title="Close Closet Drawer">✕</button>
+              </div>
+            </div>
+            <div class="s2-slot-pills-bar">${slotPillsHtml}</div>
+            <div class="rpg-items-grid">
+              ${itemsGridHtml}
+            </div>
           </div>
         </div>
       `;
     }
 
     if (wtab === 'pets') {
-      const pets = normalizePetsList(p.pets);
-      const eqPetUid = equipped.pet?.uid || equipped.pet?.id;
-
-      const petsHtml = pets.length ? pets.map((pet) => {
-        const pdef = PETS[pet.id];
-        const fam = PET_FAMILIES[pdef?.family];
-        const stars = pet.stars ?? pdef?.rarity ?? 1;
-        const isEq = eqPetUid === pet.uid || eqPetUid === pet.id;
-        const passive = petPassivePct(pet.id, stars, pet.level || 1, pet.mood ?? PET.MAX_MOOD);
-        const title = pet.nickname ? `${pet.nickname} (${pdef?.name || pet.id})` : (pdef?.name || pet.id);
-
-        return `
-          <div class="rpg-pet-card rpg-rarity-${stars} ${isEq ? 'equipped' : ''}" data-equip-pet="${pet.uid}">
-            <div class="s2-pet-card-left">
-              ${renderIconThumb(pet.id, { lineage, size: 52, stars, badgeText: `Lv.${pet.level || 1}` })}
-              <div class="s2-pet-card-info">
-                <div class="s2-pet-card-title">${escapeHtml(title)} <span class="rpg-stars">${'★'.repeat(stars)}</span> <span class="s2-pet-star-progress">${escapeHtml(formatPetStarProgress(pet))}</span></div>
-                <div class="s2-pet-card-sub">${fam?.name || ''} • Passive +${passive}% • Bond Lv.${pet.bond_lv || 1}</div>
-                <div class="s2-pet-card-meta">Mood: ${pet.mood ?? PET.MAX_MOOD}/${PET.MAX_MOOD} • ${(pet.slots || pet.traits || []).filter(Boolean).length}/${PET.TRAIT_SLOTS} Slots</div>
-              </div>
-            </div>
-            ${isEq ? '<span class="rpg-equipped-badge">✓ ACTIVE</span>' : '<button class="rpg-equip-btn">Equip</button>'}
-          </div>
-        `;
-      }).join('') : `<div class="s2-empty-notice">No pets owned yet.</div>`;
-
       return `
         ${tabsHtml}
-        <div class="rpg-card">
-          <div class="rpg-card-title">
-            <span>🐾 Companion Pet Lineup</span>
-            <button class="rpg-goforge-btn" data-view="pets">Open Pet Nest ➜</button>
-          </div>
-          <div class="rpg-pets-list">
-            ${petsHtml}
-          </div>
-        </div>
+        ${renderPetSanctuary(this, p)}
       `;
     }
 
@@ -1355,6 +1738,81 @@ export class RpgUI {
         .map((k) => [k, bag[k] | 0])
         .filter(([k, cnt]) => cnt > 0 || pinnedKeys.has(k));
 
+      // VIP Cards (Mockup 08 & 25: 4 ornate calling card passes)
+      const vip = p.vip || {};
+      const vipCards = [
+        {
+          key: 'call_day_pass',
+          tag: '24H SKY PASS',
+          title: 'Sky Call Day-Pass',
+          desc: '24h Unlimited 1-on-1 Calls',
+          price: 300,
+          ownedCount: bag['vip_call_day_pass'] | 0,
+          activeBadge: vip.call_until > Date.now() ? `Active (${Math.max(1, Math.round((vip.call_until - Date.now()) / 3600000))}h)` : null,
+          colorClass: 's2-vip-blue',
+          icon: '/assets/ui/item_ticket_standard.png',
+        },
+        {
+          key: 'vip_communicator',
+          tag: 'PERMANENT DEVICE',
+          title: 'VIP Communicator',
+          desc: 'Permanent Free Calls',
+          price: 2500,
+          ownedCount: bag['vip_communicator'] | 0,
+          activeBadge: vip.communicator ? 'Owned ✅' : null,
+          colorClass: 's2-vip-purple',
+          icon: '/assets/ui/item_vip_communicator.png',
+        },
+        {
+          key: 'telelink_box',
+          tag: 'COUPLE DUAL-UNLOCK',
+          title: 'Tele-Link Couple Box',
+          desc: 'Unlocks Both Partners Forever!',
+          price: 4500,
+          ownedCount: bag['vip_telelink_box'] | 0,
+          activeBadge: (vip.telelinks || []).length ? `Active (${vip.telelinks.length})` : null,
+          colorClass: 's2-vip-gold',
+          icon: '/assets/ui/vip_card_telelink.png',
+        },
+        {
+          key: 'black_vip',
+          tag: 'SOVEREIGN TIER',
+          title: 'Sovereign Black VIP',
+          desc: 'All Friends Free + +30💎/15m',
+          price: 9900,
+          ownedCount: bag['vip_black'] | 0,
+          activeBadge: vip.black ? 'Black VIP 👑' : null,
+          colorClass: 's2-vip-crimson',
+          icon: '/assets/ui/vip_card_black_sovereign.png',
+        },
+      ];
+
+      const vipCardsHtml = `
+        <div class="s2-vip-showcase-row">
+          ${vipCards.map((vc) => `
+            <div class="s2-vip-card ${vc.colorClass}" data-vip-card="${vc.key}">
+              <div class="s2-vip-card-tag">${escapeHtml(vc.tag)}</div>
+              <div class="s2-vip-card-art">
+                <img src="${vc.icon}" alt="${escapeHtml(vc.title)}" />
+              </div>
+              <div class="s2-vip-card-title">${escapeHtml(vc.title)}</div>
+              <div class="s2-vip-card-desc">${escapeHtml(vc.desc)}</div>
+              <div class="s2-vip-card-price">
+                <img src="/assets/ui/icon_diamond.png" alt="💎" class="s2-vip-gem-ico" />
+                <span>${vc.price.toLocaleString()}</span>
+              </div>
+              <div class="s2-vip-card-actions">
+                <button type="button" class="btn-gold small" data-act="vip-buy" data-vip-card="${vc.key}">🛒 Buy</button>
+                <button type="button" class="btn-gold small outline" data-act="vip-gift" data-vip-card="${vc.key}">🎁 Gift</button>
+                ${vc.ownedCount > 0 ? `<button type="button" class="btn-gold small active" data-act="vip-use" data-vip-card="${vc.key}">✨ Use (x${vc.ownedCount})</button>` : ''}
+              </div>
+              ${vc.activeBadge ? `<span class="s2-vip-badge active">${vc.activeBadge}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Bag items shelf (Mockup 08: compact recessed shelf of square painted item tiles)
       const bagItemsHtml = entries.map(([key, count]) => {
         const meta = BAG_ITEM_CATALOG[key] || {
           name: key.replace(/_/g, ' '),
@@ -1364,50 +1822,452 @@ export class RpgUI {
         };
         const isHairTicket = key === ticketKey;
         return `
-          <div class="rpg-bag-item rpg-rarity-${meta.rarity || 2}">
-            ${renderIconThumb(key, { lineage, size: 48, stars: meta.rarity || 2 })}
+          <div class="rpg-bag-item rpg-rarity-${meta.rarity || 2}" title="${escapeHtml(meta.desc || meta.name)}">
+            <div class="rpg-bag-thumb-wrap">
+              ${renderIconThumb(key, { lineage, size: 46, stars: meta.rarity || 2 })}
+              <div class="rpg-bag-count">${count > 0 ? `x${count}` : '0'}</div>
+            </div>
             <div class="rpg-bag-meta">
               <div class="rpg-bag-title">${escapeHtml(meta.name)}</div>
               <div class="rpg-bag-desc">${escapeHtml(meta.desc)}</div>
             </div>
-            ${isHairTicket ? `<button class="rpg-equip-btn" data-wtab="hair" title="Open Fluffé's Hair Studio">💇 Studio</button>` : ''}
-            <div class="rpg-bag-count">${count > 0 ? `x${count}` : '0'}</div>
+            ${isHairTicket ? `<button class="rpg-equip-btn rpg-bag-studio-btn" data-wtab="hair" title="Open Fluffé's Hair Studio">💇 Studio</button>` : ''}
           </div>
         `;
       }).join('');
 
-      const sampleGearId = Object.keys(ACCESSORIES).find((k) => ACCESSORIES[k].rarity === 3) || Object.keys(ACCESSORIES)[0];
-      const sampleGearVis = resolveItemVisual(sampleGearId, lineage);
+      // Daily Passport Card + 7-Stamp Starlight Track (Mockup 08 & 25)
+      const pass = p.passport || {};
+      const passProg = pass.progress || {};
+      const passClaimed = pass.claimed || {};
+      const curStamps = pass.stamps || 0;
+      const allQuestsDone = !!(passClaimed.play && passClaimed.harvest && passClaimed.pet);
 
-      return `
-        ${tabsHtml}
-        <div class="rpg-card">
-          <div class="rpg-card-title">🎒 Royal Bag, Summon Tickets &amp; VIP Passes</div>
-          <div class="rpg-bag-list">
-            ${bagItemsHtml}
+      const stampSlotsHtml = [1, 2, 3, 4, 5, 6, 7].map((dayIdx) => {
+        const filled = curStamps >= dayIdx;
+        const isGrand = dayIdx === 7;
+        return `
+          <div class="passport-stamp-slot ${filled ? 'is-filled' : ''} ${isGrand ? 'is-grand' : ''}">
+            <div class="passport-stamp-seal">${filled ? '⭐' : (isGrand ? '🎟️' : dayIdx)}</div>
+            <span class="passport-stamp-lbl">${isGrand ? 'Day 7 🎟️' : `Day ${dayIdx}`}</span>
+          </div>
+        `;
+      }).join('');
+
+      const passportCardHtml = `
+        <div class="rpg-card s2-passport-card" id="passport-card">
+          <div class="rpg-card-title">📜 Daily Starlight Passport &amp; Couple Streak</div>
+          <div class="passport-summary-bar">
+            <span class="passport-streak">💖 Couple Streak: <b>${p.couple_streak || 0} Days</b> <small>(+15% Yield)</small></span>
+            <span class="passport-stamps">📜 Stamps: <b>${curStamps}/7</b> <small>(7/7 = Free Summon Ticket 🎟️!)</small></span>
+          </div>
+          <div class="passport-stamp-track" aria-label="7-Day Starlight Stamp Track">
+            <div class="passport-stamp-row">
+              ${stampSlotsHtml}
+            </div>
+            <div class="passport-stamp-reward-pill">
+              <img src="/assets/ui/item_ticket_standard.png" alt="" />
+              <span>7/7 Stamps = <b>Free Summon Ticket 🎟️!</b></span>
+            </div>
+          </div>
+          <div class="passport-quests-list">
+            <div class="passport-quest-row">
+              <div class="quest-info">
+                <span class="quest-name">🎮 Play 1 Match</span>
+                <span class="quest-prog">(${passProg.play || 0}/1)</span>
+                <span class="quest-reward-pill">💎 +25</span>
+              </div>
+              <button type="button" class="btn-gold small passport-claim-btn" data-act="passport-claim" data-quest="play" ${passClaimed.play || (passProg.play || 0) < 1 ? 'disabled' : ''}>
+                ${passClaimed.play ? 'Claimed ✅' : 'Claim 25 💎'}
+              </button>
+            </div>
+            <div class="passport-quest-row">
+              <div class="quest-info">
+                <span class="quest-name">🌾 Village Harvest</span>
+                <span class="quest-prog">(${passProg.harvest || 0}/1)</span>
+                <span class="quest-reward-pill">💎 +40</span>
+              </div>
+              <button type="button" class="btn-gold small passport-claim-btn" data-act="passport-claim" data-quest="harvest" ${passClaimed.harvest || (passProg.harvest || 0) < 1 ? 'disabled' : ''}>
+                ${passClaimed.harvest ? 'Claimed ✅' : 'Claim 40 💎'}
+              </button>
+            </div>
+            <div class="passport-quest-row">
+              <div class="quest-info">
+                <span class="quest-name">🐾 Pet Interaction</span>
+                <span class="quest-prog">(${passProg.pet || 0}/3)</span>
+                <span class="quest-reward-pill">💎 +25</span>
+              </div>
+              <button type="button" class="btn-gold small passport-claim-btn" data-act="passport-claim" data-quest="pet" ${passClaimed.pet || (passProg.pet || 0) < 3 ? 'disabled' : ''}>
+                ${passClaimed.pet ? 'Claimed ✅' : 'Claim 25 💎'}
+              </button>
+            </div>
+            <div class="passport-quest-row bonus">
+              <div class="quest-info">
+                <span class="quest-name">✨ All 3 Daily Quests Bonus</span>
+                <span class="quest-prog">${allQuestsDone ? 'Complete!' : 'Pending Quests'}</span>
+                <span class="quest-reward-pill gold">💎 +30 + ⭐ Stamp</span>
+              </div>
+              <button type="button" class="btn-gold small passport-claim-btn" data-act="passport-claim" data-quest="bonus" ${passClaimed.bonus || !allQuestsDone ? 'disabled' : ''}>
+                ${passClaimed.bonus ? 'Bonus Claimed ✅' : 'Claim 30 💎 + 1 Stamp'}
+              </button>
+            </div>
           </div>
         </div>
+      `;
 
+      // Gear & Decor for Slot 1 (Mockup 08: Carved Wood-Parchment Slot Bars with live item icon & status badge)
+      const inventory = p.inventory || {};
+      const eq = p.equipped || {};
+      const eqIds = new Set(Object.values(eq).map((item) => (typeof item === 'object' ? item?.id : item)).filter(Boolean));
+      const slot1Catalog = [];
+      for (const [itemId, invItem] of Object.entries(inventory)) {
+        const def = itemDef(itemId) || { name: itemId };
+        const dupes = invItem.dupes | 0;
+        const refine = invItem.refine | 0;
+        const rarity = def.rarity || 1;
+        const slot = itemSlot(itemId);
+        const vis = resolveItemVisual(itemId, lineage);
+        const slotLbl = SLOT_LABELS[slot] || 'Gear';
+        if (dupes >= 1) {
+          slot1Catalog.push({
+            value: `gear:dupe:${itemId}`,
+            itemId,
+            slot,
+            refine: 0,
+            rarity,
+            sortScore: rarity * 10 + 5,
+            label: `${def.name} (${slotLbl} • 1x Dupe Copy)`,
+            iconUrl: vis?.url || '/assets/ui/item_gift_box.png',
+            filter: vis?.filter || 'none',
+            badgeText: '✨ 1x Dupe Copy (+0 Refine) • Keeps Yours Safe!',
+            badgeKind: 'gold',
+          });
+        } else if (!eqIds.has(itemId)) {
+          slot1Catalog.push({
+            value: `gear:transfer:${itemId}`,
+            itemId,
+            slot,
+            refine,
+            rarity,
+            sortScore: refine * 100 + rarity * 10,
+            label: `+${refine} ${def.name} (${slotLbl})`,
+            iconUrl: vis?.url || '/assets/ui/item_gift_box.png',
+            filter: vis?.filter || 'none',
+            badgeText: `✓ +${refine} Upgrade Level Preserved!`,
+            badgeKind: 'green',
+          });
+        }
+      }
+      slot1Catalog.sort((a, b) => (b.sortScore || 0) - (a.sortScore || 0));
+
+      const decorMap = p.village?.decor || {};
+      for (const [decId, cnt] of Object.entries(decorMap)) {
+        if (cnt > 0) {
+          const dName = DECOR[decId]?.name || decId;
+          slot1Catalog.push({
+            value: `decor:${decId}`,
+            itemId: null,
+            slot: 'decor',
+            sortScore: 1,
+            label: `${dName} (Village Decor x${cnt})`,
+            iconUrl: `/assets/village/${decId}.png`,
+            filter: 'none',
+            badgeText: '🏡 Village Decor Parcel Ready!',
+            badgeKind: 'green',
+          });
+        }
+      }
+
+      // Slot 2 Bag Items & Star-Berries
+      const slot2Catalog = [
+        {
+          value: 'berries:200',
+          label: '200x Star-Berries (Daily Berry Allowance)',
+          iconUrl: '/assets/ui/icon_berry.png',
+          badgeText: '🍓 Instant Star-Berry Gift Parcel!',
+          badgeKind: 'gold',
+        },
+        {
+          value: 'berries:100',
+          label: '100x Star-Berries (Sweet Berry Pouch)',
+          iconUrl: '/assets/ui/icon_berry.png',
+          badgeText: '🍓 Instant Star-Berry Gift Parcel!',
+          badgeKind: 'gold',
+        },
+        {
+          value: 'berries:50',
+          label: '50x Star-Berries (Starter Berry Basket)',
+          iconUrl: '/assets/ui/icon_berry.png',
+          badgeText: '🍓 Instant Star-Berry Gift Parcel!',
+          badgeKind: 'gold',
+        },
+      ];
+      const giftableBagKeys = ['streak_freeze', 'vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black'];
+      for (const k of giftableBagKeys) {
+        if ((bag[k] | 0) > 0) {
+          const meta = BAG_ITEM_CATALOG[k] || { name: k.replace(/_/g, ' '), url: '/assets/ui/vip_card_telelink.png' };
+          slot2Catalog.push({
+            value: `bag:${k}`,
+            label: `${meta.name} (x${bag[k]})`,
+            iconUrl: meta.url || '/assets/ui/vip_card_telelink.png',
+            badgeText: '💎 Instant VIP & Bag Gift Parcel!',
+            badgeKind: 'green',
+          });
+        }
+      }
+
+      if (this.owlSlot1Val === undefined) {
+        this.owlSlot1Val = slot1Catalog[0]?.value || '';
+      }
+      if (this.owlSlot2Val === undefined) {
+        const preferredBag = slot2Catalog.find((x) => x.value.startsWith('bag:'));
+        this.owlSlot2Val = preferredBag ? preferredBag.value : 'berries:200';
+      }
+
+      const activeSlot1 = slot1Catalog.find((x) => x.value === this.owlSlot1Val) || {
+        value: '',
+        itemId: null,
+        slot: null,
+        iconUrl: '/assets/ui/item_gift_box.png',
+        filter: 'none',
+        badgeText: '✓ +Refine Upgrade Level Preserved!',
+        badgeKind: 'green',
+      };
+      const activeSlot1ThumbHtml = (activeSlot1.slot === 'outfit' && activeSlot1.itemId)
+        ? renderOutfitThumbLayers(activeSlot1.itemId, { lineage, appearance: p.appearance })
+        : `<img src="${activeSlot1.iconUrl}" style="filter:${activeSlot1.filter || 'none'}" alt="" />`;
+
+      const activeSlot2 = slot2Catalog.find((x) => x.value === this.owlSlot2Val) || {
+        value: '',
+        iconUrl: '/assets/ui/icon_berry.png',
+        badgeText: '🍓 Attach Star-Berries or VIP Pass!',
+        badgeKind: 'gold',
+      };
+
+      // Recipient options
+      const partnerId = p.partner_id;
+      const partnerName = p.partner_name || (partnerId ? `Partner (${partnerId})` : null);
+      const friendsList = p.friends || [];
+      const selectedRecipient = this.giftToRecipient || partnerId || friendsList[0] || '';
+      const isRecipientPartner = Boolean(partnerId && selectedRecipient === partnerId);
+      const defaultPostage = isRecipientPartner ? 25 : 50;
+      const curRibbon = this.selectedGiftRibbon || 'pink';
+      const curNoteText = this.owlNoteText !== undefined ? this.owlNoteText : 'Happy Anniversary my love! ✨';
+
+      // Upgraded Owl Gift Wrapper (Mockup 08 1:1: Carved Wood-Parchment Slot Bars, Custom Pill Select, Note Box & Centered Gold Button)
+      const owlWrapperHtml = `
         <div class="rpg-card s2-owl-gift-card">
           <img class="s2-owl-mascot" src="/assets/ui/npc_royal_owl.png" alt="Royal Messenger Owl" />
           <div class="s2-owl-head">
             <img src="/assets/ui/item_gift_box.png" alt="" class="s2-owl-gift-ico" />
-            <span>WRAP &amp; SEND GIFT TO PARTNER</span>
+            <span>WRAP &amp; SEND GIFT TO PARTNER / FRIEND</span>
           </div>
           <div class="s2-owl-sub">
-            To: <b>💕 ${escapeHtml(p.partner_id ? `Partner (${p.partner_id})` : 'Bound Partner')}</b>
-            <span class="s2-badge-green">50% Couple Postage Discount!</span>
+            <label for="owl-to" class="s2-owl-to-lbl">To:</label>
+            <div class="s2-owl-to-pill">
+              <select id="owl-to" class="rpg-select s2-owl-to-select">
+                ${partnerId ? `<option value="${partnerId}" ${selectedRecipient === partnerId ? 'selected' : ''}>💕 ${escapeHtml(partnerName)} (Bound Partner) • 💌 Free Love-Note!</option>` : ''}
+                ${friendsList.map((f) => `<option value="${f}" ${selectedRecipient === f ? 'selected' : ''}>👤 Friend: ${escapeHtml(f)}</option>`).join('')}
+                ${!partnerId && !friendsList.length ? '<option value="" disabled selected>No partner or friends available</option>' : ''}
+              </select>
+              <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+            </div>
           </div>
+
+          <div class="s2-owl-slots-heading">2 Gift Attachment Slots:</div>
           <div class="s2-owl-slots">
-            <div class="s2-owl-slot">
-              <img src="${sampleGearVis.url}" alt="" />
-              <span><b>Slot 1:</b> Any +0..+${MAX_REFINE} Gear (Upgrade Level Preserved!)</span>
+            <div class="s2-owl-slot-bar">
+              <div class="s2-owl-slot-num">1</div>
+              <div class="s2-owl-slot-thumb">
+                ${activeSlot1ThumbHtml}
+              </div>
+              <div class="s2-owl-slot-body">
+                <div class="s2-owl-slot-select-wrap">
+                  <select id="owl-slot1" class="rpg-select s2-owl-slot-select" aria-label="Slot 1 (Gear or Decor)">
+                    <option value="" ${!activeSlot1.value ? 'selected' : ''}>— Empty Slot 1 (Select Unequipped Gear or Decor) —</option>
+                    ${slot1Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot1.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
+                  </select>
+                  <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                </div>
+                <div class="s2-owl-slot-subrow">
+                  <span class="s2-owl-slot-tag">[Slot 1: Gear / Decor]</span>
+                  <span class="s2-owl-slot-badge is-${activeSlot1.badgeKind}">${escapeHtml(activeSlot1.badgeText)}</span>
+                </div>
+              </div>
             </div>
-            <div class="s2-owl-slot">
-              <img src="/assets/ui/item_gift_box.png" alt="" />
-              <span><b>Slot 2:</b> Star-Berries / VIP Communicator Gift Box</span>
+
+            <div class="s2-owl-slot-bar">
+              <div class="s2-owl-slot-num">2</div>
+              <div class="s2-owl-slot-thumb">
+                <img src="${activeSlot2.iconUrl}" alt="" />
+              </div>
+              <div class="s2-owl-slot-body">
+                <div class="s2-owl-slot-select-wrap">
+                  <select id="owl-slot2" class="rpg-select s2-owl-slot-select" aria-label="Slot 2 (Bag Item or Star-Berries)">
+                    <option value="" ${!activeSlot2.value ? 'selected' : ''}>— Empty Slot 2 (Select Star-Berries or VIP Item) —</option>
+                    ${slot2Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot2.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
+                  </select>
+                  <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                </div>
+                <div class="s2-owl-slot-subrow">
+                  <span class="s2-owl-slot-tag">[Slot 2: Bag / Berries ≤200]</span>
+                  <span class="s2-owl-slot-badge is-${activeSlot2.badgeKind}">${escapeHtml(activeSlot2.badgeText)}</span>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div class="s2-owl-note-row">
+            <div class="s2-owl-note-box-wrap">
+              <label for="owl-note" class="s2-owl-note-lbl">💌 Note:</label>
+              <input type="text" id="owl-note" maxlength="80" class="rpg-input s2-owl-note-input" value="${escapeHtml(curNoteText)}" placeholder="Write a sweet note for recipient (max 80 chars)..." />
+            </div>
+            <div class="s2-owl-meta-bar">
+              <div class="s2-owl-ribbon-group">
+                <span class="s2-owl-meta-lbl">Ribbon:</span>
+                <div class="s2-owl-ribbon-pills">
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'pink' ? 'active' : ''}" data-ribbon="pink">🎀 Sakura Pink</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'gold' ? 'active' : ''}" data-ribbon="gold">👑 Royal Gold</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'sky' ? 'active' : ''}" data-ribbon="sky">🌌 Sky Blue</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'mint' ? 'active' : ''}" data-ribbon="mint">🍃 Mint Green</button>
+                </div>
+              </div>
+              <div class="s2-owl-postage-preview">
+                <span class="s2-owl-stamp-txt">🏷️ 1x Owl Stamp (<img src="/assets/ui/icon_berry.png" alt="🍓" class="s2-inline-berry-ico" /> <b id="owl-postage-amount">${defaultPostage}</b> Berries — <small id="owl-postage-hint">${isRecipientPartner ? '50% Couple Discount!' : 'Standard Owl Delivery'}</small>)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="s2-owl-footer-row">
+            <button type="button" class="btn-gold s2-owl-dispatch-btn" data-act="owl-send">
+              📮 Dispatch Royal Owl Gift Now!
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Mailbox / Owl Inbox (Mockup 08 & 25: cream-parchment letter cards with UNBOX & CLAIM)
+      const mailbox = p.mailbox || [];
+      const owlInboxHtml = `
+        <div class="rpg-card s2-owl-inbox-card" id="owl-inbox">
+          <div class="rpg-card-title s2-inbox-card-title">
+            <img src="/assets/ui/th_owl_postbox.png" alt="" class="s2-inbox-title-ico" />
+            <span>Royal Owl Inbox (${mailbox.length})</span>
+          </div>
+          <div class="owl-inbox-list">
+            ${mailbox.length ? mailbox.map((m) => `
+              <div class="owl-mail-row ribbon-${escapeHtml(m.ribbon || 'pink')}" data-mail-id="${m.id}">
+                <div class="owl-mail-ico-wrap">
+                  <img src="/assets/ui/item_gift_box.png" alt="Gift Parcel" class="owl-mail-ico" />
+                </div>
+                <div class="owl-mail-body">
+                  <div class="mail-head">
+                    <span class="mail-from">From: <b>${escapeHtml(m.fromName || m.from)}</b></span>
+                    <span class="mail-ribbon">${m.ribbon ? `🎀 ${escapeHtml(m.ribbon)}` : '🎀 Gift'}</span>
+                    <span class="mail-date">${m.sentAt ? new Date(m.sentAt).toLocaleDateString() : ''}</span>
+                  </div>
+                  ${m.note ? `<div class="mail-note">“${escapeHtml(m.note)}”</div>` : ''}
+                  <div class="mail-items">
+                    ${(m.items || []).map((it) => `<span class="mail-item-chip">${it.kind === 'berries' ? `🍓 ${it.amount} Berries` : (it.kind === 'diamonds' ? `💎 ${it.amount} Diamonds` : (it.kind === 'gear' ? `⚔️ ${escapeHtml(itemDef(it.itemId)?.name || it.itemId)}${it.refine ? ` +${it.refine}` : ''}` : (it.kind === 'decor' ? `🏡 ${escapeHtml(DECOR[it.decId]?.name || it.decId)}` : `📦 ${escapeHtml(it.key || it.kind)}`)))}</span>`).join(' ')}
+                  </div>
+                </div>
+                <div class="mail-action">
+                  ${m.claimed ? '<span class="s2-badge-green">Claimed ✅</span>' : `<button type="button" class="btn-gold small owl-claim-btn" data-act="owl-claim" data-mail-id="${m.id}">🎁 UNBOX &amp; CLAIM</button>`}
+                </div>
+              </div>
+            `).join('') : '<div class="owl-inbox-empty">No letters or gifts in your Royal Owl Inbox yet 🦉</div>'}
+          </div>
+        </div>
+      `;
+
+      // Founder Unbox Modal (Mockup 18: Hero banner with Royal Owl + Super Trunk + Dressed Chibi with floating 'Sky Party Founder' badge)
+      const eqOutfitRaw = p.equipped?.outfit;
+      const eqOutfitId = (typeof eqOutfitRaw === 'object' ? eqOutfitRaw?.id : eqOutfitRaw) || 'season1_royal_court';
+      const founderChibiHtml = renderOutfitThumbLayers(eqOutfitId, {
+        lineage,
+        appearance: p.appearance,
+        alt: p.username || 'Founder',
+      });
+
+      const founderModalHtml = `
+        <div id="founder-modal" class="modal-wrap founder-modal" ${this.founderModalOpen ? '' : 'hidden'}>
+          <section class="parchment founder-card">
+            <div class="parchment-title">WELCOME HOME, SKY PARTY V1 VETERAN!</div>
+            <button type="button" class="x-btn" data-act="close-founder">✕</button>
+            <div class="founder-subtitle">Claim your Permanent Founder's Heritage Rewards</div>
+
+            <div class="founder-hero-stage">
+              <div class="founder-hero-col owl">
+                <img src="/assets/ui/npc_royal_owl.png" alt="Royal Messenger Owl" class="founder-hero-owl" />
+                <span class="founder-hero-caption">🦉 Royal Courier</span>
+              </div>
+              <div class="founder-hero-col trunk">
+                <img src="/assets/monopoly/gacha_trunk_super.png" alt="Founder's Heritage Chest" class="founder-hero-trunk" />
+                <span class="founder-hero-caption">✨ Heritage Trunk</span>
+              </div>
+              <div class="founder-hero-col founder-col-chibi">
+                <div class="founder-floating-title">👑 Sky Party Founder</div>
+                <div class="founder-hero-chibi">
+                  ${founderChibiHtml}
+                </div>
+              </div>
+            </div>
+
+            <div class="founder-rewards-grid">
+              <div class="founder-tile">
+                <div class="founder-tile-ico"><img src="/assets/ui/ui_ribbon_gold_title.png" alt="Title" /></div>
+                <div class="founder-tile-lbl">TITLE</div>
+                <div class="founder-tile-desc">'Sky Party Founder'</div>
+              </div>
+              <div class="founder-tile">
+                <div class="founder-tile-ico"><img src="/assets/ui/icon_diamond.png" alt="Diamonds" /></div>
+                <div class="founder-tile-lbl">1,000</div>
+                <div class="founder-tile-desc">Diamonds</div>
+              </div>
+              <div class="founder-tile">
+                <div class="founder-tile-ico"><img src="/assets/ui/item_dupe_box.png" alt="Mythic Box" /></div>
+                <div class="founder-tile-lbl">MYTHIC</div>
+                <div class="founder-tile-desc">Outfit Selector Box</div>
+              </div>
+              <div class="founder-tile">
+                <div class="founder-tile-ico"><img src="/assets/ui/icon_pet_essence.png" alt="Star Essence" /></div>
+                <div class="founder-tile-lbl">40</div>
+                <div class="founder-tile-desc">Star Essence</div>
+              </div>
+            </div>
+            <div class="founder-code-row">
+              <label for="founder-code">Secret Founder Code (optional):</label>
+              <input type="text" id="founder-code" class="rpg-input" placeholder="e.g. SKYPARTY-V1" />
+            </div>
+            <div class="founder-actions">
+              <button type="button" class="btn-gold founder-claim-btn" data-act="founder-claim" ${p.founder_claimed ? 'disabled' : ''}>
+                ${p.founder_claimed ? 'Founder Pack Claimed ✅' : 'CLAIM FOUNDER\'S PACK &amp; EQUIP TITLE!'}
+              </button>
+            </div>
+          </section>
+        </div>
+      `;
+
+      return `
+        ${tabsHtml}
+        <div class="s2-avatar-parchment-card s2-bag-parchment-card">
+          <div class="s2-gold-ribbon-banner">
+            <span>🎒 ROYAL BAG, TICKETS &amp; PARTNER GIFTING</span>
+            <button type="button" class="btn-gold small founder-banner-btn" data-act="open-founder">🏛️ Founder Unbox</button>
+          </div>
+          ${vipCardsHtml}
+
+          <div class="rpg-card s2-bag-grid-card">
+            <div class="rpg-card-title">🗂️ Bag Inventory, Scrolls &amp; Tokens</div>
+            <div class="rpg-bag-list">
+              ${bagItemsHtml}
+            </div>
+          </div>
+
+          ${passportCardHtml}
+          ${owlWrapperHtml}
+          ${owlInboxHtml}
+          ${founderModalHtml}
         </div>
       `;
     }
@@ -1634,13 +2494,13 @@ export class RpgUI {
             <div class="rpg-pity-wrap">
               <div class="rpg-pity-bar s2-pity-royal">
                 <div class="rpg-pity-fill" style="width:${royalPct}%"></div>
-                <span class="rpg-pity-text">👑 Royal Unowned Guarantee: ${royalPity} / ${HAIR_TIERS.royal.pity} Pulls</span>
+                <span class="rpg-pity-text">👑 Royal Guarantee: ${royalPity} / ${HAIR_TIERS.royal.pity}</span>
               </div>
             </div>
             <div class="rpg-pity-wrap">
               <div class="rpg-pity-bar s2-pity-celestial">
                 <div class="rpg-pity-fill" style="width:${celestialPct}%"></div>
-                <span class="rpg-pity-text">✨ Celestial Guarantee: ${celestialPity} / ${HAIR_TIERS.celestial.pity} Pulls</span>
+                <span class="rpg-pity-text">✨ Celestial Pity: ${celestialPity} / ${HAIR_TIERS.celestial.pity}</span>
               </div>
             </div>
           </div>
@@ -1812,54 +2672,14 @@ export class RpgUI {
     const gachaState = p.gacha || {};
 
     const tabsHtml = `
-      <div class="rpg-sub-tabs">
+      <div class="rpg-sub-tabs s2-folder-tabs">
         <button class="rpg-sub-tab ${gtab === 'box1' ? 'active' : ''}" data-gtab="box1">🗽 Box 1: Fashion</button>
         <button class="rpg-sub-tab ${gtab === 'box2' ? 'active' : ''}" data-gtab="box2">🧭 Box 2: Architect</button>
         <button class="rpg-sub-tab ${gtab === 'shop' ? 'active' : ''}" data-gtab="shop">🌟 Shard Shop</button>
       </div>
     `;
 
-    let resultsHtml = '';
-    if (this.lastGachaResult) {
-      const itemsList = this.lastGachaResult.items.map((it) => {
-        const resolved = resolveGachaItem(it, lineage);
-        const filterStyle = resolved.filter && resolved.filter !== 'none' ? `filter:${resolved.filter};` : '';
-        const thumbHtml = it.pet
-          ? renderIconThumb(it.id, { lineage, size: 44, stars: resolved.rarity, round: true })
-          : `
-            <div class="s2-res-thumb">
-              <img src="${resolved.url}" alt="${escapeHtml(resolved.name)}" style="${filterStyle}" />
-              ${resolved.badgeUrl ? `<img class="s2-thumb-corner" src="${resolved.badgeUrl}" alt="" />` : ''}
-            </div>
-          `;
-        return `
-          <div class="rpg-result-item rpg-rarity-${resolved.rarity}">
-            <div class="s2-res-top">
-              <span class="rpg-result-badge rpg-badge-${it.kind}">${escapeHtml(resolved.kindBadge)}</span>
-              <span class="rpg-stars">${'★'.repeat(resolved.rarity)}</span>
-            </div>
-            ${thumbHtml}
-            <div class="rpg-result-name">${escapeHtml(resolved.name)}</div>
-          </div>
-        `;
-      }).join('');
-
-      resultsHtml = `
-        <div id="gacha-results" class="rpg-results-panel">
-          <div class="rpg-results-title">✨ Summon Results (${this.lastGachaResult.items.length})</div>
-          <div class="rpg-results-grid">
-            ${itemsList}
-          </div>
-          ${this.lastGachaResult.shardsGained ? `
-            <div class="s2-shards-toast">
-              +${this.lastGachaResult.shardsGained} Starlight Shards 🌟 (0% RNG Pity Currency)
-            </div>
-          ` : ''}
-        </div>
-      `;
-    } else {
-      resultsHtml = `<div id="gacha-results" class="rpg-results-panel" hidden></div>`;
-    }
+    const resultsHtml = '';
 
     // ---------------- SCREEN 21: BOX 1 GODDESS FASHION GACHA ----------------
     if (gtab === 'box1') {
@@ -1867,24 +2687,69 @@ export class RpgUI {
       const bannerDef = BOX1_BANNERS[bannerId] || BOX1_BANNERS[DEFAULT_BANNER];
       const pity = gachaState[bannerDef.pityKey] | 0;
       const pityMax = BOX1.PITY;
+      const smActive = Boolean(bannerDef.superMythic && superMythicEnabled());
+      const smPity = gachaState[SUPER_MYTHIC.PITY_KEY] | 0;
+      const smMax = SUPER_MYTHIC.HARD_PITY;
       const tickets = bag[BOX1.TICKET] | 0;
       const discountPct = Math.round((1 - BOX1.COST_10 / (BOX1.COST_1 * 10)) * 100);
       const pool = buildGachaPrizePool('box1', bannerId, p);
       const previewEntry = this.gachaPreviewKey ? pool.find((x) => x.key === this.gachaPreviewKey) : null;
 
-      // Sub-banner selector pills (filter out 'pets' so Gacha Box 1 UI only shows Costumes & Relics)
+      // Sub-banner selector pills (concise labels so nothing truncates)
+      const shortBannerNames = {
+        season: '🌟 Outfits',
+        s1_starlight: '🌟 Outfits',
+        relics: '🪽 Relics',
+        wings_relics: '🪽 Relics',
+        dice: '🎲 3D Dice',
+      };
       const bannerPillsHtml = Object.entries(BOX1_BANNERS)
         .filter(([id]) => id !== 'pets')
         .map(([id, b]) => `
         <button class="s2-banner-pill ${bannerId === id ? 'active' : ''}" data-box1-banner="${id}" data-banner="${id}">
-          ${escapeHtml(b.name)}
+          ${escapeHtml(shortBannerNames[id] || b.name)}
         </button>
       `).join('');
 
       // Drop rate percentages
-      const r3 = Math.round(bannerDef.rates[3] * 100);
-      const r2 = Math.round(bannerDef.rates[2] * 100);
-      const r1 = Math.round(bannerDef.rates[1] * 100);
+      const dispRates = smActive ? box1DisplayRates(bannerDef.rates, true) : bannerDef.rates;
+      const smVal = dispRates.super_mythic ?? dispRates[SUPER_MYTHIC.RARITY] ?? SUPER_MYTHIC.BASE_RATE;
+      const rSm = smActive ? (smVal * 100).toFixed(1) : null;
+      const r3 = ((dispRates[3] || 0) * 100).toFixed(smActive ? 1 : 0);
+      const r2 = ((dispRates[2] || 0) * 100).toFixed(smActive ? 1 : 0);
+      const r1 = ((dispRates[1] || 0) * 100).toFixed(smActive ? 1 : 0);
+
+      // Helper to render dressed Prince & Princess Paper-Doll couple on pedestal
+      const ragdollFrontSpr = resolvePetSpriteKey('pet_ragdoll', 3, 'front');
+      const nyxFrontSpr = resolvePetSpriteKey('pet_nyx', 3, 'front');
+      const renderCouplePedestalHtml = (outfitId, outfitName) => {
+        const princeVis = resolveItemVisual(outfitId, 'bkk');
+        const princessVis = resolveItemVisual(outfitId, 'dxb');
+        const princessEquipped = {
+          outfit: { id: outfitId, refine: 10 },
+          wings: { id: 'wings_golden_seraphim', refine: 10 },
+        };
+        const princeEquipped = {
+          outfit: { id: outfitId, refine: 10 },
+          wings: { id: 'wings_golden_seraphim', refine: 10 },
+          hat: { id: 'hat_glowing_bunny', refine: 10 },
+        };
+        return `
+          <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
+          <div class="s2-arch-figures s2-dressed-couple-stage">
+            <img class="s2-couple-pet left" src="/assets/pets/${ragdollFrontSpr}.png" alt="Ragdoll" />
+            <div class="s2-dressed-chibi-wrap left">
+              ${renderPaperDollDomLayers('dxb', princessEquipped, 'front', { body: 'girl', hair: 'hair_girl_waves', hairColor: 'honey' })}
+              <img class="s2-arch-chibi left" src="${princessVis.url}" style="display:none;${princessVis.filter !== 'none' ? `filter:${princessVis.filter};` : ''}" alt="${escapeHtml(outfitName)} Princess" />
+            </div>
+            <div class="s2-dressed-chibi-wrap right">
+              ${renderPaperDollDomLayers('bkk', princeEquipped, 'front', { body: 'boy', hair: 'hair_boy_fluffy', hairColor: 'midnight' })}
+              <img class="s2-arch-chibi right" src="${princeVis.url}" style="display:none;${princeVis.filter !== 'none' ? `filter:${princeVis.filter};` : ''}" alt="${escapeHtml(outfitName)} Prince" />
+            </div>
+            <img class="s2-couple-pet right" src="/assets/pets/${nyxFrontSpr}.png" alt="Nyx" />
+          </div>
+        `;
+      };
 
       // Data-driven Stage Header, Diorama, and Featured Banner
       let headerPillText = '';
@@ -1894,7 +2759,6 @@ export class RpgUI {
       let featuredTitleText = '';
       let featuredNameHtml = '';
       let ratesSubHtml = '';
-
       let wishSelectorHtml = '';
 
       if (bannerDef.featured) {
@@ -1905,43 +2769,49 @@ export class RpgUI {
         const featuredName = featuredDef.name || activeFeatured;
         const featuredSeason = featuredDef.season || 11;
         const featuredRatePct = Math.round((bannerDef.featuredShare || 0.5) * 100);
-        const princeVis = resolveItemVisual(activeFeatured, 'bkk');
-        const princessVis = resolveItemVisual(activeFeatured, 'dxb');
+        const cleanFeaturedName = featuredName.replace(/^Season\s*\d+:\s*/i, '');
 
-        headerPillText = `✨ SEASON ${featuredSeason} MYTHIC WISH • ${featuredRatePct}% FEATURED RATE-UP`;
-        dioramaCenterHtml = `
-          <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
-          <div class="s2-arch-figures">
-            <img class="s2-arch-chibi left" src="${princeVis.url}" style="${princeVis.filter !== 'none' ? `filter:${princeVis.filter};` : ''}" alt="${escapeHtml(featuredName)} Prince" />
-            <img class="s2-arch-chibi right" src="${princessVis.url}" style="${princessVis.filter !== 'none' ? `filter:${princessVis.filter};` : ''}" alt="${escapeHtml(featuredName)} Princess" />
-          </div>
-        `;
-        const mythicAccIds = (BOX1_POOL[3] || []).filter((id) => ACCESSORIES[id] || DICE_SKINS[id]);
-        const renderAccBubble = (id) => {
+        headerPillText = `✨ SEASON ${featuredSeason}: ${escapeHtml(cleanFeaturedName.toUpperCase())} (${featuredRatePct}% RATE-UP) ✨`;
+        dioramaCenterHtml = renderCouplePedestalHtml(activeFeatured, featuredName);
+
+        const renderShowcaseBubble = (id, customCaption) => {
           if (!id) return '';
           const vis = resolveItemVisual(id, lineage);
-          const slot = ACCESSORIES[id]?.slot || (DICE_SKINS[id] ? 'dice' : 'outfit');
           const isSel = previewEntry?.key === id;
+          const isOutfitBubble = Boolean(OUTFITS[id]);
+          const filterCss = vis.filter && vis.filter !== 'none' ? `style="filter:${vis.filter};"` : '';
+          const sphereInnerHtml = isOutfitBubble
+            ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: vis.name })
+            : `<img class="s2-bubble-item-img" src="${vis.url}" ${filterCss} alt="${escapeHtml(vis.name)}" />`;
           return `
-            <button type="button" class="s2-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
-              <img src="${vis.url}" alt="${escapeHtml(vis.name)}" />
-              <span>★${vis.rarity || 3} ${escapeHtml(SLOT_LABELS[slot] || 'Gear')}</span>
+            <button type="button" class="s2-bubble s2-iridescent-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
+              <div class="s2-bubble-sphere ${isOutfitBubble ? 'has-hair' : ''}">
+                ${sphereInnerHtml}
+              </div>
+              <span class="s2-bubble-caption">${customCaption || `★${vis.rarity || 3} ${escapeHtml(vis.name)}`}</span>
             </button>
           `;
         };
-        leftBubblesHtml = mythicAccIds.slice(0, 2).map(renderAccBubble).join('');
-        rightBubblesHtml = mythicAccIds.slice(-2).map(renderAccBubble).join('');
-        featuredTitleText = '👑 Active 50% Rate-Up Mythic Wish';
-        featuredNameHtml = `${escapeHtml(featuredName)} (Season ${featuredSeason} • Prince &amp; Princess)`;
+        leftBubblesHtml = [
+          renderShowcaseBubble(activeFeatured, `★★★ Mythic<br/>${escapeHtml(cleanFeaturedName)}`),
+          renderShowcaseBubble('boots_hermes_greaves', '★★ Hermes<br/>Winged Boots'),
+        ].join('');
+        rightBubblesHtml = [
+          renderShowcaseBubble('wings_golden_seraphim', '★★★ Seraphim<br/>6-Wings'),
+          renderShowcaseBubble('hat_glowing_bunny', '★ Glowing<br/>Bunny Ears'),
+        ].join('');
+
+        featuredTitleText = '👑 50% Rate-Up Wish';
+        featuredNameHtml = `${escapeHtml(cleanFeaturedName)} (S${featuredSeason})`;
         ratesSubHtml = '<span class="s2-badge-gold">50% of Mythics</span> Active Wish Set • All 13 Seasons in Pool!';
         const wishOpts = SEASON_OUTFITS.map((k) => {
           const o = OUTFITS[k] || {};
           return `<option value="${k}" ${activeFeatured === k ? 'selected' : ''}>S${o.season || '?'}: ${escapeHtml(o.name || k)}</option>`;
         }).join('');
         wishSelectorHtml = `
-          <div class="s2-wish-selector-bar" style="display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 10px;background:rgba(255,244,214,0.85);border:1px solid #d4a84f;border-radius:10px;">
-            <span style="font-size:11px;font-weight:800;color:#6e471b;white-space:nowrap;">🌟 Rate-Up Wish:</span>
-            <select id="gacha-featured-wish" class="rpg-select" style="flex:1;margin:0;padding:4px 8px;font-size:12px;">
+          <div class="s2-wish-selector-bar">
+            <span>🌟 Rate-Up Wish:</span>
+            <select id="gacha-featured-wish" class="rpg-select">
               ${wishOpts}
             </select>
           </div>
@@ -1951,30 +2821,35 @@ export class RpgUI {
         const heroDiceId = (bannerDef.rateUp && bannerDef.rateUp[0]) || 'dice_zeus_thunder';
         const heroDiceVis = resolveItemVisual(heroDiceId, lineage);
         dioramaCenterHtml = `
-          <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
+          <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
           <img class="s2-wonder-hero" src="${heroDiceVis.url}" alt="${escapeHtml(heroDiceVis.name)}" />
         `;
         const renderDiceBubble = (id) => {
           const vis = resolveItemVisual(id, lineage);
           const isSel = previewEntry?.key === id;
           return `
-            <button type="button" class="s2-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
-              <img src="${vis.url}" alt="${escapeHtml(vis.name)}" />
-              <span>★${vis.rarity || 3} 3D Die</span>
+            <button type="button" class="s2-bubble s2-iridescent-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
+              <div class="s2-bubble-sphere">
+                <img class="s2-bubble-item-img" src="${vis.url}" alt="${escapeHtml(vis.name)}" />
+              </div>
+              <span class="s2-bubble-caption">★${vis.rarity || 3} ${escapeHtml(vis.name)}</span>
             </button>
           `;
         };
         const diceHighlightIds = ['dice_zeus_thunder', 'dice_glacial_crystal', 'dice_astral_galaxy', 'dice_kitsune_foxfire'];
         leftBubblesHtml = diceHighlightIds.slice(0, 2).map(renderDiceBubble).join('');
         rightBubblesHtml = diceHighlightIds.slice(2, 4).map(renderDiceBubble).join('');
-        featuredTitleText = '🎲 2× Rate-Up Mythic 3D Dice';
-        featuredNameHtml = (bannerDef.rateUp || []).map((id) => `<span class="s2-badge-gold">2× rate-up</span> ${escapeHtml(DICE_SKINS[id]?.name || id)}`).join(' • ');
+        const diceRateUpIds = (bannerDef.rateUp && bannerDef.rateUp.length)
+          ? bannerDef.rateUp
+          : (bannerDef.pool?.[3] || MYTHIC_DICE);
+        featuredTitleText = '🎲 Featured ★3 Mythic 3D Dice';
+        featuredNameHtml = diceRateUpIds.map((id) => `<span class="s2-badge-gold">★3</span> ${escapeHtml(DICE_SKINS[id]?.name || id)}`).join(' • ');
         ratesSubHtml = `<span class="s2-badge-gold">2× rate-up</span> Mythic 3D Dice (+Start Gold, Toll &amp; Casino Luck!)`;
       } else if (bannerDef.rateUp) {
         headerPillText = '🪽 WINGS &amp; RELICS BANNER • 2× RATE-UP ON FEATURED RELICS';
         const rateUpHeroVis = resolveItemVisual(bannerDef.rateUp[0] || 'wings_golden_seraphim', lineage);
         dioramaCenterHtml = `
-          <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
+          <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
           <img class="s2-wonder-hero" src="${rateUpHeroVis.url}" alt="${escapeHtml(rateUpHeroVis.name)}" />
         `;
         const renderRelicBubble = (id) => {
@@ -1982,21 +2857,22 @@ export class RpgUI {
           const slot = ACCESSORIES[id]?.slot;
           const isSel = previewEntry?.key === id;
           return `
-            <button type="button" class="s2-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
-              <img src="${vis.url}" alt="${escapeHtml(vis.name)}" />
-              <span>★${vis.rarity || 3} ${escapeHtml(SLOT_LABELS[slot] || 'Relic')}</span>
+            <button type="button" class="s2-bubble s2-iridescent-bubble s2-rarity-${vis.rarity || 3} ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(id)}" title="Preview ${escapeHtml(vis.name)}">
+              <div class="s2-bubble-sphere">
+                <img class="s2-bubble-item-img" src="${vis.url}" alt="${escapeHtml(vis.name)}" />
+              </div>
+              <span class="s2-bubble-caption">★${vis.rarity || 3} ${escapeHtml(ACCESSORIES[id]?.name || SLOT_LABELS[slot] || 'Relic')}</span>
             </button>
           `;
         };
         leftBubblesHtml = bannerDef.rateUp.slice(0, 2).map(renderRelicBubble).join('');
         rightBubblesHtml = bannerDef.rateUp.slice(2, 4).map(renderRelicBubble).join('');
-        featuredTitleText = '🪽 2× Rate-Up Featured Relics';
-        featuredNameHtml = bannerDef.rateUp.map((id) => `<span class="s2-badge-gold">2× rate-up</span> ${escapeHtml(ACCESSORIES[id]?.name || id)}`).join(' • ');
+        featuredTitleText = '🪽 2× Rate-Up Relics';
+        featuredNameHtml = bannerDef.rateUp.map((id) => `<span class="s2-badge-gold">2×</span> ${escapeHtml(ACCESSORIES[id]?.name || id)}`).join(' • ');
         ratesSubHtml = `<span class="s2-badge-gold">2× rate-up</span> ${bannerDef.rateUp.map((id) => escapeHtml(ACCESSORIES[id]?.name || id)).join(' • ')}`;
       } else if (bannerDef.kind === 'pet') {
         headerPillText = '🐾 SOUL-BOND COMPANIONS • ★3 CELESTIAL TO ★1 HATCHLING';
         dioramaCenterHtml = `
-          <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
           <img class="s2-wonder-hero" src="/assets/pets/egg_couple_v2.png" alt="Pet Egg" style="max-height:92px;margin-left:0;object-fit:contain;" />
         `;
         const mythicPets = Object.keys(PETS);
@@ -2007,16 +2883,18 @@ export class RpgUI {
           const pKey = `${id}:3`;
           const isSel = previewEntry?.key === pKey;
           return `
-            <button type="button" class="s2-bubble s2-rarity-3 ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(pKey)}" title="Preview ★3 ${escapeHtml(pDef.name || id)}">
-              <img src="/assets/pets/${sprKey}.png" alt="${escapeHtml(pDef.name || id)}" />
-              <span>★3 ${escapeHtml(shortLabel)}</span>
+            <button type="button" class="s2-bubble s2-iridescent-bubble s2-rarity-3 ${isSel ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(pKey)}" title="Preview ★3 ${escapeHtml(pDef.name || id)}">
+              <div class="s2-bubble-sphere">
+                <img class="s2-bubble-item-img" src="/assets/pets/${sprKey}.png" alt="${escapeHtml(pDef.name || id)}" />
+              </div>
+              <span class="s2-bubble-caption">★3 ${escapeHtml(shortLabel)}</span>
             </button>
           `;
         };
         leftBubblesHtml = mythicPets.slice(0, 2).map(renderPetBubble).join('');
         rightBubblesHtml = mythicPets.slice(2, 4).map(renderPetBubble).join('');
-        featuredTitleText = '🐾 Soul-Bond Companion Sanctuary';
-        featuredNameHtml = 'Princess Ragdoll • Nyx, the Midnight Drake • Sakura Kitsune • Baby Sky Whale';
+        featuredTitleText = '🐾 Soul-Bond Sanctuary';
+        featuredNameHtml = 'Princess Ragdoll • Nyx • Sakura Kitsune • Sky Whale';
         ratesSubHtml = '🐾 Pull any Companion at ★3 Celestial (3%), ★2 Awakened (15%), or ★1 Hatchling (82%)';
       }
 
@@ -2025,34 +2903,43 @@ export class RpgUI {
         featuredTitleText = previewEntry.stageTitle;
         featuredNameHtml = previewEntry.stageSub;
         if (previewEntry.kind === 'outfit') {
-          const boyVis = resolveItemVisual(previewEntry.id, 'bkk');
-          const girlVis = resolveItemVisual(previewEntry.id, 'dxb');
-          dioramaCenterHtml = `
-            <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
-            <div class="s2-arch-figures">
-              <img class="s2-arch-chibi left" src="${boyVis.url}" style="${boyVis.filter !== 'none' ? `filter:${boyVis.filter};` : ''}" alt="${escapeHtml(previewEntry.name)} Boy" />
-              <img class="s2-arch-chibi right" src="${girlVis.url}" style="${girlVis.filter !== 'none' ? `filter:${girlVis.filter};` : ''}" alt="${escapeHtml(previewEntry.name)} Girl" />
-            </div>
-          `;
+          dioramaCenterHtml = renderCouplePedestalHtml(previewEntry.id, previewEntry.name);
         } else if (previewEntry.kind === 'pet') {
           dioramaCenterHtml = `
-            <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
+            <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
             <img class="s2-wonder-hero ${previewEntry.stars >= 3 ? 'pet-v2-shimmer' : ''}" src="${previewEntry.url}" alt="${escapeHtml(previewEntry.name)}" style="max-height:110px;margin-left:0;transform:scale(${previewEntry.uiScale || 1});" />
           `;
         } else {
           const filterStyle = previewEntry.filter && previewEntry.filter !== 'none' ? `filter:${previewEntry.filter};` : '';
           dioramaCenterHtml = `
-            <img class="s2-arch-prop" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
+            <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
             <img class="s2-wonder-hero" src="${previewEntry.url}" style="max-height:114px;margin-left:0;${filterStyle}" alt="${escapeHtml(previewEntry.name)}" />
           `;
         }
       }
+
+      const stageOutfitId = previewEntry?.kind === 'outfit'
+        ? previewEntry.id
+        : (!previewEntry && bannerDef.featured
+          ? (SEASON_OUTFITS.includes(gachaState.featured_outfit) ? gachaState.featured_outfit : bannerDef.featured)
+          : null);
+      const stageOutfitSkillHtml = stageOutfitId ? renderCostumeSkillCard(stageOutfitId, previewEntry?.rarity) : '';
+      const stageSkillDef = stageOutfitId ? SEASON_SKILLS[stageOutfitId] : null;
 
       return `
         ${tabsHtml}
         ${resultsHtml}
 
         <div class="s2-gacha-stage s2-stage-box1 ${previewEntry ? 'is-previewing' : ''}">
+          <div class="s2-stage-top-bar">
+            <div class="s2-banner-pills-bar">
+              ${bannerPillsHtml}
+            </div>
+            <button type="button" class="s2-stage-pool-btn" data-toggle-pool-drawer="1">
+              🔍 ${this.poolDrawerOpen ? 'Hide Pool' : 'Pool &amp; Wish 🌟'}
+            </button>
+          </div>
+
           <div class="s2-stage-header-pill">${headerPillText}</div>
 
           <div class="s2-gacha-diorama">
@@ -2069,49 +2956,69 @@ export class RpgUI {
             </div>
           </div>
 
-          <div class="rpg-featured-banner">
-            <div class="rpg-featured-title">${featuredTitleText}</div>
-            <div class="rpg-featured-name">${featuredNameHtml}</div>
+          <div class="rpg-featured-banner s2-stage-footer-pill">
+            <span class="rpg-featured-title">${featuredTitleText}:</span>
+            <span class="rpg-featured-name">${featuredNameHtml}</span>
+            ${stageSkillDef ? `<span class="s2-stage-ult-chip">⚡ ${escapeHtml(stageSkillDef.name)}</span>` : ''}
+          </div>
+        </div>
+
+        <div class="s2-pool-drawer ${this.poolDrawerOpen ? 'is-open' : ''}">
+          <div class="s2-drawer-backdrop" data-pool-close="1"></div>
+          <div class="rpg-card s2-pool-drawer-card">
+            <div class="s2-drawer-head">
+              <span class="rpg-card-title">🌟 Active Wish, Drop Rates &amp; Full Prize Pool</span>
+              <button type="button" class="s2-drawer-close-btn" data-pool-close="1">✕</button>
+            </div>
             ${wishSelectorHtml}
+            ${stageOutfitSkillHtml}
+            <div class="rpg-rates-box" id="rpg-rates">
+              <div class="rpg-rates-pcts">
+                ${rSm != null ? `<span class="super-mythic" style="color:#d946ef;font-weight:900;display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_super.png" style="width:20px;height:20px;object-fit:contain;" alt="" />✦ Super: ${rSm}%</span>` : ''}
+                <span class="mythic" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_mythic.png" style="width:20px;height:20px;object-fit:contain;" alt="" />★3 Mythic: ${r3}%</span>
+                <span class="epic" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_epic.png" style="width:20px;height:20px;object-fit:contain;" alt="" />★2 Epic: ${r2}%</span>
+                <span class="rare" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_rare.png" style="width:20px;height:20px;object-fit:contain;" alt="" />★1 Rare: ${r1}%</span>
+              </div>
+              <div class="rpg-rates-sub">${ratesSubHtml}</div>
+            </div>
+            ${renderGachaPrizePoolHtml(pool, previewEntry?.key || null, p)}
           </div>
         </div>
 
-        <div class="rpg-card s2-pity-scroll">
-          <div class="rpg-pity-wrap">
-            <div id="rpg-pity" class="rpg-pity-bar" data-pity="${pity}" data-max="${pityMax}">
-              <div class="rpg-pity-fill" style="width: ${Math.min(100, (pity / pityMax) * 100)}%;"></div>
-              <span class="rpg-pity-text">🌟 Guaranteed ★3 ${bannerDef.kind === 'pet' ? 'Mythic Pet' : 'Mythic'} Pity: ${pity} / ${pityMax} Pulls</span>
+        <div class="s2-box1-pity-callout-row">
+          <div class="rpg-card s2-pity-scroll s2-box1-pity-card">
+            <div class="rpg-pity-wrap">
+              <div id="rpg-pity" class="rpg-pity-bar s2-pity-rainbow" data-pity="${pity}" data-max="${pityMax}">
+                <div class="rpg-pity-fill" style="width: ${Math.min(100, (pity / pityMax) * 100)}%;"></div>
+                <span class="rpg-pity-text">🌈 ★3 Mythic Pity: ${pity} / ${pityMax} Pulls</span>
+              </div>
             </div>
+            ${smActive ? `
+            <div class="rpg-pity-wrap" style="margin-top:4px;">
+              <div id="rpg-sm-pity" class="rpg-pity-bar s2-pity-celestial" data-pity="${smPity}" data-max="${smMax}">
+                <div class="rpg-pity-fill" style="width: ${Math.min(100, (smPity / smMax) * 100)}%;"></div>
+                <span class="rpg-pity-text">✦ Super Mythic Pity: ${smPity} / ${smMax} (Soft ${SUPER_MYTHIC.SOFT_PITY_START})</span>
+              </div>
+            </div>` : ''}
           </div>
 
-          <div class="rpg-rates-box" id="rpg-rates">
-            <div class="rpg-rates-pcts">
-              <span class="mythic">★3 Mythic: ${r3}%</span>
-              <span class="epic">★2 Epic: ${r2}%</span>
-              <span class="rare">★1 Rare: ${r1}%</span>
-            </div>
-            <div class="rpg-rates-sub">${ratesSubHtml}</div>
+          <div class="s2-dupe-speech-callout">
+            <span>✨ Duplicates Auto-Convert to <b>★2 / ★3 Star-Up Shards!</b></span>
           </div>
-
-          ${renderGachaPrizePoolHtml(pool, previewEntry?.key || null)}
-        </div>
-
-        <div class="s2-banner-pills-bar">
-          ${bannerPillsHtml}
         </div>
 
         <div class="rpg-gacha-buttons">
           <div class="rpg-gacha-btn-row">
-            <button id="pull-1" class="btn-gold s2-btn-blue" ${p.diamonds < BOX1.COST_1 ? 'disabled' : ''}>
-              1x Summon
-              <small><img src="/assets/ui/icon_diamond.png" class="s2-inline-ico" alt="" /> ${BOX1.COST_1} Diamonds</small>
+            <button id="pull-1" class="btn-gold s2-btn-blue s2-candy-summon-1" ${p.diamonds < BOX1.COST_1 ? 'disabled' : ''}>
+              <span>🪄 1x SUMMON</span>
+              <small>(<img src="/assets/ui/icon_diamond.png" class="s2-inline-ico" alt="" /> ${BOX1.COST_1} / 🎟️ 1)</small>
             </button>
-            <button id="pull-10" class="btn-gold s2-btn-rainbow" ${p.diamonds < BOX1.COST_10 ? 'disabled' : ''}>
-              10x Summon (-${discountPct}%)
-              <small><img src="/assets/ui/icon_diamond.png" class="s2-inline-ico" alt="" /> ${BOX1.COST_10.toLocaleString()} • Guaranteed Epic+!</small>
+            <button id="pull-10" class="btn-gold s2-btn-rainbow s2-candy-summon-10" ${p.diamonds < BOX1.COST_10 ? 'disabled' : ''}>
+              <span>🌈 10x SUMMON</span>
+              <small>— GUARANTEED EPIC+! (<img src="/assets/ui/icon_diamond.png" class="s2-inline-ico" alt="" /> ${BOX1.COST_10.toLocaleString()} • ${discountPct}% OFF!)</small>
             </button>
           </div>
-          <button id="pull-ticket" class="btn-gold small" ${tickets < 1 ? 'disabled' : ''}>
+          <button id="pull-ticket" class="btn-gold small s2-ticket-bar-btn" ${tickets < 1 ? 'disabled' : ''}>
             <img src="${BAG_ITEM_CATALOG[BOX1.TICKET]?.url || '/assets/ui/item_ticket_standard.png'}" class="s2-inline-ico" alt="" />
             1x Free Ticket Summon <small>(${tickets} ${escapeHtml(BAG_ITEM_CATALOG[BOX1.TICKET]?.name || 'Standard Tickets')} Owned)</small>
           </button>
@@ -2123,6 +3030,7 @@ export class RpgUI {
     if (gtab === 'box2') {
       const pity = gachaState.box2_pity | 0;
       const pityMax = BOX2.PITY;
+      const pityPct = Math.min(100, Math.round((pity / pityMax) * 100));
       const tickets = bag[BOX2.TICKET] | 0;
       const vil = p.village || {};
       const levels = vil.levels || {};
@@ -2155,6 +3063,7 @@ export class RpgUI {
             <div class="s2-bp-mini-meta">
               <b>${escapeHtml(c.name.split(' ').slice(-1)[0])} Lv.${lv}</b>
               <span>${lv >= 10 ? 'MAX' : `${curBp}/${needBp} Cards`}</span>
+              ${ready ? '<em class="s2-bp-upgrade-pill">Upgrade!</em>' : ''}
             </div>
           </div>
         `;
@@ -2164,94 +3073,115 @@ export class RpgUI {
       const heroAlt = previewEntry ? previewEntry.name : (featuredWonder.name || 'Wonder');
       const box2HeaderHtml = previewEntry
         ? `🔍 PREVIEWING PRIZE • <button type="button" class="s2-stage-reset-inline" data-gacha-preview-reset="1">↺ Back to Banner</button>`
-        : `🧭 ROYAL ARCHITECT BANNER • GOLD &amp; STAR-BERRIES`;
+        : `🧭 ROYAL ARCHITECT'S BLUEPRINT &amp; WONDER GACHA`;
       const box2TitleHtml = previewEntry
         ? previewEntry.stageTitle
-        : `${featuredWonder.emoji || '🎡'} [${'★'.repeat(featuredWonder.rarity || 3)} MYTHIC WONDER]`;
+        : `🎡 ${'★'.repeat(featuredWonder.rarity || 3)} ${escapeHtml(featuredWonder.name || 'Couple Heart Ferris Wheel')}`;
       const box2SubHtml = previewEntry
         ? previewEntry.stageSub
-        : `${escapeHtml(featuredWonder.name)} (${escapeHtml(featuredWonder.effect || '')})`;
+        : `+25% Couple Gold &amp; Berry Yield!`;
 
       return `
         ${tabsHtml}
         ${resultsHtml}
 
         <div class="s2-gacha-stage s2-stage-box2 ${previewEntry ? 'is-previewing' : ''}">
-          <div class="s2-stage-header-pill">${box2HeaderHtml}</div>
+          <div class="s2-stage-top-bar">
+            <div class="s2-stage-header-pill">${box2HeaderHtml}</div>
+            <button type="button" class="s2-stage-pool-btn" data-toggle-pool-drawer="1">
+              🔍 ${this.poolDrawerOpen ? 'Hide Pool' : 'Pool &amp; Rates'}
+            </button>
+          </div>
 
           <div class="s2-gacha-diorama">
             <div class="s2-float-bubbles s2-bubbles-left">
-              <button type="button" class="s2-bubble s2-rarity-${bp1Vis.rarity} ${previewEntry?.key === bp1Key ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(bp1Key)}">
+              <button type="button" class="s2-bubble s2-polaroid-card tilt-left s2-rarity-${bp1Vis.rarity} ${previewEntry?.key === bp1Key ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(bp1Key)}">
                 <img src="${bp1Vis.url}" alt="" />
-                <span>${escapeHtml((CORE[CORE_LANDMARKS[0]]?.name || 'Mint').split(' ').slice(-1)[0])} BP</span>
+                <span>Waterwheel Mint Blueprint</span>
               </button>
-              <button type="button" class="s2-bubble s2-rarity-${epicWonderVis.rarity} ${previewEntry?.key === epicWonderId ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(epicWonderId)}">
+              <button type="button" class="s2-bubble s2-polaroid-card tilt-right s2-rarity-${epicWonderVis.rarity} ${previewEntry?.key === epicWonderId ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(epicWonderId)}">
                 <img src="${epicWonderVis.url}" alt="" />
-                <span>★${epicWonderVis.rarity} ${escapeHtml((epicWonder.name || 'Onsen').split(' ').slice(-1)[0])}</span>
+                <span>★${epicWonderVis.rarity} ${escapeHtml(epicWonder.name || 'Yuzu Hot Spring')}</span>
               </button>
             </div>
 
             <div class="s2-stage-centerpiece">
               <img class="s2-draft-prop" src="/assets/ui/stage_architect_stand.png" alt="" />
+              <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
               <img class="s2-wonder-hero" src="${heroUrl}" alt="${escapeHtml(heroAlt)}" />
+              <div class="s2-wonder-yield-tag">+25% Couple Gold &amp; Berry Yield!</div>
             </div>
 
             <div class="s2-float-bubbles s2-bubbles-right">
-              <button type="button" class="s2-bubble s2-rarity-${bp2Vis.rarity} ${previewEntry?.key === bp2Key ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(bp2Key)}">
+              <button type="button" class="s2-bubble s2-polaroid-card tilt-right s2-rarity-${bp2Vis.rarity} ${previewEntry?.key === bp2Key ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(bp2Key)}">
                 <img src="${bp2Vis.url}" alt="" />
-                <span>${escapeHtml((CORE[CORE_LANDMARKS[2]]?.name || 'Patisserie').split(' ').slice(-1)[0])} BP</span>
+                <span>Cat Boba Bakery Blueprint</span>
               </button>
-              <button type="button" class="s2-bubble s2-rarity-${decor1Vis.rarity} ${previewEntry?.key === decor1Id ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(decor1Id)}">
+              <button type="button" class="s2-bubble s2-polaroid-card tilt-left s2-rarity-${decor1Vis.rarity} ${previewEntry?.key === decor1Id ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(decor1Id)}">
                 <img src="${decor1Vis.url}" alt="" />
-                <span>${escapeHtml((DECOR[decor1Id]?.name || 'Decor').split(' ')[0])} Decor</span>
+                <span>Sakura Couple Swing Decor</span>
               </button>
             </div>
           </div>
 
-          <div class="rpg-featured-banner">
-            <div class="rpg-featured-title">${box2TitleHtml}</div>
-            <div class="rpg-featured-name">${box2SubHtml}</div>
+          <div class="rpg-featured-banner s2-stage-footer-pill">
+            <span class="rpg-featured-title">${box2TitleHtml}:</span>
+            <span class="rpg-featured-name">${box2SubHtml}</span>
           </div>
         </div>
 
-        <div class="rpg-card s2-pity-scroll">
-          <div class="rpg-pity-wrap">
-            <div id="rpg-pity" class="rpg-pity-bar" data-pity="${pity}" data-max="${pityMax}">
-              <div class="rpg-pity-fill" style="width: ${Math.min(100, (pity / pityMax) * 100)}%;"></div>
-              <span class="rpg-pity-text">🧭 Architect Pity: ${pity} / ${pityMax} Pulls to Guaranteed ★3 Wonder!</span>
+        <div class="rpg-card s2-pity-scroll s2-architect-scroll">
+          <div class="s2-scroll-roller left"></div>
+          <div class="s2-scroll-body">
+            <div class="s2-architect-pity-head">
+              🧭 Architect Pity: <b>${pity} / ${pityMax} Pulls</b> to Guaranteed ★★★ VIP Wonder!
             </div>
+            <div class="rpg-pity-wrap">
+              <div id="rpg-pity" class="rpg-pity-bar s2-pity-gold" data-pity="${pity}" data-max="${pityMax}">
+                <div class="rpg-pity-fill" style="width: ${pityPct}%;"></div>
+                <span class="rpg-pity-text">${pityPct}% (${pity}/${pityMax} Pulls) ⭐</span>
+              </div>
+            </div>
+
+            <div class="s2-bp-strip-title">📘 Village Blueprint Progress</div>
+            <div class="s2-bp-strip">${bpCardsHtml}</div>
           </div>
+          <div class="s2-scroll-roller right"></div>
+        </div>
 
-          <div class="rpg-rates-box">
-            <span class="mythic">★3 VIP Wonder: ${(BOX2.RATES[3] * 100).toFixed(0)}%</span>
-            <span class="epic">★2 ${escapeHtml((epicWonder.name || 'Onsen').split(' ').slice(-2).join(' '))}: ${(BOX2.RATES[2] * 100).toFixed(0)}%</span>
-            <span class="rare">Blueprints &amp; Decor: ${(BOX2.RATES[1] * 100).toFixed(0)}%</span>
+        <div class="s2-pool-drawer ${this.poolDrawerOpen ? 'is-open' : ''}">
+          <div class="s2-drawer-backdrop" data-pool-close="1"></div>
+          <div class="rpg-card s2-pool-drawer-card">
+            <div class="s2-drawer-head">
+              <span class="rpg-card-title">🧭 Royal Architect Drop Rates &amp; Prize Pool</span>
+              <button type="button" class="s2-drawer-close-btn" data-pool-close="1">✕</button>
+            </div>
+            <div class="rpg-rates-box">
+              <span class="mythic" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_mythic.png" style="width:20px;height:20px;object-fit:contain;" alt="" />★3 VIP Wonder: ${(BOX2.RATES[3] * 100).toFixed(0)}%</span>
+              <span class="epic" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_epic.png" style="width:20px;height:20px;object-fit:contain;" alt="" />★2 ${escapeHtml((epicWonder.name || 'Onsen').split(' ').slice(-2).join(' '))}: ${(BOX2.RATES[2] * 100).toFixed(0)}%</span>
+              <span class="rare" style="display:inline-flex;align-items:center;gap:4px;"><img src="/assets/monopoly/gacha_trunk_rare.png" style="width:20px;height:20px;object-fit:contain;" alt="" />Blueprints &amp; Decor: ${(BOX2.RATES[1] * 100).toFixed(0)}%</span>
+            </div>
+            ${renderGachaPrizePoolHtml(pool, previewEntry?.key || null)}
           </div>
-
-          ${renderGachaPrizePoolHtml(pool, previewEntry?.key || null)}
-
-          <div class="s2-bp-strip-title">📘 Village Blueprint Progress</div>
-          <div class="s2-bp-strip">${bpCardsHtml}</div>
         </div>
 
         <div class="rpg-gacha-buttons">
           <div class="rpg-gacha-btn-row">
-            <button id="pull-1" class="btn-gold" ${p.gold < BOX2.COST_1 ? 'disabled' : ''}>
-              1x Architect Pull
-              <small><img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" /> ${BOX2.COST_1.toLocaleString()} Gold</small>
+            <button id="pull-1" class="btn-gold s2-candy-amber" ${p.gold < BOX2.COST_1 ? 'disabled' : ''}>
+              <span>🧭 1x Architect Pull</span>
+              <small>• <img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" /> ${BOX2.COST_1.toLocaleString()} Gold</small>
             </button>
-            <button id="pull-10" class="btn-gold s2-btn-rainbow" ${p.gold < BOX2.COST_10 ? 'disabled' : ''}>
-              10x Architect Pull
-              <small><img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" /> ${BOX2.COST_10.toLocaleString()} Gold</small>
+            <button id="pull-10" class="btn-gold s2-btn-rainbow s2-candy-summon-10" ${p.gold < BOX2.COST_10 ? 'disabled' : ''}>
+              <span>✨ 10x Architect Pull</span>
+              <small>• <img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" /> ${BOX2.COST_10.toLocaleString()} Gold — Guaranteed Epic+ Wonder!</small>
             </button>
           </div>
-          <div class="rpg-gacha-btn-row">
-            <button id="pull-10-berries" class="btn-gold berry" ${p.berries < BOX2.COST_10_BERRIES ? 'disabled' : ''}>
-              🍓 10x Berry Pull
-              <small>${BOX2.COST_10_BERRIES} Star-Berries</small>
+          <div class="rpg-gacha-btn-row s2-box2-sub-btns">
+            <button id="pull-10-berries" class="btn-gold berry small" ${p.berries < BOX2.COST_10_BERRIES ? 'disabled' : ''}>
+              🍓 10x Berry Pull <small>(${BOX2.COST_10_BERRIES} Star-Berries)</small>
             </button>
             <button id="pull-ticket" class="btn-gold small" style="margin:0;flex:1;" ${tickets < 1 ? 'disabled' : ''}>
-              <img src="${BAG_ITEM_CATALOG[BOX2.TICKET]?.url || '/assets/ui/item_ticket_gold.png'}" class="s2-inline-ico" alt="" /> 1x Ticket
+              <img src="${BAG_ITEM_CATALOG[BOX2.TICKET]?.url || '/assets/ui/item_ticket_gold.png'}" class="s2-inline-ico" alt="" /> 1x Golden Ticket
               <small>(${tickets} owned)</small>
             </button>
           </div>
@@ -2261,7 +3191,9 @@ export class RpgUI {
 
     // ---------------- SCREEN 23: SHARD EXCHANGE PITY SHOP ----------------
     if (gtab === 'shop') {
-      const offersHtml = Object.entries(SHARD_OFFERS).map(([offerId, offer]) => {
+      const offersHtml = Object.entries(SHARD_OFFERS)
+        .filter(([, offer]) => !offer.pet)
+        .map(([offerId, offer]) => {
         const curPick = this.selectedPicks[offerId] || '';
         const { vis, rarity, sub } = resolveShardOfferMeta(offerId, offer, curPick, lineage);
 
@@ -2282,6 +3214,10 @@ export class RpgUI {
         }
 
         const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
+        const isOutfitCard = offer.pick === 'outfit';
+        const shopThumbInnerHtml = isOutfitCard
+          ? renderOutfitThumbLayers(curPick || FEATURED_OUTFIT, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: offer.name })
+          : `<img class="s2-thumb-img" src="${vis.url}" alt="${escapeHtml(offer.name)}" style="${filterStyle}" loading="lazy" />`;
 
         return `
           <div class="rpg-offer-card s2-shop-card rpg-rarity-${rarity}" data-offer="${offerId}">
@@ -2290,8 +3226,8 @@ export class RpgUI {
               <span class="rpg-stars">${'★'.repeat(rarity)}</span>
             </div>
             <div class="s2-shop-card-body">
-              <div class="s2-thumb s2-shop-thumb s2-rarity-${rarity}">
-                <img class="s2-thumb-img" src="${vis.url}" alt="${escapeHtml(offer.name)}" style="${filterStyle}" loading="lazy" />
+              <div class="s2-thumb s2-shop-thumb s2-rarity-${rarity} ${isOutfitCard ? 's2-thumb-has-hair' : ''}">
+                ${shopThumbInnerHtml}
               </div>
               <div class="s2-shop-card-info">
                 <div class="s2-shop-sub" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
@@ -2310,11 +3246,17 @@ export class RpgUI {
         `;
       }).join('');
 
-      const heroOutfitVis = resolveItemVisual(this.selectedPicks.mythic_outfit || FEATURED_OUTFIT, lineage);
+      const heroOutfitId = this.selectedPicks.mythic_outfit || FEATURED_OUTFIT;
+      const heroOutfitVis = resolveItemVisual(heroOutfitId, lineage);
       const heroWonderVis = resolveItemVisual(this.selectedPicks.vip_wonder || VIP_WONDERS[0], lineage);
+      const heroSkillDef = SEASON_SKILLS[heroOutfitId];
       const dupeConvertSummary = Object.entries(DUPE_SHARDS)
-        .map(([r, s]) => `★${r}=+${s}`)
+        .map(([r, s]) => `★${r}=+${s}⭐`)
         .join(' | ');
+      const heroEquipped = {
+        outfit: { id: heroOutfitId, refine: 10 },
+        wings: { id: 'wings_golden_seraphim', refine: 10 },
+      };
 
       return `
         ${tabsHtml}
@@ -2323,16 +3265,24 @@ export class RpgUI {
           <div class="s2-shard-hero-body">
             <div class="s2-shard-showcase">
               <img class="s2-shard-arch" src="/assets/ui/stage_goddess_pedestal.png" alt="" />
-              <img class="s2-shard-chibi" src="${heroOutfitVis.url}" style="${heroOutfitVis.filter !== 'none' ? `filter:${heroOutfitVis.filter};` : ''}" alt="" />
+              <div class="s2-shard-dressed-chibi">
+                ${renderPaperDollDomLayers(lineage, heroEquipped, 'front', p.appearance)}
+                <img class="s2-shard-chibi" src="${heroOutfitVis.url}" style="display:none;${heroOutfitVis.filter !== 'none' ? `filter:${heroOutfitVis.filter};` : ''}" alt="" />
+              </div>
               <img class="s2-shard-wonder" src="${heroWonderVis.url}" alt="" />
             </div>
             <div class="s2-shard-summary">
               <div class="s2-shard-bal">
                 <img src="/assets/ui/icon_shard.png" alt="" />
                 <div class="s2-shard-bal-text">
-                  <div>Your Starlight Shards: <b>${fmtNum(p.shards || 0)}</b></div>
-                  <small>Excess +${MAX_REFINE} Dupes Auto-Convert: ${dupeConvertSummary} Shards</small>
+                  <div>⭐ Your Starlight Shards: <b>${fmtNum(p.shards || 0)}</b> <span class="s2-ready-tag">(Ready to Redeem!)</span></div>
+                  <small class="s2-dupe-convert-pill">♻️ Excess +${MAX_REFINE} Dupes Auto-Convert: ${dupeConvertSummary}</small>
                 </div>
+              </div>
+              <div class="s2-shard-featured-callout">
+                <div class="s2-shard-feat-tag">👑 [FEATURED MYTHIC OUTFIT]</div>
+                <div class="s2-shard-feat-name">${escapeHtml(OUTFITS[heroOutfitId]?.name || heroOutfitVis.name)}</div>
+                <div class="s2-shard-feat-sub">+250 Base CP • ${heroSkillDef ? `⚡ Ult: ${escapeHtml(heroSkillDef.name)} • ` : ''}Cost: ⭐ ${SHARD_OFFERS.mythic_outfit?.cost || 400} Shards</div>
               </div>
             </div>
           </div>
@@ -2362,15 +3312,19 @@ export class RpgUI {
     const itemPickerHtml = ownedIds.length ? ownedIds.map((id) => {
       const def = itemDef(id);
       const vis = resolveItemVisual(id, lineage);
+      const isOutfitPick = vis.kind === 'outfit';
       const refine = inv[id].refine | 0;
       const dupes = inv[id].dupes | 0;
       const isActive = id === this.selectedForgeItem;
       const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
+      const pickThumbInnerHtml = isOutfitPick
+        ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: def?.name || id })
+        : `<img src="${vis.url}" alt="${escapeHtml(def?.name || id)}" style="${filterStyle}" />`;
 
       return `
         <div class="rpg-forge-item s2-rarity-${vis.rarity || 1} ${isActive ? 'active' : ''}" data-forge-item="${id}">
-          <div class="s2-forge-pick-thumb">
-            <img src="${vis.url}" alt="${escapeHtml(def?.name || id)}" style="${filterStyle}" />
+          <div class="s2-forge-pick-thumb ${isOutfitPick ? 's2-thumb-has-hair' : ''}">
+            ${pickThumbInnerHtml}
             <span class="s2-thumb-refine">+${refine}</span>
             ${dupes > 0 ? `<span class="s2-thumb-badge">x${dupes}</span>` : ''}
           </div>
@@ -2393,6 +3347,7 @@ export class RpgUI {
     const it = inv[curId];
     const def = itemDef(curId);
     const vis = resolveItemVisual(curId, lineage);
+    const isCurOutfit = vis.kind === 'outfit';
     const slot = itemSlot(curId) || 'outfit';
     const refine = it.refine | 0;
     const isMax = refine >= MAX_REFINE;
@@ -2441,6 +3396,39 @@ export class RpgUI {
 
     const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
 
+    // Build quick 6-slot equipped/top gear strip for 1-tap switching on the main Forge screen
+    const equippedIds = Object.values(p.equipped || {})
+      .map((e) => e?.id)
+      .filter((id) => id && inv[id]);
+    const quickIds = [...new Set([...equippedIds, ...ownedIds])].slice(0, 6);
+    const quickBarSlotsHtml = quickIds.map((id) => {
+      const qDef = itemDef(id);
+      const qVis = resolveItemVisual(id, lineage);
+      const qIsOutfit = qVis.kind === 'outfit';
+      const qRef = inv[id]?.refine | 0;
+      const qDupes = inv[id]?.dupes | 0;
+      const isAct = id === curId;
+      const qFilter = qVis.filter && qVis.filter !== 'none' ? `filter:${qVis.filter};` : '';
+      const qInnerHtml = qIsOutfit
+        ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: qVis.url, filter: qVis.filter, alt: qDef?.name || id })
+        : `<img src="${qVis.url}" alt="${escapeHtml(qDef?.name || id)}" style="${qFilter}" />`;
+      return `
+        <button type="button" class="s2-forge-quick-slot s2-rarity-${qVis.rarity || 1} ${qIsOutfit ? 's2-thumb-has-hair' : ''} ${isAct ? 'active' : ''}" data-forge-item="${id}" title="${escapeHtml(qDef?.name || id)} (+${qRef})">
+          ${qInnerHtml}
+          <span class="s2-thumb-refine">+${qRef}</span>
+          ${qDupes > 0 ? `<span class="s2-thumb-badge">x${qDupes}</span>` : ''}
+        </button>
+      `;
+    }).join('');
+
+    const activePet = this.resolveActivePet();
+    const petSprKey = activePet
+      ? resolvePetSpriteKey(activePet.id, activePet.visual_tier || activePet.stars || 1, 'happy')
+      : resolvePetSpriteKey('pet_ragdoll', 3, 'happy');
+    const anvilItemInnerHtml = isCurOutfit
+      ? renderOutfitThumbLayers(curId, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: def?.name || curId })
+      : `<img src="${vis.url}" alt="${escapeHtml(def?.name || curId)}" style="${filterStyle}" />`;
+
     return `
       <div class="s2-forge-stage">
         ${renderStarForceArc(refine, MAX_REFINE)}
@@ -2448,13 +3436,20 @@ export class RpgUI {
         <div class="s2-anvil-diorama">
           <div class="s2-anvil-center">
             <img class="s2-anvil-magic" src="/assets/ui/fx_magic_circle.png" alt="" />
-            <div class="s2-anvil-item-box s2-rarity-${vis.rarity || 1}">
-              <img src="${vis.url}" alt="${escapeHtml(def?.name || curId)}" style="${filterStyle}" />
+            <div class="s2-anvil-item-box s2-rarity-${vis.rarity || 1} ${isCurOutfit ? 's2-thumb-has-hair' : ''}">
+              ${anvilItemInnerHtml}
               <span class="s2-anvil-plus">+${refine}</span>
             </div>
             <img class="s2-anvil-prop" src="/assets/ui/stage_blacksmith_anvil.png" alt="Blacksmith Anvil" />
           </div>
-          <img class="s2-anvil-smith" src="/assets/chibi/${lineage}_base_front.png" alt="" />
+
+          <div class="s2-anvil-chibi-cheer">
+            <div class="s2-anvil-dressed-chibi">
+              ${renderPaperDollDomLayers(lineage, p.equipped || {}, 'front', p.appearance)}
+            </div>
+            <img class="s2-anvil-cheer-pet" src="/assets/pets/${petSprKey}.png" alt="" />
+            <img class="s2-anvil-smith" src="/assets/chibi/${lineage}_base_front.png" alt="" style="display:none;" />
+          </div>
         </div>
 
         <div class="rpg-forge-target">
@@ -2463,8 +3458,12 @@ export class RpgUI {
       </div>
 
       <div class="rpg-forge-console">
+        <div class="s2-forge-level-header">
+          <span>Level +${refine}  ➜  Level +${isMax ? MAX_REFINE : target}</span>
+        </div>
+
         <div class="s2-aura-banner">
-          ✨ +${target <= MAX_REFINE ? target : MAX_REFINE} Milestone: <b>+15% Slot CP (${curCP} ➜ ${nextCP} CP)</b> • ★${MAX_REFINE} Unlocks Golden Sovereign Aura!
+          ⚔️ Power: <b>+${curCP} CP ➜ +${nextCP} CP (+15% Boost!)</b> • ✨ ★${MAX_REFINE} Unlocks Golden Sovereign Aura!
         </div>
 
         <div class="s2-forge-mid-row">
@@ -2512,19 +3511,37 @@ export class RpgUI {
         </div>
 
         ${resultHtml}
+      </div>
 
-        <button id="forge-go" class="btn-gold s2-btn-rainbow" ${canForge ? '' : 'disabled'}>
+      <div class="s2-forge-equipped-bar">
+        <div class="s2-forge-quick-slots">${quickBarSlotsHtml}</div>
+        <button type="button" class="s2-forge-all-btn" data-toggle-forge-drawer="1">
+          🗂️ ${this.forgeDrawerOpen ? 'Hide Gear' : `All Gear (${ownedIds.length})`}
+        </button>
+      </div>
+
+      <div class="s2-forge-drawer ${this.forgeDrawerOpen ? 'is-open' : ''}">
+        <div class="s2-drawer-backdrop" data-forge-drawer-close="1"></div>
+        <div class="rpg-card s2-forge-picker-card">
+          <div class="s2-drawer-head">
+            <span class="rpg-card-title s2-forge-picker-title">Select Gear / Costume to Forge (${ownedIds.length})</span>
+            <button type="button" class="s2-drawer-close-btn" data-forge-drawer-close="1">✕</button>
+          </div>
+          <div class="rpg-forge-picker">
+            ${itemPickerHtml}
+          </div>
+        </div>
+      </div>
+
+      <div class="s2-forge-bottom-bar">
+        <div class="s2-forge-title-ribbon">
+          <span>👑 <b>+${MAX_REFINE} Sovereign</b><br/><small>Title at ★${MAX_REFINE}!</small></span>
+        </div>
+        <button id="forge-go" class="btn-gold s2-btn-rainbow s2-forge-cta-btn" ${canForge ? '' : 'disabled'}>
           ${isMax
             ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX REACHED ✨`
             : `🔨 FORGE TO +${target}! (${goldCost.toLocaleString()} Gold${this.forgeBerries ? ` + ${FORGE.BERRY_COST} Berries` : ''}${activeScroll ? ' + 1 Scroll' : ''})`}
         </button>
-      </div>
-
-      <div class="rpg-card s2-forge-picker-card">
-        <div class="rpg-card-title s2-forge-picker-title">Select Gear / Costume to Forge (${ownedIds.length})</div>
-        <div class="rpg-forge-picker">
-          ${itemPickerHtml}
-        </div>
       </div>
     `;
   }

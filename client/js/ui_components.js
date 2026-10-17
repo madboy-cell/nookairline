@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { ACCESSORIES, DICE_SKINS, PETS, PET_FAMILIES, petLocomotion } from '/shared/catalog_gear_pets.js';
 import { resolvePetSpriteKey, resolvePetUiScale } from '/shared/pet_catalog.js';
-import { computePetPassives } from '/shared/pet_rules.js';
+import { computePetPassives, normalizeActivePoses } from '/shared/pet_rules.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { WONDERS, DECOR, CORE, BLUEPRINT_CARDS } from '/shared/catalog_landmarks.js';
 import { SLOTS, slotCP, recalcPlayerCP } from '/shared/progression.js';
@@ -97,6 +97,30 @@ export const BAG_ITEM_CATALOG = {
   },
   dupe_box: dupeBoxDef,
   random_dupe_box: dupeBoxDef,
+  mythic_selector_box: {
+    name: 'Mythic Outfit Selector Box',
+    desc: 'Founder Heritage Chest — Unlocks any ★3 Season Mythic Outfit',
+    url: '/assets/ui/item_dupe_box.png',
+    rarity: 3,
+  },
+  vip_call_day_pass: {
+    name: 'Sky Call Day-Pass',
+    desc: '24h Unlimited 1-on-1 Voice Calls',
+    url: '/assets/ui/item_ticket_standard.png',
+    rarity: 2,
+  },
+  vip_telelink_box: {
+    name: 'Tele-Link Couple Box',
+    desc: 'Unlocks Permanent Free Calls for Both Bound Partners',
+    url: '/assets/ui/vip_card_telelink.png',
+    rarity: 3,
+  },
+  vip_black: {
+    name: 'Sovereign Black VIP Card',
+    desc: 'All Friends Free Calls + +30💎/15m Couple Talk',
+    url: '/assets/ui/vip_card_black_sovereign.png',
+    rarity: 3,
+  },
 };
 
 function formatStatsSummary(stats) {
@@ -401,8 +425,72 @@ export function resolveItemVisual(id, lineage = 'bkk') {
 /**
  * Renders a reusable Style-2 square or round icon thumbnail with rarity frame and optional badges.
  */
+export function shortenGearName(rawName) {
+  if (!rawName) return '(Empty)';
+  return String(rawName)
+    .replace(/^Season\s*\d+:\s*/i, '')
+    .replace(/^Oracle\s+Starlight\s+/i, 'Oracle ')
+    .replace(/^Golden\s+Seraphim\s+/i, 'Seraphim ')
+    .replace(/^Hermes\s+Winged\s+/i, 'Winged ')
+    .replace(/^Glowing\s+/i, '')
+    .replace(/\s+Sovereign\s+/i, ' ')
+    .replace(/\s*&\s*Hera\s+/i, ' ')
+    .trim();
+}
+
+/**
+ * Renders a bone-aligned 2-layer hair + body outfit thumbnail inside a 1:1 square rig box
+ * so every hairstyle (short, long waves, braids, twin-tails, celestial) fits the skull 1:1
+ * without bald forehead gaps or aspect-ratio distortion.
+ */
+export function renderOutfitThumbLayers(outfitId, {
+  lineage = 'bkk',
+  appearance = null,
+  url = null,
+  filter = 'none',
+  alt = '',
+  headCrop = false,
+} = {}) {
+  const isGirl = appearance?.body === 'girl' || (!appearance?.body && (lineage === 'dxb' || lineage === 'girl'));
+  const lin = isGirl ? 'dxb' : 'bkk';
+  const hairId = appearance?.hair || (isGirl ? 'hair_girl_waves' : 'hair_boy_fluffy');
+  const hairColor = appearance?.hairColor || (lin === 'dxb' ? 'coral' : 'silver');
+  const pd = computePaperDollParts({
+    lineage: lin,
+    equipped: { outfit: { id: outfitId || 'newbie_outfit' } },
+    hair: hairId,
+    hairColor,
+    view: 'front',
+    right: true,
+    getSpriteInfo: spriteInfo,
+  });
+  const bodyUrl = url || pd.body.url;
+  const bodyFilter = (filter && filter !== 'none')
+    ? `filter:${filter};`
+    : (pd.body.filter && pd.body.filter !== 'none' ? `filter:${pd.body.filter};` : '');
+  const h = pd.hair;
+  const hairBackHtml = h
+    ? `<img class="s2-outfit-rig-hair-back" src="${h.url}" alt="" loading="lazy" style="left:calc(50% + ${h.cxPct.toFixed(2)}%);bottom:${h.cyPct.toFixed(2)}%;width:${h.wPct.toFixed(2)}%;height:${h.hPct.toFixed(2)}%;transform:translate(-50%, 50%) scaleX(${h.scaleX});" />`
+    : '';
+  const hairFrontHtml = h
+    ? `<img class="s2-outfit-rig-hair-front" src="${h.url}" alt="" loading="lazy" style="left:calc(50% + ${h.cxPct.toFixed(2)}%);bottom:${h.cyPct.toFixed(2)}%;width:${h.wPct.toFixed(2)}%;height:${h.hPct.toFixed(2)}%;transform:translate(-50%, 50%) scaleX(${h.scaleX});clip-path:${h.frontClipPolygon || 'none'};" />`
+    : '';
+  return `
+    <div class="s2-outfit-rig-thumb ${headCrop ? 'is-head-crop' : ''}">
+      ${hairBackHtml}
+      <img class="s2-outfit-rig-body s2-thumb-img" src="${bodyUrl}" alt="${escapeHtml(alt)}" loading="lazy" style="height:100%;width:auto;transform:translateX(-50%) scaleX(${pd.body.scaleX});${bodyFilter}" />
+      ${hairFrontHtml}
+    </div>
+  `;
+}
+
+/**
+ * Renders a reusable Style-2 square or round icon thumbnail with rarity frame and optional badges.
+ * Automatically composites hair on top of outfit sprites so mannequins are never bald.
+ */
 export function renderIconThumb(id, {
   lineage = 'bkk',
+  appearance = null,
   size = 54,
   refine = null,
   stars = null,
@@ -414,9 +502,12 @@ export function renderIconThumb(id, {
   const r = stars ?? vis.rarity ?? 1;
   const filterStyle = vis.filter && vis.filter !== 'none' ? `filter: ${vis.filter};` : '';
   const sizeStyle = size ? ` style="--thumb-size:${size}px;"` : '';
+  const innerHtml = vis.kind === 'outfit'
+    ? renderOutfitThumbLayers(id, { lineage, appearance, url: vis.url, filter: vis.filter, alt: vis.name })
+    : `<img class="s2-thumb-img" src="${vis.url}" alt="${escapeHtml(vis.name)}" style="${filterStyle}" loading="lazy" />`;
   return `
-    <div class="s2-thumb s2-rarity-${r} ${round ? 'is-round' : ''} ${extraClass}"${sizeStyle}>
-      <img class="s2-thumb-img" src="${vis.url}" alt="${escapeHtml(vis.name)}" style="${filterStyle}" loading="lazy" />
+    <div class="s2-thumb s2-rarity-${r} ${vis.kind === 'outfit' ? 'is-outfit-thumb' : ''} ${round ? 'is-round' : ''} ${extraClass}"${sizeStyle}>
+      ${innerHtml}
       ${vis.badgeUrl ? `<img class="s2-thumb-corner" src="${vis.badgeUrl}" alt="" />` : ''}
       ${refine != null && refine > 0 ? `<span class="s2-thumb-refine">+${refine}</span>` : ''}
       ${badgeText ? `<span class="s2-thumb-badge">${escapeHtml(badgeText)}</span>` : ''}
@@ -488,45 +579,33 @@ export function computePlayerStats(profile) {
 }
 
 /**
- * Renders the 2x2 Style-2 Character Stat Breakdown Card (Screen 07).
+ * Renders the 2x2 Style-2 Character Stat Breakdown Card (Screen 07 Mockup 07).
  */
 export function renderStatGrid(profile) {
   const st = computePlayerStats(profile);
-  const cp = Number(profile?.cp || recalcPlayerCP(profile) || 0).toLocaleString('en-US');
+  const powerBonusPct = Math.max(0, Math.round((st.powerMult - 1) * 100));
   return `
     <div class="s2-stat-panel">
-      <div class="s2-stat-header">
-        <span>⚔️ CHARACTER STATS &amp; POWER</span>
-        <span class="s2-cp-pill">CP <b id="rpg-cp">${cp}</b></span>
-      </div>
       <div class="s2-stat-grid">
         <div class="s2-stat-cell">
-          <img src="/assets/ui/icon_gold.png" alt="" />
-          <div>
-            <div class="s2-stat-name">Fortune</div>
-            <div class="s2-stat-val">+${st.fortunePct}% <small>Yield</small></div>
-          </div>
+          <span class="s2-stat-ico">🍀</span>
+          <span class="s2-stat-name">Fortune</span>
+          <b class="s2-stat-val">+${st.fortunePct}%</b>
         </div>
         <div class="s2-stat-cell">
-          <img src="/assets/ui/fx_feather.png" alt="" />
-          <div>
-            <div class="s2-stat-name">Swiftness</div>
-            <div class="s2-stat-val">+${st.swiftnessPct}% <small>Speed</small></div>
-          </div>
+          <span class="s2-stat-ico">⚡</span>
+          <span class="s2-stat-name">Swiftness</span>
+          <b class="s2-stat-val">+${st.swiftnessPct}%</b>
         </div>
         <div class="s2-stat-cell">
-          <img src="/assets/ui/fx_lightning.png" alt="" />
-          <div>
-            <div class="s2-stat-name">Power</div>
-            <div class="s2-stat-val">${st.powerMult}x <small>Board</small></div>
-          </div>
+          <span class="s2-stat-ico">🔥</span>
+          <span class="s2-stat-name">Power</span>
+          <b class="s2-stat-val">+${powerBonusPct}%</b>
         </div>
         <div class="s2-stat-cell">
-          <img src="/assets/ui/fx_star.png" alt="" />
-          <div>
-            <div class="s2-stat-name">Luck</div>
-            <div class="s2-stat-val">+${st.luckPct}% <small>Crit/Drop</small></div>
-          </div>
+          <span class="s2-stat-ico">✨</span>
+          <span class="s2-stat-name">Luck</span>
+          <b class="s2-stat-val">+${st.luckPct}%</b>
         </div>
       </div>
     </div>
@@ -535,9 +614,10 @@ export function renderStatGrid(profile) {
 
 /**
  * Renders a single Paper-Doll Equipment Slot Square (used in Left 3 / Right 3 columns of Screen 07).
- * Preserves [data-slot], [data-hide], and [data-goforge] hooks for automated QA.
+ * Matches Mockup 07 1:1: compact 2-line caption above a 64x64 golden filigree box with +Refine top-left,
+ * item icon centered (with hair layer for outfits), and stars + eye visibility toggle along the bottom.
  */
-function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false) {
+function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false, appearance = null) {
   const itemId = equippedSlot?.id || null;
   const refine = equippedSlot?.refine | 0;
   const isHidden = Boolean(equippedSlot?.hide);
@@ -546,34 +626,40 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
   const rarity = def?.rarity || (itemId ? 1 : 0);
   const stars = rarity ? '★'.repeat(rarity) : '—';
   const filterStyle = vis?.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
-  const forgeLabel = refine >= 10 ? '★MAX' : '🔨 Blacksmith +10';
+  const rawName = def ? def.name : '(Empty)';
+  const shortName = shortenGearName(rawName);
+  const slotThumbHtml = itemId
+    ? (slot === 'outfit'
+        ? renderOutfitThumbLayers(itemId, { lineage, appearance, url: vis.url, filter: vis.filter, alt: vis.name })
+        : `<img class="s2-pd-thumb" src="${vis.url}" alt="${escapeHtml(vis.name)}" style="${filterStyle}" />`)
+    : `<span class="s2-pd-empty">+</span>`;
 
   return `
-    <div class="rpg-slot-card s2-pd-slot rpg-rarity-${rarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''}" data-slot="${slot}">
-      <div class="s2-pd-slot-top">
+    <div class="rpg-slot-card s2-pd-slot s2-pd-slot-v2 rpg-rarity-${rarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''}" data-slot="${slot}">
+      <div class="s2-pd-slot-caption" title="${escapeHtml(rawName)}">
         <span class="rpg-slot-label">${SLOT_LABELS[slot]}</span>
+        <span class="rpg-slot-name">${escapeHtml(shortName)}</span>
+      </div>
+      <div class="s2-pd-slot-box">
         ${itemId ? `<span class="rpg-slot-refine">+${refine}</span>` : ''}
-      </div>
-      <div class="s2-pd-slot-Body">
-        <div class="s2-pd-thumb-wrap">
-          ${itemId ? `
-            <img class="s2-pd-thumb" src="${vis.url}" alt="${escapeHtml(vis.name)}" style="${filterStyle}" />
-          ` : `<span class="s2-pd-empty">+</span>`}
-        </div>
-        <div class="s2-pd-meta">
-          <div class="rpg-slot-name">${escapeHtml(def ? def.name : '(Empty)')}</div>
-          <div class="rpg-stars">${stars}</div>
-        </div>
-      </div>
-      <div class="rpg-slot-actions">
         ${itemId ? `
-          <button class="rpg-eye-btn ${isHidden ? 'is-hidden' : ''}" data-hide="${slot}" title="${isHidden ? 'Hidden (Tap to show)' : 'Visible (Tap to hide)'}">
-            ${isHidden ? '🙈' : '👁️'}
+          <button type="button" class="rpg-goforge-btn s2-pd-forge-mini" data-goforge="${itemId}" title="Forge ${escapeHtml(rawName)}">
+            🔨${hasRedDot && refine < 10 ? '<span class="rpg-red-dot"></span>' : ''}
           </button>
-          <button class="rpg-goforge-btn" data-goforge="${itemId}" title="[🔨 Blacksmith +10]">${forgeLabel}${hasRedDot ? '<span class="rpg-red-dot"></span>' : ''}</button>
-        ` : `
-          <button class="rpg-eye-btn disabled" disabled title="Empty slot">👁️</button>
-        `}
+        ` : ''}
+        <div class="s2-pd-thumb-wrap ${slot === 'outfit' ? 'is-outfit' : ''}">
+          ${slotThumbHtml}
+        </div>
+        <div class="rpg-slot-actions s2-pd-slot-foot">
+          <span class="rpg-stars">${stars}</span>
+          ${itemId ? `
+            <button type="button" class="rpg-eye-btn ${isHidden ? 'is-hidden' : ''}" data-hide="${slot}" data-toggle-hide="${slot}" title="${isHidden ? 'Hidden (Tap to show)' : 'Visible (Tap to hide)'}">
+              ${isHidden ? '🙈' : '👁️'}
+            </button>
+          ` : `
+            <button type="button" class="rpg-eye-btn disabled" disabled title="Empty slot">👁️</button>
+          `}
+        </div>
       </div>
     </div>
   `;
@@ -607,10 +693,15 @@ export function getPaperDollStageState() {
  */
 export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appearance = null) {
   const isGirl = appearance?.body === 'girl' || (!appearance?.body && (lineage === 'dxb' || lineage === 'girl'));
+  const effLineage = appearance?.body === 'girl'
+    ? (lineage === 'dxb' ? 'dxb' : 'girl')
+    : appearance?.body === 'boy'
+      ? (lineage === 'bkk' ? 'bkk' : 'boy')
+      : lineage;
   const hairId = appearance?.hair || (isGirl ? 'hair_girl_waves' : 'hair_boy_fluffy');
-  const hairColor = appearance?.hairColor || (lineage === 'dxb' ? 'coral' : lineage === 'bkk' ? 'silver' : 'chestnut');
+  const hairColor = appearance?.hairColor || (isGirl ? 'coral' : lineage === 'bkk' ? 'silver' : 'chestnut');
   const pd = computePaperDollParts({
-    lineage,
+    lineage: effLineage,
     equipped,
     hair: hairId,
     hairColor,
@@ -649,11 +740,20 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
          alt="" />
   `;
 
+  const hairBehindHtml = pd.hair && view !== 'back'
+    ? `
+      <img class="s2-pd-bone-acc s2-pd-acc-hair is-behind"
+           src="${pd.hair.url}"
+           style="left:calc(50% + ${pd.hair.cxPct.toFixed(2)}%);bottom:${pd.hair.cyPct.toFixed(2)}%;width:${pd.hair.wPct.toFixed(2)}%;height:${pd.hair.hPct.toFixed(2)}%;z-index:4;transform:translate(-50%, 50%) scaleX(${pd.hair.scaleX});"
+           alt="" />
+    `
+    : '';
+
   const hairHtml = pd.hair
     ? `
-      <img class="s2-pd-bone-acc s2-pd-acc-hair"
+      <img class="s2-pd-bone-acc s2-pd-acc-hair is-front"
            src="${pd.hair.url}"
-           style="left:calc(50% + ${pd.hair.cxPct.toFixed(2)}%);bottom:${pd.hair.cyPct.toFixed(2)}%;width:${pd.hair.wPct.toFixed(2)}%;height:${pd.hair.hPct.toFixed(2)}%;z-index:${pd.hair.zIndex};transform:translate(-50%, 50%) scaleX(${pd.hair.scaleX});"
+           style="left:calc(50% + ${pd.hair.cxPct.toFixed(2)}%);bottom:${pd.hair.cyPct.toFixed(2)}%;width:${pd.hair.wPct.toFixed(2)}%;height:${pd.hair.hPct.toFixed(2)}%;z-index:${pd.hair.zIndex};transform:translate(-50%, 50%) scaleX(${pd.hair.scaleX});${pd.hair.frontClipPolygon ? `clip-path:${pd.hair.frontClipPolygon};` : ''}"
            alt="" />
     `
     : '';
@@ -673,6 +773,7 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
     <div class="s2-pd-rig-box ${liveStageState.walking ? 'is-walking' : 'is-idle'}">
       <div class="s2-pd-dom-rig">
         ${wingsHtml}
+        ${hairBehindHtml}
         ${bodyHtml}
         ${hairHtml}
         ${itemsHtml}
@@ -683,9 +784,9 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
 
 /**
  * Renders the Screen 07 Central Paper-Doll Hero Stage:
- * Left 3 Slots (Outfit, Gloves, Boots) + Center Live Animated ChibiRig Stage + Right 3 Slots (Hat, Face, Wings).
+ * Gold Ribbon Title Header + 3 Status Pills + Left 3 Slots + Center Live Animated ChibiRig Stage + Right 3 Slots.
  */
-export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit') {
+export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPoseOverride = null) {
   const lineage = profile?.lineage === 'dxb' ? 'dxb' : 'bkk';
   const eq = profile?.equipped || {};
   const app = profile?.appearance || {};
@@ -696,45 +797,63 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit') {
   const maxRefine = Math.max(0, ...SLOTS.map((s) => eq[s]?.refine | 0));
   const hasAura = maxRefine >= 7 || isCelestialHair;
 
-  // Companion pet preview with locomotion-matched animation & evolution tier scaling
+  // Companion pet preview with locomotion-matched animation, evolution tier scaling & active pose rotation
   const eqPet = eq.pet;
+  const ownedEqPet = eqPet?.id && Array.isArray(profile?.pets)
+    ? profile.pets.find((x) => x && (x.uid === eqPet.uid || x.id === eqPet.id))
+    : null;
+  const petBondLv = Math.max(1, Number(ownedEqPet?.bond_lv || eqPet?.bond_lv || ownedEqPet?.level || eqPet?.level) || 1);
+  const activePoses = normalizeActivePoses(ownedEqPet?.active_poses || eqPet?.active_poses, petBondLv);
+  const rawPetPose = (petPoseOverride && activePoses.includes(petPoseOverride))
+    ? petPoseOverride
+    : (activePoses[0] || 'front');
+  const stagePetPose = rawPetPose === 'flip' ? 'happy' : rawPetPose;
   const petStars = Math.max(1, Math.min(3, Number(eqPet?.stars) || 1));
   const petVTier = Math.max(1, Math.min(petStars, Number(eqPet?.visual_tier) || petStars));
   const petVis = eqPet?.id ? resolveItemVisual(eqPet.id, lineage) : null;
   if (petVis && eqPet?.id && PETS[eqPet.id]) {
-    const tierSpr = resolvePetSpriteKey(eqPet.id, petVTier, 'front');
+    const tierSpr = resolvePetSpriteKey(eqPet.id, petVTier, stagePetPose);
     if (spriteInfo(tierSpr)) {
       petVis.url = `/assets/pets/${tierSpr}.png`;
       petVis.filter = 'none';
     }
   }
   const petLoco = eqPet?.id ? petLocomotion(eqPet.id) : 'HOP_WADDLE';
-  const petUiScale = eqPet?.id ? resolvePetUiScale(eqPet.id, petStars, petVTier, 'front') : 1.0;
+  const petUiScale = eqPet?.id ? resolvePetUiScale(eqPet.id, petStars, petVTier, stagePetPose) : 1.0;
 
   const isForgeReady = forgeReady(profile);
 
   const leftSlots = ['outfit', 'gloves', 'boots']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance))
     .join('');
 
   const rightSlots = ['hat', 'face', 'wings']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance))
     .join('');
 
-  const titleText = profile?.title || (maxRefine >= 10 ? '★10 Sovereign' : 'Sky Sovereign');
+  const titleText = profile?.title || (maxRefine >= 10 ? '+10 Sovereign' : 'Sky Sovereign');
+  const cp = Number(profile?.cp || recalcPlayerCP(profile) || 0).toLocaleString('en-US');
+  const playerName = profile?.username || profile?.id || 'Adventurer';
 
   return `
+    <div class="s2-avatar-card-header">
+      <div class="s2-gold-ribbon-banner ${isCelestialHair ? 'is-celestial-nameplate' : ''}">
+        <span class="s2-ribbon-crown">👑</span>
+        <b class="s2-ribbon-name">${escapeHtml(playerName)} Lv.${profile?.level || 1}</b>
+      </div>
+      <div class="s2-avatar-status-pills">
+        <span class="s2-status-pill gold">⭐ ${escapeHtml(titleText)}</span>
+        <span class="s2-status-pill pink">💞 ${profile?.partner_id ? `Bound with ${escapeHtml(profile.partner_id)}` : 'Bound Partner'}</span>
+        <span class="s2-status-pill cp">⚔️ CP <b id="rpg-cp">${cp}</b></span>
+      </div>
+    </div>
+
     <div class="s2-wardrobe-stage">
       <div class="s2-pd-col s2-pd-left">
         ${leftSlots}
       </div>
 
       <div class="s2-pd-center">
-        <div class="s2-pd-badges">
-          <span class="s2-badge-gold">👑 ${escapeHtml(titleText)}</span>
-          ${profile?.partner_id ? `<span class="s2-badge-pink">💕 Bound: ${escapeHtml(profile.partner_id)}</span>` : ''}
-        </div>
-
         <div class="s2-pd-figure" id="pd-hero-figure">
           <div class="s2-pd-stage-ctrls">
             <button type="button" class="s2-pd-ctrl-btn" data-pd-turn="1" title="Rotate Character View">
@@ -745,7 +864,7 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit') {
             </button>
           </div>
 
-          ${hasAura ? `<img class="s2-pd-aura" src="/assets/ui/fx_magic_circle.png" alt="" />` : ''}
+          <img class="s2-pd-aura ${hasAura ? 'is-bright' : ''}" src="/assets/ui/fx_magic_circle.png" alt="" />
           <img class="s2-pd-pedestal" src="/assets/ui/stage_wardrobe_pedestal.png" alt="" />
 
           ${renderPaperDollDomLayers(lineage, eq, liveStageState.view, profile?.appearance)}
@@ -754,14 +873,9 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit') {
 
           ${petVis ? `
             <div class="s2-pd-pet-wrap s2-loco-${petLoco} s2-pd-pet-tier-${petVTier}" title="Equipped Companion Pet (★${petStars})">
-              <img class="s2-pd-pet ${petVTier >= 3 ? 'pet-v2-shimmer' : ''}" src="${petVis.url}" style="--pet-ui-scale:${petUiScale};${petVis.filter !== 'none' ? `filter:${petVis.filter};` : ''}" alt="" />
+              <img class="s2-pd-pet ${petVTier >= 3 ? 'pet-v2-shimmer' : ''} ${rawPetPose === 'flip' ? 'pet-v2-flip-spin' : ''}" src="${petVis.url}" style="--pet-ui-scale:${petUiScale};${petVis.filter !== 'none' ? `filter:${petVis.filter};` : ''}" alt="" />
             </div>
           ` : ''}
-        </div>
-
-        <div class="s2-pd-nameplate ${isCelestialHair ? 'is-celestial-nameplate' : ''}">
-          <b>${isCelestialHair ? '✨ ' : ''}${escapeHtml(profile?.username || profile?.id || 'Adventurer')}${isCelestialHair ? ' ✨' : ''}</b>
-          <span>Lv.${profile?.level || 1}</span>
         </div>
       </div>
 

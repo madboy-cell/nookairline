@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { loadSprite, spriteInfo } from './assets.js';
 import {
-  placeable, footprint, TILES, CORE, WONDERS, DECOR, GROUND_SKINS, LOVE_PAVILION, EXPANSION_TIERS,
+  placeable, footprint, buildingCaps, TILES, CORE, WONDERS, DECOR, GROUND_SKINS, LOVE_PAVILION, EXPANSION_TIERS,
 } from '/shared/catalog_landmarks.js';
 import {
   buildCellIndex, cellToWorld, worldToCell, validateLayout, computeComfort, comfortBonusPct, bagContents, cellsOf,
@@ -108,6 +108,7 @@ export class VillagePlaza {
     this.bubbles = [];
     this.tintables = new Set();    // materials tinted by the mood
     this.water = [];
+    this.leanList = [];
     this.selfId = null;
     this.mood = 'sunny';
     this.t = 0;
@@ -138,7 +139,7 @@ export class VillagePlaza {
     for (const e of this.entries.values()) this.disposeGroup(e.group);
     this.entries.clear();
     if (this.bridgeGroup) { this.disposeGroup(this.bridgeGroup); this.bridgeGroup = null; }
-    this.pickables = []; this.bubbles = []; this.water = [];
+    this.pickables = []; this.bubbles = []; this.water = []; this.leanList = [];
     for (const isl of this.layout.islands) this.buildIsland(isl);
     if (this.layout.bridge) this.buildBridge(this.layout.bridge, gen);
   }
@@ -158,6 +159,7 @@ export class VillagePlaza {
       this.pickables = this.pickables.filter((p) => p.userData.owner !== isl.owner);
       this.bubbles = this.bubbles.filter((b) => b.userData.owner !== isl.owner);
       this.water = this.water.filter((w) => w.userData.owner !== isl.owner);
+      if (this.leanList) this.leanList = this.leanList.filter((m) => m.userData?.owner !== isl.owner);
     }
     const group = new THREE.Group();
     this.root.add(group);
@@ -274,7 +276,8 @@ export class VillagePlaza {
             const ledgeN = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.04, 0.11), bankMat);
             ledgeN.position.set(c.x, Y.WATER + 0.015, c.z - 0.46);
             group.add(ledgeN);
-            if (!isl.index?.byCell?.get(`${gx},${gy - 1}`) && (gx === 8 || gx === 15 || gx === 3 || gx === 20)) {
+            const mid = Math.floor(S / 2);
+            if (!isl.index?.byCell?.get(`${gx},${gy - 1}`) && (gx === mid - 3 || gx === mid + 2 || gx === 2 || gx === S - 3)) {
               const prop = (gx % 2 === 0) ? 'env_river_boulders_a' : 'env_river_cattails';
               this.addSprite(group, prop, c.x, c.z - 0.38, 0.92, { kind: 'env', owner: isl.owner }, { pick: false });
             } else if (!isl.index?.byCell?.get(`${gx},${gy - 1}`) && gx % 3 === 1) {
@@ -285,7 +288,8 @@ export class VillagePlaza {
             const ledgeS = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.04, 0.11), bankMat);
             ledgeS.position.set(c.x, Y.WATER + 0.015, c.z + 0.46);
             group.add(ledgeS);
-            if (!isl.index?.byCell?.get(`${gx},${gy + 1}`) && (gx === 9 || gx === 14 || gx === 2 || gx === 16)) {
+            const mid = Math.floor(S / 2);
+            if (!isl.index?.byCell?.get(`${gx},${gy + 1}`) && (gx === mid - 2 || gx === mid + 2 || gx === 1 || gx === S - 2)) {
               const prop = (gx % 2 === 0) ? 'env_river_boulders_b' : 'env_bush_daisies_white';
               this.addSprite(group, prop, c.x, c.z + 0.46, 0.85, { kind: 'env', owner: isl.owner }, { pick: false });
             } else if (!isl.index?.byCell?.get(`${gx},${gy + 1}`) && gx % 3 === 2) {
@@ -317,7 +321,7 @@ export class VillagePlaza {
         for (let i = 0; i < 6; i++) {
           const a = (i / 6) * Math.PI * 2;
           const cloudSprite = i % 2 === 0 ? 'env_cloud_fluffy_a' : 'env_cloud_fluffy_b';
-          const cm = this.addSprite(group, cloudSprite, isl.cx + Math.cos(a) * (S / 2 + 4.8), Math.sin(a) * (S / 2 + 4.8) + 1.2, 5.2, { kind: 'cloud', owner: isl.owner }, { pick: false, y: -2.4, opacity: 0.92 });
+          const cm = this.addSprite(group, cloudSprite, isl.cx + Math.cos(a) * (S / 2 + 4.2), Math.sin(a) * (S / 2 + 4.2) + 1.2, 4.8, { kind: 'cloud', owner: isl.owner }, { pick: false, y: -2.4, opacity: 0.92 });
           cm.userData.lean = false;
           cm.rotation.x = -0.06;
         }
@@ -391,7 +395,7 @@ export class VillagePlaza {
 
     // 3. Bottom golden-hour clouds parallel to the cliff face (no plane intersection)
     for (const sx of [-1, 1]) {
-      const cb = this.addSprite(group, 'env_cloud_fluffy_b', cx + sx * (half - 2.2), half + 0.65, 4.6, { kind: 'cloud', owner: isl.owner }, { pick: false, y: -2.65, opacity: 0.94, mirror: sx < 0 });
+      const cb = this.addSprite(group, 'env_cloud_fluffy_b', cx + sx * (half - 2.2), half + 0.65, 4.4, { kind: 'cloud', owner: isl.owner }, { pick: false, y: -2.65, opacity: 0.94, mirror: sx < 0 });
       cb.userData.lean = false;
       cb.rotation.x = -0.06;
     }
@@ -399,65 +403,70 @@ export class VillagePlaza {
 
   /** Curated 2.5D storybook trees, flower bushes, split-rail stone fences & glowing streetlamps around the island & plaza. */
   addIslandScenery(group, isl, tileMap) {
-    const S = isl.S, ox = isl.cx - S / 2, oz = -S / 2;
+    const S = isl.S, ox = isl.cx - S / 2, oz = -S / 2, mid = Math.floor(S / 2);
     const isSakura = isl.village.ground === 'ground_sakura';
     const treeA = isSakura ? 'env_tree_sakura_a' : 'env_tree_oak_a';
     const treeB = isSakura ? 'env_tree_sakura_b' : 'env_tree_oak_b';
+    const cellFree = (gx, gy) => gx >= 0 && gy >= 0 && gx < S && gy < S && !isl.index?.solid?.[gy * S + gx] && !tileMap.has(`${gx},${gy}`);
 
-    // Perimeter trees + inner garden trees visible in the central camera view
+    // Perimeter trees along the outer island rim
     const rimTrees = [
-      [ox + 1.2, oz - 0.15, treeA, 2.35, false],
-      [ox + 5.2, oz - 0.2, 'env_tree_fruit_apple', 2.15, false],
-      [ox + S - 5.2, oz - 0.2, 'env_tree_golden_maple', 2.2, true],
-      [ox + S - 1.2, oz - 0.15, treeB, 2.35, true],
-      [ox - 0.25, oz + 3.5, treeB, 2.1, false],
-      [ox - 0.25, oz + S - 3.2, 'env_pine', 1.95, false],
-      [ox + S + 0.25, oz + 3.5, treeA, 2.1, true],
-      [ox + S + 0.25, oz + S - 3.2, 'env_tree_sakura_a', 2.05, true],
-      // Framing trees around the Castle & Canal plaza (on open grass cells)
-      [ox + 8.2, oz + 5.2, treeA, 1.95, false],
-      [ox + 15.6, oz + 5.2, 'env_tree_sakura_a', 1.90, true],
+      [ox + 1.0, oz - 0.15, treeA, 2.2, false],
+      [ox + 4.5, oz - 0.2, 'env_tree_fruit_apple', 2.0, false],
+      [ox + S - 4.5, oz - 0.2, 'env_tree_golden_maple', 2.05, true],
+      [ox + S - 1.0, oz - 0.15, treeB, 2.2, true],
+      [ox - 0.25, oz + 2.8, treeB, 1.95, false],
+      [ox - 0.25, oz + S - 2.6, 'env_pine', 1.85, false],
+      [ox + S + 0.25, oz + 2.8, treeA, 1.95, true],
+      [ox + S + 0.25, oz + S - 2.6, 'env_tree_sakura_a', 1.95, true],
     ];
     for (const [x, z, sprite, w, mirror] of rimTrees) {
       this.addSprite(group, sprite, x, z, w, { kind: 'env', owner: isl.owner }, { pick: false, mirror });
     }
+    // Inner framing trees beside the Castle if those cells are open
+    if (cellFree(mid - 4, mid - 7)) this.addSprite(group, treeA, ox + mid - 3.5, oz + mid - 6.5, 1.85, { kind: 'env', owner: isl.owner }, { pick: false });
+    if (cellFree(mid + 3, mid - 7)) this.addSprite(group, 'env_tree_sakura_a', ox + mid + 3.5, oz + mid - 6.5, 1.85, { kind: 'env', owner: isl.owner }, { pick: false, mirror: true });
 
-    // Lush 2.5D flowering bushes, split-rail stone fences & wildflower tufts along the plaza & road edges
+    // Outer rim bushes & fences
     const rimProps = [
-      [ox + 2.8, oz + 0.1, 'env_bush_mixed_large', 1.25],
-      [ox + S - 2.8, oz + 0.1, 'env_bush_roses_pink', 1.15],
-      [ox + 3.6, oz + S - 0.15, 'env_fence_wood_stone_straight', 1.35],
-      [ox + 5.0, oz + S - 0.15, 'env_bush_daisies_white', 1.05],
-      [ox + S - 3.6, oz + S - 0.15, 'env_fence_wood_stone_straight', 1.35],
-      [ox + S - 5.0, oz + S - 0.15, 'env_bush_hydrangea_blue', 1.1],
-      // Central plaza flower bushes, fences & wildflower tufts bordering the cobble road
-      [ox + 9.2, oz + 7.6, 'env_bush_roses_pink', 0.95],
-      [ox + 14.8, oz + 7.6, 'env_bush_mixed_large', 1.05],
-      [ox + 10.2, oz + 14.8, 'env_bush_daisies_white', 0.88],
-      [ox + 13.8, oz + 14.8, 'env_bush_roses_pink', 0.92],
-      [ox + 10.3, oz + 16.5, 'decal_grass_daisies_b', 0.78],
-      [ox + 13.7, oz + 16.2, 'decal_grass_clover_a', 0.75],
-      [ox + 8.5, oz + 14.2, 'decal_path_stepping_stones', 0.95],
-      [ox + 9.2, oz + 19.6, 'env_fence_wood_stone_straight', 1.15],
-      [ox + 14.8, oz + 19.6, 'env_fence_wood_stone_straight', 1.15],
+      [ox + 2.5, oz + 0.1, 'env_bush_mixed_large', 1.15],
+      [ox + S - 2.5, oz + 0.1, 'env_bush_roses_pink', 1.1],
+      [ox + 3.2, oz + S - 0.15, 'env_fence_wood_stone_straight', 1.25],
+      [ox + 4.5, oz + S - 0.15, 'env_bush_daisies_white', 1.0],
+      [ox + S - 3.2, oz + S - 0.15, 'env_fence_wood_stone_straight', 1.25],
+      [ox + S - 4.5, oz + S - 0.15, 'env_bush_hydrangea_blue', 1.05],
     ];
     for (const [x, z, sprite, w] of rimProps) {
       this.addSprite(group, sprite, x, z, w, { kind: 'env', owner: isl.owner }, { pick: false });
     }
 
+    // Dynamic central plaza flower bushes & wildflower tufts (only on unblocked grass cells)
+    const innerCandidates = [
+      [mid - 2, mid + 2, 'env_bush_daisies_white', 0.85],
+      [mid + 1, mid + 2, 'env_bush_roses_pink', 0.88],
+      [mid - 2, mid + 4, 'decal_grass_daisies_b', 0.75],
+      [mid + 1, mid + 4, 'decal_grass_clover_a', 0.72],
+    ];
+    for (const [gx, gy, sprite, w] of innerCandidates) {
+      if (cellFree(gx, gy)) {
+        const c = cellToWorld(isl, gx, gy);
+        this.addSprite(group, sprite, c.x, c.z + 0.2, w, { kind: 'env', owner: isl.owner }, { pick: false });
+      }
+    }
+
     // 4-Way Plaza Cobblestone Garden Medallion at the Castle Crossroad
-    const mid = Math.floor(S / 2);
-    if (tileMap.has(`${mid - 1},6`) && tileMap.has(`${mid},6`)) {
+    const crossY = mid - 4;
+    if (tileMap.has(`${mid - 1},${crossY}`) && tileMap.has(`${mid},${crossY}`)) {
       const medMat = this.tint(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, depthWrite: false }));
       loadSprite('tile_plaza_cobble_medallion_4way').then((s) => { medMat.map = s.texture; medMat.needsUpdate = true; });
       const med = new THREE.Mesh(new THREE.PlaneGeometry(1.55, 1.55).rotateX(-Math.PI / 2), medMat);
-      med.position.set(ox + mid, Y.ROAD + 0.005, oz + 6.5);
+      med.position.set(ox + mid, Y.ROAD + 0.005, oz + crossY + 0.5);
       group.add(med);
     }
 
-    // Properly scaled 2.5D vintage glowing iron streetlamps (width 0.44 -> ~1.32m tall) flanking Castle Plaza & South Promenade
-    for (const [gx, gy] of [[mid - 2, 5], [mid + 1, 5], [mid - 2, 13], [mid + 1, 13]]) {
-      if (!isl.index?.byCell?.get(`${gx},${gy}`) && tileMap.get(`${gx},${gy}`) !== 'water') {
+    // Properly scaled 2.5D vintage glowing iron streetlamps flanking Castle Plaza & South Promenade
+    for (const [gx, gy] of [[mid - 2, mid - 5], [mid + 1, mid - 5], [mid - 2, mid + 1], [mid + 1, mid + 1]]) {
+      if (cellFree(gx, gy)) {
         const c = cellToWorld(isl, gx, gy);
         this.addSprite(group, 'env_streetlamp_iron', c.x, c.z + 0.15, 0.44, { kind: 'env', owner: isl.owner }, { pick: false });
       }
@@ -506,42 +515,91 @@ export class VillagePlaza {
     mesh.userData = { ...data, height: width * aspect, lean: true };
     group.add(mesh);
     if (o.pick !== false) this.pickables.push(mesh);
+    if (this.leanList) this.leanList.push(mesh);
     return mesh;
   }
 
+  /**
+   * 8-grid 2.5D Horizontal Rainbow Heart Bridge with the Couple Love Dome in the middle:
+   * - Walkable hand-painted pastel rainbow flagstone deck (`bridge_rainbow_deck_strip`) + central balcony medallion
+   * - Back heart-cutout stone parapet (`bridge_rainbow_back_rail`) + Couple Love Dome (`dec_love_pavilion`)
+   * - Front twin stone arches & heart-cutout parapet with pink-heart lamp pillars (`bridge_rainbow_front_arch`)
+   */
   buildBridge(br) {
     const g = new THREE.Group();
     this.root.add(g);
     this.bridgeGroup = g;
-    const len = br.x1 - br.x0, wid = br.z1 - br.z0;
-    const deck = new THREE.Mesh(new THREE.PlaneGeometry(len, wid).rotateX(-Math.PI / 2), this.tint(new THREE.MeshBasicMaterial({ map: rainbowDeckTexture() })));
-    deck.material.map.repeat.set(len / 2, 1);
-    deck.position.set(br.cx, Y.BRIDGE, (br.z0 + br.z1) / 2);
+    const len = br.x1 - br.x0, wid = br.z1 - br.z0, midZ = (br.z0 + br.z1) / 2;
+
+    // 1. Central circular stone terrace alcove under the Love Dome
+    const terraceMat = this.tint(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.35, depthWrite: false }));
+    loadSprite('decal_plaza_medallion_circle').then((s) => { terraceMat.map = s.texture; terraceMat.needsUpdate = true; });
+    const terrace = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.4).rotateX(-Math.PI / 2), terraceMat);
+    terrace.position.set(br.cx, Y.BRIDGE - 0.003, br.z0 - 0.15);
+    terrace.matrixAutoUpdate = false;
+    terrace.updateMatrix();
+    g.add(terrace);
+
+    // 2. Hand-painted 2.5D Pastel Rainbow Flagstone Bridge Deck (walkable floor at Y.BRIDGE)
+    const deckMat = this.tint(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.35 }));
+    loadSprite('bridge_rainbow_deck_strip').then((s) => { deckMat.map = s.texture; deckMat.needsUpdate = true; });
+    const deck = new THREE.Mesh(new THREE.PlaneGeometry(len + 0.65, wid + 0.35).rotateX(-Math.PI / 2), deckMat);
+    deck.position.set(br.cx, Y.BRIDGE, midZ);
+    deck.matrixAutoUpdate = false;
+    deck.updateMatrix();
     g.add(deck);
-    const railMat = this.tint(new THREE.MeshBasicMaterial({ color: 0xffe3a6 }));
-    for (const z of [br.z0 + 0.05, br.z1 - 0.05]) {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.22, 0.08), railMat);
-      rail.position.set(br.cx, 0.2, z); g.add(rail);
+
+    // 2b. Sandstone stepping-stone landing aprons where the bridge meets each island
+    const stepMat = this.tint(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.35, depthWrite: false }));
+    loadSprite('decal_path_stepping_stones').then((s) => { stepMat.map = s.texture; stepMat.needsUpdate = true; });
+    for (const lx of [br.x0 - 0.65, br.x1 + 0.65]) {
+      const pad = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.5).rotateX(-Math.PI / 2), stepMat);
+      pad.position.set(lx, Y.BRIDGE - 0.002, midZ);
+      pad.matrixAutoUpdate = false;
+      pad.updateMatrix();
+      g.add(pad);
     }
-    const under = new THREE.Mesh(new THREE.BoxGeometry(len, 0.5, wid), this.tint(new THREE.MeshBasicMaterial({ color: 0xc89a6a })));
-    under.position.set(br.cx, -0.26, (br.z0 + br.z1) / 2); g.add(under);
-    this.addSprite(g, LOVE_PAVILION.sprite, br.cx, br.z0 - 0.05, 2.8, { kind: 'pavilion' }, { pick: false });
-    this.addSprite(g, 'bridge_rainbow_arch', br.cx, br.z1 + 0.15, 3.0, { kind: 'arch' }, { pick: false });
-    this.addSprite(g, 'env_streetlamp_double', br.x0 + 0.4, br.z0 - 0.1, 1.15, { kind: 'env' }, { pick: false });
-    this.addSprite(g, 'env_streetlamp_double', br.x1 - 0.4, br.z0 - 0.1, 1.15, { kind: 'env' }, { pick: false });
+
+    // 3. Soft golden-hour sky clouds cradling the bridge arches from below
+    for (const dx of [-2.2, 2.2]) {
+      const cb = this.addSprite(g, 'env_cloud_fluffy_b', br.cx + dx, br.z1 + 0.25, 3.8, { kind: 'cloud' }, { pick: false, y: -1.75, opacity: 0.92, mirror: dx < 0 });
+      cb.userData.lean = false;
+      cb.rotation.x = -0.06;
+    }
+
+    // 4. Couple Love Dome centered in the middle of the bridge + Back heart-cutout stone parapet
+    this.addSprite(g, LOVE_PAVILION.sprite, br.cx, br.z0 - 0.18, 2.75, { kind: 'pavilion' }, { pick: false, y: -0.05 });
+    this.addSprite(g, 'bridge_rainbow_back_rail', br.cx, br.z0 + 0.02, len + 0.65, { kind: 'arch_back' }, { pick: false, y: -0.06 });
+
+    // 5. Front twin stone under-arches, heart-cutout parapet & pink-heart lamp pillars
+    this.addSprite(g, 'bridge_rainbow_front_arch', br.cx, br.z1 + 0.12, len + 0.65, { kind: 'arch' }, { pick: false, y: -0.78 });
   }
 
   addEditOverlay(group, isl, draft) {
     const S = isl.S, pts = [];
     const ox = isl.cx - S / 2, oz = -S / 2;
+    const gridOpacity = draft.quickMove ? 0.22 : 0.35;
     for (let i = 0; i <= S; i++) { pts.push(ox + i, Y.GRID, oz, ox + i, Y.GRID, oz + S, ox, Y.GRID, oz + i, ox + S, Y.GRID, oz + i); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-    group.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })));
+    group.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: gridOpacity })));
     const sel = draft.selected && isl.village.buildings.find((b) => b.uid === draft.selected);
     if (sel) {
       const cells = cellsOf(sel);
-      const m = new THREE.Mesh(cellsGeometry(isl, cells, Y.GHOST), new THREE.MeshBasicMaterial({ color: draft.valid ? 0x3ddc84 : 0xff4d4d, transparent: true, opacity: 0.45, depthWrite: false }));
+      const col = draft.valid ? 0x3ddc84 : 0xff4d4d;
+      const m = new THREE.Mesh(cellsGeometry(isl, cells, Y.GHOST), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.52, depthWrite: false }));
       group.add(m);
+      // Glowing footprint border outline (Mockup 01 & 02)
+      const f = footprint(sel.type, sel.rot);
+      const x0 = ox + sel.x, z0 = oz + sel.y, x1 = x0 + f.w, z1 = z0 + f.h, by = Y.GHOST + 0.008;
+      const bPts = [
+        x0, by, z0, x1, by, z0,
+        x1, by, z0, x1, by, z1,
+        x1, by, z1, x0, by, z1,
+        x0, by, z1, x0, by, z0,
+      ];
+      const bGeo = new THREE.BufferGeometry();
+      bGeo.setAttribute('position', new THREE.Float32BufferAttribute(bPts, 3));
+      group.add(new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({ color: draft.valid ? 0xb8ff9e : 0xffb3a8, transparent: true, opacity: 0.95 })));
     }
   }
 
@@ -566,11 +624,21 @@ export class VillagePlaza {
     this.t += dt;
     for (const w of this.water) if (w.material.map) { w.material.map.offset.x = this.t * 0.03; w.material.map.offset.y = Math.sin(this.t * 0.4) * 0.05; }
     const lean = -pitch;
-    this.root.traverse((o) => { if (o.userData?.lean) o.rotation.x = lean; });
+    if (!this.leanList) {
+      this.leanList = [];
+      this.root.traverse((o) => { if (o.userData?.lean) this.leanList.push(o); });
+    }
+    for (let i = 0; i < this.leanList.length; i++) {
+      const o = this.leanList[i];
+      if (o.userData?.lean) o.rotation.x = lean;
+    }
     for (const b of this.bubbles) {
       if (!b.visible) continue;
       const h = b.userData.height || 3;
       b.position.set(b.userData.base.x, h * Math.cos(pitch) + 0.5 + Math.sin(this.t * 3 + b.userData.base.x) * 0.12, b.userData.base.z - h * Math.sin(pitch) * 0.5);
+    }
+    if (this.world?.editor?.active) {
+      this.world.editor.updateFloatingUi();
     }
   }
 
@@ -619,25 +687,57 @@ function alphaAt(img, u, v, mirrored) {
 }
 
 // =================================================================================================
-// Grid Editor (Screen 02)
+// Grid Editor (Screen 01 Inline Quick-Move & Screen 02 Kingdom Grid Editor)
 // =================================================================================================
 const TAB_ITEMS = {
-  buildings: () => ['castle', 'mint', 'shrine', 'patisserie', 'nest', 'dock'],
+  buildings: () => Object.keys(CORE),
   wonders: () => Object.keys(WONDERS),
   decor: () => Object.keys(DECOR),
   tiles: () => [...Object.keys(TILES), 'erase'],
   skins: () => Object.keys(GROUND_SKINS),
 };
 
+function shortBuffLabel(key, d) {
+  if (!d) return '';
+  if (key === 'castle') return '👑 +2% Yield/Lv';
+  if (d.produces === 'gold') return `🪙 +${d.perHour(1)}/hr • +100🌸`;
+  if (d.produces === 'berries') return `🍓 +${d.perHour(1)}/hr • +100🌸`;
+  if (d.daily === 'diamonds') return `💎 +${d.perDay(1)}/day • +100🌸`;
+  if (key === 'nest') return '🥚 Pet Odds • +100🌸';
+  if (key === 'dock') return '🎣 Storage+Fish • +100🌸';
+  if (d.kind === 'wonder') {
+    if (d.matchYieldPct) return `🪙 +${d.matchYieldPct(1)}% Yield • +300🌸`;
+    if (d.blacksmithPct) return `🔨 +${d.blacksmithPct(1)}% Forge • +300🌸`;
+    if (d.perDay) return `💎 +${d.perDay(1)}/day • +300🌸`;
+    if (key === 'wnd_fountain') return '⛲ Daily Wish • +300🌸';
+    return '✨ VIP Buff • +300🌸';
+  }
+  if (d.kind === 'decor') {
+    const b = d.buff || {};
+    if (b.goldPct) return `🪙 +${b.goldPct}% Gold • +120🌸`;
+    if (b.berriesPct) return `🍓 +${b.berriesPct}% Berry • +120🌸`;
+    if (b.luckPct) return `🍀 +${b.luckPct}% Luck • +120🌸`;
+    if (b.fortunePct) return `✨ +${b.fortunePct}% Fortune • +120🌸`;
+    if (b.swiftnessPct) return `⚡ +${b.swiftnessPct}% Speed • +120🌸`;
+    if (b.traitLuckPct) return `🐾 +${b.traitLuckPct}% Pet Luck • +120🌸`;
+    if (b.storagePct) return `📦 +${b.storagePct}% Cap • +120🌸`;
+    return `👍 +${120 + (b.comfortBonus || 0)} Comfort`;
+  }
+  return '';
+}
+
 export class GridEditor {
   /**
    * @param plaza VillagePlaza
-   * @param ui { onSave(layout) => Promise<{ok,error}>, onExit(), toast(msg) }
+   * @param ui { onSave(layout) => Promise<{ok,error}>, onExit(saved), onPromoteToFull(), toast(msg) }
    */
   constructor(plaza, ui) {
     this.plaza = plaza;
     this.ui = ui;
     this.active = false;
+    this.quickMode = false;
+    this.unplacedOnly = false;
+    this.drawerCollapsed = false;
     this.mode = 'drag';
     this.tab = 'buildings';
     this.paintTile = 'road_cobble';
@@ -651,14 +751,89 @@ export class GridEditor {
   bindDom() {
     const $ = this.$;
     $('ed-undo').onclick = () => this.popUndo();
-    $('ed-store').onclick = () => { this.pushUndo(); this.draft.buildings = []; this.selected = null; this.refresh(); };
+    $('ed-store').onclick = () => {
+      // Keep Castle on the island since Castle is unique & required, store everything else in bag
+      this.pushUndo();
+      const castle = this.draft.buildings.find((b) => b.type === 'castle');
+      this.draft.buildings = castle ? [castle] : [];
+      this.selected = null;
+      this.ui.toast?.('🧹 Stored landmarks, Wonders & decor into your Bag!');
+      this.refresh();
+    };
     $('ed-save').onclick = () => this.save();
     $('ed-exit').onclick = () => this.close(true);
     $('ed-mode').onclick = () => this.setMode(this.mode === 'drag' ? 'paint' : 'drag');
     $('ed-confirm').onclick = () => { this.selected = null; this.refresh(); };
     $('ed-rotate').onclick = () => this.rotateSelected();
     $('ed-bag').onclick = () => this.bagSelected();
-    document.querySelectorAll('#ed-tabs [data-tab]').forEach((b) => { b.onclick = () => { this.tab = b.dataset.tab; this.renderDrawer(); }; });
+
+    // Filter bar & drawer collapse (Mockup 02)
+    if ($('ed-filter-all')) {
+      $('ed-filter-all').onclick = () => {
+        this.unplacedOnly = false;
+        this.syncFilterBar();
+        this.renderDrawer();
+      };
+    }
+    if ($('ed-filter-unplaced')) {
+      $('ed-filter-unplaced').onclick = () => {
+        this.unplacedOnly = !this.unplacedOnly;
+        this.syncFilterBar();
+        this.renderDrawer();
+      };
+    }
+    if ($('ed-drawer-collapse')) {
+      $('ed-drawer-collapse').onclick = () => {
+        this.drawerCollapsed = !this.drawerCollapsed;
+        $('ed-drawer')?.classList.toggle('collapsed', this.drawerCollapsed);
+        $('ed-drawer-collapse').textContent = this.drawerCollapsed ? '▴' : '▾';
+      };
+    }
+
+    // Inline Quick-Move bar (Mockup 01)
+    if ($('qm-place')) $('qm-place').onclick = () => this.save();
+    if ($('qm-rotate')) $('qm-rotate').onclick = () => this.rotateSelected();
+    if ($('qm-bag')) {
+      $('qm-bag').onclick = async () => {
+        const b = this.draft?.buildings?.find((q) => q.uid === this.selected);
+        if (b?.type === 'castle') {
+          this.ui.toast?.('🏰 Your Grand Starlight Castle stays anchored on the island!');
+          return;
+        }
+        this.bagSelected();
+        await this.save();
+      };
+    }
+    if ($('qm-full')) {
+      $('qm-full').onclick = () => {
+        this.quickMode = false;
+        if ($('quick-move-ui')) $('quick-move-ui').hidden = true;
+        this.ui.onPromoteToFull?.();
+        this.refresh();
+      };
+    }
+    if ($('qm-cancel')) $('qm-cancel').onclick = () => this.close(true);
+
+    document.querySelectorAll('#ed-tabs [data-tab]').forEach((b) => {
+      b.onclick = () => {
+        this.tab = b.dataset.tab;
+        if (this.drawerCollapsed) {
+          this.drawerCollapsed = false;
+          $('ed-drawer')?.classList.remove('collapsed');
+          if ($('ed-drawer-collapse')) $('ed-drawer-collapse').textContent = '▾';
+        }
+        if (this.tab === 'tiles' && this.mode !== 'paint') this.setMode('paint');
+        else if (this.tab !== 'tiles' && this.mode === 'paint') this.setMode('drag');
+        else this.renderDrawer();
+      };
+    });
+  }
+
+  syncFilterBar() {
+    const $ = this.$;
+    $('ed-filter-all')?.classList.toggle('active', !this.unplacedOnly);
+    $('ed-filter-unplaced')?.classList.toggle('active', this.unplacedOnly);
+    $('ed-filter-unplaced')?.setAttribute('aria-pressed', String(this.unplacedOnly));
   }
 
   get village() { return this.plaza.selfIsland.village; }
@@ -666,29 +841,50 @@ export class GridEditor {
   /** Draft village = saved village with the draft's buildings / tiles / ground (for validation + comfort). */
   draftVillage() { return { ...this.base, buildings: this.draft.buildings, tiles: this.draft.tiles, ground: this.draft.ground }; }
 
-  open() {
+  open({ quickUid = null, selectUid = null } = {}) {
     const v = this.village;
     this.base = JSON.parse(JSON.stringify(v));
     this.draft = { buildings: v.buildings.map(({ uid, type, x, y, rot }) => ({ uid, type, x, y, rot })), tiles: v.tiles.map((t) => ({ ...t })), ground: v.ground };
     this.undo = [];
-    this.selected = null;
+    this.quickMode = !!quickUid;
+    this.selected = quickUid || selectUid || null;
     this.active = true;
+    this.drawerCollapsed = false;
+    this.$('ed-drawer')?.classList.remove('collapsed');
+    if (this.$('ed-drawer-collapse')) this.$('ed-drawer-collapse').textContent = '▾';
     this.setMode('drag');
+    if (this.selected) this.focusOnBuilding(this.selected);
     this.refresh();
+  }
+
+  focusOnBuilding(uid) {
+    const isl = this.plaza.selfIsland;
+    const b = this.draft?.buildings?.find((q) => q.uid === uid);
+    if (!isl || !b) return;
+    const f = footprint(b.type, b.rot);
+    const c = cellToWorld(isl, b.x, b.y, f.w, f.h);
+    this.plaza.world.camTarget.set(c.x, 0, c.z + 1.2);
+    this.plaza.world.followDetached = true;
   }
 
   close(discard = false) {
     if (!this.active) return;
     this.active = false;
+    this.quickMode = false;
     this.selected = null;
+    if (this.$('quick-move-ui')) this.$('quick-move-ui').hidden = true;
+    if (this.$('ed-select')) this.$('ed-select').hidden = true;
+    if (this.$('ed-footprint-tag')) this.$('ed-footprint-tag').hidden = true;
     if (discard) this.plaza.setVillage(this.plaza.selfId, this.base);
-    this.ui.onExit?.();
+    this.ui.onExit?.(false);
   }
 
   setMode(m) {
     this.mode = m;
-    this.$('ed-mode').textContent = m === 'drag' ? '📍 Drag' : '🖌️ Paint';
-    this.$('ed-mode').classList.toggle('paint', m === 'paint');
+    if (this.$('ed-mode')) {
+      this.$('ed-mode').textContent = m === 'drag' ? '📍 Drag' : '🖌️ Paint';
+      this.$('ed-mode').classList.toggle('paint', m === 'paint');
+    }
     if (m === 'paint') { this.selected = null; this.tab = 'tiles'; }
     this.refresh();
   }
@@ -700,47 +896,231 @@ export class GridEditor {
 
   refresh() {
     if (!this.active) return;
+    const $ = this.$;
+    const isl = this.plaza.selfIsland;
     const val = this.validation();
     this.valid = val.ok;
     const dv = { ...this.draftVillage(), buildings: this.draft.buildings.map((b) => ({ ...b })) };
-    this.plaza.setVillage(this.plaza.selfId, dv, { draft: { overlay: true, selected: this.selected, valid: val.ok } });
+    this.plaza.setVillage(this.plaza.selfId, dv, { draft: { overlay: true, quickMove: this.quickMode, selected: this.selected, valid: val.ok } });
+
+    if (this.quickMode) {
+      if ($('quick-move-ui')) $('quick-move-ui').hidden = !this.selected;
+      if ($('qm-place')) $('qm-place').disabled = !val.ok;
+      this.updateFloatingUi();
+      return;
+    }
+
+    if ($('quick-move-ui')) $('quick-move-ui').hidden = true;
     const comfort = computeComfort(dv);
-    this.$('ed-comfort').textContent = `🌸 ${comfort.toLocaleString('en-US')} • +${comfortBonusPct(comfort)}% yield`;
-    this.$('ed-save').disabled = !val.ok;
-    this.$('ed-status').textContent = val.ok ? '' : `✕ Blocked: ${humanError(val.error)}`;
-    this.$('ed-select').hidden = !this.selected;
+    if ($('ed-grid-title') && isl) {
+      $('ed-grid-title').textContent = `🏰 Kingdom Grid Editor (${isl.S}×${isl.S} Tiles)`;
+    }
+    if ($('ed-comfort')) {
+      $('ed-comfort').textContent = `🌸 Comfort Score: ${comfort.toLocaleString('en-US')} (+${comfortBonusPct(comfort)}% Yield)`;
+    }
+    if ($('ed-save')) $('ed-save').disabled = !val.ok;
+    if ($('ed-status')) $('ed-status').textContent = val.ok ? '' : `✕ Blocked: ${humanError(val.error)}`;
+    if ($('ed-select')) $('ed-select').hidden = !this.selected;
+    if ($('ed-footprint-tag')) $('ed-footprint-tag').hidden = !this.selected;
+
+    this.updateFloatingUi();
     this.renderDrawer();
+  }
+
+  /** Dynamically anchor the speech bubble (#ed-select or #qm-bar) & footprint pill in 3D screen space above the selected building. */
+  updateFloatingUi() {
+    const $ = this.$;
+    const isl = this.plaza.selfIsland;
+    const world = this.plaza.world;
+    if (!this.active || !this.selected || !isl || !world) {
+      if ($('ed-select')) $('ed-select').hidden = true;
+      if ($('ed-footprint-tag')) $('ed-footprint-tag').hidden = true;
+      if ($('quick-move-ui')) $('quick-move-ui').hidden = true;
+      return;
+    }
+    const b = this.draft.buildings.find((q) => q.uid === this.selected);
+    if (!b) {
+      if ($('ed-select')) $('ed-select').hidden = true;
+      if ($('ed-footprint-tag')) $('ed-footprint-tag').hidden = true;
+      if ($('quick-move-ui')) $('quick-move-ui').hidden = true;
+      return;
+    }
+    const d = placeable(b.type);
+    const f = footprint(b.type, b.rot);
+    const c = cellToWorld(isl, b.x, b.y, f.w, f.h);
+    const scalePerTile = d?.kind === 'decor' ? 0.92 : SPRITE_WIDTH_PER_TILE;
+    const width = Math.max(1.15, Math.max(f.w, f.h) * scalePerTile);
+    const info = spriteInfo(d?.sprite);
+    const aspect = info ? info.h / info.w : 1;
+    const sprH = width * aspect;
+
+    const appRect = document.getElementById('app').getBoundingClientRect();
+    const topScreen = world.worldToScreen(c.x, sprH * 0.85 + 0.55, c.z);
+    const footScreen = world.worldToScreen(c.x, 0.06, c.z + f.h / 2 + 0.22);
+
+    const clampX = (px, margin = 110) => Math.max(margin, Math.min(appRect.width - margin, px - appRect.left));
+    const drawerH = this.quickMode ? 84 : (this.drawerCollapsed ? 96 : 256);
+    const topMinY = this.quickMode ? 76 : 138;
+    const clampY = (py) => Math.max(topMinY, Math.min(appRect.height - drawerH, py - appRect.top));
+
+    const labelTxt = this.valid ? `${f.w}×${f.h} Tiles` : `✕ Blocked (${f.w}×${f.h})`;
+
+    if (this.quickMode) {
+      const qmBar = $('qm-bar');
+      const qmFoot = $('qm-footprint');
+      if (qmBar) {
+        qmBar.style.left = `${clampX(topScreen.x, 128)}px`;
+        qmBar.style.top = `${clampY(topScreen.y)}px`;
+      }
+      if (qmFoot) {
+        qmFoot.textContent = labelTxt;
+        qmFoot.classList.toggle('bad', !this.valid);
+        qmFoot.style.left = `${clampX(footScreen.x, 54)}px`;
+        qmFoot.style.top = `${Math.max(90, Math.min(appRect.height - 80, footScreen.y - appRect.top))}px`;
+      }
+      return;
+    }
+
+    const selEl = $('ed-select');
+    const footEl = $('ed-footprint-tag');
+    if (selEl && !selEl.hidden) {
+      selEl.style.left = `${clampX(topScreen.x, 118)}px`;
+      selEl.style.top = `${clampY(topScreen.y)}px`;
+    }
+    if (footEl && !footEl.hidden) {
+      footEl.textContent = labelTxt;
+      footEl.classList.toggle('bad', !this.valid);
+      footEl.style.left = `${clampX(footScreen.x, 54)}px`;
+      footEl.style.top = `${Math.max(96, Math.min(appRect.height - drawerH + 14, footScreen.y - appRect.top))}px`;
+    }
   }
 
   renderDrawer() {
     const $ = this.$;
     document.querySelectorAll('#ed-tabs [data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === this.tab));
-    const bag = bagContents(this.draftVillage(), this.draft.buildings);
+    const dv = this.draftVillage();
+    const bag = bagContents(dv, this.draft.buildings);
+    const caps = buildingCaps(dv.castle_lv || 1);
+
+    // Update live tab badges (Mockup 02: Buildings 5/5, Wonders 2/3, Cute Decor 📦4)
+    const placedCore = this.draft.buildings.filter((b) => CORE[b.type] && b.type !== 'castle').length;
+    const placedWonders = this.draft.buildings.filter((b) => WONDERS[b.type]).length;
+    const bagDecorCount = Object.keys(DECOR).reduce((sum, k) => sum + (bag[k] || 0), 0);
+    const totalUnplaced = Object.values(bag).reduce((sum, n) => sum + (n || 0), 0);
+
+    if ($('ed-cnt-buildings')) $('ed-cnt-buildings').textContent = `${placedCore}/${caps.core}`;
+    if ($('ed-cnt-wonders')) $('ed-cnt-wonders').textContent = `${placedWonders}/${caps.wonders}`;
+    if ($('ed-cnt-decor')) $('ed-cnt-decor').textContent = bagDecorCount > 0 ? `📦${bagDecorCount}` : `${this.draft.buildings.filter((b) => DECOR[b.type]).length}`;
+    if ($('ed-unplaced-cnt')) $('ed-unplaced-cnt').textContent = `(${totalUnplaced})`;
+    this.syncFilterBar();
+
     const box = $('ed-items');
+    if (!box) return;
     box.innerHTML = '';
+
+    const selectedBuilding = this.selected ? this.draft.buildings.find((b) => b.uid === this.selected) : null;
+
     for (const key of TAB_ITEMS[this.tab]()) {
-      const el = document.createElement('button');
-      el.className = 'ed-item';
       if (this.tab === 'tiles') {
         const d = TILES[key];
-        el.innerHTML = `<span class="em">${d ? d.emoji : '🧽'}</span><span>${d ? d.name : 'Eraser'}</span>`;
-        el.classList.toggle('active', this.mode === 'paint' && this.paintTile === key);
+        const isAct = this.mode === 'paint' && this.paintTile === key;
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = `ed-item${isAct ? ' active' : ''}`;
+        const buffTxt = d?.road ? '⚡ +15% Walk Speed' : d?.water ? '💧 Canal Brook' : d?.bridge ? '🌉 Water Crossing' : '🧽 Clear Tile';
+        el.innerHTML = `
+          <div class="ed-card-title">${d ? d.name : 'Tile Eraser'}</div>
+          <div class="ed-card-thumb">${d?.sprite ? `<img src="/assets/terrain/${d.sprite}.png" alt="">` : `<span class="em">🧽</span>`}</div>
+          <span class="ed-card-grid">1×1 Tile</span>
+          <span class="ed-card-status ${isAct ? 'placing' : ''}">${isAct ? '🟡 Painting...' : '∞ Unlimited'}</span>
+          <span class="ed-card-buff">${buffTxt}</span>
+          <span class="ed-card-cta paint">🖌️ Paint</span>
+        `;
         el.onclick = () => { this.paintTile = key; this.setMode('paint'); };
-      } else if (this.tab === 'skins') {
-        const d = GROUND_SKINS[key];
-        el.innerHTML = `<img src="/assets/terrain/${key}.png" alt=""><span>${d.emoji} ${d.name}</span>`;
-        el.classList.toggle('active', this.draft.ground === key);
-        el.onclick = () => { this.pushUndo(); this.draft.ground = key; this.refresh(); };
-      } else {
-        const d = placeable(key);
-        const n = bag[key] || 0;
-        const placed = this.draft.buildings.filter((b) => b.type === key).length;
-        const owned = n + placed;
-        el.innerHTML = `<img src="/assets/village/${d.sprite}.png" alt=""><span>${d.name}</span><b class="cnt">${owned ? (n ? `📦 ${n}` : '✅ Placed') : '🔒'}</b>`;
-        el.disabled = !n;
-        el.onclick = () => this.placeFromBag(key);
+        box.appendChild(el);
+        continue;
       }
+
+      if (this.tab === 'skins') {
+        const d = GROUND_SKINS[key];
+        const isAct = this.draft.ground === key;
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = `ed-item${isAct ? ' active' : ''}`;
+        el.innerHTML = `
+          <div class="ed-card-title">${d.name}</div>
+          <div class="ed-card-thumb"><img src="/assets/terrain/${key}.png" alt=""></div>
+          <span class="ed-card-grid">Island Skin</span>
+          <span class="ed-card-status ${isAct ? 'placed' : ''}">${isAct ? '✓ Active Skin' : '📦 Unlocked'}</span>
+          <span class="ed-card-buff">${d.emoji} Full Island Turf</span>
+          <span class="ed-card-cta ${isAct ? 'locate' : ''}">${isAct ? '✓ Applied' : '🎨 Apply'}</span>
+        `;
+        el.onclick = () => { this.pushUndo(); this.draft.ground = key; this.refresh(); };
+        box.appendChild(el);
+        continue;
+      }
+
+      const d = placeable(key);
+      if (!d) continue;
+      const n = bag[key] || 0;
+      const placedList = this.draft.buildings.filter((b) => b.type === key);
+      const placed = placedList.length;
+      const owned = n + placed;
+
+      if (this.unplacedOnly && n <= 0) continue;
+
+      const isPlacingThis = selectedBuilding?.type === key;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = `ed-item${isPlacingThis ? ' active' : ''}${!owned ? ' locked' : ''}`;
+
+      let statusHtml = '';
+      let ctaHtml = '';
+      if (isPlacingThis) {
+        statusHtml = `<span class="ed-card-status placing">🟡 Placing Now...</span>`;
+        ctaHtml = `<span class="ed-card-cta">📍 Moving</span>`;
+      } else if (n > 0) {
+        statusHtml = `<span class="ed-card-status">📦 In Bag: x${n}</span>`;
+        ctaHtml = `<span class="ed-card-cta">📍 Drag</span>`;
+      } else if (placed > 0) {
+        statusHtml = `<span class="ed-card-status placed">✓ Placed (${placed})</span>`;
+        ctaHtml = `<span class="ed-card-cta locate">🔍 Select</span>`;
+      } else {
+        statusHtml = `<span class="ed-card-status">🔒 Unowned</span>`;
+        ctaHtml = `<span class="ed-card-cta">🧭 Box 2</span>`;
+      }
+
+      el.innerHTML = `
+        <div class="ed-card-title">${d.name}</div>
+        <div class="ed-card-thumb"><img src="/assets/village/${d.sprite}.png" alt=""></div>
+        <span class="ed-card-grid">${d.w}×${d.h} Grid</span>
+        ${statusHtml}
+        <span class="ed-card-buff">${shortBuffLabel(key, d)}</span>
+        ${ctaHtml}
+      `;
+
+      el.onclick = () => {
+        if (n > 0) {
+          this.placeFromBag(key);
+        } else if (placed > 0) {
+          // Select & pan camera to the placed building on the island!
+          if (this.mode !== 'drag') this.setMode('drag');
+          const target = placedList[0];
+          this.selected = target.uid;
+          this.focusOnBuilding(target.uid);
+          this.refresh();
+        } else {
+          this.ui.toast?.(`🧭 Pull ${d.name} in Box 2: Royal Architect Gacha or Shard Shop!`);
+        }
+      };
       box.appendChild(el);
+    }
+
+    if (!box.children.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'margin:auto; font:800 12px var(--font); color:#6e4119; text-align:center; padding:12px;';
+      empty.textContent = '📦 All owned items in this category are already placed on your island!';
+      box.appendChild(empty);
     }
   }
 
@@ -756,6 +1136,16 @@ export class GridEditor {
       const b = this.draft.buildings[i];
       if (cellsOf(b).some(([x, y]) => x === gx && y === gy)) return b;
     }
+    return null;
+  }
+
+  /** Mobile thumb halo: if a building is already selected, allow grabbing within 1 tile of its footprint. */
+  selectedNearCell(gx, gy) {
+    if (!this.selected) return null;
+    const b = this.draft.buildings.find((q) => q.uid === this.selected);
+    if (!b) return null;
+    const f = footprint(b.type, b.rot);
+    if (gx >= b.x - 1 && gx <= b.x + f.w && gy >= b.y - 1 && gy <= b.y + f.h) return b;
     return null;
   }
 
@@ -780,6 +1170,7 @@ export class GridEditor {
     }
     if (!best) { b.x = Math.max(0, Math.min(isl.S - f.w, start.gx)); b.y = Math.max(0, Math.min(isl.S - f.h, start.gy)); }
     this.selected = b.uid;
+    this.focusOnBuilding(b.uid);
     this.refresh();
   }
 
@@ -789,13 +1180,18 @@ export class GridEditor {
     this.pushUndo();
     b.rot = (b.rot + 90) % 360;
     const f = footprint(b.type, b.rot), S = this.plaza.selfIsland.S;
-    b.x = Math.min(b.x, S - f.w); b.y = Math.min(b.y, S - f.h);
+    b.x = Math.max(0, Math.min(b.x, S - f.w));
+    b.y = Math.max(0, Math.min(b.y, S - f.h));
     this.refresh();
   }
 
   bagSelected() {
     const i = this.draft.buildings.findIndex((q) => q.uid === this.selected);
     if (i < 0) return;
+    if (this.draft.buildings[i].type === 'castle') {
+      this.ui.toast?.('🏰 Your Grand Starlight Castle stays anchored on the island!');
+      return;
+    }
     this.pushUndo();
     this.draft.buildings.splice(i, 1);
     this.selected = null;
@@ -823,11 +1219,17 @@ export class GridEditor {
     const cell = this.cellAt(hit);
     if (this.mode === 'paint') { this.strokeUndo = false; this.paintAt(cell); return !!cell; }
     if (!cell) return false;
-    const b = this.buildingAtCell(cell.gx, cell.gy);
-    if (!b) { if (this.selected) { this.selected = null; this.refresh(); } return false; }
+    const b = this.selectedNearCell(cell.gx, cell.gy) || this.buildingAtCell(cell.gx, cell.gy);
+    if (!b) {
+      if (!this.quickMode && this.selected) { this.selected = null; this.refresh(); }
+      return false;
+    }
     this.pushUndo();
     this.selected = b.uid;
-    this.drag = { uid: b.uid, offX: cell.gx - b.x, offY: cell.gy - b.y, moved: false };
+    const f = footprint(b.type, b.rot);
+    const offX = Math.max(0, Math.min(f.w - 1, cell.gx - b.x));
+    const offY = Math.max(0, Math.min(f.h - 1, cell.gy - b.y));
+    this.drag = { uid: b.uid, offX, offY, moved: false };
     this.refresh();
     return true;
   }
@@ -838,6 +1240,7 @@ export class GridEditor {
     const cell = this.cellAt(hit);
     if (!cell) return;
     const b = this.draft.buildings.find((q) => q.uid === this.drag.uid);
+    if (!b) return;
     const f = footprint(b.type, b.rot), S = this.plaza.selfIsland.S;
     const nx = Math.max(0, Math.min(S - f.w, cell.gx - this.drag.offX));
     const ny = Math.max(0, Math.min(S - f.h, cell.gy - this.drag.offY));
@@ -853,11 +1256,20 @@ export class GridEditor {
   async save() {
     const val = this.validation();
     if (!val.ok) { this.ui.toast?.(`✕ ${humanError(val.error)}`); return; }
-    this.$('ed-save').disabled = true;
+    if (this.$('ed-save')) this.$('ed-save').disabled = true;
+    if (this.$('qm-place')) this.$('qm-place').disabled = true;
     const r = await this.ui.onSave({ buildings: this.draft.buildings, tiles: this.draft.tiles, ground: this.draft.ground });
-    this.$('ed-save').disabled = false;
-    if (r?.ok) { this.active = false; this.selected = null; this.ui.onExit?.(true); }
-    else this.ui.toast?.(`✕ ${humanError(r?.error)}`);
+    if (this.$('ed-save')) this.$('ed-save').disabled = false;
+    if (this.$('qm-place')) this.$('qm-place').disabled = false;
+    if (r?.ok) {
+      this.active = false;
+      this.quickMode = false;
+      this.selected = null;
+      if (this.$('quick-move-ui')) this.$('quick-move-ui').hidden = true;
+      this.ui.onExit?.(true);
+    } else {
+      this.ui.toast?.(`✕ ${humanError(r?.error)}`);
+    }
   }
 }
 
@@ -875,3 +1287,4 @@ export function humanError(e) {
     not_enough_berries: 'not enough Star-Berries', bad_layout: 'invalid layout',
   })[e] || e || 'something went wrong';
 }
+

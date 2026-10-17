@@ -212,11 +212,19 @@ test('box 1 banners: bad banner refunds nothing taken, relics = accessories with
   assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'nope' }).error, 'bad_banner');
   assert.equal(p.diamonds, 100000);
   for (const r of [1, 2, 3]) assert.ok(BOX1_BANNERS.relics.pool[r].every((k) => ACCESSORIES[k]));
-  // Mythic accessories in catalog order with weights 2,1,2,1,2 (total 8): r < 2/8 → bunny ears, next 1/8 → monocle
+  // Mythic accessories in catalog order (weights: 2,1,2,1,2 + fourteen 1s = total 22): r < 2/22 → bunny ears, next 1/22 → monocle
   const pool3 = BOX1_BANNERS.relics.pool[3];
-  assert.deepEqual(pool3, ['hat_glowing_bunny', 'face_oracle_monocle', 'gloves_starlight_wand', 'boots_astral_striders', 'wings_golden_seraphim']);
-  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.24)).items[0].id, 'hat_glowing_bunny');
-  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.26)).items[0].id, 'face_oracle_monocle');
+  assert.deepEqual(pool3, [
+    'hat_glowing_bunny', 'face_oracle_monocle', 'gloves_starlight_wand', 'boots_astral_striders', 'wings_golden_seraphim',
+    'hat_seraphim_rose_crown', 'face_seraphim_veil_glasses', 'gloves_seraphim_silk_gauntlets', 'boots_seraphim_heels',
+    'wings_seraphim_rose_six', 'back_seraphim_nine_tails', 'back_seraphim_stardust_veil',
+    'hat_astral_eclipse_crown', 'face_astral_eclipse_visor', 'gloves_astral_eclipse_bracers', 'boots_astral_eclipse_sabaton',
+    'wings_astral_eclipse_six', 'back_astral_eclipse_comet_tail', 'back_astral_eclipse_regalia_cape',
+    'hat_aurora_spirit_hood', 'face_aurora_starlight_glasses', 'gloves_aurora_orb_mitts', 'boots_aurora_spirit_slippers',
+    'wings_aurora_crystal_wings', 'back_aurora_spirit_tail', 'back_aurora_starlit_mantle',
+  ]);
+  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.05)).items[0].id, 'hat_glowing_bunny');
+  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.10)).items[0].id, 'face_oracle_monocle');
   p.gacha.box1_pity = 30; p.gacha.box1_relics_pity = 0;
   const r = rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, fixed(0.99));
   assert.equal(r.banner, 'relics'); assert.equal(r.pity, 1); assert.equal(p.gacha.box1_pity, 30);
@@ -325,4 +333,34 @@ test('13 Season Mythic Outfits in Box 1 + Rate-Up Wish Selector + 9 Collectible 
   assert.equal(p.equipped.dice.refine, 1);
   assert.equal(p.cp, cpBefore + 805); // 700 * 1.15 = 805
 });
+
+test('pet multi-select idle pose rotation: unlocks by bond_lv, filters locked poses, and syncs equipped mirror', async () => {
+  const { unlockedSelectablePosesForLevel, normalizeActivePoses, addBondXp } = await import('../shared/rpg_rules.js');
+  assert.deepEqual(unlockedSelectablePosesForLevel(1), ['front']);
+  assert.deepEqual(unlockedSelectablePosesForLevel(5), ['front', 'sleep']);
+  assert.deepEqual(unlockedSelectablePosesForLevel(10), ['front', 'sleep', 'happy']);
+  assert.deepEqual(unlockedSelectablePosesForLevel(15), ['front', 'sleep', 'happy', 'cast']);
+  assert.deepEqual(unlockedSelectablePosesForLevel(25), ['front', 'sleep', 'happy', 'cast', 'flip']);
+
+  // Default when unset = all unlocked poses for that level
+  assert.deepEqual(normalizeActivePoses(undefined, 10), ['front', 'sleep', 'happy']);
+  // Filters out locked poses and preserves canonical order
+  assert.deepEqual(normalizeActivePoses(['sleep', 'flip'], 5), ['sleep']);
+  // Guarantees at least 1 unlocked pose if selection becomes empty
+  assert.deepEqual(normalizeActivePoses([], 5), ['front', 'sleep']);
+
+  const p = fresh('nook');
+  const pet = p.pets[0];
+  pet.bond_lv = 10;
+  const res1 = rpg.petSetPoses(p, { petUid: pet.uid, poses: ['sleep', 'happy'] });
+  assert.equal(res1.ok, true);
+  assert.deepEqual(res1.active_poses, ['sleep', 'happy']);
+  assert.deepEqual(p.equipped.pet.active_poses, ['sleep', 'happy']);
+
+  // Leveling up across a pose milestone (Lv.10 -> Lv.15) auto-adds newly unlocked 'cast' pose
+  addBondXp(pet, 5000);
+  assert.ok(pet.bond_lv >= 15);
+  assert.ok(pet.active_poses.includes('sleep') && pet.active_poses.includes('happy') && pet.active_poses.includes('cast'));
+});
+
 

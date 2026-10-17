@@ -2,10 +2,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MONO, PVP_CAPS, TILES, ZONE_TILES, PROPERTY_IDX, tileCell, isCorner, rentFor, netWorth, upgradeCost, takeoverCost,
-  matchMods, gearStats, podiumRewards, investedValue, ZONES, THEMES, affinityFor,
+  MONO, CHAOS, PVP_CAPS, TILES, ZONE_TILES, PROPERTY_IDX, tileCell, isCorner, rentFor, netWorth, upgradeCost, takeoverCost,
+  matchMods, gearStats, podiumRewards, investedValue, ZONES, THEMES, affinityFor, petMatchStats,
 } from '../shared/monopoly_rules.js';
-import { createMatch, roll, decide, ultimate, drainEvents, legalActions, ranking } from '../shared/monopoly_engine.js';
+import { createMatch, roll, decide, ultimate, petUltimate, petArm, setPetAuto, drainEvents, legalActions, ranking } from '../shared/monopoly_engine.js';
 import { botAction } from '../shared/monopoly_bots.js';
 import { SEASON_SKILLS } from '../shared/season_skills.js';
 
@@ -405,4 +405,175 @@ test('ranking puts bankrupt players last, latest bankruptcy ranked higher', () =
   assert.deepEqual(ranking(m).map((r) => r.seat).slice(2), [3, 1]);
   assert.ok(types(drainEvents(m)).includes('turn'));
 });
+
+test('Pet Costume Soul-Link: petUlt charges at bond-scaled speed and NEVER auto-casts at turn start (waits for its owner)', () => {
+  const m = newMatch(2, {
+    0: {
+      outfit: 's11_zeus_olympus',
+      outfitRarity: 3,
+      pet: 'pet_nyx',
+      petCostume: 's1_naga_sovereign',
+      petCostumeRarity: 3,
+    },
+  });
+  const p0 = m.players[0];
+  assert.equal(p0.petCostume, 's1_naga_sovereign');
+  assert.equal(p0.petUlt, MONO.PET_START_MIN, 'bond Lv1 starting gauge');
+  p0.petUlt = 0;
+
+  // Seat 0 rolls and ends turn (+10 owner ult -> +5.5 petUlt at bond Lv1 0.55x)
+  rollExactly(m, 2);
+  endTurnOf(m);
+  assert.equal(p0.ult, MONO.ULT_PER_TURN);
+  assert.equal(p0.petUlt, MONO.ULT_PER_TURN * MONO.PET_RATE_MIN);
+
+  p0.petUlt = 100;
+  drainEvents(m);
+  rollExactly(m, 1);
+  endTurnOf(m);
+  const evs = drainEvents(m);
+  assert.ok(!evs.some((e) => e.t === 'ult' && e.byPet), 'no pet cast at the start of the owner turn');
+  assert.equal(p0.petUlt, 100, 'gauge is held for a Soul-Link Combo');
+});
+
+test('Soul-Link Combo: casting owner ultimate when pet gauge is full fires pet_combo immediately with +15% potency', () => {
+  const m = newMatch(2, {
+    0: {
+      outfit: 's11_zeus_olympus',
+      outfitRarity: 3,
+      pet: 'pet_nyx',
+      petBondLv: 1,
+      petCostume: 's1_naga_sovereign',
+      petCostumeRarity: 3,
+    },
+  });
+  const p0 = m.players[0];
+  p0.ult = 100;
+  p0.petUlt = 100;
+  drainEvents(m);
+  const res = ultimate(m, 0);
+  assert.equal(res.ok, true);
+  assert.equal(res.combo, true, 'owner ultimate triggered a Soul-Link Combo');
+  const evs = drainEvents(m);
+  const ultEv = evs.find((e) => e.t === 'ult' && e.seat === 0 && !e.byPet);
+  const comboEv = evs.find((e) => e.t === 'pet_combo' && e.seat === 0);
+  assert.ok(ultEv?.combo, 'ult event marked combo=true');
+  assert.ok(comboEv, 'pet_combo event emitted');
+  assert.equal(comboEv.bonus, MONO.PET_COMBO_BONUS);
+  assert.equal(comboEv.potency, Math.round(MONO.PET_POT_MIN * (1 + MONO.PET_COMBO_BONUS) * 10000) / 10000);
+  assert.equal(p0.petCasts, 1);
+});
+
+test('Pet Auto vs Manual & Arm: Manual holds pet unless armed or solo-cast; Auto solo-casts after 2 held turns', () => {
+  const m = newMatch(2, {
+    0: { outfit: 'newbie_outfit', pet: 'pet_ragdoll', petBondLv: 10 },
+  });
+  const p0 = m.players[0];
+  setPetAuto(m, 0, false);
+  assert.equal(p0.petAuto, false);
+  p0.ult = 100;
+  p0.petUlt = 100;
+  // In Manual mode without arming, owner ult does NOT combo
+  const r1 = ultimate(m, 0);
+  assert.equal(r1.combo, false);
+  assert.equal(p0.petUlt, 100);
+  // Arming in Manual mode causes the next owner ult to combo
+  petArm(m, 0, true);
+  assert.equal(p0.petArmed, true);
+  // Or solo-casting on owner turn before rolling works
+  const soloRes = petUltimate(m, 0);
+  assert.equal(soloRes.ok, true);
+  assert.equal(p0.petCasts, 1);
+  assert.ok(drainEvents(m).some((e) => e.t === 'ult' && e.byPet && e.solo));
+});
+
+test('Pet Bond Lv.1 -> Max scaling & Public table potency compression', () => {
+  const lv1 = petMatchStats({ bond: 1, publicTable: false });
+  assert.equal(lv1.rate, MONO.PET_RATE_MIN);
+  assert.equal(lv1.potency, MONO.PET_POT_MIN);
+  assert.equal(lv1.start, MONO.PET_START_MIN);
+
+  const maxLv = petMatchStats({ bond: MONO.PET_BOND_MAX, publicTable: false });
+  assert.equal(maxLv.rate, MONO.PET_RATE_MAX);
+  assert.equal(maxLv.potency, MONO.PET_POT_MAX);
+  assert.equal(maxLv.start, MONO.PET_START_MAX);
+
+  const pubLv1 = petMatchStats({ bond: 1, publicTable: true });
+  const pubMax = petMatchStats({ bond: MONO.PET_BOND_MAX, publicTable: true });
+  assert.equal(pubLv1.potency, 0.40);
+  assert.equal(pubMax.potency, 0.60);
+});
+
+test('Chaos Party mode: 10 rounds, max pets (1.0x/1.0/50% start), +30% combo, and chaos_event each round', () => {
+  const m = createMatch({
+    mode: 'chaos',
+    players: [
+      P(0, { isBot: true, botDiff: 'hard', outfit: 'sm_eclipse_dragon', outfitRarity: 3, pet: 'pet_nyx', petBondLv: 1 }),
+      P(1, { isBot: true, botDiff: 'hard', outfit: 'sm_aurora_empress', outfitRarity: 3, pet: 'pet_ragdoll', petBondLv: 1 }),
+    ],
+    seed: 777,
+  });
+  assert.equal(m.chaos, true);
+  assert.equal(m.maxRounds, CHAOS.MAX_ROUNDS);
+  assert.equal(m.players[0].petUlt, CHAOS.PET_START);
+  assert.equal(m.players[0].petPotency, CHAOS.PET_POT);
+  assert.equal(m.players[0].petCap, null, 'Chaos mode has no pet cast cap');
+  const startEvs = drainEvents(m);
+  assert.ok(startEvs.some((e) => e.t === 'chaos_event'), 'round 1 emits a chaos_event');
+  playOut(m);
+  assert.equal(m.ended, true);
+});
+
+test('underdog boost: applies when far behind, not when not last, not when gap small', () => {
+  // Case 1: far behind (< 0.6 * leader net worth) and strictly last -> boost applies (+50% salary = 600)
+  const m1 = newMatch(3);
+  m1.players[1].cash = 5000;
+  m1.players[2].cash = 3000;
+  m1.players[0].cash = 1000;
+  m1.players[0].pos = 22;
+  rollExactly(m1, 3);
+  const ev1 = drainEvents(m1).find((e) => e.t === 'salary' && e.seat === 0);
+  assert.equal(ev1.underdog, true);
+  assert.equal(ev1.bonus, 200);
+  assert.equal(ev1.amount, 600);
+  assert.equal(m1.players[0].cash, 1000 + 600);
+
+  // Case 2: not last (seat 0 has 2500, seat 1 has 5000, seat 2 has 1000) -> boost does NOT apply
+  const m2 = newMatch(3);
+  m2.players[1].cash = 5000;
+  m2.players[2].cash = 1000;
+  m2.players[0].cash = 2500;
+  m2.players[0].pos = 22;
+  rollExactly(m2, 3);
+  const ev2 = drainEvents(m2).find((e) => e.t === 'salary' && e.seat === 0);
+  assert.equal(ev2.underdog, undefined);
+  assert.equal(ev2.amount, 400);
+
+  // Case 3: strictly last, but gap is small (>= 0.6 * leader net worth) -> boost does NOT apply
+  const m3 = newMatch(3);
+  m3.players[1].cash = 3000;
+  m3.players[2].cash = 2500;
+  m3.players[0].cash = 2000;
+  m3.players[0].pos = 22;
+  rollExactly(m3, 3);
+  const ev3 = drainEvents(m3).find((e) => e.t === 'salary' && e.seat === 0);
+  assert.equal(ev3.underdog, undefined);
+  assert.equal(ev3.amount, 400);
+});
+
+test('highlights: bigRent is recorded after a rent payment', () => {
+  const m = newMatch(2);
+  own(m, 1, 1, 0); // seat 1 owns Shibuya (tile 1)
+  const rent = rentFor(m, 1);
+  m.players[0].pos = 0;
+  rollExactly(m, 1); // seat 0 lands on tile 1 and pays rent
+  assert.ok(m.highlights.bigRent, 'highlights.bigRent is set');
+  assert.equal(m.highlights.bigRent.seat, 0);
+  assert.equal(m.highlights.bigRent.owner, 1);
+  assert.equal(m.highlights.bigRent.amount, rent);
+  assert.equal(m.highlights.bigRent.tile, 1);
+  assert.equal(m.highlights.rentEarned[1], rent);
+});
+
+
 

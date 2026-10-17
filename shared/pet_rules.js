@@ -83,9 +83,42 @@ export function unlockedPosesForLevel(lv = 1) {
   return poses;
 }
 
+export const SELECTABLE_PET_POSES = Object.freeze(['front', 'sleep', 'happy', 'cast', 'flip']);
+
+export function unlockedSelectablePosesForLevel(lv = 1) {
+  const l = Number(lv) || 1;
+  const out = ['front'];
+  if (l >= 5) out.push('sleep');
+  if (l >= 10) out.push('happy');
+  if (l >= 15) out.push('cast');
+  if (l >= 25) out.push('flip');
+  return out;
+}
+
+export function normalizeActivePoses(activePoses, lv = 1) {
+  const unlocked = unlockedSelectablePosesForLevel(lv);
+  if (Array.isArray(activePoses) && activePoses.length > 0) {
+    const valid = unlocked.filter((p) => activePoses.includes(p));
+    if (valid.length > 0) return valid;
+  }
+  return unlocked;
+}
+
 export function starsForLevel(lv = 1) {
   const l = Number(lv) || 1;
   return l >= 20 ? 3 : l >= 10 ? 2 : 1;
+}
+
+export function minLevelForStars(stars = 1) {
+  const s = Number(stars) || 1;
+  return s >= 3 ? 20 : s >= 2 ? 10 : 1;
+}
+
+export function openSlotCountForPet(pet) {
+  if (!pet) return 1;
+  const stars = Number(pet.stars) || starsForLevel(pet.bond_lv || pet.level || 1);
+  const bondLv = Number(pet.bond_lv || pet.level) || 1;
+  return (stars >= 2 || bondLv >= 10) ? MAX_TRAIT_SLOTS : 1;
 }
 
 export const STAT_TIERS = Object.freeze(['common', 'rare', 'epic', 'mythic']);
@@ -275,10 +308,12 @@ export function createPetRecord(petId, {
   initialSlot0 = null,
 } = {}) {
   const clampedStars = Math.max(1, Math.min(PET2.MAX_STARS, Math.floor(Number(stars) || 1)));
+  const minLv = minLevelForStars(clampedStars);
+  const openSlots = Math.min(clampedStars, MAX_TRAIT_SLOTS);
   const slots = [null, null, null];
   const usedPerks = [];
 
-  for (let i = 0; i < clampedStars; i++) {
+  for (let i = 0; i < openSlots; i++) {
     if (i === 0 && initialSlot0) {
       slots[0] = normalizeSlot(initialSlot0);
     } else {
@@ -298,9 +333,9 @@ export function createPetRecord(petId, {
     spent_essence: spentEssenceForStars(clampedStars),
     visual_tier: clampedStars,
     nickname: '',
-    bond_lv: 1,
+    bond_lv: minLv,
     bond_xp: 0,
-    level: 1,
+    level: minLv,
     mood: 100,
     hunger: HUNGER.DEFAULT,
     costume_id: null,
@@ -334,7 +369,8 @@ export function bondXpToNext(bondLv = 1) {
 
 export function addBondXp(pet, amount = 0) {
   if (!pet || amount <= 0) return { leveledUp: false, bond_lv: pet?.bond_lv || 1 };
-  pet.bond_lv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Number(pet.bond_lv) || 1));
+  const prevLv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Number(pet.bond_lv) || 1));
+  pet.bond_lv = prevLv;
   pet.bond_xp = Math.max(0, (Number(pet.bond_xp) || 0) + amount);
   let leveledUp = false;
   while (pet.bond_lv < PET2.BOND_MAX_LV) {
@@ -349,17 +385,24 @@ export function addBondXp(pet, amount = 0) {
   }
   if (leveledUp) {
     pet.level = pet.bond_lv;
+    if (Array.isArray(pet.active_poses)) {
+      const prevUnlocked = new Set(unlockedSelectablePosesForLevel(prevLv));
+      const nextUnlocked = unlockedSelectablePosesForLevel(pet.bond_lv);
+      const newlyUnlocked = nextUnlocked.filter((p) => !prevUnlocked.has(p));
+      pet.active_poses = normalizeActivePoses([...pet.active_poses, ...newlyUnlocked], pet.bond_lv);
+    }
     const targetStars = starsForLevel(pet.bond_lv);
     const curStars = pet.stars || 1;
     if (targetStars > curStars) {
       pet.stars = targetStars;
       pet.visual_tier = targetStars;
-      if (!Array.isArray(pet.slots)) pet.slots = [null, null, null];
-      for (let i = curStars; i < targetStars; i++) {
-        if (!pet.slots[i]) {
-          const usedPerks = pet.slots.filter((s) => s && PERK_LINES[s.stat]).map((s) => s.stat);
-          pet.slots[i] = rollSlot(1, Math.random, { excludePerks: usedPerks });
-        }
+    }
+    const openSlots = openSlotCountForPet(pet);
+    if (!Array.isArray(pet.slots)) pet.slots = [null, null, null];
+    for (let i = 0; i < openSlots; i++) {
+      if (!pet.slots[i]) {
+        const usedPerks = pet.slots.filter((s) => s && PERK_LINES[s.stat]).map((s) => s.stat);
+        pet.slots[i] = rollSlot(1, Math.random, { excludePerks: usedPerks });
       }
     }
   }
@@ -415,7 +458,7 @@ export function petStatBonus(pet) {
   if (!pet) return out;
 
   if (Array.isArray(pet.slots)) {
-    const openCount = Math.max(1, Math.min(PET2.MAX_STARS, Number(pet.stars) || 1));
+    const openCount = openSlotCountForPet(pet);
     for (let i = 0; i < openCount; i++) {
       const s = pet.slots[i];
       if (!s || !s.stat) continue;
@@ -452,12 +495,82 @@ export function petStatBonus(pet) {
 export function computePetPassives(pet) {
   const b = petStatBonus(pet);
   return {
-    fortune: Math.round((b.goldPct || 0) * 100),
-    swiftness: Math.round((b.speedPct || 0) * 100),
-    power: Math.round((b.critPct || 0) * 100),
-    luck: Math.round((b.luckPct || 0) * 100),
+    fortune: Math.round(((b.goldPct || 0) + (b.doubleJackpotPct || 0)) * 100),
+    swiftness: Math.round(((b.speedPct || 0) + (b.goSalaryPct || 0) + (b.machWingPct || 0)) * 100),
+    power: Math.round(((b.critPct || 0) + (b.ultChargePct || 0)) * 100),
+    luck: Math.round(((b.luckPct || 0) + (b.rentCharmPct || 0) + (b.buildRebatePct || 0)) * 100),
     ...b,
   };
+}
+
+/**
+ * Returns the Soul-Link Ultimate bonus provided by a single Companion Trait Slot:
+ * - kind: 'charge' (⚡ Charge %) | 'echo' (💥 Echo %) | 'start' (🔋 Start %)
+ * - pct: integer percentage bonus (e.g. 16 for +16%)
+ * - label: human-readable badge (e.g. "+16% ⚡ Charge")
+ */
+export function slotSoulLinkBonus(slot) {
+  if (!slot || !slot.stat) return null;
+  const def = ALL_SLOT_LINES[slot.stat];
+  if (!def) return null;
+  const tier = STAT_TIERS.includes(slot.tier) ? slot.tier : 'common';
+  const v = Number(slot.value ?? def.values[tier] ?? def.values.common) || 0;
+  switch (slot.stat) {
+    case 'swiftness':
+    case 'ult_charge': {
+      const pct = Math.round(v * 100);
+      return { kind: 'charge', rateBonus: v, pct, label: `+${pct}% ⚡ Charge` };
+    }
+    case 'cozy_purr': {
+      const rateBonus = Math.round(v * 50) / 100;
+      const pct = Math.round(rateBonus * 100);
+      return { kind: 'charge', rateBonus, pct, label: `+${pct}% ⚡ Charge` };
+    }
+    case 'power':
+    case 'fortune':
+    case 'double_jackpot':
+    case 'rent_charm': {
+      const pct = Math.round(v * 100);
+      return { kind: 'echo', potencyBonus: v, pct, label: `+${pct}% 💥 Echo` };
+    }
+    case 'berry_gourmand': {
+      const potencyBonus = tier === 'mythic' ? 0.12 : tier === 'epic' ? 0.09 : tier === 'rare' ? 0.06 : 0.04;
+      const pct = Math.round(potencyBonus * 100);
+      return { kind: 'echo', potencyBonus, pct, label: `+${pct}% 💥 Echo` };
+    }
+    case 'mach_wing':
+    case 'luck':
+    case 'treasure_sniffer': {
+      const pct = Math.round(v * 100);
+      return { kind: 'start', startBonus: pct, pct, label: `+${pct}% 🔋 Start` };
+    }
+    case 'magnet_paw': {
+      const pct = Math.round(v * 25);
+      return { kind: 'start', startBonus: pct, pct, label: `+${pct}% 🔋 Start` };
+    }
+    default:
+      return null;
+  }
+}
+
+export function computePetSoulLinkBonuses(pet) {
+  const out = { rateBonus: 0, potencyBonus: 0, startBonus: 0, ratePct: 0, potencyPct: 0, startPct: 0 };
+  if (!pet || !Array.isArray(pet.slots)) return out;
+  const openSlots = openSlotCountForPet(pet);
+  for (let i = 0; i < openSlots; i++) {
+    const b = slotSoulLinkBonus(pet.slots[i]);
+    if (!b) continue;
+    if (b.rateBonus) out.rateBonus += b.rateBonus;
+    if (b.potencyBonus) out.potencyBonus += b.potencyBonus;
+    if (b.startBonus) out.startBonus += b.startBonus;
+  }
+  out.rateBonus = +out.rateBonus.toFixed(4);
+  out.potencyBonus = +out.potencyBonus.toFixed(4);
+  out.startBonus = Math.round(out.startBonus);
+  out.ratePct = Math.round(out.rateBonus * 100);
+  out.potencyPct = Math.round(out.potencyBonus * 100);
+  out.startPct = out.startBonus;
+  return out;
 }
 
 const LEGACY_STAT_BY_OLD_ID = {
@@ -507,10 +620,13 @@ export function migratePetsState(oldPets = {}, equippedPet = null, lineage = 'bk
 
     // Already V2 record?
     if (Array.isArray(rec.slots)) {
-      const stars = Math.max(1, Math.min(PET2.MAX_STARS, Number(rec.stars) || 1));
+      const rawStars = Math.max(1, Math.min(PET2.MAX_STARS, Number(rec.stars) || 1));
+      const bondLv = Math.max(1, Math.min(PET2.BOND_MAX_LV, Math.max(Number(rec.bond_lv) || 1, minLevelForStars(rawStars))));
+      const stars = Math.max(rawStars, starsForLevel(bondLv));
+      const openSlots = Math.min(stars, MAX_TRAIT_SLOTS);
       const slots = [null, null, null];
       const usedPerks = [];
-      for (let i = 0; i < stars; i++) {
+      for (let i = 0; i < openSlots; i++) {
         const norm = normalizeSlot(rec.slots[i]);
         if (norm) {
           slots[i] = norm;
@@ -520,13 +636,21 @@ export function migratePetsState(oldPets = {}, equippedPet = null, lineage = 'bk
           if (PERK_LINES[slots[i].stat]) usedPerks.push(slots[i].stat);
         }
       }
+      const maxLocks = Math.max(0, openSlots - 1);
+      let seenLocks = 0;
+      for (let i = 0; i < openSlots; i++) {
+        if (slots[i]?.locked) {
+          if (seenLocks < maxLocks) seenLocks++;
+          else slots[i].locked = false;
+        }
+      }
       newPets[canonicalId] = {
         stars,
         essence: Math.max(0, Number(rec.essence) || 0),
         spent_essence: Math.max(0, Number(rec.spent_essence ?? spentEssenceForStars(stars)) || 0),
         visual_tier: Math.max(1, Math.min(stars, Number(rec.visual_tier) || stars)),
         nickname: sanitizeNickname(rec.nickname || ''),
-        bond_lv: Math.max(1, Math.min(PET2.BOND_MAX_LV, Number(rec.bond_lv) || 1)),
+        bond_lv: bondLv,
         bond_xp: Math.max(0, Number(rec.bond_xp) || 0),
         hunger: rec.hunger != null ? Math.max(0, Math.min(HUNGER.MAX, Number(rec.hunger))) : HUNGER.DEFAULT,
         costume_id: rec.costume_id || null,
@@ -560,11 +684,13 @@ export function migratePetsState(oldPets = {}, equippedPet = null, lineage = 'bk
     } else {
       // Merge duplicate legacy family clone into existing canonical pet
       if (oldStars > existing.stars) {
-        for (let s = existing.stars; s < oldStars; s++) {
+        const openSlots = Math.min(oldStars, MAX_TRAIT_SLOTS);
+        for (let s = Math.min(existing.stars, MAX_TRAIT_SLOTS); s < openSlots; s++) {
           const usedPerks = existing.slots.filter((x) => x && PERK_LINES[x.stat]).map((x) => x.stat);
           existing.slots[s] = rollSlot(nestLv, Math.random, { excludePerks: usedPerks });
         }
         existing.stars = oldStars;
+        existing.bond_lv = Math.max(existing.bond_lv || 1, minLevelForStars(oldStars));
         existing.spent_essence = spentEssenceForStars(oldStars);
         existing.visual_tier = oldStars;
       }

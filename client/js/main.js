@@ -8,8 +8,12 @@ import { env, initGate, registerServiceWorker } from './pwa_gate.js';
 import { GridEditor, humanError, resolveMood } from './village_plaza.js';
 import { DockFishing } from './minigames/dock_fishing.js';
 import { RpgUI } from './gacha_forge_ui.js';
+import { renderOutfitThumbLayers } from './ui_components.js';
 import { MonopolyBridge } from './monopoly_bridge.js';
 import { NetRoom } from './minigames/monopoly_25d/room_client.js';
+import { TownHallScene, getTownHallConfig } from './town_hall_scene.js';
+import { TownHallRadar } from './town_hall_radar.js';
+import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { expToNext } from '/shared/progression.js';
 import {
   CORE, WONDERS, DECOR, MOODS, EXPANSION_TIERS, BLUEPRINT_CARDS, MAX_CORE_LV, MAX_CASTLE_LV, CORE_LANDMARKS,
@@ -19,6 +23,7 @@ import { harvestPreview, storageCapHrs, comfortBonusPct, islandOf, findPlaced, u
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => (n >= 100000 ? `${(n / 1000).toFixed(1)}K` : Number(n || 0).toLocaleString('en-US'));
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MOOD_ICON = { auto: '🔄', sunny: '☀️', sakura: '🌸', sunset: '🌅', night: '🌙' };
 const MOOD_NAME = { auto: 'Auto', sunny: 'Sunny', sakura: 'Sakura', sunset: 'Sunset', night: 'Night' };
 
@@ -28,6 +33,12 @@ let editor = null;
 let fishing = null;
 let rpg = null;
 let mono = null;            // Step 4: Table Hub + Sky Monopoly bridge (rebuilt with every socket session)
+let townHallScene = null;
+let radar = null;
+let hallOfFameUI = null;
+let casinoUI = null;
+let voiceClient = null;
+let cheerTimer = null;
 let selectedLineage = 'bkk';
 let selectedHairColor = 'chestnut';
 let toastTimer = 0;
@@ -52,7 +63,22 @@ function renderHud(p) {
   $('hud-diamonds').textContent = fmt(p.diamonds);
   const need = expToNext(p.level);
   $('hud-exp').style.width = `${Number.isFinite(need) ? Math.min(100, (p.exp / need) * 100) : 100}%`;
-  $('hud-avatar').style.backgroundImage = `url(/assets/chibi/${p.lineage}_base_front.png)`;
+  const eqOut = p.equipped?.outfit?.id || (typeof p.equipped?.outfit === 'string' ? p.equipped.outfit : null);
+  const hudAvaEl = $('hud-avatar');
+  if (hudAvaEl) {
+    hudAvaEl.style.backgroundImage = 'none';
+    hudAvaEl.innerHTML = renderOutfitThumbLayers(eqOut || 'newbie_outfit', {
+      lineage: p.lineage,
+      appearance: p.appearance,
+      headCrop: true,
+    });
+  }
+  const couplePill = $('hud-couple-pill');
+  if (couplePill) {
+    couplePill.innerHTML = S.coupled || p.partner_id
+      ? '💚 Sky Kingdom Online • <b>+15% Couple Yield</b>'
+      : '💚 Sky Kingdom Online • <b>+15% Couple Yield</b>';
+  }
   fishing?.setProfile(p);
   syncSelfVillage();
   tickVillage();
@@ -61,7 +87,7 @@ function renderHud(p) {
 /** Keep the renderer's copy of MY island = my authoritative profile.village (full data, incl. bag). */
 function syncSelfVillage() {
   const p = S.profile;
-  if (!world?.layout || !p?.village || editor?.active) return;
+  if (!world?.layout || !p?.village || editor?.active || world.layout?.kind === 'townhall' || !Array.isArray(world.layout?.islands)) return;
   const isl = islandOf(world.layout, p.id);
   if (!isl) return;
   const v = p.village;
@@ -98,7 +124,7 @@ function request(type, payload = {}) {
 // ------------------------------------------------------------------ village HUD tick (1 Hz)
 function tickVillage() {
   const p = S.profile;
-  if (!p?.village || !world?.layout) return;
+  if (!p?.village || !world?.layout || world.layout?.kind === 'townhall' || !Array.isArray(world.layout?.islands)) return;
   const pv = harvestPreview(p, serverNow(), { coupled: S.coupled });
   const btn = $('act-harvest');
   const any = pv.gold + pv.berries + pv.diamonds > 0;
@@ -136,9 +162,9 @@ async function harvestAll() {
   world.plaza.setBubbles(null);
 }
 
-async function cycleMood() {
-  const cur = S.profile.village.mood || 'auto';
-  const next = MOODS[(MOODS.indexOf(cur) + 1) % MOODS.length];
+async function setMoodTo(next) {
+  if (!MOODS.includes(next)) return;
+  if (S.profile?.village) S.profile.village.mood = next;
   applyMood(next);
   const r = await request('village_set_mood', { mood: next });
   if (!r.ok) toast(humanError(r.error));
@@ -162,22 +188,117 @@ async function tossCoin(owner) {
 }
 
 // ------------------------------------------------------------------ modals
-function openModal(title, body, actions = []) {
+function openModal(title, body, actions = [], onMount = null) {
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
   const box = $('modal-actions');
   box.innerHTML = '';
   for (const a of actions) {
     const b = document.createElement('button');
-    b.className = 'btn-gold small';
+    b.className = `btn-gold small${a.cls ? ` ${a.cls}` : ''}`;
     b.innerHTML = a.label;
     b.disabled = !!a.disabled;
     b.onclick = async () => { b.disabled = true; const keep = await a.onClick?.(); if (!keep) closeModal(); else b.disabled = false; };
     box.appendChild(b);
   }
   $('modal').hidden = false;
+  onMount?.($('modal-body'));
 }
 function closeModal() { $('modal').hidden = true; }
+
+/** Mockup 03: VIP Wonder Card & Village Atmosphere Selector */
+function wonderMoodModal(focusWonderType = null) {
+  const p = S.profile;
+  if (!p?.village) return;
+  const v = p.village;
+  const curMood = v.mood || 'auto';
+  const placedWonders = v.buildings.filter((b) => WONDERS[b.type]);
+  const hasFountain = v.buildings.some((b) => b.type === 'wnd_fountain');
+  const hasOnsen = v.buildings.find((b) => b.type === 'wnd_onsen');
+  const blacksmithActive = (p.buffs?.blacksmith?.until || 0) > serverNow();
+
+  const wonderRowsHtml = placedWonders.length
+    ? placedWonders.map((b) => {
+      const wd = WONDERS[b.type];
+      const stars = v.wonders?.[b.type]?.stars || 1;
+      const hi = focusWonderType === b.type ? ' style="border-color:#e09b22;background:#fff8df;"' : '';
+      return `<div class="wnd-buff-row"${hi}>
+        <img src="/assets/village/${wd.sprite}.png" alt="" />
+        <div>
+          <div style="font-weight:900;color:#3a2415;">${wd.name} <span style="color:#d68008;">${'★'.repeat(stars)}</span></div>
+          <div style="color:#6e4119;font-size:10px;">${wd.effect}</div>
+        </div>
+      </div>`;
+    }).join('')
+    : `<div class="wnd-buff-row"><div><b>No VIP Wonders placed yet</b><div style="font-size:10px;color:#6e4119;">Open Grid Editor or Box 2 Architect Gacha to place Wonders!</div></div></div>`;
+
+  const body = `
+    <div class="wnd-hub-grid">
+      <div class="wnd-fountain-box">
+        <div style="font-weight:900;font-size:11px;color:#4a2a10;">⛲ Daily Fountain Wish</div>
+        <img src="/assets/village/wnd_fountain.png" alt="Fountain" />
+        <div style="font-size:10px;color:#6e4119;line-height:1.2;">Toss <b>100 🪙</b> daily for <b>+10–50 💎</b> or <b>1× Ticket 🎟️</b>!</div>
+        <button type="button" id="wnd-modal-toss" class="btn-gold small" style="padding:6px 8px;font-size:11px;margin-top:2px;" ${hasFountain ? '' : 'disabled'}>
+          ${hasFountain ? '🪙 Toss 100 Gold!' : '📍 Place Fountain First'}
+        </button>
+      </div>
+      <div class="wnd-buffs-box">
+        <div style="font-weight:900;font-size:11px;color:#4a2a10;">✨ Active Island Wonders (${placedWonders.length})</div>
+        ${wonderRowsHtml}
+        ${hasOnsen ? `<button type="button" id="wnd-modal-onsen" class="btn-gold small emerald" style="padding:5px 8px;font-size:10.5px;margin-top:2px;">
+          ♨️ ${blacksmithActive ? 'Hot Spring Buff Active! ✨' : 'Drop Chibi in Onsen (+Forge%)'}
+        </button>` : ''}
+      </div>
+    </div>
+    <div class="mood-strip-box">
+      <div class="mood-strip-lbl">🎨 Village Mood &amp; Sky Lighting</div>
+      <div class="mood-pills-row">
+        ${MOODS.map((m) => `
+          <button type="button" class="mood-pill-btn${curMood === m ? ' active' : ''}" data-pick-mood="${m}">
+            <span class="m-ico">${MOOD_ICON[m]}</span>
+            <span>${MOOD_NAME[m]}${curMood === m ? ' ✓' : ''}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  openModal('⛲✨ VIP Wonders & Village Mood', body, [
+    { label: '🏡 Edit Grid / Place Wonders', cls: 'secondary', onClick: () => { enterEdit(); } },
+    { label: '✓ Done', onClick: () => {} },
+  ], (root) => {
+    const tossBtn = root.querySelector('#wnd-modal-toss');
+    if (tossBtn && hasFountain) {
+      tossBtn.onclick = async () => {
+        tossBtn.disabled = true;
+        await tossCoin(p.id);
+      };
+    }
+    const onsenBtn = root.querySelector('#wnd-modal-onsen');
+    if (onsenBtn && hasOnsen) {
+      onsenBtn.onclick = () => {
+        closeModal();
+        const hit = findPlaced(world.layout, hasOnsen.uid, world.local?.x || 0, world.local?.z || 0);
+        if (hit && world.local) {
+          world.setLocalPosition(hit.center.x, hit.center.z + 0.35);
+          net.send({ type: 'chibi_pickup_drop', targetId: p.id, x: +hit.center.x.toFixed(3), z: +(hit.center.z + 0.35).toFixed(3), propId: hasOnsen.uid });
+        }
+      };
+    }
+    root.querySelectorAll('[data-pick-mood]').forEach((btn) => {
+      btn.onclick = async () => {
+        const m = btn.dataset.pickMood;
+        await setMoodTo(m);
+        root.querySelectorAll('[data-pick-mood]').forEach((b) => {
+          const act = b.dataset.pickMood === m;
+          b.classList.toggle('active', act);
+          const spans = b.querySelectorAll('span');
+          if (spans[1]) spans[1].textContent = `${MOOD_NAME[b.dataset.pickMood]}${act ? ' ✓' : ''}`;
+        });
+      };
+    });
+  });
+}
 
 function buildingModal(pick) {
   const p = S.profile;
@@ -190,46 +311,97 @@ function buildingModal(pick) {
   const rows = [];
   const actions = [];
   let title = `${d.emoji} ${d.name}`;
+  let badgeTag = `${d.w}×${d.h} Grid`;
+  let levelTag = '';
+  let progressBarHtml = '';
+
   if (b.type === 'castle') {
     const next = v.castle_lv + 1;
     const sum = CORE_LANDMARKS.reduce((s, k) => s + (v.levels?.[k] || 1), 0);
     const caps = buildingCaps(v.castle_lv);
-    title += ` • Lv. ${v.castle_lv}`;
-    rows.push(['All-Building Yield', `+${v.castle_lv * 2}%`], ['Comfort', `🌸 ${fmt(v.comfort)} (+${comfortBonusPct(v.comfort)}%)`],
-      ['Building cap', `${caps.core} landmarks • ${caps.wonders} Wonders`], ['Island', `${v.grid_size}×${v.grid_size}`]);
+    levelTag = `👑 Lv. ${v.castle_lv}`;
+    rows.push(['All-Building Yield', `+${v.castle_lv * 2}%`], ['Comfort Score', `🌸 ${fmt(v.comfort)} (+${comfortBonusPct(v.comfort)}%)`],
+      ['Placement Cap', `${caps.core} Landmarks • ${caps.wonders} Wonders`], ['Island Territory', `${v.grid_size}×${v.grid_size} Tiles`]);
     if (mine && next <= MAX_CASTLE_LV) {
-      rows.push([`Upgrade to Lv. ${next}`, `${fmt(castleUpgradeCost(next))} 🪙`], ['Landmark levels needed', `${sum} / ${castlePrereq(next)}`]);
-      actions.push({ label: `⬆️ Upgrade (${fmt(castleUpgradeCost(next))} 🪙)`, disabled: p.gold < castleUpgradeCost(next) || sum < castlePrereq(next), onClick: () => upgrade('castle') });
+      const needSum = castlePrereq(next);
+      const pct = Math.min(100, Math.round((sum / Math.max(1, needSum)) * 100));
+      progressBarHtml = `
+        <div class="bld-bp-bar">
+          <div class="bld-bp-fill${sum >= needSum ? ' ready' : ''}" style="width:${pct}%"></div>
+          <div class="bld-bp-txt">🏛️ Landmark Levels: ${sum} / ${needSum}</div>
+        </div>`;
+      rows.push([`Upgrade to Lv. ${next}`, `${fmt(castleUpgradeCost(next))} 🪙`]);
+      actions.push({ label: `⬆️ Upgrade (${fmt(castleUpgradeCost(next))} 🪙)`, cls: 'emerald', disabled: p.gold < castleUpgradeCost(next) || sum < needSum, onClick: () => upgrade('castle') });
     }
   } else if (CORE[b.type]) {
     const lv = v.levels?.[b.type] || 1;
-    title += ` • Lv. ${lv}`;
-    if (d.produces) rows.push(['Production', `${fmt(d.perHour(lv))} ${d.produces === 'gold' ? '🪙' : '🍓'}/hr`]);
+    levelTag = `⭐ Lv. ${lv}`;
+    if (d.produces) rows.push(['Hourly Production', `${fmt(d.perHour(lv))} ${d.produces === 'gold' ? '🪙' : '🍓'}/hr`]);
     if (d.daily) rows.push(['Daily Diamonds', `${d.perDay(lv)} 💎/day`]);
     if (b.type === 'nest') rows.push(['Mythic/Epic Trait Odds', `${d.traitOdds(lv).toFixed(2)}x`]);
-    if (b.type === 'dock') rows.push(['Offline Storage Cap', `${storageCapHrs(v, mine ? p : {}).toFixed(1)} h`], ['Fishing', 'Walk onto the dock and tap 🎣']);
+    if (b.type === 'dock') rows.push(['Offline Storage Cap', `${storageCapHrs(v, mine ? p : {}).toFixed(1)} h`], ['Co-Op Fishing', 'Walk onto the dock and tap 🎣']);
     if (b.type === 'patisserie') rows.push(['Post-Match Gold', `+${d.matchGoldPct(lv)}%`]);
-    if (b.type === 'shrine') rows.push(['1-Tap Warp to Town Hall', 'opens in Step 5']);
+    if (b.type === 'shrine') rows.push(['1-Tap Warp to Town Hall', 'Unlocks in Step 5']);
     if (mine) {
       const cards = v.blueprints?.[b.type] | 0;
       if (lv < MAX_CORE_LV) {
-        rows.push(['Blueprint Cards', `${cards} / ${BLUEPRINT_CARDS[lv]}`]);
-        actions.push({ label: '⬆️ Upgrade!', disabled: cards < BLUEPRINT_CARDS[lv], onClick: () => upgrade(b.type) });
-      } else rows.push(['Level', 'MAX ✨']);
+        const need = BLUEPRINT_CARDS[lv];
+        const pct = Math.min(100, Math.round((cards / Math.max(1, need)) * 100));
+        progressBarHtml = `
+          <div class="bld-bp-bar">
+            <div class="bld-bp-fill${cards >= need ? ' ready' : ''}" style="width:${pct}%"></div>
+            <div class="bld-bp-txt">📘 Blueprints: ${cards} / ${need}</div>
+          </div>`;
+        actions.push({ label: `⬆️ Upgrade to Lv.${lv + 1}!`, cls: 'emerald', disabled: cards < need, onClick: () => upgrade(b.type) });
+      } else {
+        levelTag = '👑 MAX Lv.10';
+      }
     }
   } else if (WONDERS[b.type]) {
     const stars = v.wonders?.[b.type]?.stars || 1;
-    title += ` ${'★'.repeat(stars)}`;
-    rows.push(['Active buff', d.effect]);
-    if (b.type === 'wnd_fountain') actions.push({ label: '⛲ Toss 100 🪙', onClick: () => tossCoin(pick.owner) });
-    if (b.type === 'wnd_onsen') rows.push(['Tip', 'Long-press your Chibi and drop them into the hot spring!']);
+    levelTag = '★'.repeat(stars);
+    rows.push(['VIP Wonder Buff', d.effect], ['Comfort Bonus', `+${stars * 300} 🌸`]);
+    if (b.type === 'wnd_fountain') actions.push({ label: '⛲ Toss 100 🪙', cls: 'emerald', onClick: () => tossCoin(pick.owner) });
+    if (b.type === 'wnd_onsen' && mine) {
+      actions.push({
+        label: '♨️ Soak Chibi (+Forge%)',
+        cls: 'emerald',
+        onClick: () => {
+          const hit = findPlaced(world.layout, b.uid, world.local?.x || 0, world.local?.z || 0);
+          if (hit && world.local) {
+            world.setLocalPosition(hit.center.x, hit.center.z + 0.35);
+            net.send({ type: 'chibi_pickup_drop', targetId: p.id, x: +hit.center.x.toFixed(3), z: +(hit.center.z + 0.35).toFixed(3), propId: b.uid });
+          }
+        },
+      });
+    }
+    if (mine) actions.push({ label: '✨ All Wonders & Mood', cls: 'secondary', onClick: () => { wonderMoodModal(b.type); return true; } });
   } else if (DECOR[b.type]) {
-    rows.push(['Buff', d.effect]);
-    if (d.seats) rows.push(['Tip', 'Drop your Chibi onto it to sit 🪑']);
+    levelTag = '🌸 Cute Decor';
+    rows.push(['Passive Buff', d.effect], ['Comfort Bonus', '+120 🌸 (1st copy)']);
+    if (d.seats) rows.push(['Interactive Seat', `Drop your Chibi onto it to sit (${d.seats} seats) 🪑`]);
   }
-  if (mine) actions.push({ label: '🔨 Move / Edit', onClick: () => { enterEdit(b.uid); } });
-  const body = `<img class="big" src="/assets/village/${d.sprite}.png" alt="">${mine ? '' : `<div class="hint-small">🏝️ ${pick.owner}'s island</div>`}`
-    + `<div class="rows">${rows.map(([k, val]) => `<span>${k}</span><b>${val}</b>`).join('')}</div>`;
+
+  if (mine) {
+    actions.push({ label: '🔨 Quick Move', onClick: () => { enterQuickMove(b.uid); } });
+    actions.push({ label: '🛠️ Grid Editor', cls: 'secondary', onClick: () => { enterEdit(b.uid); } });
+  }
+
+  const body = `
+    <div class="bld-card-hero">
+      <img src="/assets/village/${d.sprite}.png" alt="${d.name}" />
+      <div class="bld-card-meta">
+        <div class="bld-card-badges">
+          <span class="bld-pill">${badgeTag}</span>
+          ${levelTag ? `<span class="bld-pill gold">${levelTag}</span>` : ''}
+          ${!mine ? `<span class="bld-pill">🏝️ ${pick.owner}'s Island</span>` : ''}
+        </div>
+        <div style="font-size:11.5px;color:#5c3416;font-weight:800;">${d.effect || 'Sky Kingdom Landmark'}</div>
+        ${progressBarHtml}
+      </div>
+    </div>
+    <div class="rows">${rows.map(([k, val]) => `<span>${k}</span><b>${val}</b>`).join('')}</div>
+  `;
   openModal(title, body, actions);
 }
 
@@ -247,7 +419,7 @@ function expansionModal() {
   openModal('☁️ Clear Cloud Territory', `<img class="big" src="/assets/village/env_cloud.png" alt="">`
     + `<div class="rows"><span>Expansion Tier ${tier + 1}</span><b>${v.grid_size}×${v.grid_size} → ${next.size}×${next.size}</b>`
     + `<span>Castle level</span><b>${v.castle_lv} / ${next.castleLv}</b><span>Cost</span><b>${fmt(next.gold)} 🪙</b></div>`,
-  [{ label: `☁️ Clear Clouds (${fmt(next.gold)} 🪙)`, disabled: !ok, onClick: async () => { const r = await request('village_expand_cloud'); toast(r.ok ? `☁️ Your kingdom grew to ${r.grid_size}×${r.grid_size}!` : `☁️ ${humanError(r.error)}`); } }]);
+  [{ label: `☁️ Clear Clouds (${fmt(next.gold)} 🪙)`, cls: 'emerald', disabled: !ok, onClick: async () => { const r = await request('village_expand_cloud'); toast(r.ok ? `☁️ Your kingdom grew to ${r.grid_size}×${r.grid_size}!` : `☁️ ${humanError(r.error)}`); } }]);
 }
 
 function welcomeBack(off) {
@@ -258,17 +430,30 @@ function welcomeBack(off) {
   if (off.diamonds) rewards.push(`<span>💎 +${off.diamonds}</span>`);
   openModal('⏳ Welcome Back!', `<div>While you were resting (<b>${h}h ${m}m</b>), your Sky Kingdom produced:</div>`
     + `<div class="rewards">${rewards.join('')}</div><div class="hint-small">🐢 Storage cap: ${off.capHrs.toFixed(1)} h${off.full ? ' — storage was full!' : ''}</div>`,
-  [{ label: '🍓 HARVEST ALL (+15 EXP)', onClick: () => harvestAll() }]);
+  [{ label: '🍓 HARVEST ALL (+15 EXP)', cls: 'emerald', onClick: () => harvestAll() }]);
 }
 
-// ------------------------------------------------------------------ editor
+// ------------------------------------------------------------------ editor (Dual-Flow: Quick-Move + Full Grid Editor)
+function enterQuickMove(uid) {
+  closeModal();
+  if (!editor) return;
+  if (editor.active && !editor.quickMode) {
+    editor.selected = uid;
+    editor.focusOnBuilding(uid);
+    editor.refresh();
+    return;
+  }
+  $('hud').dataset.scene = 'VILLAGE';
+  world.setEditMode(false);
+  editor.open({ quickUid: uid });
+}
+
 function enterEdit(selectUid = null) {
   closeModal();
-  if (!editor || editor.active) return;
+  if (!editor) return;
   $('hud').dataset.scene = 'VILLAGE_EDIT';
   world.setEditMode(true);
-  editor.open();
-  if (selectUid) { editor.selected = selectUid; editor.refresh(); }
+  editor.open({ selectUid });
 }
 
 function exitEdit() {
@@ -315,14 +500,23 @@ async function startGame(profile) {
     await loadManifest(world.renderer);
     world.start();
     rpg = new RpgUI({ request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile });
-    window.__neora = { world, debug: () => world.debugState(), request: (t, p) => request(t, p), state: S, rpg };
+    townHallScene = new TownHallScene({ world, onAction: (act) => handleTownHallAction(act) });
+    world.townHallScene = townHallScene;
+    world.onLandmarksCheck = (x, z) => townHallScene.checkTrigger(x, z);
+    radar = new TownHallRadar({ world, getProfile: () => S.profile, landmarks: getTownHallConfig().LANDMARKS });
+    hallOfFameUI = new HallOfFameUI({ request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile, rpg, getNet: () => net });
+    window.__neora = { world, debug: () => world.debugState(), request: (t, p) => request(t, p), state: S, rpg, townHallScene, radar, hallOfFameUI };
     trackSpeech();
     setInterval(tickVillage, 1000);
     $('act-harvest').onclick = harvestAll;
     $('act-edit').onclick = () => enterEdit();
-    $('act-mood').onclick = cycleMood;
+    $('act-mood').onclick = () => wonderMoodModal();
     $('act-bless').onclick = bless;
     $('act-fountain').onclick = () => tossCoin($('act-fountain').dataset.owner);
+    if ($('act-th-table')) $('act-th-table').onclick = () => openPlayHub();
+    if ($('act-th-social')) $('act-th-social').onclick = () => voiceClient?.openSwitchboard?.();
+    if ($('act-th-hof')) $('act-th-hof').onclick = () => hallOfFameUI?.open();
+    if ($('hud-couple-pill')) $('hud-couple-pill').onclick = () => voiceClient?.openSwitchboard?.();
     $('modal-x').onclick = closeModal;
     $('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
     world.onPick = (pk) => {
@@ -359,7 +553,7 @@ async function startGame(profile) {
         toast(`🐾 Pat-pat! Bond Lv.${r.bond_lv}${r.leveledUp ? ' 🎉 BOND LEVEL UP!' : ' (+10 Bond XP)'}`, 1800);
       }
     };
-    world.onLongPressBuilding = (pk) => { enterEdit(pk.uid); return true; };
+    world.onLongPressBuilding = (pk) => { enterQuickMove(pk.uid); return true; };
     world.onLiftStart = (target) => {
       $('speech').textContent = target === 'pet' ? 'Nyaa~ Drop me on the Cushion or Nest! 💕' : 'Waaah! Put me in the Onsen! >o<';
       startSpeechTracking();
@@ -375,9 +569,67 @@ async function startGame(profile) {
 
   net?.close();
   net = new Net();
+
+  // Route incoming socket messages to CasinoUI + VoiceCallClient first
+  const origEmit = net.emit.bind(net);
+  net.emit = (type, detail) => {
+    if (detail && typeof detail === 'object') {
+      if (casinoUI?.handle?.(detail)) return;
+      if (voiceClient?.handle?.(detail)) return;
+    }
+    origEmit(type, detail);
+  };
+
+  // Guarded dynamic imports for CasinoUI and VoiceCallClient
+  import('./minigames/casino/casino_ui.js?v=mockup17')
+    .then(({ CasinoUI }) => {
+      casinoUI = new CasinoUI({
+        net,
+        getProfile: () => S.profile,
+        toast,
+        onExit: () => {
+          if (world) world.activeScene = null;
+          $('hud').hidden = false;
+          setActiveDock(world?.getInstanceKind?.() === 'townhall' ? 'townhall' : 'village');
+          if (mono?.hub) {
+            mono.hub.table = null;
+            mono.hub._casinoStarted = false;
+            mono.hub._casinoStartedTableId = null;
+          }
+        },
+      });
+      if (window.__neora) window.__neora.casinoUI = casinoUI;
+    })
+    .catch(() => {});
+
+  import('./voice_call_client.js')
+    .then(({ VoiceCallClient }) => {
+      voiceClient = new VoiceCallClient({
+        net,
+        getProfile: () => S.profile,
+        toast,
+        getUserName: (id) => {
+          if (id === S.profile?.id) return S.profile.username;
+          const r = world?.remotes.get(id);
+          return r?.data?.username || id;
+        },
+        onBlessPartner: () => bless(),
+        onOpenGift: (toId) => {
+          closeModal();
+          mono?.hub?.close({ leave: true });
+          setActiveDock('wardrobe');
+          rpg?.open('wardrobe', { tab: 'bag', giftTo: toId });
+        },
+        onOpenPlayHub: () => openPlayHub(),
+      });
+      if (window.__neora) window.__neora.voiceClient = voiceClient;
+    })
+    .catch(() => {});
+
   editor = editor || new GridEditor(world.plaza, {
     onSave: (layout) => request('village_save_grid', { layout }),
     onExit: (saved) => { exitEdit(); if (saved) toast('✅ Layout saved!'); },
+    onPromoteToFull: () => { $('hud').dataset.scene = 'VILLAGE_EDIT'; world.setEditMode(true); },
     toast,
   });
   world.editor = editor;
@@ -396,7 +648,19 @@ async function startGame(profile) {
     .on('auth_ok', (m) => {
       S.serverOffset = m.serverNow - Date.now();
       S.coupled = !!m.coupled;
-      world.plaza.setLayout(m.layout, m.profile.id);
+      if (m.layout?.kind === 'townhall') {
+        $('hud').dataset.scene = 'TOWN_HALL';
+        fishing?.setAvailable(false);
+        world.setTownHallMode(true, m.layout);
+        radar?.setActive(true);
+        setActiveDock('townhall');
+      } else {
+        $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
+        world.setTownHallMode(false);
+        world.plaza.setLayout(m.layout, m.profile.id);
+        radar?.setActive(false);
+        setActiveDock('village');
+      }
       S.layoutKey = '';
       renderHud(m.profile);
       applyMood(m.profile.village?.mood || 'auto');
@@ -407,6 +671,22 @@ async function startGame(profile) {
       if (m.offline) welcomeBack(m.offline);
     })
     .on('instance_snapshot', (m) => {
+      if (m.layout?.kind === 'townhall') {
+        $('hud').dataset.scene = 'TOWN_HALL';
+        fishing?.setAvailable(false);
+        world.setTownHallMode(true, m.layout);
+        radar?.setActive(true);
+        setActiveDock('townhall');
+        if (m.self) world.setLocalPosition(m.self.x, m.self.z);
+        else if (world.local) world.setLocalPosition(0, 6);
+      } else if (m.layout) {
+        $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
+        world.setTownHallMode(false);
+        world.plaza.setLayout(m.layout, S.profile.id);
+        radar?.setActive(false);
+        setActiveDock('village');
+        if (m.self) world.setLocalPosition(m.self.x, m.self.z);
+      }
       const ids = new Set(m.players.map((p) => p.id));
       for (const id of world.remotes.keys()) if (!ids.has(id)) world.removeRemote(id);
       for (const p of m.players) world.upsertRemote(p);
@@ -425,10 +705,50 @@ async function startGame(profile) {
       rpg?.onProfile(m.profile);
     })
     .on('player_equipped', (m) => world.applyEquipment(m.id, m.equipped, m.appearance))
-    .on('global_cheer_banner', (m) => toast(`🌟 ${m.winnerName} ${m.achievement}! 👏`, 3200))
+    .on('global_cheer_banner', (m) => showGlobalCheerBanner(m))
+    .on('owl_mail_arrived', (m) => {
+      if (m.mail && S.profile) {
+        S.profile.mailbox = [m.mail, ...(S.profile.mailbox || [])];
+      }
+      toast(`🦉 Royal Owl arrived with a gift from ${m.mail?.fromName || 'a friend'}!`, 3000);
+      rpg?.render();
+    })
+    .on('couple_streak_update', (m) => {
+      if (S.profile) {
+        S.profile.couple_streak = m.streak;
+      }
+      toast(`💖 Couple Streak Updated: ${m.streak} Days! 🎉`, 3000);
+      rpg?.render();
+    })
+    .on('call_incoming', (m) => voiceClient?.handle?.(m))
+    .on('call_ringing', (m) => voiceClient?.handle?.(m))
+    .on('call_connected', (m) => voiceClient?.handle?.(m))
+    .on('call_ended', (m) => voiceClient?.handle?.(m))
+    .on('call_signal', (m) => voiceClient?.handle?.(m))
+    .on('call_busy', (m) => voiceClient?.handle?.(m))
+    .on('call_reward', (m) => voiceClient?.handle?.(m))
     .on('couple_egg_hatched', (m) => toast(`🥚💞 ${m.by} hatched a Rainbow Couple Egg with your pet!`, 3000))
-    .on('resume_ok', (m) => { S.serverOffset = m.serverNow - Date.now(); world.plaza.setLayout(m.layout, m.profile.id); S.layoutKey = ''; renderHud(m.profile); world.syncPetGiftAndYard(m.profile); })
+    .on('resume_ok', (m) => {
+      S.serverOffset = m.serverNow - Date.now();
+      if (m.layout?.kind === 'townhall') {
+        $('hud').dataset.scene = 'TOWN_HALL';
+        fishing?.setAvailable(false);
+        world.setTownHallMode(true, m.layout);
+        radar?.setActive(true);
+        setActiveDock('townhall');
+      } else {
+        $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
+        world.setTownHallMode(false);
+        world.plaza.setLayout(m.layout, m.profile.id);
+        radar?.setActive(false);
+        setActiveDock('village');
+      }
+      S.layoutKey = '';
+      renderHud(m.profile);
+      world.syncPetGiftAndYard(m.profile);
+    })
     .on('village_updated', (m) => {
+      if (world.layout?.kind === 'townhall' || !Array.isArray(world.layout?.islands)) return;
       const isl = islandOf(world.layout, m.owner);
       const resized = m.layout && (!isl || isl.S !== m.layout.islands.find((i) => i.owner === m.owner)?.S);
       if (resized) { world.plaza.setLayout(m.layout, S.profile.id); S.layoutKey = ''; syncSelfVillage(); world.syncPetGiftAndYard(S.profile); return; }
@@ -458,6 +778,12 @@ async function startGame(profile) {
 }
 
 // ------------------------------------------------------------------ Step 4: 🎮 Play → Table Hub → Sky Monopoly
+function setActiveDock(dockName) {
+  document.querySelectorAll('#bottom-dock .dock-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.dock === dockName);
+  });
+}
+
 function setupMonopoly(profile) {
   mono?.destroy();
   if (world) world.activeScene = null;
@@ -467,10 +793,15 @@ function setupMonopoly(profile) {
     renderer: world.renderer,
     room: new NetRoom({ net, userId: profile.id }),
     toast,
-    onExit: () => { if (world) world.activeScene = null; $('hud').hidden = false; },
+    onExit: () => {
+      if (world) world.activeScene = null;
+      $('hud').hidden = false;
+      setActiveDock(world?.getInstanceKind?.() === 'townhall' ? 'townhall' : 'village');
+    },
     // the board takes over the shared canvas (village paused) and the village HUD hides while playing
     onEnterMatch: (b) => { world.activeScene = b; $('hud').hidden = true; },
-    onLeaveMatch: () => { world.activeScene = null; $('hud').hidden = false; },
+    onLeaveMatch: () => { world.activeScene = null; $('hud').hidden = false; setActiveDock('play'); },
+    onCasinoStart: (table) => casinoUI?.open(table),
   });
   window.__neora && (window.__neora.mono = mono);
 }
@@ -478,7 +809,88 @@ function setupMonopoly(profile) {
 function openPlayHub() {
   if (!mono || editor?.active) return;
   closeModal();
+  rpg?.close?.();
+  setActiveDock('play');
   mono.openHub();
+}
+
+function showGlobalCheerBanner(m) {
+  const el = $('global-cheer-banner');
+  if (!el) return;
+  if (cheerTimer) {
+    clearInterval(cheerTimer);
+    cheerTimer = null;
+  }
+
+  const expiresAt = m.expiresAt || (serverNow() + 10000);
+  const updateTimer = () => {
+    const rem = Math.max(0, Math.ceil((expiresAt - serverNow()) / 1000));
+    const timerSpan = el.querySelector('.cheer-timer');
+    if (timerSpan) timerSpan.textContent = `${rem}s`;
+    if (rem <= 0) {
+      clearInterval(cheerTimer);
+      cheerTimer = null;
+      el.hidden = true;
+    }
+  };
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="cheer-crown-badge">👑</div>
+    <div class="cheer-info">
+      <div class="cheer-title">🎉 SERVER JACKPOT: ${esc(m.winnerName)}!</div>
+      <div class="cheer-sub">${esc(m.achievement)} • <span class="cheer-timer">${Math.max(0, Math.ceil((expiresAt - serverNow()) / 1000))}s</span></div>
+    </div>
+    <button type="button" class="btn-gold small cheer-claim-btn" data-act="cheer-claim" data-cheer-id="${esc(m.cheerId)}">
+      👏 Cheer (+50 🪙 Free!)
+    </button>
+  `;
+
+  cheerTimer = setInterval(updateTimer, 500);
+}
+
+function handleTownHallAction(action) {
+  if (editor?.active) return;
+  closeModal();
+  if (action === 'fountain') {
+    mono?.hub?.close({ leave: true });
+    setActiveDock('gacha');
+    rpg?.open('gacha', { tab: 'box1' });
+  } else if (action && action.startsWith('statue_')) {
+    hallOfFameUI?.open(action);
+  } else if (action === 'casino_palace') {
+    closeModal();
+    rpg?.close?.();
+    setActiveDock('play');
+    if (mono?.hub) {
+      mono.hub.mode = 'casino';
+      mono.openHub();
+    } else {
+      openPlayHub();
+    }
+  } else if (action === 'monopoly_arch') {
+    closeModal();
+    rpg?.close?.();
+    setActiveDock('play');
+    if (mono?.hub) {
+      mono.hub.mode = 'monopoly';
+      mono.openHub();
+    } else {
+      openPlayHub();
+    }
+  } else if (action === 'forge') {
+    mono?.hub?.close({ leave: true });
+    rpg?.open('forge');
+  } else if (action === 'owl_postbox') {
+    mono?.hub?.close({ leave: true });
+    setActiveDock('wardrobe');
+    rpg?.open('wardrobe', { tab: 'bag' });
+    setTimeout(() => {
+      document.querySelector('#owl-inbox')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  } else if (action && action.startsWith('vip_table_')) {
+    openPlayHub();
+  }
 }
 
 function bindGate() {
@@ -517,11 +929,66 @@ function bindGate() {
       $('login-error').textContent = err.message;
     } finally { btn.disabled = false; }
   });
+  document.querySelector('.dock-btn[data-dock="village"]')?.addEventListener('click', () => {
+    if (editor?.active) editor.close(true);
+    closeModal();
+    rpg?.close?.();
+    hallOfFameUI?.close?.();
+    voiceClient?.closeSwitchboard?.();
+    mono?.hub?.close({ leave: true });
+    $('hud').dataset.scene = 'VILLAGE';
+    setActiveDock('village');
+    net?.send({ type: 'instance_switch', to: 'home' });
+  });
+  document.querySelector('.dock-btn[data-dock="townhall"]')?.addEventListener('click', () => {
+    if (editor?.active) editor.close(true);
+    closeModal();
+    rpg?.close?.();
+    hallOfFameUI?.close?.();
+    voiceClient?.closeSwitchboard?.();
+    mono?.hub?.close({ leave: true });
+    $('hud').dataset.scene = 'TOWN_HALL';
+    fishing?.setAvailable(false);
+    setActiveDock('townhall');
+    net?.send({ type: 'instance_switch', to: 'townhall' });
+  });
   document.querySelectorAll('.dock-btn[data-step]').forEach((b) => b.addEventListener('click', () =>
     toast(`${b.textContent.trim()} unlocks in Step ${b.dataset.step} 🔒`)));
+  document.addEventListener('click', async (e) => {
+    const cheerBtn = e.target.closest('[data-act="cheer-claim"]');
+    if (cheerBtn) {
+      const cheerId = cheerBtn.dataset.cheerId;
+      cheerBtn.disabled = true;
+      try {
+        const res = await request('cheer_claim', { cheerId });
+        if (res && res.ok) {
+          toast(`👏 Cheered for the champion! +${res.gold || 50} 🪙 Free!`);
+          cheerBtn.textContent = 'Cheered! ✅';
+        } else {
+          toast(`⚠️ ${humanError(res?.error || 'cheer_expired')}`);
+          cheerBtn.disabled = false;
+        }
+      } catch (err) {
+        toast(`⚠️ ${err.message}`);
+        cheerBtn.disabled = false;
+      }
+    }
+  });
   document.querySelector('.dock-btn[data-dock="play"]')?.addEventListener('click', openPlayHub);
-  document.querySelector('.dock-btn[data-dock="wardrobe"]')?.addEventListener('click', () => rpg?.open('wardrobe'));
-  document.querySelector('.dock-btn[data-dock="gacha"]')?.addEventListener('click', () => rpg?.open('gacha', { tab: 'box1' }));
+  document.querySelector('.dock-btn[data-dock="wardrobe"]')?.addEventListener('click', () => {
+    if (editor?.active) return;
+    closeModal();
+    mono?.hub?.close({ leave: true });
+    setActiveDock('wardrobe');
+    rpg?.open('wardrobe');
+  });
+  document.querySelector('.dock-btn[data-dock="gacha"]')?.addEventListener('click', () => {
+    if (editor?.active) return;
+    closeModal();
+    mono?.hub?.close({ leave: true });
+    setActiveDock('gacha');
+    rpg?.open('gacha', { tab: 'box1' });
+  });
 }
 
 function applyUiScale() {
