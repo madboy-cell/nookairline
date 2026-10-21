@@ -8,4 +8,6 @@ tests/
 scripts/
 server/data/*.backup*
 server/data/*.tmp
+client/assets/monopoly/_contact*
+client/assets/monopoly/raw/
 *.md
