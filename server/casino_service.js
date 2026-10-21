@@ -181,6 +181,7 @@ export function createCasinoAdapter({
     c.shoe = null;
     c.dealerCards = null;
     c.dealerDrawCard = null;
+    c.coupleCredited = new Set();
     c.seats = initPokDengSeats(t);
 
     for (const s of c.seats) {
@@ -311,9 +312,22 @@ export function createCasinoAdapter({
           }
         }
         s.gold = p.gold;
+        const partnerId = p.partner_id || null;
+        if (!t.casino.coupleCredited) t.casino.coupleCredited = new Set();
+        const hasPartnerInHand = Boolean(
+          partnerId &&
+          (t.casino.seats?.some((q) => q && !q.isBot && q.userId === partnerId) ||
+            t.seats?.some((q) => q && q.kind === 'human' && q.userId === partnerId))
+        );
+        let withPartner = false;
+        if (hasPartnerInHand && !t.casino.coupleCredited.has(p.id)) {
+          t.casino.coupleCredited.add(p.id);
+          t.casino.coupleCredited.add(partnerId);
+          withPartner = true;
+        }
+        onHandSettled(p, withPartner ? { withPartner: true } : undefined);
         db.markProfile(p.id);
         pushProfile(p);
-        onHandSettled(p);
       }
     }
     const item = { seat: s.seat, cards: s.cards, info: s.info || (s.cards ? handInfo(s.cards) : null), settle, chest: chestWon };
@@ -368,6 +382,7 @@ export function createCasinoAdapter({
     c.phase = 'betting';
     c.phaseEndsAt = getNow() + CASINO.ROULETTE.PHASE_MS.betting;
     c.spin = null;
+    c.coupleCredited = new Set();
     c.seats = initRouletteSeats(t);
 
     const outsideTypes = ['red', 'black', 'even', 'odd'];
@@ -415,9 +430,22 @@ export function createCasinoAdapter({
         daily.net += res.profit;
         daily.hands += 1;
         s.gold = p.gold;
+        const partnerId = p.partner_id || null;
+        if (!t.casino.coupleCredited) t.casino.coupleCredited = new Set();
+        const hasPartnerInHand = Boolean(
+          partnerId &&
+          (t.casino.seats?.some((q) => q && !q.isBot && q.userId === partnerId) ||
+            t.seats?.some((q) => q && q.kind === 'human' && q.userId === partnerId))
+        );
+        let withPartner = false;
+        if (hasPartnerInHand && !t.casino.coupleCredited.has(p.id)) {
+          t.casino.coupleCredited.add(p.id);
+          t.casino.coupleCredited.add(partnerId);
+          withPartner = true;
+        }
+        onHandSettled(p, withPartner ? { withPartner: true } : undefined);
         db.markProfile(p.id);
         pushProfile(p);
-        onHandSettled(p);
 
         if (res.bigHit) {
           onBigHit({
@@ -604,12 +632,25 @@ export function createCasinoAdapter({
       if (c.game === 'roulette') {
         if (m.type === 'casino_roulette_bets') {
           if (c.phase !== 'betting') return sendError(t, userId, 'wrong_phase');
-          const v = validateRouletteBets(m.bets);
-          if (!v.ok) return sendError(t, userId, v.error);
           const seat = c.seats.find((s) => s.userId === userId);
           if (!seat) return sendError(t, userId, 'not_seated');
           const p = db.getProfile(userId);
           if (!p) return sendError(t, userId, 'no_profile');
+          if (Array.isArray(m.bets) && m.bets.length === 0) {
+            const prevTotal = seat.totalBet || 0;
+            p.gold = (p.gold || 0) + prevTotal;
+            seat.bets = [];
+            seat.totalBet = 0;
+            seat.gold = p.gold;
+            if (prevTotal > 0) {
+              db.markProfile(p.id);
+              pushProfile(p);
+            }
+            broadcastState(t);
+            return { ok: true };
+          }
+          const v = validateRouletteBets(m.bets);
+          if (!v.ok) return sendError(t, userId, v.error);
           const prevTotal = seat.totalBet || 0;
           const diff = v.total - prevTotal;
           if (diff > 0 && (p.gold || 0) < diff) return sendError(t, userId, 'insufficient_gold');
@@ -654,7 +695,21 @@ export function createCasinoAdapter({
             if (seat.action == null) {
               seat.action = 'stay';
             }
-            const dealerFinalCards = resolveDealerFinalCards(c);
+            const otherHumansActive = c.seats.some(
+              (s) => s && s.userId !== userId && !s.isBot && s.bet > 0 && !s.settled
+            );
+            const dealerFinalCards = otherHumansActive
+              ? (dealerShouldHit(c.dealerCards)
+                  ? [
+                      ...c.dealerCards,
+                      ...(c.dealerDrawCard
+                        ? [c.dealerDrawCard]
+                        : c.shoe && c.shoe.length > 0
+                          ? [c.shoe[c.shoe.length - 1]]
+                          : []),
+                    ]
+                  : [...c.dealerCards])
+              : resolveDealerFinalCards(c);
             const tNow = getNow();
             const item = settlePokDengSeat(t, seat, dealerFinalCards, tNow);
             sendMsg(userId, {

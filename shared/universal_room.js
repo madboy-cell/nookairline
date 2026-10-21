@@ -421,12 +421,18 @@ export class TableManager {
   rematch(userId) {
     const t = this.tableOf(userId);
     if (!t || t.status !== 'ended') return this.error(userId, 'no_table');
+    const now = this.now();
+    for (const s of [...t.seats]) {
+      if (s.kind === 'human' && s.userId && !this.connected.has(s.userId) && s.disconnectedAt && (now - s.disconnectedAt > 15_000)) {
+        this.leave(s.userId, { silent: true });
+      }
+    }
     t.status = 'lobby';
     t.match = null; t.seatOf = null; t.deadline = null; t.podiumRewards = null;
     t.moonDefense = null; t.cloudDash = null;
     t.seats = t.seats.map((s) => (s.leftUserId ? { kind: 'empty' } : { ...s, ready: s.kind === 'bot' || t.mode !== 'monopoly' || s.userId === t.hostId }));
     this.pushState(t);
-    if (t.solo || ((t.mode === 'moon_bunny' || t.mode === 'cloud_dash') && (userId === t.hostId || this.humans(t).length <= 1))) {
+    if (t.solo || ((t.mode === 'moon_bunny' || t.mode === 'cloud_dash') && this.humans(t).length <= 1)) {
       return this.start(t.hostId);
     }
     this.pushList(t.mode);
@@ -546,8 +552,8 @@ export class TableManager {
       const anyone = this.humans(t).some((u) => this.connected.has(u));
       if (anyone) {
         t.emptySince = null;
-        if (t.status === 'lobby') {
-          for (const s of t.seats) {
+        if (t.status === 'lobby' || t.status === 'ended') {
+          for (const s of [...t.seats]) {
             if (s.kind === 'human' && s.userId && !this.connected.has(s.userId) && s.disconnectedAt && now - s.disconnectedAt > 15_000) {
               this.leave(s.userId);
             }

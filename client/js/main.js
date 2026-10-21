@@ -3,21 +3,21 @@
 // building / upgrade / Cloud Territory / Welcome-Back modals, Finger Pick-Up & Drop and Dock fishing.
 import { WorldEngine } from './world_engine.js?v=nm14';
 import { loadManifest } from './assets.js';
-import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js';
-import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id3';
+import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
+import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
 import { GridEditor, humanError, resolveMood } from './village_plaza.js';
 import { DockFishing } from './minigames/dock_fishing.js';
 import { RpgUI } from './gacha_forge_ui.js?v=wd6';
 import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
 
 
-import { MonopolyBridge } from './monopoly_bridge.js?v=cd44';
+import { MonopolyBridge } from './monopoly_bridge.js?v=nm18';
 import { NetRoom } from './minigames/monopoly_25d/room_client.js';
 import { TownHallScene, getTownHallConfig } from './town_hall_scene.js?v=cd44';
-import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?v=nm17';
+import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?v=nm18';
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
-import { CouplePhotoboothUI } from './couple_photobooth.js?v=cd39';
+import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
 import { expToNext } from '/shared/progression.js';
 import {
   CORE, WONDERS, DECOR, MOODS, EXPANSION_TIERS, BLUEPRINT_CARDS, MAX_CORE_LV, MAX_CASTLE_LV, CORE_LANDMARKS,
@@ -229,6 +229,7 @@ function runGuideAction() {
     $('hud').dataset.scene = 'TOWN_HALL';
     fishing?.setAvailable(false);
     setActiveDock('townhall');
+    if (net) net.resumeInstanceId = 'townhall';
     net?.send({ type: 'instance_switch', to: 'townhall' });
   }
 }
@@ -760,6 +761,7 @@ function buildingModal(pick) {
           $('hud').dataset.scene = 'TOWN_HALL';
           fishing?.setAvailable(false);
           setActiveDock('townhall');
+          if (net) net.resumeInstanceId = 'townhall';
           net?.send({ type: 'instance_switch', to: 'townhall' });
         },
       });
@@ -955,6 +957,7 @@ function enterNookMuseum(portalId = null) {
     nookMuseumScene?.exitPortalToHall?.({ fromServer: true, spawn: { x: -0.6, z: 2.2 } });
   }
   if (world) world.setZoneSeq((world.zoneSeq || 1) + 1);
+  if (net) net.resumeInstanceId = portalId ? `nook_museum:${portalId}` : 'nook_museum';
   net?.send({
     type: 'instance_switch',
     to: portalId ? `museum:${portalId}` : 'museum',
@@ -1013,14 +1016,20 @@ async function startGame(profile) {
       getProfile: () => S.profile,
       toast,
       onAction: (act, arg, spawn) => {
+        if (act?.action === 'couple_moment') {
+          request('couple_moment', act).catch(() => {});
+          return;
+        }
         if (act === 'exit_museum') {
           world.setMuseumMode(false);
           $('hud').dataset.scene = 'VILLAGE';
           setActiveDock('village');
           if (world) world.setZoneSeq((world.zoneSeq || 1) + 1);
+          if (net) net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
           net?.send({ type: 'instance_switch', to: 'home', force: true });
         } else if (act === 'switch_portal') {
           if (world) world.setZoneSeq((world.zoneSeq || 1) + 1);
+          if (net) net.resumeInstanceId = arg ? `nook_museum:${arg}` : 'nook_museum';
           net?.send({
             type: 'instance_switch',
             to: arg ? `museum:${arg}` : 'museum',
@@ -1149,7 +1158,7 @@ async function startGame(profile) {
   if (casinoUI) {
     casinoUI.net = net;
   } else {
-    import('./minigames/casino/casino_ui.js?v=pd50k2')
+    import('./minigames/casino/casino_ui.js?v=nm18')
       .then(({ CasinoUI }) => {
         casinoUI = new CasinoUI({
           net,
@@ -1184,7 +1193,7 @@ async function startGame(profile) {
   if (moonDefenseUI) {
     moonDefenseUI.net = net;
   } else {
-    import('./minigames/moon_defense_ui.js?v=cd49')
+    import('./minigames/moon_defense_ui.js?v=nm18')
       .then(({ MoonDefenseUI }) => {
         moonDefenseUI = new MoonDefenseUI({
           net,
@@ -1259,7 +1268,7 @@ async function startGame(profile) {
   if (voiceClient) {
     voiceClient.net = net;
   } else {
-    import('./voice_call_client.js?v=cd40')
+    import('./voice_call_client.js?v=nm18')
       .then(({ VoiceCallClient }) => {
         voiceClient = new VoiceCallClient({
           net,
@@ -1279,6 +1288,7 @@ async function startGame(profile) {
             mono?.hub?.close({ leave: true });
             $('hud').dataset.scene = 'VILLAGE';
             setActiveDock('village');
+            if (net) net.resumeInstanceId = targetId ? `village:${targetId}` : null;
             net?.send({ type: 'instance_switch', to: targetId ? `visit:${targetId}` : 'home' });
           },
           onOpenGift: (toId) => {
@@ -1369,32 +1379,46 @@ async function startGame(profile) {
       if (m.zoneSeq) world.setZoneSeq(m.zoneSeq);
       S.serverOffset = m.serverNow - Date.now();
       S.coupled = !!m.coupled;
-      S.visitingOwner = null;
-      if (m.layout?.kind === 'museum') {
+      S.visitingOwner = m.visitingOwner || null;
+      if (m.layout?.kind === 'museum' || m.museum) {
+        const mus = m.museum || m.layout;
+        const portalId = mus?.portalId || null;
+        S.visitingOwner = null;
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'NOOK_MUSEUM';
           fishing?.setAvailable(false);
-          world.setMuseumMode(true, m.layout);
+          world.setTownHallMode(false);
+          world.setMuseumMode(true, mus);
+          if (portalId) {
+            nookMuseumScene?.enterPortal?.(portalId, { fromServer: true });
+          } else if (nookMuseumScene?.currentPortalId) {
+            nookMuseumScene?.exitPortalToHall?.({ fromServer: true });
+          }
           radar?.setActive(false);
         }
-      } else if (m.layout?.kind === 'townhall') {
+        net.resumeInstanceId = portalId ? `nook_museum:${portalId}` : 'nook_museum';
+      } else if (m.layout?.kind === 'townhall' || m.townhall) {
+        S.visitingOwner = null;
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'TOWN_HALL';
           fishing?.setAvailable(false);
           world.setMuseumMode(false);
-          world.setTownHallMode(true, m.layout);
+          world.setTownHallMode(true, m.layout || m.townhall);
           radar?.setActive(true);
           setActiveDock('townhall');
         }
+        net.resumeInstanceId = 'townhall';
       } else {
+        S.visitingOwner = m.visitingOwner || null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
           world.setMuseumMode(false);
           world.setTownHallMode(false);
         }
-        world.plaza.setLayout(m.layout, m.profile.id);
+        world.plaza.setLayout(m.layout || m.village, m.profile.id);
         radar?.setActive(false);
         if (!moonDefenseUI?.active && !cloudDashUI?.active && !casinoUI?.tableId) setActiveDock('village');
+        net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
       }
       S.layoutKey = '';
       renderHud(m.profile);
@@ -1413,6 +1437,7 @@ async function startGame(profile) {
       S.partnerCompanion = m.partnerCompanion || null;
       if (m.layout?.kind === 'museum') {
         S.visitingOwner = null;
+        net.resumeInstanceId = m.layout.portalId ? `nook_museum:${m.layout.portalId}` : 'nook_museum';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'NOOK_MUSEUM';
           fishing?.setAvailable(false);
@@ -1425,6 +1450,7 @@ async function startGame(profile) {
         }
       } else if (m.layout?.kind === 'townhall') {
         S.visitingOwner = null;
+        net.resumeInstanceId = 'townhall';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'TOWN_HALL';
           fishing?.setAvailable(false);
@@ -1437,6 +1463,7 @@ async function startGame(profile) {
         }
       } else if (m.layout) {
         S.visitingOwner = m.visitingOwner || null;
+        net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
           world.setMuseumMode(false);
@@ -1528,13 +1555,14 @@ async function startGame(profile) {
     .on('museum_partner_invite', (m) => showMuseumInviteBanner(m))
     .on('museum_invite_sent', (m) => {
       if (m.ok) toast('💌 Sent a romantic Museum invite popup to your partner!', 2600);
-      else if (m.reason === 'partner_offline') toast('🌙 Partner is offline right now — your Companion Stand-In is walking with you!', 2800);
+      else if (m.error === 'partner_offline' || m.reason === 'partner_offline') toast('🕊️ Partner is currently offline — they can join you anytime!', 2800);
       else toast('💞 Invite requires an active Couple Bond!', 2400);
     })
     .on('resume_ok', (m) => {
       if (m.zoneSeq) world.setZoneSeq(m.zoneSeq);
       S.serverOffset = m.serverNow - Date.now();
       if (m.layout?.kind === 'museum') {
+        net.resumeInstanceId = m.layout.portalId ? `nook_museum:${m.layout.portalId}` : 'nook_museum';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'NOOK_MUSEUM';
           fishing?.setAvailable(false);
@@ -1542,6 +1570,7 @@ async function startGame(profile) {
           radar?.setActive(false);
         }
       } else if (m.layout?.kind === 'townhall') {
+        net.resumeInstanceId = 'townhall';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'TOWN_HALL';
           fishing?.setAvailable(false);
@@ -1551,6 +1580,7 @@ async function startGame(profile) {
           setActiveDock('townhall');
         }
       } else {
+        net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
           world.setMuseumMode(false);
@@ -1828,6 +1858,7 @@ function bindGate() {
     world?.setMuseumMode?.(false);
     $('hud').dataset.scene = 'VILLAGE';
     setActiveDock('village');
+    if (net) net.resumeInstanceId = null;
     net?.send({ type: 'instance_switch', to: 'home' });
   });
   document.querySelector('.dock-btn[data-dock="townhall"]')?.addEventListener('click', () => {
@@ -1841,6 +1872,7 @@ function bindGate() {
     $('hud').dataset.scene = 'TOWN_HALL';
     fishing?.setAvailable(false);
     setActiveDock('townhall');
+    if (net) net.resumeInstanceId = 'townhall';
     net?.send({ type: 'instance_switch', to: 'townhall' });
   });
   document.querySelectorAll('.dock-btn[data-step]').forEach((b) => b.addEventListener('click', () =>

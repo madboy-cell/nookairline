@@ -1116,7 +1116,12 @@ export function createDailyService({
       return { ok: true, streak: 0, rewards: null };
     }
 
+    const prevPartnerStreak = partner.couple_streak || 0;
+    const prevPartnerBest = partner.couple_stats?.bestStreak || 0;
     ensurePhase5(partner, nowMs);
+    if (partner.couple_streak !== prevPartnerStreak || (partner.couple_stats?.bestStreak || 0) !== prevPartnerBest) {
+      db?.markProfile?.(partner.id);
+    }
 
     // Couple streak applies when both have logged in today and streak hasn't been applied today
     if (partner.login_day === today && p.couple_streak_day !== today) {
@@ -1311,12 +1316,16 @@ export function createDailyService({
 
   function socialDirectory(p) {
     const nowMs = now();
+    const prevPStatsJson = JSON.stringify(p.couple_stats || null);
+    const prevPAlbumJson = JSON.stringify(p.couple_album || null);
     ensurePhase5(p, nowMs);
     const partnerProf = p.partner_id ? db?.getProfile?.(p.partner_id) : null;
     const isBoundCouple = !!(partnerProf && partnerProf.partner_id && partnerProf.partner_id.toLowerCase() === p.id.toLowerCase());
     let coupleStats = p.couple_stats;
     let coupleAlbum = Array.isArray(p.couple_album) ? p.couple_album : [];
     if (isBoundCouple && partnerProf) {
+      const prevPartnerStatsJson = JSON.stringify(partnerProf.couple_stats || null);
+      const prevPartnerAlbumJson = JSON.stringify(partnerProf.couple_album || null);
       ensurePhase5(partnerProf, nowMs);
       coupleStats = mergeCoupleStats(p.couple_stats, partnerProf.couple_stats, Math.max(p.couple_streak || 0, partnerProf.couple_streak || 0));
       p.couple_stats = { ...coupleStats };
@@ -1324,6 +1333,17 @@ export function createDailyService({
       coupleAlbum = mergeCoupleAlbums(p.couple_album, partnerProf.couple_album);
       p.couple_album = coupleAlbum;
       partnerProf.couple_album = [...coupleAlbum];
+      const nextStatsJson = JSON.stringify(coupleStats);
+      const nextAlbumJson = JSON.stringify(coupleAlbum);
+      if (
+        nextStatsJson !== prevPStatsJson ||
+        nextStatsJson !== prevPartnerStatsJson ||
+        nextAlbumJson !== prevPAlbumJson ||
+        nextAlbumJson !== prevPartnerAlbumJson
+      ) {
+        db?.markProfile?.(p.id);
+        db?.markProfile?.(partnerProf.id);
+      }
     }
     const partner = isBoundCouple ? describeUserSummary(p, partnerProf) : null;
 

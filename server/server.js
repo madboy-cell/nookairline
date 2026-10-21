@@ -374,7 +374,12 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       const p = db.getProfile(userId);
       if (!p) return;
       if (diamonds) p.diamonds = (p.diamonds || 0) + diamonds;
-      if (exp) eco.grantExp(p, exp);
+      if (exp) {
+        const lvl = eco.grantExp(p, exp);
+        if (lvl && (typeof lvl === 'number' ? lvl > 0 : lvl.leveledUp || lvl.levelsGained > 0)) {
+          eco.refreshDerived(p);
+        }
+      }
       db.markProfile(p.id);
       pushProfile(p);
     },
@@ -423,12 +428,14 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         achievement: `hit ⚡ ${mult}× on #${number} at Zeus Roulette`,
       });
     },
-    onHandSettled: (prof) => {
+    onHandSettled: (prof, opts) => {
       dailyService.bumpQuest(prof, 'play');
+      if (opts?.withPartner) dailyService.bumpCoupleStat(prof, { coopActivities: 1 });
       pushProfile(prof);
     },
-    onMatchFinished: (prof) => {
+    onMatchFinished: (prof, opts) => {
       dailyService.bumpQuest(prof, 'play');
+      if (opts?.withPartner) dailyService.bumpCoupleStat(prof, { coopActivities: 1 });
       pushProfile(prof);
     },
     onMvpCharmDrop: ({ playerId, playerName, wave, charm }) => {
@@ -539,10 +546,20 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const s = presence.get(ws.userId);
     const isMuseum = ws.instanceId === MUSEUM_ID || String(ws.instanceId || '').startsWith('nook_museum:');
     const portalId = String(ws.instanceId || '').startsWith('nook_museum:') ? ws.instanceId.split(':')[1] : null;
+    let visitingOwner = null;
+    if (ws.instanceId !== TOWNHALL.ID && !isOpen36Instance(ws.instanceId) && String(ws.instanceId || '').startsWith('village:')) {
+      const ownerId = ws.instanceId.slice('village:'.length);
+      const p = db.getProfile(ws.userId);
+      const isPartner = Boolean(p && isCouple(p) && p.partner_id === ownerId);
+      if (ownerId && ownerId !== ws.userId && !isPartner) {
+        visitingOwner = ownerId;
+      }
+    }
     return {
       type: 'instance_snapshot',
       instanceId: ws.instanceId,
       zoneSeq: ws.zoneSeq || 1,
+      ...(visitingOwner ? { visitingOwner } : {}),
       layout: ws.instanceId === TOWNHALL.ID
         ? { kind: 'townhall', size: 36 }
         : isMuseum
@@ -673,34 +690,104 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     }
   }
 
-  function join(ws, p) {
+  function join(ws, p, requestedInstanceId = null) {
     ensurePhase5(p);
     dailyService.onDailyLogin(p);
     const old = sockets.get(p.id);
+    const prev = presence.get(p.id);
     if (old && old !== ws) { send(old, { type: 'kicked', reason: 'Signed in on another device' }); old.close(4001, 'replaced'); }
+    const candidateId = requestedInstanceId || prev?.instanceId || null;
+    let nextInstanceId = instanceFor(p);
+    if (candidateId === TOWNHALL.ID || isOpen36Instance(candidateId)) {
+      nextInstanceId = candidateId;
+    } else if (typeof candidateId === 'string' && candidateId.startsWith('village:')) {
+      const ownerId = candidateId.slice('village:'.length);
+      if (ownerId && ownerId !== p.id && !(isCouple(p) && ownerId === p.partner_id) && db.getProfile(ownerId)) {
+        nextInstanceId = candidateId;
+      }
+    }
+    const oldInstId = old?.instanceId || prev?.instanceId;
+    if (oldInstId && oldInstId !== nextInstanceId) {
+      const oldMembers = instances.get(oldInstId);
+      if (oldMembers) {
+        oldMembers.delete(p.id);
+        if (!oldMembers.size && !isOpen36Instance(oldInstId)) {
+          instances.delete(oldInstId);
+          layouts.delete(oldInstId);
+        }
+        broadcast(oldInstId, { type: 'player_left', id: p.id }, p.id);
+      }
+    }
     sockets.set(p.id, ws);
     ws.userId = p.id;
-    ws.instanceId = instanceFor(p);
+    ws.instanceId = nextInstanceId;
     ws.zoneSeq = (ws.zoneSeq || 0) + 1;
     if (!instances.has(ws.instanceId)) instances.set(ws.instanceId, new Set());
     instances.get(ws.instanceId).add(p.id);
-    const L = layoutFor(ws.instanceId);
-    const prev = presence.get(p.id);
+    const isTownHall = ws.instanceId === TOWNHALL.ID;
+    const isMuseum = ws.instanceId === MUSEUM_ID || String(ws.instanceId || '').startsWith('nook_museum:');
+    const portalId = isMuseum && String(ws.instanceId || '').startsWith('nook_museum:')
+      ? String(ws.instanceId).split(':')[1]
+      : null;
+    const L = (isTownHall || isMuseum) ? null : layoutFor(ws.instanceId);
     const canFly = !!p.equipped?.wings?.id;
-    if (!prev || prev.instanceId !== ws.instanceId) {
-      const sp = spawnPoint(L, p.id, p.lineage);   // couples spawn on their own islands, never stacked
-      presence.set(p.id, { x: sp.x, z: sp.z, vx: 0, vz: 0, right: p.lineage !== 'dxb', back: false, t: Date.now(), instanceId: ws.instanceId });
-    } else if (!isWalkablePos(L, prev.x, prev.z, { canFly })) {
-      const safe = nearestWalkablePos(L, prev.x, prev.z, { canFly });
-      prev.x = safe.x; prev.z = safe.z; prev.vx = 0; prev.vz = 0;
-    }
     const now = Date.now();
+    if (isTownHall) {
+      if (!prev || prev.instanceId !== ws.instanceId) {
+        presence.set(p.id, { x: 0, z: 6, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: ws.instanceId });
+      } else {
+        prev.x = Math.max(-18, Math.min(18, prev.x));
+        prev.z = Math.max(-18, Math.min(18, prev.z));
+        prev.vx = 0; prev.vz = 0; prev.t = now; prev.instanceId = ws.instanceId;
+      }
+    } else if (isMuseum) {
+      const defX = portalId ? -0.55 : -0.6;
+      const defZ = portalId ? 2.6 : 2.2;
+      if (!prev || prev.instanceId !== ws.instanceId) {
+        presence.set(p.id, { x: defX, z: defZ, vx: 0, vz: 0, right: true, back: !!portalId, t: now, instanceId: ws.instanceId });
+      } else {
+        prev.x = Math.max(-18, Math.min(18, prev.x));
+        prev.z = Math.max(-18, Math.min(18, prev.z));
+        prev.vx = 0; prev.vz = 0; prev.t = now; prev.instanceId = ws.instanceId;
+      }
+    } else {
+      const spawnOwnerId = ws.instanceId.startsWith('village:') ? ws.instanceId.slice('village:'.length) : p.id;
+      if (!prev || prev.instanceId !== ws.instanceId) {
+        const sp = spawnPoint(L, spawnOwnerId, p.lineage);   // couples spawn on their own islands, never stacked
+        presence.set(p.id, { x: sp.x, z: sp.z, vx: 0, vz: 0, right: p.lineage !== 'dxb', back: false, t: now, instanceId: ws.instanceId });
+      } else if (!isWalkablePos(L, prev.x, prev.z, { canFly })) {
+        const safe = nearestWalkablePos(L, prev.x, prev.z, { canFly });
+        prev.x = safe.x; prev.z = safe.z; prev.vx = 0; prev.vz = 0;
+      }
+    }
     const offline = eco.computeOfflineGains(p, now, p.last_active_ts, { coupled: isCouple(p) });
     p.last_active_ts = now;
     db.markProfile(p.id);
+    const layoutPayload = isTownHall
+      ? { kind: 'townhall', size: 36 }
+      : isMuseum
+        ? { kind: 'museum', size: 36, portalId }
+        : layoutWire(L);
+    const visitingOwner = (!isTownHall && !isMuseum && ws.instanceId.startsWith('village:'))
+      ? (() => {
+          const ownerId = ws.instanceId.slice('village:'.length);
+          return ownerId && ownerId !== p.id ? ownerId : null;
+        })()
+      : null;
     send(ws, {
-      type: 'auth_ok', profile: publicProfile(p, { self: true }), instanceId: ws.instanceId, zoneSeq: ws.zoneSeq, self: presence.get(p.id),
-      layout: layoutWire(L), serverNow: now, coupled: isCouple(p), offline,
+      type: 'auth_ok',
+      profile: publicProfile(p, { self: true }),
+      instanceId: ws.instanceId,
+      zoneSeq: ws.zoneSeq,
+      self: presence.get(p.id),
+      layout: layoutPayload,
+      ...(isTownHall ? { townhall: { id: TOWNHALL.ID, size: 36 } } : {}),
+      ...(isMuseum ? { museum: { id: MUSEUM_ID, size: 36, portalId } } : {}),
+      ...(!isTownHall && !isMuseum ? { village: layoutPayload } : {}),
+      ...(visitingOwner ? { visitingOwner } : {}),
+      serverNow: now,
+      coupled: isCouple(p),
+      offline,
     });
     send(ws, snapshotFor(ws));
     broadcast(ws.instanceId, { type: 'player_joined', player: playerState(p.id) }, p.id);
@@ -823,6 +910,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       }
       case 'village_wonder_action': {
         if (m.action !== 'fountain_toss') return reply(ws, p, m.type, m, { ok: false, error: 'bad_action' });
+        if (ws.instanceId === TOWNHALL.ID || isOpen36Instance(ws.instanceId)) return reply(ws, p, m.type, m, { ok: false, error: 'not_in_village' });
         const owner = String(m.owner || p.id);
         const L = layoutFor(ws.instanceId);
         const isl = L.islands.find((i) => i.owner === owner);
@@ -1122,8 +1210,44 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     if (ws.instanceId === TOWNHALL.ID) return;
     const p = db.getProfile(ws.userId);
     const now = Date.now();
-    const isPetDrop = m.targetId === 'pet';
-    if ((m.targetId !== ws.userId && !isPetDrop) || !finite(m.x) || !finite(m.z)) return;
+    const isPetDrop = m.targetId === 'pet' || m.targetType === 'pet';
+    if ((m.targetId && m.targetId !== ws.userId && !isPetDrop) || !finite(m.x) || !finite(m.z)) return;
+    if (isOpen36Instance(ws.instanceId)) {
+      const x = Math.max(-17.5, Math.min(17.5, Number(m.x) || 0));
+      const z = Math.max(-17.5, Math.min(17.5, Number(m.z) || 0));
+      const targetType = isPetDrop ? 'pet' : 'self';
+      const targetId = isPetDrop ? 'pet' : ws.userId;
+      if (targetType === 'self') {
+        const me = presence.get(ws.userId);
+        if (me) Object.assign(me, { x, z, vx: 0, vz: 0, t: now });
+      }
+      send(ws, {
+        type: 'drop_result',
+        ok: true,
+        targetId,
+        targetType,
+        x,
+        z,
+        prop: null,
+        spotType: 'plaza',
+        buildingId: null,
+        wonderId: null,
+        reaction: 'happy',
+        bonusGold: 0,
+      });
+      broadcast(ws.instanceId, {
+        type: 'player_dropped',
+        id: ws.userId,
+        targetId,
+        targetType,
+        x,
+        z,
+        prop: null,
+        spotType: 'plaza',
+        reaction: 'happy',
+      }, ws.userId);
+      return;
+    }
     const L = layoutFor(ws.instanceId);
     if (now - (ws.lastDrop || 0) < NET.DROP_COOLDOWN_MS) {
       const s = presence.get(ws.userId);
@@ -1169,7 +1293,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
   // --- Dock fishing: loot rolled at cast, revealed after the reel minigame -----------
   function onFishing(ws, m) {
-    if (ws.instanceId === TOWNHALL.ID && m.type === 'fishing_cast') return;
+    if (isOpen36Instance(ws.instanceId)) return;
     const p = db.getProfile(ws.userId);
     if (!p) return;
     const now = Date.now();
@@ -1202,7 +1326,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         const o = presence.get(id);
         return o && Math.hypot(o.x - s.x, o.z - s.z) <= FISHING.COOP_RADIUS && dockNear(L, o.x, o.z, FISHING.DOCK_REACH);
       });
-      const callCoop = !!(voiceService?.activeCalls?.has?.(ws.userId) || voiceService?.inCall?.(ws.userId));
+      const callCoop = voiceService?.activeCallOf?.(ws.userId)?.state === 'connected';
       const coop = dockCoop || callCoop;
       let loot = eco.rollCatch({ bait, coop }, rng);
       if (bait) {
@@ -1268,7 +1392,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         const p = s && db.getProfile(s.userId);
         if (!p) { send(ws, { type: 'auth_fail', error: 'Session expired, please sign in again.' }); ws.close(4003, 'bad token'); return; }
         clearTimeout(authTimer);
-        join(ws, p);
+        join(ws, p, m.instanceId);
         return;
       }
 

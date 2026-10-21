@@ -37,6 +37,7 @@ export class Net extends EventTarget {
     this.rtt = null;
     this.lastMoveSent = 0;
     this.zoneSeq = 1;
+    this.resumeInstanceId = null;
     this._onVis = () => this.onVisibility();
     this._onOnline = () => {
       if (this.closedByUser) return;
@@ -69,7 +70,7 @@ export class Net extends EventTarget {
     this.ws = ws;
     ws.onopen = () => {
       if (this.ws !== ws) return;
-      ws.send(JSON.stringify({ type: 'auth', token: session.token }));
+      ws.send(JSON.stringify({ type: 'auth', token: session.token, instanceId: this.resumeInstanceId || undefined }));
     };
     ws.onmessage = (ev) => {
       if (this.ws !== ws) return;

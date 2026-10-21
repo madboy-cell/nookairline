@@ -23,7 +23,7 @@ import {
   rollCharmDrop,
   upsertCharmToProfile,
 } from '../shared/moon_defense_rules.js';
-import { applyExp, expToNext } from '../shared/progression.js';
+import { applyExp, expToNext, recalcPlayerCP } from '../shared/progression.js';
 import { grantPetActivityExp } from './rpg_service.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -261,6 +261,10 @@ export function createMoonDefenseAdapter({
       lastManualAttackAt: 0,
       lastMineSwingAt: 0,
     };
+  }
+
+  function alivePlayers(s) {
+    return (s?.players || []).filter((p) => p.active && !p.disconnected && (p.hp ?? 250) > 0);
   }
 
   function serializeState(table) {
@@ -619,8 +623,7 @@ export function createMoonDefenseAdapter({
     // Aggro onto nearby Heroes within 6.5m
     let targetHero = null;
     let bestHeroD = 6.5;
-    for (const p of s.players) {
-      if (!p.active || p.hp <= 0) continue;
+    for (const p of alivePlayers(s)) {
       const d = distHypot(e.x, e.z, p.x, p.z);
       if (d <= bestHeroD) {
         bestHeroD = d;
@@ -675,7 +678,7 @@ export function createMoonDefenseAdapter({
     if (!titan || titan.hp <= 0) return;
 
     const buildingsList = Object.values(s.buildings);
-    const livingHeroes = s.players.filter((p) => p.active && (p.hp ?? 250) > 0);
+    const livingHeroes = alivePlayers(s);
 
     // Vision Ward detection (reveals stealth within 16m)
     for (const b of buildingsList) {
@@ -2165,6 +2168,7 @@ export function createMoonDefenseAdapter({
     const clearedWaves = reason === 'victory' ? MD_MAX_WAVES : Math.max(1, s.wave);
     const victoryBonus = reason === 'victory' ? 1.5 : reason === 'cash_out' ? 1.15 : 0.85;
     const rewards = {};
+    const coupleCredited = new Set();
 
     for (const p of s.players) {
       if (!p.active || !p.userId) continue;
@@ -2196,6 +2200,7 @@ export function createMoonDefenseAdapter({
         prof.exp = lvRes.exp;
         if (lvRes.levelsGained > 0) {
           prof.diamonds += lvRes.levelsGained * 50;
+          prof.cp = recalcPlayerCP(prof);
         }
 
         if (Array.isArray(prof.pets) && prof.pets.length > 0) {
@@ -2203,11 +2208,21 @@ export function createMoonDefenseAdapter({
           if (petRes?.ok) petExpGained = petRes.expGained || 0;
         }
 
+        const partnerId = prof.partner_id || null;
+        const hasPartnerInMatch = Boolean(
+          partnerId && s.players.some((q) => q.active && !q.isBot && q.userId === partnerId)
+        );
+        let withPartner = false;
+        if (hasPartnerInMatch && !coupleCredited.has(prof.id)) {
+          coupleCredited.add(prof.id);
+          coupleCredited.add(partnerId);
+          withPartner = true;
+        }
+        try {
+          onMatchFinished(prof, withPartner ? { withPartner: true } : undefined);
+        } catch {}
         db.markProfile?.(prof.id);
         pushProfile(prof);
-        try {
-          onMatchFinished(prof);
-        } catch {}
       }
 
       const nextExpVal = expToNext(levelAfter);

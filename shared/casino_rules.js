@@ -30,7 +30,7 @@ export const CASINO = Object.freeze({
     MAX_BET_PER_SPOT: 5000,
     MAX_TOTAL_BET: 25000,
     MAX_SPOTS: 20,
-    PAYOUT: Object.freeze({ straight: 30, dozen: 3, column: 3, red: 2, black: 2, even: 2, odd: 2 }), // TOTAL return × stake
+    PAYOUT: Object.freeze({ straight: 30, dozen: 3, column: 3, red: 2, black: 2, even: 2, odd: 2, low: 2, high: 2 }), // TOTAL return × stake
     STRIKE_COUNT_W: Object.freeze([[1, 50], [2, 35], [3, 15]]),                          // weights (%)
     STRIKE_MULT_W: Object.freeze([[50, 50], [100, 30], [200, 15], [500, 5]]),
     CHEER_BANNER_MIN_MULT: 100,                                                          // 100×+ → global_cheer_banner
@@ -178,7 +178,7 @@ export function playPokDengHand(seed, seats) {
 // ------------------------------------------------------------------------------------- ZEUS ROULETTE
 export const RED = Object.freeze(new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]));
 export const colorOf = (n) => (n === 0 ? 'green' : RED.has(n) ? 'red' : 'black');
-export const ROULETTE_BET_TYPES = Object.freeze(['straight', 'dozen', 'column', 'red', 'black', 'even', 'odd']);
+export const ROULETTE_BET_TYPES = Object.freeze(['straight', 'dozen', 'column', 'red', 'black', 'even', 'odd', 'low', 'high']);
 
 /** Bet = { type, n? (straight 0–36 | dozen 1–3 | column 1–3), amount }. */
 export function betWins(bet, n) {
@@ -190,6 +190,8 @@ export function betWins(bet, n) {
     case 'black': return colorOf(n) === 'black';
     case 'even': return n > 0 && n % 2 === 0;
     case 'odd': return n % 2 === 1;
+    case 'low': return n >= 1 && n <= 18;
+    case 'high': return n >= 19 && n <= 36;
     default: return false;
   }
 }

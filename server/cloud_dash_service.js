@@ -33,7 +33,7 @@ import { computeUniversalStats } from '../shared/universal_stats.js';
 import { buildTrack } from '../shared/cloud_dash_track.js';
 import { normalizePetId } from '../shared/pet_catalog.js';
 import { defenderModsFromProfile } from '../shared/moon_defense_rules.js';
-import { applyExp, expToNext } from '../shared/progression.js';
+import { applyExp, expToNext, recalcPlayerCP } from '../shared/progression.js';
 import { utcDay } from '../shared/village_rules.js';
 import { grantPetActivityExp, checkBuildDiscovery, syncGlamourAndAttune } from './rpg_service.js';
 
@@ -349,6 +349,7 @@ export function createCloudDashAdapter({
     t.status = 'ended';
     const rewardsByUser = {};
     const dayKey = String(utcDay(getNow()));
+    const coupleCredited = new Set();
     ranking.forEach((ri, i) => {
       const p = s.racers[ri];
       let place = i + 1;
@@ -464,6 +465,7 @@ export function createCloudDashAdapter({
         const lv = applyExp(prof.level || 1, prof.exp || 0, exp);
         levelsGained = lv.levelsGained; levelUpDiamonds = 50 * levelsGained;
         prof.level = lv.level; prof.exp = lv.exp; prof.diamonds += levelUpDiamonds;
+        if (levelsGained > 0) prof.cp = recalcPlayerCP(prof);
 
         // Town Hall Statue #3 (arcade) reads arcade_best — higher is better
         prof.arcade_best = Math.max(prof.arcade_best || 0, Math.round(p.style / 10));
@@ -471,12 +473,22 @@ export function createCloudDashAdapter({
           const pr = grantPetActivityExp(prof, place <= 2 ? 30 : 15, 'cloud_dash');
           petExpGained = pr?.ok ? pr.expGained : 0;
         }
+        const partnerId = prof.partner_id || null;
+        const hasPartnerInRace = Boolean(
+          partnerId && s.racers.some((q) => !q.isBot && q.id === partnerId)
+        );
+        let withPartner = false;
+        if (hasPartnerInRace && !coupleCredited.has(prof.id)) {
+          coupleCredited.add(prof.id);
+          coupleCredited.add(partnerId);
+          withPartner = true;
+        }
+        try { onMatchFinished(prof, withPartner ? { withPartner: true } : undefined); } catch {}
         db.markProfile?.(prof.id);
         pushProfile(prof);
-        try { onMatchFinished(prof); } catch {}
       }
       rewardsByUser[p.id] = {
-        place, gold, berries, diamonds: diamonds + levelUpDiamonds, exp, multiplier: mult,
+        place, gold, berries, diamonds: diamonds + levelUpDiamonds + (buildUpdate?.diamonds || 0), exp, multiplier: mult,
         style: p.style, coins: p.coins, finishMs, newBestTime, newBestStyle, newGhostPb,
         levelsGained, petExpGained,
         streak: prof?.dash_stats?.streak || 0,

@@ -1747,6 +1747,10 @@ export class VoiceCallClient {
         return true;
       }
       case 'call_connected': {
+        if (this._graceStreamTimer) {
+          clearTimeout(this._graceStreamTimer);
+          this._graceStreamTimer = null;
+        }
         const wasReconnecting = this.reconnecting;
         const isSameCall = this.callId === msg.callId;
         if (!isSameCall) {
@@ -1809,7 +1813,22 @@ export class VoiceCallClient {
         else if (reason === 'grace_expired') this.toast('⚡ Connection interrupted — auto-resuming when back online');
         else if (reason === 'hangup' && this._state === 'connected') this.toast('Call ended');
 
-        this.cleanup();
+        if (reason === 'grace_expired') {
+          this.cleanup({ preserveLocalStream: true });
+          if (this._graceStreamTimer) clearTimeout(this._graceStreamTimer);
+          this._graceStreamTimer = setTimeout(() => {
+            this._graceStreamTimer = null;
+            if (this._state === 'idle' && this.localStream) {
+              try {
+                this.localStream.getTracks().forEach((track) => track.stop());
+              } catch (e) {}
+              this.localStream = null;
+            }
+          }, 95000);
+          this._graceStreamTimer?.unref?.();
+        } else {
+          this.cleanup();
+        }
         return true;
       }
       case 'call_busy': {
@@ -2400,7 +2419,12 @@ export class VoiceCallClient {
   }
 
   // --------------------------------------------------------------------------- Cleanup
-  cleanup() {
+  cleanup(opts = {}) {
+    const preserveLocalStream = Boolean(opts?.preserveLocalStream);
+    if (this._graceStreamTimer) {
+      clearTimeout(this._graceStreamTimer);
+      this._graceStreamTimer = null;
+    }
     this._state = 'idle';
     this.callId = null;
     this.peerId = null;
@@ -2446,7 +2470,7 @@ export class VoiceCallClient {
       } catch (e) {}
       this.pc = null;
     }
-    if (this.localStream) {
+    if (!preserveLocalStream && this.localStream) {
       try {
         this.localStream.getTracks().forEach((track) => track.stop());
       } catch (e) {}

@@ -260,7 +260,7 @@ export class CouplePhotoboothUI {
     const hud = document.getElementById('hud');
     if (!hud || hud.hidden) return false;
     const scene = hud.dataset.scene;
-    if (scene !== 'VILLAGE' && scene !== 'TOWN_HALL') return false;
+    if (scene !== 'VILLAGE' && scene !== 'TOWN_HALL' && scene !== 'NOOK_MUSEUM') return false;
     const modal = document.getElementById('modal');
     if (modal && !modal.hidden) return false;
     const sb = document.getElementById('social-switchboard-modal');
@@ -470,6 +470,7 @@ export class CouplePhotoboothUI {
     if (this.proxBarEl) this.proxBarEl.hidden = true;
 
     // Stage couple on the Rainbow Heart Bridge (or current spot in Town Hall)
+    this._savedPosBeforePhotobooth = this.world?.local ? { x: this.world.local.x, z: this.world.local.z } : null;
     this.world.playCoupleStage(this.activePose, {
       loop: true,
       dur: 999,
@@ -514,7 +515,13 @@ export class CouplePhotoboothUI {
     }
 
     if (this.world) {
-      this.world.stopCoupleStage();
+      if (this._savedPosBeforePhotobooth && this.world.local) {
+        this.world.local.x = this._savedPosBeforePhotobooth.x;
+        this.world.local.z = this._savedPosBeforePhotobooth.z;
+        this.world.local.rig?.setPosition?.(this.world.local.x, this.world.local.z);
+        this._savedPosBeforePhotobooth = null;
+      }
+      this.world.stopCoupleStage?.();
       if (this._savedCamDist) this.world.camDist = this._savedCamDist;
       if (this.onApplyMood && this._savedMood) {
         this.onApplyMood(this._savedMood);
@@ -562,7 +569,7 @@ export class CouplePhotoboothUI {
       this.world.playCoupleStage(poseMeta.id, {
         loop: true,
         dur: 999,
-        stageAtBridge: false,
+        stageAtBridge: true,
       });
     }
     this.renderPhotobooth();

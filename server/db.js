@@ -77,7 +77,11 @@ export class Database {
         this.profiles.set(row.id, row.data);
         continue;
       }
-      const winner = (row.data.last_active_ts || 0) > (local.last_active_ts || 0) ? row.data : local;
+      const winner =
+        (row.data.updated_at_ts || row.data.last_active_ts || 0) >
+        (local.updated_at_ts || local.last_active_ts || 0)
+          ? row.data
+          : local;
       const other = winner === row.data ? local : row.data;
       if (winner.couple_stats || other.couple_stats) {
         winner.couple_stats = { ...(other.couple_stats || {}), ...(winner.couple_stats || {}) };
@@ -96,6 +100,18 @@ export class Database {
           }
         }
         winner.couple_album = mergedAlbum;
+      }
+      if (Array.isArray(local.mailbox) || Array.isArray(row.data.mailbox)) {
+        const byId = new Map();
+        for (const m of [...(winner.mailbox || []), ...(other.mailbox || [])]) {
+          if (!m || !m.id) continue;
+          const prev = byId.get(m.id);
+          if (!prev) byId.set(m.id, { ...m });
+          else byId.set(m.id, { ...prev, ...m, claimed: Boolean(prev.claimed || m.claimed) });
+        }
+        winner.mailbox = [...byId.values()]
+          .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0))
+          .slice(0, 50);
       }
       this.profiles.set(row.id, winner);
     }
@@ -144,7 +160,12 @@ export class Database {
     this.markProfile(p.id);
   }
 
-  markProfile(id) { this.dirtyProfiles.add(id); this.dirty = true; }
+  markProfile(id) {
+    const p = this.profiles.get(id) || this.profiles.get(String(id || '').toLowerCase());
+    if (p) p.updated_at_ts = Date.now();
+    this.dirtyProfiles.add(id);
+    this.dirty = true;
+  }
   markDirty() { this.dirtySocial = true; this.dirty = true; }
 
   createSession(token, userId) {
@@ -184,7 +205,17 @@ export class Database {
   }
 
   async flush() {
+    if (this._flushing) return this._flushPromise;
     if (!this.dirty) return;
+    this._flushing = true;
+    this._flushPromise = this._doFlush().finally(() => {
+      this._flushing = false;
+      this._flushPromise = null;
+    });
+    return this._flushPromise;
+  }
+
+  async _doFlush() {
     const ids = [...this.dirtyProfiles];
     const sessUpserts = [...this.dirtySessions];
     const sessDeletes = [...this.deletedSessions];
@@ -200,6 +231,7 @@ export class Database {
       fs.renameSync(tmp, this.file);  // atomic on the same filesystem
     }
 
+    let profilesFailed = false;
     if (this.supabase && ids.length) {
       const nowIso = new Date().toISOString();
       const rows = ids
@@ -211,6 +243,7 @@ export class Database {
         const batch = rows.slice(i, i + BATCH_SIZE);
         const { error } = await this.supabase.from('profiles').upsert(batch);
         if (error) {
+          profilesFailed = true;
           this.log.warn?.('[db] Supabase upsert failed, will retry:', error.message);
           batch.forEach((r) => this.dirtyProfiles.add(r.id));
           this.dirty = true;
@@ -219,31 +252,51 @@ export class Database {
     }
 
     if (this.supabase && (sessUpserts.length || sessDeletes.length)) {
-      try {
-        const nowIso = new Date().toISOString();
-        const sessionRows = sessUpserts
-          .map((token) => {
-            const s = this.sessions.get(token);
-            return s
-              ? { token, user_id: s.userId, created_at: s.created, updated_at: nowIso }
-              : null;
-          })
-          .filter(Boolean);
+      if (profilesFailed) {
+        sessUpserts.forEach((t) => this.dirtySessions.add(t));
+        sessDeletes.forEach((t) => this.deletedSessions.add(t));
+        this.dirty = true;
+      } else {
+        try {
+          const nowIso = new Date().toISOString();
+          const sessionRows = sessUpserts
+            .map((token) => {
+              const s = this.sessions.get(token);
+              return s
+                ? { token, user_id: s.userId, created_at: s.created, updated_at: nowIso }
+                : null;
+            })
+            .filter(Boolean);
 
-        if (sessionRows.length) {
-          await this.supabase.from('sessions')?.upsert?.(sessionRows);
+          if (sessionRows.length) {
+            const upRes = await this.supabase.from('sessions')?.upsert?.(sessionRows, { onConflict: 'token' });
+            if (upRes?.error) {
+              this.log.warn?.('[db] Supabase sessions upsert failed, will retry:', upRes.error.message);
+              sessUpserts.forEach((t) => this.dirtySessions.add(t));
+              this.dirty = true;
+            }
+          }
+          if (sessDeletes.length) {
+            const delRes = await this.supabase.from('sessions')?.delete?.()?.in?.('token', sessDeletes);
+            if (delRes?.error) {
+              this.log.warn?.('[db] Supabase sessions delete failed, will retry:', delRes.error.message);
+              sessDeletes.forEach((t) => this.deletedSessions.add(t));
+              this.dirty = true;
+            }
+          }
+        } catch (e) {
+          this.log.info?.('[db] Optional sessions sync skipped:', e.message);
+          sessUpserts.forEach((t) => this.dirtySessions.add(t));
+          sessDeletes.forEach((t) => this.deletedSessions.add(t));
+          this.dirty = true;
         }
-        if (sessDeletes.length) {
-          await this.supabase.from('sessions')?.delete?.()?.in?.('token', sessDeletes);
-        }
-      } catch (e) {
-        this.log.info?.('[db] Optional sessions sync skipped:', e.message);
       }
     }
   }
 
   async close() {
     clearInterval(this.timer);
+    if (this._flushPromise) await this._flushPromise;
     this.dirty = true;
     await this.flush();
   }

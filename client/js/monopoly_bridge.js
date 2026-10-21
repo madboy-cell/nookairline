@@ -10,7 +10,7 @@
 import { MonopolyBoard, tokenModules } from './minigames/monopoly_25d/board_scene.js';
 import { MonopolyHud } from './minigames/monopoly_25d/hud.js';
 import { sfx } from './minigames/monopoly_25d/sfx.js';
-import { TableHub } from './table_hub.js?v=mst4';
+import { TableHub } from './table_hub.js?v=nm18';
 import { legalActions, scoreboard } from '/shared/monopoly_engine.js';
 import { TILES, MONO, rentFor, wrap } from '/shared/monopoly_rules.js';
 
@@ -184,7 +184,10 @@ export class MonopolyBridge {
   // ------------------------------------------------------------------------- room messages
   async onTableState(m) {
     this.table = m.table;
-    if (m.table?.mode === 'casino' || m.table?.mode === 'moon_bunny' || m.table?.mode === 'cloud_dash') return;
+    if (m.table?.mode === 'casino' || m.table?.mode === 'moon_bunny' || m.table?.mode === 'cloud_dash') {
+      if (this.active) this.stopMatchView();
+      return;
+    }
     await tokenModules;
     if ((m.table?.status === 'playing' || (m.table?.status === 'ended' && (this.active || m.resumed))) && m.match) {
       const sameMatch = Boolean(

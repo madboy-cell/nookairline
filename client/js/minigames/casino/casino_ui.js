@@ -1934,15 +1934,8 @@ export class CasinoUI {
   _serializeBetsForServer(bets) {
     const merged = new Map();
     for (const b of bets) {
-      let type = b.type;
-      let n = b.n;
-      if (type === 'low') {
-        type = 'even';
-        n = undefined;
-      } else if (type === 'high') {
-        type = 'odd';
-        n = undefined;
-      }
+      const type = b.type;
+      const n = (type === 'low' || type === 'high') ? undefined : b.n;
       const key = `${type}:${n ?? ''}`;
       const prev = merged.get(key);
       merged.set(key, { type, ...(n != null ? { n } : {}), amount: (prev?.amount || 0) + b.amount });

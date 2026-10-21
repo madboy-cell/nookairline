@@ -536,6 +536,7 @@ export function createVoiceCallService({
             startedAt: rec.startedAt,
             lastRewardAt: rec.lastRewardAt,
             chunks: rec.chunks,
+            recordedMinutes: rec.recordedMinutes || 0,
             graceUntil: null,
             lastHealAt: nowMs,
           };

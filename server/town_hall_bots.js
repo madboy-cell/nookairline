@@ -389,7 +389,6 @@ export function createTownHallBotController({
             .filter(Boolean)
         );
         randomizeBotCostume(p, rng, activeOutfits);
-        db.markProfile(p.id);
         bot.nextCostumeSwapAt = now + (80 + Math.floor(rng() * 60)) * 1000;
         broadcast(TOWNHALL.ID, {
           type: 'player_equipped',

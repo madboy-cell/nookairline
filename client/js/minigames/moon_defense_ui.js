@@ -1196,12 +1196,14 @@ function injectStyles() {
 // MoonDefenseUI Main Controller
 // ===========================================================================
 export class MoonDefenseUI {
-  constructor({ net, world, getProfile, toast, onExit } = {}) {
+  constructor({ net, room, world, getProfile, toast, onExit } = {}) {
     this.net = net;
+    this.room = room || net;
     this.world = world;
     this.getProfile = getProfile || (() => null);
     this.toast = toast || (() => {});
     this.onExit = onExit || (() => {});
+    this.lastSummary = null;
 
     this.halfSize = 28.0; // Allows tapping anywhere on the 56m × 56m island in world.raycastGround!
     this.active = false;
@@ -3574,8 +3576,14 @@ export class MoonDefenseUI {
         </div>
       `;
       resModal.querySelector('#md-res-again').onclick = () => {
-        this.send({ type: 'table_leave' });
-        this.close();
+        this.lastSummary = null;
+        if (this.state) this.state.result = null;
+        resModal.hidden = true;
+        if (this.room?.send) {
+          this.room.send({ type: 'table_rematch' });
+        } else {
+          this.send({ type: 'table_rematch' });
+        }
       };
       resModal.querySelector('#md-res-exit').onclick = () => {
         this.send({ type: 'table_leave' });

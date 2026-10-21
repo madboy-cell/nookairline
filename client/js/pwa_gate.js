@@ -27,7 +27,12 @@ export function initGate({ onSkip } = {}) {
   const card = document.getElementById('a2hs-card');
   const steps = document.getElementById('a2hs-steps');
   const form = document.getElementById('login-form');
-  if (!env.mobile || env.standalone) { card.hidden = true; return true; }
+  const isTunnel = location.hostname.endsWith('.trycloudflare.com');
+  if (!env.mobile || env.standalone || isTunnel || env.params.has('skip') || env.params.has('direct')) {
+    card.hidden = true;
+    form.hidden = false;
+    return true;
+  }
 
   card.hidden = false;
   form.hidden = true;

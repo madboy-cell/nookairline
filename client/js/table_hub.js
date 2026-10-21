@@ -10,7 +10,7 @@ import { normalizePetId, PETS } from '/shared/pet_catalog.js';
 
 export const HUB_MODES = Object.freeze({
   ...MODES,
-  monopoly: { ...(MODES.monopoly || {}), label: 'Sky Monopoly', icon: '🎲', iconImg: '/assets/ui/dice_zeus_thunder.png', available: true, minSeats: 4 },
+  monopoly: { ...(MODES.monopoly || {}), label: 'Sky Monopoly', icon: '🎲', iconImg: '/assets/ui/dice_zeus_thunder.png', available: true, minSeats: 2 },
   casino: { ...(MODES.casino || {}), label: 'Grand Casino', icon: '🎰', iconImg: '/assets/monopoly/mono_ult_roulette.png', available: true, minSeats: 1 },
   moon_bunny: { ...(MODES.moon_bunny || {}), label: 'Moon Defense', icon: '🌙', iconImg: '/assets/ui/mb_tab_moon_emblem.png', available: true, minSeats: 1 },
   cloud_dash: { ...(MODES.cloud_dash || {}), label: 'Cloud Dash', icon: '☁️', iconImg: '/assets/ui/icon_cloud_dash.png', available: true, minSeats: 1 },
@@ -136,9 +136,10 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
       room.on('table_state', (m) => {
         if (m.table) {
           const prevTableId = this.table?.id;
+          const prevTableMode = this.table?.mode || null;
           this.table = m.table;
           const isMyHost = m.table.hostId === this.me;
-          if (m.table.mode && (isMyHost || m.table.status === 'playing' || prevTableId !== m.table.id)) {
+          if (m.table.mode && (isMyHost || m.table.status === 'playing' || prevTableId !== m.table.id || m.table.mode !== prevTableMode)) {
             this.mode = m.table.mode;
           }
           if (m.table.options?.casinoGame) this.casinoGame = m.table.options.casinoGame;
@@ -667,7 +668,9 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
       case 'solo': {
         const hasGuests = t && this.isHost && t.status === 'lobby' && (t.seats || []).some((s) => s.kind === 'human' && s.userId && s.userId !== this.me);
         if (hasGuests && !(this.mode === 'cloud_dash' && this.dashMode === 'ghost')) {
-          t.seats.forEach((s, idx) => { if (s.kind === 'empty') this.room.send({ type: 'table_set_bot', seatIdx: idx, diff: this.botDiff }); });
+          if (t.mode !== 'moon_bunny' && t.mode !== 'cloud_dash' && t.mode !== 'casino') {
+            t.seats.forEach((s, idx) => { if (s.kind === 'empty') this.room.send({ type: 'table_set_bot', seatIdx: idx, diff: this.botDiff }); });
+          }
           this.room.send({ type: 'table_start' });
           this.onStart?.();
           break;
@@ -708,13 +711,16 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
           this.onReady?.(nextReady);
           return;
         }
-        if (this.mode === 'casino') {
+        if (t.mode === 'casino' || t.mode === 'moon_bunny' || t.mode === 'cloud_dash' || this.mode === 'casino') {
           this.room.send({ type: 'table_start' });
           this.onStart?.();
           return;
         }
-        // auto-fill empty chairs with bots at the selected difficulty, then start
-        t.seats.forEach((s, idx) => { if (s.kind === 'empty') this.room.send({ type: 'table_set_bot', seatIdx: idx, diff: this.botDiff }); });
+        const modeSpec = HUB_MODES[t.mode || this.mode] || MODES[t.mode || this.mode] || { minSeats: 2 };
+        const filledCount = (t.seats || []).filter((s) => s && s.kind !== 'empty').length;
+        if (filledCount < modeSpec.minSeats) {
+          t.seats.forEach((s, idx) => { if (s.kind === 'empty') this.room.send({ type: 'table_set_bot', seatIdx: idx, diff: this.botDiff }); });
+        }
         this.room.send({ type: 'table_start' });
         this.onStart?.();
         break;

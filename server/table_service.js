@@ -8,7 +8,7 @@
 //   • delivers queued room messages to sockets ('lobby' = every connected player)
 import { TableManager } from '../shared/universal_room.js';
 import { playerInfoFromProfile, podiumRewards, matchMods, PODIUM } from '../shared/monopoly_rules.js';
-import { applyExp, expToNext } from '../shared/progression.js';
+import { applyExp, expToNext, recalcPlayerCP } from '../shared/progression.js';
 import { grantPetActivityExp } from './rpg_service.js';
 import { createCasinoAdapter } from './casino_service.js';
 import { createMoonDefenseAdapter } from './moon_defense_service.js';
@@ -19,7 +19,7 @@ export const TABLE_TYPES = new Set([
   'table_set_option',
   'mono_roll', 'mono_ult', 'mono_buy', 'mono_event_choice',
   'mono_pet_cast', 'mono_pet_arm', 'mono_pet_toggle_auto',
-  'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave',
+  'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave', 'casino_state',
   'mb_move', 'mb_dash', 'mb_ult', 'mb_buy_tome', 'mb_hire_merc', 'mb_stance', 'mb_bounty_bell', 'mb_toss_coins', 'mb_pick_blessing', 'mb_leave',
   'mb_draft_card', 'mb_swap_pedestals', 'mb_sell_pedestal', 'mb_reroll_shop', 'mb_toggle_speed', 'mb_equip_charm',
   'cd_report', 'cd_leave', 'cd_item',
@@ -65,6 +65,7 @@ export function createTableService({
     const seats = table.match.players;
     const chaos = !!table.match.chaos;
     const t = now();
+    const coupleCredited = new Set();
     for (const r of result.ranking) {
       const seat = seats[r.seat];
       if (seat.isBot) continue;
@@ -110,6 +111,7 @@ export function createTableService({
       const lv = applyExp(levelBefore, levelExpBefore, exp);
       const levelUpDiamonds = 50 * lv.levelsGained;
       prof.level = lv.level; prof.exp = lv.exp; prof.diamonds += levelUpDiamonds;
+      if (lv.levelsGained > 0) prof.cp = recalcPlayerCP(prof);
       prof.mono_stats = {
         played: (prof.mono_stats?.played || 0) + 1,
         wins: (prof.mono_stats?.wins || 0) + (r.rank === 1 ? 1 : 0),
@@ -119,9 +121,15 @@ export function createTableService({
       if (Array.isArray(prof.pets) && prof.pets.length > 0) {
         petExpRes = grantPetActivityExp(prof, 25, 'monopoly');
       }
+      let withPartner = false;
+      if (coupleBonus && !coupleCredited.has(prof.id)) {
+        coupleCredited.add(prof.id);
+        coupleCredited.add(partnerId);
+        withPartner = true;
+      }
+      try { onMatchFinished(prof, withPartner ? { withPartner: true } : undefined); } catch (e) { log.error?.('[tables] onMatchFinished', e); }
       db.markProfile(prof.id);
       pushProfile(prof);
-      try { onMatchFinished(prof); } catch (e) { log.error?.('[tables] onMatchFinished', e); }
       out[seat.id] = {
         ...rw, multiplier, chest, chestReward, exp, levelsGained: lv.levelsGained, levelUpDiamonds,
         // podium EXP bar: before → after (levelExpNext 0 = max level)

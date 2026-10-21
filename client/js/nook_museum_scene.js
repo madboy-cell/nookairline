@@ -2212,6 +2212,10 @@ export class NookMuseumScene {
   // 2.5D Living Scenery Portal Worlds Builder (`fuji`, `paris`, `swiss`, `dubai`, `maldives`, `cabin`)
   // -------------------------------------------------------------------------
   enterPortal(portalId, { fromServer = false } = {}) {
+    if (this._keepsakeModalTimer) {
+      clearTimeout(this._keepsakeModalTimer);
+      this._keepsakeModalTimer = null;
+    }
     const portal = MUSEUM_SCENERY_PORTALS.find((p) => p.id === portalId) || MUSEUM_SCENERY_PORTALS[0];
     this.active = true;
     this.root.visible = true;
@@ -2259,6 +2263,10 @@ export class NookMuseumScene {
   }
 
   exitPortalToHall({ fromServer = false, spawn = null } = {}) {
+    if (this._keepsakeModalTimer) {
+      clearTimeout(this._keepsakeModalTimer);
+      this._keepsakeModalTimer = null;
+    }
     const prevPortal = MUSEUM_SCENERY_PORTALS.find((p) => p.id === this.currentPortalId);
     this.active = true;
     this.root.visible = true;
@@ -4128,7 +4136,7 @@ export class NookMuseumScene {
     }
   }
 
-  triggerCoupleMoment() {
+  triggerCoupleMoment(opts = {}) {
     const local = this.world?.local;
     const partner = this.findPartnerEntity();
     const cx = this.currentPortalId ? 0 : (local?.x || 0);
@@ -4174,7 +4182,29 @@ export class NookMuseumScene {
         life: 1.8,
       });
     }
-    this.showWarmHugKeepsakeBanner();
+    this.onAction?.({
+      action: 'couple_moment',
+      kind: 'pose',
+      pose: 'hug',
+      x: cx,
+      z: cz,
+      initiatorRole: 'left',
+    });
+    if (this._keepsakeModalTimer) {
+      clearTimeout(this._keepsakeModalTimer);
+      this._keepsakeModalTimer = null;
+    }
+    if (opts?.openKeepsakeModal) {
+      this.showWarmHugKeepsakeBanner();
+    } else if (typeof setTimeout === 'function') {
+      this._keepsakeModalTimer = setTimeout(() => {
+        this._keepsakeModalTimer = null;
+        if (this.active) {
+          this.showWarmHugKeepsakeBanner();
+        }
+      }, 2600);
+      this._keepsakeModalTimer?.unref?.();
+    }
     if (this.toast) {
       this.toast('💑 Nook & Neen Warm Hug Memory! Holding hands together.');
     }
@@ -4443,7 +4473,20 @@ export class NookMuseumScene {
           const caption = activePortal
             ? `Nook & Neen — ${activePortal.title}`
             : 'Nook & Neen — NookAirline V1 Memory Museum';
-          this.world?.capturePolaroid?.({ caption });
+          const snap = this.world?.capturePolaroid?.({ caption });
+          if (snap && (snap.thumbDataUrl || snap.dataUrl)) {
+            this.onAction?.({
+              action: 'couple_moment',
+              kind: 'polaroid',
+              photo: {
+                id: `mus_${Date.now()}`,
+                caption,
+                dataUrl: snap.thumbDataUrl || snap.dataUrl,
+                takenAt: Date.now(),
+                pose: 'hug',
+              },
+            });
+          }
           this.toast?.(`📸 Captured "Then & Now" Keepsake Polaroid: ${caption}!`);
           return;
         }
@@ -5132,6 +5175,10 @@ export class NookMuseumScene {
         this.checkTrigger(this.world.local.x, this.world.local.z);
       }
     } else {
+      if (this._keepsakeModalTimer) {
+        clearTimeout(this._keepsakeModalTimer);
+        this._keepsakeModalTimer = null;
+      }
       this.stopMusicBox();
       this.closeModal();
       this.updateHud();
@@ -5224,6 +5271,10 @@ export class NookMuseumScene {
   }
 
   dispose() {
+    if (this._keepsakeModalTimer) {
+      clearTimeout(this._keepsakeModalTimer);
+      this._keepsakeModalTimer = null;
+    }
     this.stopMusicBox();
     this.renderPrompt(null);
     this.closeModal();
