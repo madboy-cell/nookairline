@@ -7,7 +7,7 @@
 // - Block 4: 4 Canonical Soul-Bond Companions Switcher (Nyx, Princess Ragdoll, Sakura Kitsune, Baby Sky Whale)
 
 import {
-  PETS, PET_FAMILIES, PET_EMOTES, getPetDef, resolvePetSpriteKey, resolvePetEmoteKey, resolvePetUiScale,
+  PETS, PET_FAMILIES, PET_EMOTES, getPetDef, petLocomotion, resolvePetSpriteKey, resolvePetEmoteKey, resolvePetUiScale,
 } from '/shared/pet_catalog.js';
 import {
   PET2, MAX_TRAIT_SLOTS, HUNGER, hungerZone, PET_MILESTONES, unlockedPosesForLevel,
@@ -21,6 +21,11 @@ import { skillFor, GENERIC_SKILLS } from '/shared/season_skills.js';
 import { PET } from '/shared/rpg_rules.js';
 import { fmtNum, escapeHtml, resolveItemVisual } from './ui_components.js';
 import { spriteInfo } from './assets.js';
+
+const GOLD_ICO_HTML = '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="Gold">';
+function formatGoldIcons(escapedStr) {
+  return String(escapedStr || '').replace(/🪙/g, GOLD_ICO_HTML);
+}
 
 export function utcDayStr(ms = Date.now()) {
   return String(Math.floor(ms / 86_400_000));
@@ -64,7 +69,7 @@ function formatSlotLine(slot) {
     const valStr = def.isFlat ? `+${val}` : `+${Math.round(val * 100)}%`;
     return {
       tier,
-      icon: def.icon || '✨',
+      icon: def.icon === '🪙' ? GOLD_ICO_HTML : (def.icon || '✨'),
       name: `${def.name} (${valStr})`,
       shortTitle: `${def.name} (${valStr})`,
       desc: def.desc,
@@ -101,16 +106,21 @@ export function renderPetSanctuary(ui, p) {
   const tierFormTitle = pdef.tierNames?.[visualTier] || (visualTier === 3 ? 'Radiant Form' : visualTier === 2 ? 'Awakened Form' : 'Starter Form');
   const eqPet = p.equipped?.pet;
   const isEquipped = Boolean(eqPet && (eqPet.uid === activePet.uid || eqPet.id === activePet.id));
+  const loco = petLocomotion(activePet.id);
+  const moveVerbLabel = loco === 'FLY_FLUTTER' ? '🪽 Fly' : loco === 'SKY_SWIM' ? '🌊 Swim' : '🏃 Walk';
 
   // --------------------------------------------------------------------------
   // BLOCK 1: Sakura Sky-Island Sanctuary Stage (Single Companion + Poses + Emotes)
   // --------------------------------------------------------------------------
   const activePoses = normalizeActivePoses(activePet.active_poses, bondLv);
   const unlockedPoses = unlockedSelectablePosesForLevel(bondLv);
+  const dirView = ui.petStageDirView || 'front';
   const heroPose = (ui.petPreviewPose && activePoses.includes(ui.petPreviewPose))
     ? ui.petPreviewPose
     : (activePoses[0] || 'front');
-  const stagePose = heroPose === 'flip' ? 'happy' : heroPose;
+  const stagePose = dirView !== 'front'
+    ? dirView
+    : (heroPose === 'flip' ? 'happy' : heroPose);
   const heroSpriteKey = resolvePetSpriteKey(activePet.id, visualTier, stagePose);
   const visFallback = resolveItemVisual(activePet.id, lineage);
   const heroUrl = spriteInfo(heroSpriteKey) ? `/assets/pets/${heroSpriteKey}.png` : visFallback.url;
@@ -241,7 +251,7 @@ export function renderPetSanctuary(ui, p) {
             <span>${escapeHtml(innateSkill.icon || '🌟')} <b>${escapeHtml(innateSkill.name)}</b> <small>(Innate Companion Ultimate)</small></span>
             <span class="pet-v2-costume-skill-tag">🔗 +15% Soul-Link Combo</span>
           </div>
-          <div class="pet-v2-costume-skill-desc">${escapeHtml(innateSkill.desc)}</div>
+          <div class="pet-v2-costume-skill-desc">${formatGoldIcons(escapeHtml(innateSkill.desc))}</div>
         </div>
         <div class="pet-v2-costume-lock-banner" style="margin-top:6px;">
           🔒 <b>Custom Costume Override &amp; Particle Trail (Unlocks at Companion Lv. 15 — Current: Lv. ${bondLv}/15)</b>
@@ -283,7 +293,7 @@ export function renderPetSanctuary(ui, p) {
             <span>${escapeHtml(activeSkill.icon || '⚡')} <b>${escapeHtml(activeSkill.name)}</b> <small>(${isCustomLinked ? 'Costume Soul-Echo Ultimate' : 'Innate Companion Ultimate'})</small></span>
             <span class="pet-v2-costume-skill-tag">${slStatsBarHtml}</span>
           </div>
-          <div class="pet-v2-costume-skill-desc">${escapeHtml(activeSkill.desc || 'Channels the costume ultimate in Sky Monopoly & Moon Bunny.')}</div>
+          <div class="pet-v2-costume-skill-desc">${formatGoldIcons(escapeHtml(activeSkill.desc || 'Channels the costume ultimate in Sky Monopoly & Moon Bunny.'))}</div>
         </div>
       </div>
     `;
@@ -320,7 +330,7 @@ export function renderPetSanctuary(ui, p) {
         <span class="s2-trait-medal tier-${tier}">${medalIcon}</span>
         <div class="pet-v2-slot-body">
           <div class="s2-trait-tag">${tagLabel}${slBadgeHtml}</div>
-          <div class="s2-trait-name">${line ? `${line.icon} <b>${escapeHtml(line.shortTitle)}:</b> ${escapeHtml(line.desc || '')}` : 'Empty Slot — Tap Reroll to Awaken'}</div>
+          <div class="s2-trait-name">${line ? `${line.icon} <b>${escapeHtml(line.shortTitle)}:</b> ${formatGoldIcons(escapeHtml(line.desc || ''))}` : 'Empty Slot — Tap Reroll to Awaken'}</div>
         </div>
         <button type="button" class="pet-v2-lock-btn ${isLocked ? 'locked' : ''}" data-pet-lock="${idx}" data-pet-action="toggle-lock" ${canToggleLock ? '' : 'disabled'} title="${isLocked ? 'Unlock Slot' : (canToggleLock ? 'Lock Slot for Next Reroll' : 'At least 1 slot must stay unlocked')}">
           <img src="/assets/ui/icon_pet_lock.png" class="s2-inline-ico" alt="" />
@@ -371,16 +381,17 @@ export function renderPetSanctuary(ui, p) {
     const pVis = resolveItemVisual(petId, lineage);
     const pUrl = spriteInfo(pSpr) ? `/assets/pets/${pSpr}.png` : pVis.url;
     const canAdopt = (p.gold | 0) >= 2500 || pets.length === 0;
-    const adoptCostLabel = pets.length === 0 ? 'Free' : '2,500 🪙';
+    const adoptCostTitle = pets.length === 0 ? 'Free' : '2,500 Gold';
+    const adoptCostHtml = pets.length === 0 ? 'Free' : `2,500 ${GOLD_ICO_HTML}`;
 
     return `
-      <div class="rpg-pet-bubble pet-v2-adopt-bubble" data-adopt-pet="${petId}" title="Bond with ${escapeHtml(cdef.name || petId)} (${adoptCostLabel})">
+      <div class="rpg-pet-bubble pet-v2-adopt-bubble" data-adopt-pet="${petId}" title="Bond with ${escapeHtml(cdef.name || petId)} (${adoptCostTitle})">
         <div class="s2-pet-avatar-circle not-owned">
           <img src="${pUrl}" alt="${escapeHtml(cdef.name || petId)}" />
         </div>
         <span class="s2-pet-b-name">${escapeHtml(shortSpecies)}</span>
         <button type="button" class="btn-gold s2-btn-rainbow small pet-v2-adopt-btn" data-adopt-pet="${petId}" ${canAdopt ? '' : 'disabled'}>
-          🐾 Bond (${adoptCostLabel})
+          🐾 Bond (${adoptCostHtml})
         </button>
       </div>
     `;
@@ -394,10 +405,10 @@ export function renderPetSanctuary(ui, p) {
       </div>
 
       <div class="s2-single-nest-diorama">
-        <div class="pet-v2-hero-focus s2-single-nest-focus">
+        <div class="pet-v2-hero-focus s2-single-nest-focus s2-loco-${loco} ${dirView === 'move' ? 'is-moving-preview' : ''}" data-dir-view="${escapeHtml(dirView)}">
           <img class="s2-single-nest-magic" src="/assets/ui/fx_magic_circle.png" alt="" />
           ${activeEmoteBubbleHtml}
-          <img class="pet-v2-stage-pet s2-nest-pet-hero pet-v2-tier-${visualTier} ${visualTier === 3 ? 'pet-v2-shimmer' : ''} ${heroPose === 'flip' ? 'pet-v2-flip-spin' : ''}" src="${heroUrl}" style="--pet-ui-scale:${heroUiScale};${heroFilter}" alt="${escapeHtml(displayName)}" />
+          <img class="pet-v2-stage-pet s2-nest-pet-hero pet-v2-tier-${visualTier} s2-loco-${loco} ${visualTier === 3 ? 'pet-v2-shimmer' : ''} ${heroPose === 'flip' && dirView === 'front' ? 'pet-v2-flip-spin' : ''} ${dirView === 'move' ? 'is-moving-preview' : ''}" src="${heroUrl}" style="--pet-ui-scale:${heroUiScale};${heroFilter}" alt="${escapeHtml(displayName)}" />
         </div>
         <div class="s2-nest-pet-tag">
           <b>${escapeHtml(shortDisplayName)}</b>
@@ -405,13 +416,19 @@ export function renderPetSanctuary(ui, p) {
         </div>
       </div>
 
-      <!-- Form Appearance Switcher & Quick Companion Actions -->
-      <div class="pet-v2-stage-bar">
+      <!-- Form Appearance Switcher, Angle/Motion View & Quick Companion Actions -->
+      <div class="pet-v2-stage-bar s2-pet-stage-controls">
         <div class="pet-v2-vtier-bar">
           <span class="pet-v2-vtier-label">Form:</span>
           <button type="button" class="pet-v2-vtier-pill ${visualTier === 1 ? 'active' : ''}" data-pet-vtier="1">★1</button>
           <button type="button" class="pet-v2-vtier-pill ${visualTier === 2 ? 'active' : ''}" data-pet-vtier="2" ${stars >= 2 ? '' : 'disabled'} title="${stars >= 2 ? 'Awakened Form' : 'Unlocks at Lv. 10'}">${stars >= 2 ? '★2' : '🔒Lv10'}</button>
           <button type="button" class="pet-v2-vtier-pill ${visualTier === 3 ? 'active' : ''}" data-pet-vtier="3" ${stars >= 3 ? '' : 'disabled'} title="${stars >= 3 ? 'Radiant Form' : 'Unlocks at Lv. 20'}">${stars >= 3 ? '★3' : '🔒Lv20'}</button>
+        </div>
+        <div class="pet-v2-vtier-bar pet-v2-dir-bar" title="Preview 360° Directional Views & Locomotion">
+          <button type="button" class="pet-v2-vtier-pill ${dirView === 'front' ? 'active' : ''}" data-pet-dir-view="front">Front</button>
+          <button type="button" class="pet-v2-vtier-pill ${dirView === 'side' ? 'active' : ''}" data-pet-dir-view="side">Side</button>
+          <button type="button" class="pet-v2-vtier-pill ${dirView === 'back' ? 'active' : ''}" data-pet-dir-view="back">Back</button>
+          <button type="button" class="pet-v2-vtier-pill ${dirView === 'move' ? 'active' : ''}" data-pet-dir-view="move">${moveVerbLabel}</button>
         </div>
         <button type="button" id="pet-interact-btn" class="pet-v2-mini-pill green">👋 Pat (+${PET2.INTERACT_BOND_XP} EXP)</button>
         <button type="button" id="pet-claim-gift-btn" class="pet-v2-mini-pill gold" ${giftReady ? '' : 'disabled'}>
@@ -422,25 +439,31 @@ export function renderPetSanctuary(ui, p) {
           : `<button type="button" class="pet-v2-mini-pill blue" data-equip-pet="${activePet.uid}">✨ Equip</button>`}
       </div>
 
-      <!-- Nickname Row -->
-      <div class="pet-v2-rename-row" style="margin-top:6px;">
-        <input type="text" id="pet-rename-input" class="pet-v2-rename-input" maxlength="${PET2.NICKNAME_MAX_LEN}" placeholder="Custom nickname (max 14 chars)…" value="${escapeHtml(activePet.nickname || '')}" />
-        <button type="button" id="pet-rename-save" class="btn-gold small pet-v2-rename-btn">✏️ Rename</button>
-      </div>
+      <!-- Compact Collapsible Drawer for Poses, 8 Emotes & Nickname -->
+      <details class="s2-pet-pose-drawer" ${ui.petPoseDrawerOpen ? 'open' : ''}>
+        <summary class="s2-pet-pose-summary">🎭 Poses (${activePoses.length}/${unlockedPoses.length}), 8 Emotes &amp; Nickname ▾</summary>
+        <div class="s2-pet-pose-drawer-body">
+          <!-- Nickname Row -->
+          <div class="pet-v2-rename-row" style="margin-top:4px;">
+            <input type="text" id="pet-rename-input" class="pet-v2-rename-input" maxlength="${PET2.NICKNAME_MAX_LEN}" placeholder="Custom nickname (max 14 chars)…" value="${escapeHtml(activePet.nickname || '')}" />
+            <button type="button" id="pet-rename-save" class="btn-gold small pet-v2-rename-btn">✏️ Rename</button>
+          </div>
 
-      <!-- Interactive Multi-Select Pose & Trick Rotation Bar (Always Visible) -->
-      <div class="pet-v2-pose-hint">
-        <span>🔄 <b>Idle Pose Rotation:</b> ${activePoses.length}/${unlockedPoses.length} active</span>
-        <small>Tap unlocked poses to toggle ✓ (cycles in village &amp; stage)</small>
-      </div>
-      <div class="pet-v2-pose-bar">
-        ${poseBarHtml}
-      </div>
+          <!-- Interactive Multi-Select Pose & Trick Rotation Bar -->
+          <div class="pet-v2-pose-hint">
+            <span>🔄 <b>Idle Pose Rotation:</b> ${activePoses.length}/${unlockedPoses.length} active</span>
+            <small>Tap unlocked poses to toggle ✓ (cycles in village &amp; stage)</small>
+          </div>
+          <div class="pet-v2-pose-bar">
+            ${poseBarHtml}
+          </div>
 
-      <!-- 8-Expression Bust Emotes (Always Visible) -->
-      <div class="pet-v2-emotes-grid" style="margin-top:5px;">
-        ${emotesHtml}
-      </div>
+          <!-- 8-Expression Bust Emotes -->
+          <div class="pet-v2-emotes-grid" style="margin-top:4px;">
+            ${emotesHtml}
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- BLOCK 2: Progress & Care Card (♥ Companion Level 1-30 + 🍓 Hunger 🟢/🟠/🔴) -->
@@ -480,7 +503,7 @@ export function renderPetSanctuary(ui, p) {
           <span class="s2-candy-emoji">🎲</span>
           <div class="s2-candy-label">
             <span>Reroll Unlocked Trait (${lockedCount}/${maxLocksAllowed} 🔒)</span>
-            <small>(🪙 ${rCost.gold.toLocaleString()} + 🍓 ${rCost.berries})</small>
+            <small>(${GOLD_ICO_HTML} ${rCost.gold.toLocaleString()} + 🍓 ${rCost.berries})</small>
           </div>
         </button>
       </div>
@@ -523,6 +546,11 @@ export function bindPetSanctuaryClick(ui, e, p) {
   const target = e?.target || e;
   if (!target || typeof target !== 'object') return false;
 
+  const drawerEl = ui.el?.querySelector?.('.s2-pet-pose-drawer');
+  if (drawerEl) {
+    ui.petPoseDrawerOpen = Boolean(drawerEl.open);
+  }
+
   const sendAction = (type, payload, onSuccess) => {
     if (typeof ui.send === 'function') {
       return ui.send(type, payload, onSuccess);
@@ -544,9 +572,33 @@ export function bindPetSanctuaryClick(ui, e, p) {
     return true;
   }
 
+  // 1b. Directional View & Locomotion Preview (Front | Side | Back | Move)
+  const dirBtn = target.closest?.('[data-pet-dir-view]');
+  if (dirBtn) {
+    const dir = dirBtn.dataset.petDirView || 'front';
+    ui.petStageDirView = dir;
+    const worldPet = ui.world?.local?.pet || (typeof window !== 'undefined' && (window.__neora?.world?.local?.pet || window.world?.local?.pet));
+    if (worldPet) {
+      if (dir === 'back') {
+        worldPet.facing?.set?.(true, true);
+        worldPet.applyView?.('back', true);
+      } else if (dir === 'side' || dir === 'move') {
+        worldPet.facing?.set?.(true, false);
+        worldPet.applyView?.(dir, true);
+      } else {
+        worldPet.facing?.set?.(true, false);
+        worldPet.applyView?.('front', true);
+      }
+    }
+    ui.render();
+    return true;
+  }
+
   // 2. Interactive Multi-Select Pose & Trick Bar
   const poseBtn = target.closest?.('[data-pet-pose]');
   if (poseBtn && !poseBtn.disabled) {
+    ui.petPoseDrawerOpen = true;
+    ui.petStageDirView = 'front';
     const pose = poseBtn.dataset.petPose;
     const pet = ui.resolveActivePet?.();
     if (pet) {
@@ -592,6 +644,7 @@ export function bindPetSanctuaryClick(ui, e, p) {
   // 3. Expression Bust Emote Preview
   const emoteBtn = target.closest?.('[data-pet-emote]');
   if (emoteBtn && !emoteBtn.disabled) {
+    ui.petPoseDrawerOpen = true;
     const emo = emoteBtn.dataset.petEmote;
     ui.petPreviewEmote = ui.petPreviewEmote === emo ? null : emo;
     const worldPet = ui.world?.local?.pet || (typeof window !== 'undefined' && (window.__neora?.world?.local?.pet || window.world?.local?.pet));
@@ -605,6 +658,7 @@ export function bindPetSanctuaryClick(ui, e, p) {
   // 4. Nickname Save
   const renameBtn = target.closest?.('#pet-rename-save');
   if (renameBtn) {
+    ui.petPoseDrawerOpen = true;
     const pet = ui.resolveActivePet();
     if (!pet) return true;
     const inp = ui.el?.querySelector('#pet-rename-input');

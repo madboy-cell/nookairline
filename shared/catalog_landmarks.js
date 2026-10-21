@@ -131,6 +131,11 @@ export const WONDERS = {
     kind: 'wonder', sprite: 'wnd_sky_airship_dock', name: 'Royal Starlight Airship Harbor', emoji: '🛳️', w: 3, h: 3, rarity: 2, series3: true,
     matchYieldPct: (s) => lerpStar(15, 35, s), effect: '+15–35% Sky-Harbor Trade Gold & Offline Storage',
   },
+  wnd_burj_khalifa: {
+    kind: 'wonder', sprite: 'wnd_burj_khalifa', name: 'Burj Khalifa & Dancing Fountain', emoji: '🏙️', w: 4, h: 4, rarity: 3, series3: true, spriteScale: 0.90,
+    matchYieldPct: (s) => lerpStar(30, 55, s), perDay: (s) => Math.floor(lerpStar(10, 25, s)),
+    effect: '+30–55% Post-Match Gold • +10–25 💎 Daily Dubai Royal Tribute',
+  },
 };
 export const WONDER_DUPE_SHARDS = { 2: 25, 3: 100 };
 
@@ -171,6 +176,11 @@ export const DECOR = {
   dec_heaven_divine_tree:    { kind: 'decor', sprite: 'dec_heaven_divine_tree', name: 'Sacred Pearl-Blossom Heaven Tree', emoji: '🌳', w: 2, h: 2, series3: true, buff: { berriesPct: 3 }, effect: '+3% Star-Berries/hr' },
   dec_heaven_lotus_fountain: { kind: 'decor', sprite: 'dec_heaven_lotus_fountain', name: 'Celestial Lotus & Cloud Basin', emoji: '🪷', w: 2, h: 2, series3: true, buff: { luckPct: 3 }, effect: '+3% Divine Wish Luck' },
   dec_heaven_seraph_harp:    { kind: 'decor', sprite: 'dec_heaven_seraph_harp', name: 'Golden Seraphim Angel-Wing Lyre', emoji: '🪉', w: 1, h: 1, series3: true, buff: { petMoodPct: 3 }, effect: '+3% Seraphim Harmony & Pet Mood' },
+  dec_palm_jumeirah_island:  { kind: 'decor', sprite: 'dec_palm_jumeirah_island', name: 'Palm Jumeirah & Royal Atlantis Lagoon', emoji: '🏝️', w: 2, h: 2, series3: true, spriteScale: 1.05, buff: { goldPct: 4 }, effect: '+4% Village Gold/hr • Palm Archipelago' },
+  dec_burj_al_arab_sail:     { kind: 'decor', sprite: 'dec_burj_al_arab_sail', name: 'Burj Al Arab Golden Sail Hotel', emoji: '⛵', w: 2, h: 2, series3: true, spriteScale: 0.82, buff: { fortunePct: 4 }, effect: '+4% Royal Dubai Fortune' },
+  dec_museum_of_the_future:  { kind: 'decor', sprite: 'dec_museum_of_the_future', name: 'Dubai Museum of the Future Torus', emoji: '🪐', w: 2, h: 2, series3: true, buff: { luckPct: 4 }, effect: '+4% Future Vision Luck' },
+  dec_dubai_dallah_majlis:   { kind: 'decor', sprite: 'dec_dubai_dallah_majlis', name: 'Emirati Dallah Coffee & Falcon Majlis', emoji: '🦅', w: 2, h: 2, series3: true, seats: 2, buff: { petMoodPct: 4 }, effect: '+4% Royal Falcon Mood • 2-Chibi Majlis' },
+  dec_nookairline_museum:    { kind: 'decor', sprite: 'dec_nookairline_museum', name: 'NookAirline V1 Memory Museum & 2.5D Portals', emoji: '✈️', w: 2, h: 2, series3: true, spriteScale: 1.35, seats: 2, buff: { fortunePct: 5, luckPct: 5 }, effect: 'Enter Nook & Neen V1 Memory Museum & 2.5D Mount Fuji Portal! (+5% Couple Fortune & Luck)' },
 };
 // Couple Love Pavilion: not placeable — rendered at BridgeCenterX when a couple bridge is visible.
 export const LOVE_PAVILION = { sprite: 'dec_love_pavilion', name: 'Couple Love Pavilion', harmonyPct: 25 };
@@ -180,11 +190,11 @@ export const ENV_PROPS_25D = {
   bushes: ['env_bush_mixed_large', 'env_bush_roses_pink', 'env_bush_daisies_white', 'env_bush_hydrangea_blue', 'env_hedge_boxwood_straight', 'env_hedge_boxwood_corner', 'env_hedge_ortho_horizontal', 'env_flowerbed_planter', 'env_planter_ortho_horizontal', 'env_sunflower_clump'],
   fences: ['env_fence_wood_stone_straight', 'env_fence_wood_stone_corner', 'env_fence_wood_stone_gate', 'env_fence_ortho_horizontal', 'env_arch_floral_ortho', 'env_wall_stone_low', 'dec_bench_ortho_front', 'decal_plaza_medallion_circle', 'dec_heaven_winged_pillar', 'dec_heaven_cloud_arch'],
   lamps: ['env_streetlamp_iron', 'env_streetlamp_double', 'env_string_lights_post', 'env_signpost', 'dec_heaven_seraph_harp'],
-  water: ['env_river_boulders_a', 'env_river_boulders_b', 'env_river_cattails', 'decal_water_lily_white', 'decal_water_lotus_pink', 'dec_heaven_lotus_fountain'],
+  water: ['env_river_boulders_a', 'env_river_boulders_b', 'env_river_cattails', 'decal_water_lily_white', 'decal_water_lotus_pink', 'dec_heaven_lotus_fountain', 'dec_palm_jumeirah_island'],
   bridges: ['bridge_stone_deck', 'env_bridge_parapet_side', 'env_bridge_pillar_cap', 'bridge_wood_deck', 'bridge_rainbow_arch', 'bridge_rainbow_front_arch', 'bridge_rainbow_back_rail', 'bridge_rainbow_deck_strip', 'dec_stone_arch_footbridge', 'dec_sakura_drum_bridge'],
   cliffs: ['cliff_grass_lip_strip', 'cliff_side_strata_strip', 'cliff_waterfall_strip', 'cliff_wall_strip', 'cliff_rim_turf_strip', 'cliff_heaven_cloud_wall', 'env_waterfall_mist', 'env_cloud_fluffy_a', 'env_cloud_fluffy_b'],
   monopolyEmblems: ['mono_icon_start', 'mono_icon_casino', 'mono_icon_airdrop', 'mono_icon_vault', 'mono_icon_warp', 'mono_icon_arena'],
-  monopolyGrounds: ['mono_ground_brook_classic', 'mono_ground_pond_sakura', 'mono_ground_oasis_mirage', 'mono_ground_lagoon_atlantis', 'mono_ground_rink_aurora'],
+  monopolyGrounds: ['mono_ground_brook_classic', 'mono_ground_pond_sakura', 'mono_ground_oasis_mirage', 'mono_ground_lagoon_atlantis', 'mono_ground_rink_aurora', 'mono_ground_palm_jumeirah'],
 };
 
 export const COMFORT = { CASTLE_PER_LV: 150, CORE_PER_LV: 100, WONDER_PER_STAR: 300, DECOR_FIRST: 120, DECOR_DUPE: 30, DECOR_CAP: 2400, TILE: 5, TILE_CAP: 500, YIELD_DIV: 200, YIELD_CAP_PCT: 50 };
@@ -224,17 +234,111 @@ export const EXPANSION_TIERS = [
 // Fishing (Section 2.F)
 // ---------------------------------------------------------------------------------------------
 export const FISH = {
-  minnow: { name: 'Silver Stream Minnow', emoji: '🐟', sprite: 'fish_minnow', rate: 45, reward: { gold: 150 }, exp: 25 },
-  crab:   { name: 'Starlight Coral Crab', emoji: '🦀', sprite: 'fish_crab', rate: 30, reward: { gold: 300, berries: 10 }, exp: 25 },
-  koi:    { name: 'Golden Starlight Koi', emoji: '🐠', sprite: 'fish_koi', rate: 15, reward: { gold: 500, berries: 25 }, exp: 25, baitOnly: true },
-  chest:  { name: 'Sunken Duplicate Gear Chest', emoji: '🎁', sprite: 'fish_chest', rate: 10, reward: { dupe: 1 }, exp: 50, baitOnly: true },
+  minnow: {
+    name: 'Silver Stream Minnow', emoji: '🐟', sprite: 'fish_minnow', rate: 45,
+    reward: { gold: 150 }, exp: 25,
+    rarity: 'common', stars: 1, minKg: 0.18, maxKg: 0.78, behavior: 'calm',
+    desc: 'Shimmering pond minnow that schools beneath the wooden dock.',
+  },
+  crab: {
+    name: 'Starlight Coral Crab', emoji: '🦀', sprite: 'fish_crab', rate: 30,
+    reward: { gold: 300, berries: 10 }, exp: 25,
+    rarity: 'rare', stars: 2, minKg: 0.48, maxKg: 1.96, behavior: 'heavy',
+    desc: 'Rosy star-shelled crab that pinches sweet Star-Berries along the riverbed.',
+  },
+  koi: {
+    name: 'Golden Starlight Koi', emoji: '🐠', sprite: 'fish_koi', rate: 15,
+    reward: { gold: 500, berries: 25 }, exp: 25, baitOnly: true,
+    rarity: 'epic', stars: 3, minKg: 1.85, maxKg: 6.80, behavior: 'darter',
+    desc: 'Radiant golden koi drawn only to fragrant Starlight Berry Bait.',
+  },
+  chest: {
+    name: 'Sunken Duplicate Gear Chest', emoji: '🎁', sprite: 'fish_chest', rate: 10,
+    reward: { dupe: 1 }, exp: 50, baitOnly: true,
+    rarity: 'mythic', stars: 4, minKg: 8.50, maxKg: 24.50, behavior: 'treasure',
+    desc: 'Gilded royal reliquary containing +1 Duplicate Gear for +10 Star-Force Blacksmith upgrades!',
+  },
 };
 export const FISHING = {
   BAIT_COST_BERRIES: 5, COOP_CHEST_MULT: 1.35, COOP_RADIUS: 4.0, DOCK_REACH: 2.6,
   BITE_MIN_MS: 2500, BITE_MAX_MS: 5000, REEL_MS: 3500, CAST_TIMEOUT_MS: 60000,
   SWEET_SPOT_WIDTH: 0.28, HOLD_SPEED: 0.45, DRIFT_SPEED: 0.35,
   CODEX_MILESTONES: [1, 10, 50], CODEX_DIAMONDS: 50,
+  BAIT_CHEST_PITY: 10, PERFECT_HOOK_WINDOW_MS: 650,
 };
+
+export const ANGLER_EXCHANGE = [
+  {
+    id: 'chest_targeted',
+    name: 'Targeted Sunken Gear Chest',
+    sub: '+1 Duplicate for your Pinned Target Gear (+10 Blacksmith!)',
+    icon: '/assets/village/fish_chest.png',
+    badge: '🔨 +10 FORGE DUPE',
+    rarity: 'mythic',
+    cost: { minnow: 6, crab: 4 },
+    reward: { targetedDupe: 1, exp: 50 },
+  },
+  {
+    id: 'chest_koi_express',
+    name: 'Sovereign Koi Reliquary Chest',
+    sub: 'Instant +1 Pinned Gear Duplicate + 500 🪙 Gold',
+    icon: '/assets/ui/item_dupe_box.png',
+    badge: '👑 KOI SPECIAL',
+    rarity: 'mythic',
+    cost: { koi: 2 },
+    reward: { targetedDupe: 1, gold: 500, exp: 60 },
+  },
+  {
+    id: 'gacha_ticket',
+    name: 'Goddess Summon Ticket',
+    sub: '1x Free Pull in Goddess Fashion or Architect Gacha',
+    icon: '/assets/ui/item_ticket_standard.png',
+    badge: '🎟️ SUMMON PULL',
+    rarity: 'epic',
+    cost: { minnow: 5, crab: 3 },
+    reward: { ticket: 1, exp: 35 },
+  },
+  {
+    id: 'blessed_scroll',
+    name: 'Blessed Star-Force Scroll',
+    sub: '+1 Protection Scroll & +15% Blacksmith Forge Buff (1h)',
+    icon: '/assets/ui/item_protection_scroll.png',
+    badge: '🔨 FORGE +15%',
+    rarity: 'epic',
+    cost: { crab: 4, koi: 1 },
+    reward: { scroll: 1, forgeBuffPct: 15, exp: 40 },
+  },
+  {
+    id: 'pet_sashimi',
+    name: 'Royal Sashimi Pet Platter',
+    sub: '+60 Pet Bond EXP, +30 Pet Essence & +40 🍓 Star-Berries',
+    icon: '/assets/ui/icon_pet_bond.png',
+    badge: '🐾 PET FEAST',
+    rarity: 'rare',
+    cost: { minnow: 4, crab: 2 },
+    reward: { petExp: 60, petEssence: 30, berries: 40, exp: 30 },
+  },
+  {
+    id: 'starlight_shards',
+    name: '25x Starlight Pity Shards',
+    sub: 'Redeem directly for 0% RNG Mythic Outfits in Shard Shop',
+    icon: '/assets/ui/icon_shard.png',
+    badge: '⭐ 0% RNG SHARDS',
+    rarity: 'mythic',
+    cost: { koi: 2, crab: 3 },
+    reward: { shards: 25, exp: 45 },
+  },
+  {
+    id: 'angler_diamonds',
+    name: 'Sunken Pearl Pouch (+100 💎)',
+    sub: '+100 Diamonds & +1,000 Gold from deep-sea starlight pearls',
+    icon: '/assets/ui/icon_diamond.png',
+    badge: '💎 +100 DIAMONDS',
+    rarity: 'mythic',
+    cost: { minnow: 8, crab: 5, koi: 1 },
+    reward: { diamonds: 100, gold: 1000, exp: 50 },
+  },
+];
 
 // ---------------------------------------------------------------------------------------------
 export const ALL_PLACEABLES = { ...CORE, ...WONDERS, ...DECOR };

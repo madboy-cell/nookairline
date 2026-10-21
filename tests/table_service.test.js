@@ -135,4 +135,125 @@ test('mono_pet_toggle_auto persists mono_pet_auto on the player profile', () => 
   close();
 });
 
+test('Cloud Dash: brief disconnect & reconnect preserves human control, rewards, and supports non-solo rematch', () => {
+  let rStep = 0.12;
+  const { svc, db, advance, close } = setup(() => { rStep = (rStep + 0.23) % 0.99; return rStep; });
+  svc.connect('nook');
+  svc.handle('nook', { type: 'table_create', mode: 'cloud_dash', dashMode: 'quick' });
+  const t = [...svc.mgr.tables.values()][0];
+  svc.handle('nook', { type: 'table_set_bot', seatIdx: 1, diff: 'hard' });
+  svc.handle('nook', { type: 'table_start' });
+  assert.equal(t.status, 'playing');
 
+  // Advance past countdown into active race
+  advance(4000);
+  svc.tick();
+  assert.equal(t.cloudDash.status, 'playing');
+
+  // Simulate socket drop mid-race
+  svc.disconnect('nook');
+  const racer = t.cloudDash.racers.find((r) => r.id === 'nook');
+  assert.equal(racer.isBot, false, 'temporary disconnect must NOT permanently convert human racer into a bot');
+  assert.equal(racer.disconnected, true, 'racer is marked temporarily disconnected');
+
+  // Tick while disconnected -> autopilot advances runner along track
+  advance(1000);
+  svc.tick();
+  assert.ok(racer.r.s > 0, 'autopilot keeps disconnected racer moving');
+
+  // Reconnect and send cd_report -> accepted!
+  svc.connect('nook');
+  assert.equal(racer.disconnected, false, 'reconnect clears disconnected flag');
+  const rep = svc.handle('nook', {
+    type: 'cd_report',
+    tableId: t.id,
+    t: 2.0,
+    s: racer.r.s + 5,
+    l: 0,
+    y: 0,
+    v: 18,
+    style: 120,
+    coins: 5,
+  });
+  assert.equal(rep.ok, true, 'reconnected human can report race progress');
+
+  // Finish race and verify rewards are paid to reconnected human
+  const goldBefore = db.getProfile('nook').gold;
+  racer.r.s = 1000;
+  racer.r.finished = true;
+  racer.r.finishT = 28.5;
+  svc.tick(); // registers firstFinishT and sets dnfAt
+  advance(15_000);
+  svc.tick(); // completes race after DNF countdown
+  assert.equal(t.status, 'ended');
+  assert.ok(t.cloudDash.rewards?.nook, 'reconnected human receives end-of-race rewards');
+  assert.ok(db.getProfile('nook').gold > goldBefore, 'gold credited to profile');
+
+  // Non-solo Cloud Dash rematch ("Run It Back") immediately restarts the race!
+  const prevSeed = t.cloudDash.seed;
+  assert.ok(svc.handle('nook', { type: 'table_rematch' }).ok);
+  assert.equal(t.status, 'playing', 'rematch immediately starts next Cloud Dash race');
+  assert.notEqual(t.cloudDash.seed, prevSeed);
+  close();
+});
+
+test('Moon Defense: brief disconnect & reconnect preserves human defender, and rematch restarts siege', () => {
+  const { svc, advance, close } = setup();
+  svc.connect('nook');
+  svc.handle('nook', { type: 'table_create', mode: 'moon_bunny' });
+  const t = [...svc.mgr.tables.values()][0];
+  svc.handle('nook', { type: 'table_start' });
+  assert.equal(t.status, 'playing');
+
+  // Disconnect mid-siege
+  svc.disconnect('nook');
+  const p = t.moonDefense.players.find((x) => x.id === 'nook');
+  assert.equal(p.isBot, false, 'temporary disconnect must NOT convert defender to bot');
+  assert.equal(p.disconnected, true);
+
+  // Reconnect
+  svc.connect('nook');
+  assert.equal(p.disconnected, false);
+  assert.equal(p.isBot, false);
+  assert.ok(svc.handle('nook', { type: 'mb_move', tableId: t.id, x: 1.5, z: 2.0 }).ok);
+
+  // End siege and trigger table_rematch -> immediately starts new siege
+  t.moonDefense.bunnyHp = 0;
+  advance(500);
+  svc.tick();
+  assert.equal(t.status, 'ended');
+  assert.ok(svc.handle('nook', { type: 'table_rematch' }).ok);
+  assert.equal(t.status, 'playing', 'Moon Defense rematch immediately restarts siege');
+  assert.equal(t.moonDefense.bunnyHp, t.moonDefense.bunnyMaxHp);
+  close();
+});
+
+test('Grand Casino: lobby join replaces bot, blocks new joins once started, and brief disconnect preserves seat for rejoin', () => {
+  const { svc, close } = setup();
+  svc.connect('nook');
+  svc.connect('beam');
+  svc.handle('nook', { type: 'table_create', mode: 'casino', casinoGame: 'pokdeng' });
+  const t = [...svc.mgr.tables.values()][0];
+  for (const k of [1, 2, 3]) svc.handle('nook', { type: 'table_set_bot', seatIdx: k, diff: 'hard' });
+
+  // beam joins in lobby -> replaces bot in seat 1
+  const sitLobby = svc.handle('beam', { type: 'table_sit', tableId: t.id });
+  assert.equal(sitLobby.ok, true);
+  assert.equal(sitLobby.seatIdx, 1);
+
+  svc.handle('nook', { type: 'table_start' });
+  assert.equal(t.status, 'playing');
+
+  // Once started, a new outsider ('leo') cannot join the running match
+  const sitRunning = svc.handle('leo', { type: 'table_sit', tableId: t.id });
+  assert.equal(sitRunning.ok, false);
+  assert.equal(sitRunning.error, 'match_running');
+
+  // Brief disconnect of beam does NOT null out beam's seat in t.casino.seats, and beam can rejoin & bet
+  svc.disconnect('beam');
+  assert.equal(t.casino.seats[1].userId, 'beam', 'brief disconnect preserves Casino seat');
+  svc.connect('beam');
+  const betRes = svc.handle('beam', { type: 'casino_bet', tableId: t.id, amount: 100 });
+  assert.equal(betRes.ok, true, 'rejoined player can immediately bet in current round');
+  close();
+});

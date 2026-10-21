@@ -41,8 +41,13 @@ export class FacingState {
     if (speed > 0.05) {
       this.idleFor = 0;
       const nx = vx / speed, nz = vz / speed;
-      if (Math.abs(nx) > MOVE.SIDE_DX) right = nx > 0;
-      back = nz < MOVE.BACK_DZ;
+      const sideThresh = (nx > 0) !== this.right ? MOVE.SIDE_DX + 0.05 : MOVE.SIDE_DX;
+      if (Math.abs(nx) > sideThresh) right = nx > 0;
+      if (this.back) {
+        if (nz > MOVE.BACK_DZ + 0.08) back = false;
+      } else if (nz < MOVE.BACK_DZ) {
+        back = true;
+      }
     } else {
       this.idleFor += dt;
       if (this.back && this.idleFor >= this.cfg.idleTurnTime) back = false; // turn to camera
@@ -201,16 +206,19 @@ export class PetFollower {
       }
     } else if (owner.moving && owner.vx !== undefined) {
       // owner is walking into the pet (e.g. reversed direction): hop aside off their path
-      this.crumbs.length = 0; this.lastCrumb = null;
       const sp = Math.hypot(owner.vx, owner.vz) || 1;
       const ux = owner.vx / sp, uz = owner.vz / sp;                 // owner heading
       let ax = this.x - owner.x, az = this.z - owner.z;
       const ad = Math.hypot(ax, az) || 1e-3; ax /= ad; az /= ad;    // away from owner
-      const side = (ux * az - uz * ax) >= 0 ? 1 : -1;               // which side of the path the pet is on
-      let mx = ax + -uz * side * 1.5, mz = az + ux * side * 1.5;    // away + perpendicular
-      const ml = Math.hypot(mx, mz) || 1; mx /= ml; mz /= ml;
-      const step = Math.min((PET_FOLLOW.MIN_FOLLOW_DIST - ad) + 0.05, Math.max(owner.speed, 2) * 1.2 * dt);
-      if (step > 0) { this.x += mx * step; this.z += mz * step; }
+      const walkingIntoPet = (ux * ax + uz * az) > 0.05 || ad < PET_FOLLOW.MIN_FOLLOW_DIST - 0.06;
+      if (walkingIntoPet) {
+        this.crumbs.length = 0; this.lastCrumb = null;
+        const side = (ux * az - uz * ax) >= 0 ? 1 : -1;               // which side of the path the pet is on
+        let mx = ax + -uz * side * 1.5, mz = az + ux * side * 1.5;    // away + perpendicular
+        const ml = Math.hypot(mx, mz) || 1; mx /= ml; mz /= ml;
+        const step = Math.min((PET_FOLLOW.MIN_FOLLOW_DIST - ad) + 0.05, Math.max(owner.speed, 2) * 1.2 * dt);
+        if (step > 0) { this.x += mx * step; this.z += mz * step; }
+      }
     }
     this.vx = dt > 0 ? (this.x - px) / dt : 0;
     this.vz = dt > 0 ? (this.z - pz) / dt : 0;

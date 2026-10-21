@@ -10,13 +10,13 @@
 import { MonopolyBoard, tokenModules } from './minigames/monopoly_25d/board_scene.js';
 import { MonopolyHud } from './minigames/monopoly_25d/hud.js';
 import { sfx } from './minigames/monopoly_25d/sfx.js';
-import { TableHub } from './table_hub.js';
+import { TableHub } from './table_hub.js?v=mst4';
 import { legalActions, scoreboard } from '/shared/monopoly_engine.js';
 import { TILES, MONO, rentFor, wrap } from '/shared/monopoly_rules.js';
 
 const fmt = (n) => Number(Math.round(n || 0)).toLocaleString('en-US');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const STATUS_TXT = { skipTurn: '❄️ FROZEN', fixedRoll: '🌙 Sleepwalk', moveDir: '🕰️ Reverse!', lapTax: '🎡 Heist', discountPct: '🔥 −50% Underdog' };
+const STATUS_TXT = { skipTurn: '❄️ FROZEN!', fixedRoll: '🌙 Sleepwalk!', moveDir: '⏪ REVERSE!', maxRoll: '🌌 SLOW-MO!', lapTax: '🎡 Heist!', discountPct: '🔥 −50% Underdog' };
 
 export class MonopolyBridge {
   /**
@@ -27,7 +27,7 @@ export class MonopolyBridge {
    * @param {(msg) => void} [o.toast]
    * @param {() => void} [o.onExit]     leave the minigame (back to village / Town Hall)
    */
-  constructor({ container, renderer, room, toast = () => {}, onExit = () => {}, onEnterMatch = () => {}, onLeaveMatch = () => {}, onCasinoStart = () => {} }) {
+  constructor({ container, renderer, room, toast = () => {}, onExit = () => {}, onEnterMatch = () => {}, onLeaveMatch = () => {}, onCasinoStart = () => {}, onMoonDefenseStart = () => {}, onCloudDashStart = () => {} }) {
     this.onEnterMatch = onEnterMatch;
     this.onLeaveMatch = onLeaveMatch;
     this.container = container;
@@ -36,6 +36,8 @@ export class MonopolyBridge {
     this.toast = toast;
     this.onExit = onExit;
     this.onCasinoStart = onCasinoStart;
+    this.onMoonDefenseStart = onMoonDefenseStart;
+    this.onCloudDashStart = onCloudDashStart;
     this.queue = [];
     this.playing = false;
     this.match = null;
@@ -49,6 +51,8 @@ export class MonopolyBridge {
       toast,
       onClose: () => this.exit(),
       onCasinoStart: (table) => this.onCasinoStart?.(table),
+      onMoonDefenseStart: (table) => this.onMoonDefenseStart?.(table),
+      onCloudDashStart: (table) => this.onCloudDashStart?.(table),
     });
     this.layer = document.createElement('div');
     this.layer.className = 'mono-layer';
@@ -63,9 +67,20 @@ export class MonopolyBridge {
       onDecide: (choice) => this.act({ type: 'mono_event_choice', choice }),
       onCam: () => this.toggleCam(),
       onExit: () => this.leaveMatch(),
-      onRematch: () => { this.hud.hidePodium(); this.podium = null; this._shownPodium = null; this.room.send({ type: 'table_rematch' }); },
+      onRematch: () => {
+        this._matchGen = (this._matchGen || 0) + 1;
+        this.hud.hidePodium();
+        this.hud.hideDecision();
+        this.podium = null;
+        this._shownPodium = null;
+        this.queue = [];
+        this.match = null;
+        this.busyInput = false;
+        this.room.send({ type: 'table_rematch' });
+      },
       onMute: () => { sfx.setMuted(!sfx.muted); return sfx.muted; },
     });
+    this._matchGen = 0;
 
     this.off = [
       room.on('table_state', (m) => this.onTableState(m)),
@@ -122,6 +137,8 @@ export class MonopolyBridge {
   }
 
   stopMatchView() {
+    this._matchGen = (this._matchGen || 0) + 1;
+    clearTimeout(this._botWatchdogTimer);
     if (this.active) this.onLeaveMatch(this);
     this.active = false;
     this.layer.hidden = true;
@@ -149,6 +166,7 @@ export class MonopolyBridge {
   render() { if (this.board) this.renderer.render(this.board.scene, this.board.camera); }
 
   destroy() {
+    clearTimeout(this._botWatchdogTimer);
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this._resize);
     this.off.forEach((f) => f?.());
@@ -158,22 +176,52 @@ export class MonopolyBridge {
     this.layer.remove();
   }
 
+  _matchVer(m) {
+    if (!m) return -1;
+    return (m.turn?.n || 0) * 100000 + (m.eventSeq || 0) + (m.ended ? 50000 : 0);
+  }
+
   // ------------------------------------------------------------------------- room messages
   async onTableState(m) {
     this.table = m.table;
-    if (m.table?.mode === 'casino') return;
+    if (m.table?.mode === 'casino' || m.table?.mode === 'moon_bunny' || m.table?.mode === 'cloud_dash') return;
     await tokenModules;
-    if ((m.table?.status === 'playing' || (m.table?.status === 'ended' && this.active)) && m.match) {
-      const fresh = !this.active || this.match?.tableId !== m.match.tableId || m.resumed;
+    if ((m.table?.status === 'playing' || (m.table?.status === 'ended' && (this.active || m.resumed))) && m.match) {
+      const sameMatch = Boolean(
+        this.match?.tableId &&
+        this.match.tableId === m.match.tableId &&
+        this.match?.seed === m.match.seed &&
+        !(this.match.ended && !m.match.ended)
+      );
+      const fresh = !this.active || !sameMatch || m.resumed;
       this.yourSeat = m.yourSeat;
       if (fresh) {
+        if (!sameMatch) {
+          this._matchGen = (this._matchGen || 0) + 1;
+          this.hud.hidePodium();
+          this.hud.hideDecision();
+          this.podium = null;
+          this._shownPodium = null;
+          this.busyInput = false;
+        }
         this.startMatchView();
-        this.queue = [];
-        this.applyFinal(m.match, { snap: true });
-        this.hud.setPlayers(m.match.players, m.yourSeat);
-        this.hud.updateCards(scoreboard(m.match), m.match.turn?.seat, m.match.players);
-        if (m.events?.length) this.enqueue({ events: m.events, match: m.match });
-        else this.refreshControls();
+        const incomingVer = this._matchVer(m.match);
+        // Keep any queued turn batches that belong to the same match and are strictly newer than this table_state snapshot
+        this.queue = sameMatch
+          ? this.queue.filter((b) => this._matchVer(b.match) > incomingVer)
+          : [];
+        if (!sameMatch || incomingVer >= this._matchVer(this.match)) {
+          this.applyFinal(m.match, { snap: true });
+          this.hud.setPlayers(m.match.players, m.yourSeat);
+          this.hud.updateCards(scoreboard(m.match), m.match.turn?.seat, m.match.players);
+        }
+        if (m.events?.length && (!sameMatch || incomingVer >= this._matchVer(this.match))) {
+          this.enqueue({ events: m.events, match: m.match });
+        } else if (this.queue.length) {
+          this.pump();
+        } else if (!this.playing) {
+          this.refreshControls();
+        }
       }
       return;
     }
@@ -198,15 +246,29 @@ export class MonopolyBridge {
       this.ensureBoard();
       while (this.queue.length) {
         const batch = this.queue.shift();
+        const gen = this._matchGen;
+        if (batch.match && this.match && (batch.match.tableId !== this.match.tableId || batch.match.seed !== this.match.seed)) {
+          continue;
+        }
         this.yourSeat = batch.yourSeat ?? this.yourSeat;
         this.hud.hideDecision();
         this.refreshControls(true);
         try {
-          await this.playBatch(batch.events || [], batch.match);
+          await this.playBatch(batch.events || [], batch.match, gen);
         } catch (err) {
           console.warn('[MonopolyBridge] playBatch error:', err);
         }
-        if (batch.match) this.applyFinal(batch.match);
+        if (gen !== this._matchGen) continue;
+        if (batch.match) {
+          const sameMatch = Boolean(
+            this.match?.tableId &&
+            this.match.tableId === batch.match.tableId &&
+            this.match?.seed === batch.match.seed
+          );
+          if (sameMatch && this._matchVer(batch.match) >= this._matchVer(this.match)) {
+            this.applyFinal(batch.match);
+          }
+        }
       }
       if (this.podium && this.match && this._shownPodium !== this.podium) {
         this._shownPodium = this.podium;
@@ -233,6 +295,7 @@ export class MonopolyBridge {
   }
 
   refreshControls(busy = false) {
+    clearTimeout(this._botWatchdogTimer);
     const m = this.match;
     if (!m) return;
     const seat = this.yourSeat;
@@ -248,11 +311,32 @@ export class MonopolyBridge {
       busy: lock, waitingName: cur && !la.myTurn ? cur.name : null,
       deadline: !this.room.local && m.deadline ? m.deadline - (m.serverSkew || 0) : null,
       fixedRoll: me?.status?.fixedRoll || 0,
+      moveDir: me?.status?.moveDir || 1,
+      maxRoll: me?.status?.maxRoll || 0,
+      skipTurn: Boolean(me?.status?.skipTurn),
     });
     if (!lock && la.pending) this.hud.showDecision(la.pending, m, seat);
     // auto camera: always follow whoever is acting; Overview is a manual toggle only
     if (!this.board.camForced) this.board.camMode = 'follow';
     this.board.followSeat = m.turn?.seat ?? this.board.followSeat;
+
+    // Bot-turn resync watchdog: if the client is idle waiting for a bot turn for > 3.2s, resync state
+    if (!lock && !m.ended && cur?.isBot && !la.myTurn && !this.queue.length) {
+      const stuckVer = this._matchVer(m);
+      this._botWatchdogTimer = setTimeout(() => {
+        if (!this.active || this.playing || this.queue.length || this._matchVer(this.match) !== stuckVer) return;
+        if (this.room?.local) {
+          this.room.mgr?.tick?.();
+          this.room.flush?.();
+        } else if (this.room?.net) {
+          if (this.room.net.ws?.readyState === 1) {
+            this.room.net.send({ type: 'auth_resume' });
+          } else if (!this.room.net.closedByUser) {
+            this.room.net.connect();
+          }
+        }
+      }, 3200);
+    }
   }
 
   act(msg) {
@@ -272,10 +356,21 @@ export class MonopolyBridge {
   }
 
   // ------------------------------------------------------------------------- cutscene replay
-  async playBatch(events, final) {
+  async playBatch(events, final, gen = this._matchGen) {
     const b = this.board, hud = this.hud;
     const names = final.players.map((p) => p.name);
-    const cash = (this.match || final).players.map((p) => p.cash);
+    const prevPlayers = (this.match || final).players;
+    const cash = prevPlayers.map((p) => p.cash);
+    const livePlayers = final.players.map((p, i) => {
+      const prev = prevPlayers[i] || p;
+      return {
+        ...p,
+        status: { ...(prev.status || p.status || {}) },
+        shields: prev.shields ?? p.shields ?? 0,
+        coupons: prev.coupons ?? p.coupons ?? 0,
+        revive: prev.revive ?? p.revive ?? 0,
+      };
+    });
     const at = (seat) => (b.tokens[seat] ? { x: b.tokens[seat].x, z: b.tokens[seat].z } : 0);
     const scores = () => final.players.map((p, i) => ({
       seat: i, cash: cash[i], netWorth: scoreboard(final)[i].netWorth,
@@ -285,23 +380,39 @@ export class MonopolyBridge {
     b.playbackRate = firstTurnSeat != null && final.players[firstTurnSeat]?.isBot ? 1.5 : 1;
     try {
       for (const e of events) {
+        if (gen != null && gen !== this._matchGen) break;
         switch (e.t) {
           case 'turn':
             b.followSeat = e.seat;
             b.playbackRate = final.players[e.seat]?.isBot ? 1.5 : 1;
             hud.setRound(e.round, final.maxRounds || MONO.MAX_ROUNDS, !!final.chaos);
-            hud.updateCards(scores(), e.seat, final.players);
+            b.syncTokenStatuses?.(livePlayers, { animate: false });
+            hud.updateCards(scores(), e.seat, livePlayers);
             if (e.seat === this.yourSeat) hud.ticker('✨ Your turn!', 1200);
             break;
           case 'chaos_event':
             await b.juice?.(e, { final, hud });
             break;
-          case 'dice':
+          case 'dice': {
             if (!b.camForced) b.camMode = 'follow';
             b.followSeat = e.seat;
-            await b.rollDice(e.seat, e.dice);
-            b.float(`${e.boosted ? '⚡' : '🎲'} ${e.steps}${e.dir < 0 ? ' ◀' : ''}`, at(e.seat), { y: 2.6, big: true, color: '#fff6c2' });
+            const pst = livePlayers[e.seat]?.status || {};
+            const isRev = e.dir < 0 || pst.moveDir === -1;
+            const maxR = pst.maxRoll || 0;
+            const fixR = pst.fixedRoll || 0;
+            await b.rollDice(e.seat, e.dice, { reversed: isRev, maxRoll: maxR, fixedRoll: fixR });
+            if (pst.moveDir === -1) pst.moveDir = 1;
+            if (pst.maxRoll) delete pst.maxRoll;
+            if (pst.fixedRoll) delete pst.fixedRoll;
+            b.syncTokenStatuses?.(livePlayers, { animate: false });
+            hud.updateCards(scores(), e.seat, livePlayers);
+            b.float(
+              `${e.boosted ? '⚡' : '🎲'} ${e.steps}${isRev ? ' ◀ REVERSE' : maxR ? ` (MAX ${maxR})` : ''}`,
+              at(e.seat),
+              { y: 2.6, big: true, color: isRev ? '#e8b8ff' : maxR ? '#8ff2ff' : '#fff6c2' }
+            );
             break;
+          }
           case 'move': {
             await b.moveToken(e.seat, e.path, e.kind);
             if (e.kind === 'walk' && Array.isArray(e.path) && e.path.length > 0) {
@@ -361,12 +472,23 @@ export class MonopolyBridge {
             if (e.from != null) { cash[e.from] -= e.amount; hud.bumpCash(e.from, -1); }
             if (e.to != null) { cash[e.to] += e.amount; hud.bumpCash(e.to, 1); }
             if (e.from != null && e.to != null && e.reason !== 'rent') b.coins?.(e.from, e.to, e.amount);
-            hud.updateCards(scores(), final.turn?.seat, final.players);
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
             break;
           case 'rent': {
             const tile = e.tile;
-            if (e.shielded) { b.float('🛡️ Rent blocked!', tile, { color: '#bfe6ff' }); break; }
-            if (e.frozen) { b.float('❄️ 0 rent', tile, { color: '#bfe6ff' }); break; }
+            if (e.shielded) {
+              if (livePlayers[e.payer]) livePlayers[e.payer].shields = Math.max(0, (livePlayers[e.payer].shields || 1) - 1);
+              b.float('🛡️ RENT BLOCKED!', tile, { color: '#7fe3ff', big: true });
+              hud.ticker(`🛡️ ${names[e.payer]}'s Shield blocked rent on ${TILES[tile]?.name || 'tile'}!`, 1800);
+              await b.playShieldEffect?.(e.payer, { broken: true });
+              b.syncTokenStatuses?.(livePlayers, { animate: false });
+              hud.updateCards(scores(), final.turn?.seat, livePlayers);
+              break;
+            }
+            if (e.frozen) {
+              b.float('❄️ FROZEN — 0 RENT!', tile, { color: '#9ef2ff', big: true });
+              break;
+            }
             b.coins(e.payer, e.owner, e.amount);
             sfx.coin(false);
             b.float(`${e.reversed ? '🎭 Reversed! ' : ''}−${fmt(e.amount)} 🪙`, tile, { color: '#ff8f8f', big: e.amount >= 600 });
@@ -411,14 +533,28 @@ export class MonopolyBridge {
             b.setModifier(e.tile, e.modifier);
             break;
           case 'status': {
+            if (livePlayers[e.seat]) {
+              Object.assign(livePlayers[e.seat].status, e.status || {});
+            }
+            b.syncTokenStatuses?.(livePlayers, { animate: true });
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
             const k = Object.keys(STATUS_TXT).find((x) => e.status?.[x]);
             const tk = b.tokens[e.seat];
-            if (k && tk) b.float(STATUS_TXT[k], { x: tk.x, z: tk.z }, { y: 2.4, color: '#e9dcff' });
+            const label = k === 'maxRoll' ? `🌌 SLOW-MO (MAX ${e.status.maxRoll})!` : k === 'fixedRoll' ? `🌙 ROLL ${e.status.fixedRoll}!` : STATUS_TXT[k];
+            if (label && tk) b.float(label, { x: tk.x, z: tk.z }, { y: 2.5, color: '#e9dcff', big: true });
             break;
           }
           case 'grant': {
+            if (livePlayers[e.seat]) {
+              if (e.shields) livePlayers[e.seat].shields = (livePlayers[e.seat].shields || 0) + e.shields;
+              if (e.coupons) livePlayers[e.seat].coupons = (livePlayers[e.seat].coupons || 0) + e.coupons;
+              if (e.revive) livePlayers[e.seat].revive = (livePlayers[e.seat].revive || 0) + e.revive;
+            }
+            b.syncTokenStatuses?.(livePlayers, { animate: true });
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
             const tk = b.tokens[e.seat];
-            if (tk) b.float(`${e.shields ? '🛡️' : ''}${e.coupons ? '🎟️' : ''}${e.revive ? '🐦‍🔥' : ''} +1`, { x: tk.x, z: tk.z }, { y: 2.4 });
+            if (tk) b.float(`${e.shields ? '🛡️' : ''}${e.coupons ? '🎟️' : ''}${e.revive ? '🐦‍🔥' : ''} +1`, { x: tk.x, z: tk.z }, { y: 2.4, big: true });
+            if (e.shields) b.playShieldEffect?.(e.seat, { broken: false });
             break;
           }
           case 'ult': {
@@ -473,22 +609,71 @@ export class MonopolyBridge {
             break;
           }
           case 'trap': {
-            const label = { burn: `🔥 −${e.amount}`, prison: '👠 Glass Slipper Prison!', push: '🌊 Swept +2!', warp: '⛩️ Spirited away!' }[e.kind];
-            b.float(label, e.tile, { color: '#ffd0f0', big: e.kind !== 'burn' });
-            await b.wait(0.3);
+            const label = {
+              burn: `🔥 −${e.amount}`,
+              prison: '👠 Glass Slipper Prison!',
+              push: '🌊 Swept +2!',
+              push_forward: `⛩️ Fox Gate +${e.steps || 2}!`,
+              warp: '⛩️ Spirited away!',
+              teleport_cheapest: '💠 Whirlpool Warp!',
+              invert_rent: `🎭 Inverted Rent +${fmt(e.amount)} 🪙!`,
+            }[e.kind] || '⚡ Trap Triggered!';
+            b.playTrapTrigger?.(e.seat, e.tile, e.kind);
+            if (e.kind === 'prison' && livePlayers[e.seat]?.status) {
+              livePlayers[e.seat].status.skipTurn = true;
+              b.syncTokenStatuses?.(livePlayers, { animate: true });
+              hud.updateCards(scores(), final.turn?.seat, livePlayers);
+            }
+            b.float(label, e.tile ?? at(e.seat), { color: '#ffd0f0', big: e.kind !== 'burn' });
+            await b.wait(0.38);
             break;
           }
           case 'skip': {
             const tk = b.tokens[e.seat];
-            if (tk) b.float('❄️ Frozen — turn skipped', { x: tk.x, z: tk.z }, { y: 2.4, color: '#bfe6ff', big: true });
-            await b.wait(0.7);
+            if (tk) b.float('❄️ FROZEN — TURN SKIPPED!', { x: tk.x, z: tk.z }, { y: 2.5, color: '#8ff0ff', big: true });
+            hud.ticker(`❄️ ${names[e.seat]} is Frozen — Turn Skipped!`, 1800);
+            await b.playSkipTurn?.(e.seat);
+            if (livePlayers[e.seat]?.status) livePlayers[e.seat].status.skipTurn = false;
+            b.syncTokenStatuses?.(livePlayers, { animate: false });
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
+            await b.wait(0.25);
             break;
           }
-          case 'revive': hud.ticker(`🐦‍🔥 ${names[e.seat]} rose from the ashes!`); break;
-          case 'shield_break': b.float('🛡️💥', at(e.seat)); break;
+          case 'revive':
+            if (livePlayers[e.seat]) livePlayers[e.seat].revive = Math.max(0, (livePlayers[e.seat].revive || 1) - 1);
+            hud.ticker(`🐦‍🔥 PHOENIX REBIRTH! ${names[e.seat]} rose from the ashes with ${fmt(e.cash || 500)} 🪙!`, 2600);
+            b.float('🐦‍🔥 PHOENIX REBIRTH!', at(e.seat), { y: 2.7, color: '#ffb84d', big: true });
+            await b.playPhoenixRevive?.(e.seat);
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
+            break;
+          case 'shield_break':
+            if (livePlayers[e.seat]) livePlayers[e.seat].shields = Math.max(0, (livePlayers[e.seat].shields || 1) - 1);
+            b.float('🛡️💥 SHIELD BLOCKED!', at(e.seat), { y: 2.5, color: '#7fe3ff', big: true });
+            await b.playShieldEffect?.(e.seat, { broken: true });
+            b.syncTokenStatuses?.(livePlayers, { animate: false });
+            hud.updateCards(scores(), final.turn?.seat, livePlayers);
+            break;
+          case 'phase_shift':
+            sfx.fanfare();
+            b.playPhaseShift?.(e.phase);
+            hud.setRound(e.round, final.maxRounds || MONO.MAX_ROUNDS, !!final.chaos);
+            hud.ticker(
+              e.phase === 'overdrive'
+                ? '🔥 STARLIGHT OVERDRIVE! 2× ULT CHARGE · 1.65× RENT!'
+                : '⚡ MID-GAME ESCALATION! 1.35× ULT · 1.25× RENT · 450 🪙 SALARY!',
+              3000
+            );
+            break;
+          case 'bounty':
+            sfx.fanfare();
+            b.float(`💀 KO BOUNTY +${fmt(e.cash)} 🪙 +${e.ult}% ULT!`, at(e.seat), { y: 3.0, big: true, color: '#ffd86b' });
+            hud.ticker(`💀 ${names[e.seat]} claimed Knockout Bounty (+${fmt(e.cash)} 🪙, +${e.ult}% ULT)!`, 2600);
+            break;
           case 'bankrupt':
             sfx.bad();
             if (b.tokens[e.seat]) b.markBankrupt(b.tokens[e.seat]);
+            if (livePlayers[e.seat]) livePlayers[e.seat].bankrupt = true;
+            b.syncTokenStatuses?.(livePlayers, { animate: false });
             hud.ticker(`💥 ${names[e.seat]} went BANKRUPT${e.finisher ? ' — BANKRUPTCY STRIKE!' : '!'}`, 3000);
             await b.wait(0.9);
             break;

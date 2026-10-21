@@ -13,8 +13,12 @@ import { SLOTS, slotCP, recalcPlayerCP } from '/shared/progression.js';
 import { itemDef, itemSlot, FEATURED_OUTFIT, MYTHIC_DICE, petPassivePct, forgeReady } from '/shared/rpg_rules.js';
 import { computePaperDollParts, OUTFIT_FALLBACK } from '/shared/accessory_attach.js';
 import { HAIRSTYLES, HAIR_COLORS, hairSpriteName } from '/shared/hair_catalog.js';
+import { normalizeItemStats, matchMods } from '/shared/monopoly_rules.js';
+import { moonDefenseMods } from '/shared/moon_defense_rules.js';
+import { computeUniversalStats, inspectItemAttune } from '/shared/universal_stats.js';
+import { detectBuild, BUILDS, BUILD_PERKS } from '/shared/dash_builds.js';
 import { loadManifest, spriteInfo } from './assets.js';
-import { ChibiRig } from './chibi_rig.js';
+import { ChibiRig } from './chibi_rig.js?v=cd37';
 
 export const fmtNum = (n) => (n >= 100000 ? `${(n / 1000).toFixed(1)}K` : Number(n || 0).toLocaleString('en-US'));
 
@@ -36,6 +40,44 @@ export const SLOT_LABELS = {
   boots: 'Boots',
   wings: 'Wings',
   dice: '3D Dice',
+};
+
+export const SLOT_ROLE_GUIDE = {
+  outfit: {
+    icon: '👘',
+    badge: '🌈 Ultimate + 4 Stats',
+    text: 'Unlocks your [🌈 Ultimate] skill in 🎲 Monopoly, 🌙 Moon Defense & ☁️ Cloud Dash + boosts Universal Stats (+0→+10).',
+  },
+  hat: {
+    icon: '🎩',
+    badge: 'Universal 4-Stat Gear',
+    text: 'Boosts 🔥 Power, ⚡ Swiftness, 🪙 Fortune & 🍀 Luck across all 3 modes! Wear any cute hat & Forge +0→+10.',
+  },
+  face: {
+    icon: '👓',
+    badge: 'Universal 4-Stat Gear',
+    text: 'Boosts 🔥 Power, ⚡ Swiftness, 🪙 Fortune & 🍀 Luck across all 3 modes! Wear any glasses/blush & Forge +0→+10.',
+  },
+  gloves: {
+    icon: '🧤',
+    badge: 'Universal 4-Stat Gear',
+    text: 'Wear any bouquet, wand, teacup, or blade — all Gloves & Held items feed your 4 Universal Stats in every mode (+0→+10).',
+  },
+  boots: {
+    icon: '🥾',
+    badge: 'Universal 4-Stat Gear',
+    text: 'Boosts ⚡ Swiftness, 🔥 Power, 🪙 Fortune & 🍀 Luck in 🎲 Monopoly, 🌙 Moon Defense & ☁️ Cloud Dash (+0→+10).',
+  },
+  wings: {
+    icon: '🪽',
+    badge: '4 Stats + Star Aura',
+    text: 'Boosts your 4 Universal Stats across all 3 modes + radiates +5 / +8 / +10 Blacksmith Star-Force Aura!',
+  },
+  dice: {
+    icon: '🎲',
+    badge: '3D Dice + 4 Stats',
+    text: 'Custom 3D Dice skin on the Monopoly board + boosts your 4 Universal Stats across all 3 modes (+0→+10).',
+  },
 };
 
 const PET_FAMILY_SPRITE = {
@@ -123,12 +165,78 @@ export const BAG_ITEM_CATALOG = {
   },
 };
 
-function formatStatsSummary(stats) {
+export const STAT_PILL_META = {
+  power:     { icon: '🔥', label: 'Power',     short: 'PWR', cls: 'stat-power' },
+  swiftness: { icon: '⚡', label: 'Swiftness', short: 'SWF', cls: 'stat-swiftness' },
+  fortune:   { icon: '🪙', label: 'Fortune',   short: 'FRT', cls: 'stat-fortune' },
+  luck:      { icon: '🍀', label: 'Luck',      short: 'LCK', cls: 'stat-luck' },
+};
+
+export function getItemEffectiveStats(itemId, refine = 0, attuneStat = null) {
+  const def = itemDef(itemId);
+  if (!def) return { power: 0, swiftness: 0, fortune: 0, luck: 0, isAll: false, allVal: 0 };
+  const mult = 1 + 0.15 * Math.max(0, refine | 0);
+  const effRarity = def.rarity === 'super_mythic' ? 3 : (def.rarity || 1);
+  const raw = def.stats || (effRarity === 3 ? { all: 24 } : { all: 8 });
+  const norm = normalizeItemStats(raw, effRarity);
+  const allBonus = Number(norm.all || raw.all || 0);
+  if (allBonus > 0 && !norm.power && !norm.swiftness && !norm.fortune && !norm.luck) {
+    const v = Math.round(allBonus * mult);
+    return { power: v, swiftness: v, fortune: v, luck: v, isAll: true, allVal: v };
+  }
+  const info = inspectItemAttune(itemId, refine, attuneStat);
+  if (info?.attunable) {
+    const out = { power: 0, swiftness: 0, fortune: 0, luck: 0, isAll: false, allVal: 0 };
+    if (info.mainStat) out[info.mainStat] += info.mainVal;
+    const secKey = (refine >= 5 && attuneStat && info.allowedStats?.includes(attuneStat))
+      ? attuneStat
+      : (info.activeSecStat || info.defaultSecStat);
+    if (secKey) out[secKey] += info.secVal;
+    return out;
+  }
+  const power = Math.round(((norm.power || 0) + allBonus) * mult);
+  const swiftness = Math.round(((norm.swiftness || 0) + allBonus) * mult);
+  const fortune = Math.round(((norm.fortune || 0) + allBonus) * mult);
+  const luck = Math.round(((norm.luck || 0) + allBonus) * mult);
+  return { power, swiftness, fortune, luck, isAll: false, allVal: 0 };
+}
+
+
+export function formatStatsSummary(stats, rarity = 1, refine = 0) {
   if (!stats) return '';
-  if (stats.all) return `+${stats.all} All Stats`;
-  return Object.entries(stats)
-    .map(([k, v]) => `+${v} ${k.charAt(0).toUpperCase() + k.slice(1)}`)
-    .join(' • ');
+  const mult = 1 + 0.15 * Math.max(0, refine | 0);
+  if (stats.all && !stats.power && !stats.swiftness && !stats.fortune && !stats.luck && !stats.charm) {
+    return `+${Math.round(stats.all * mult)} All 4 Stats`;
+  }
+  const norm = normalizeItemStats(stats, rarity);
+  const parts = [];
+  for (const k of ['power', 'swiftness', 'fortune', 'luck']) {
+    const v = Math.round((norm[k] || 0) * mult);
+    if (v > 0) {
+      const m = STAT_PILL_META[k];
+      parts.push(`${m.icon} +${v} ${m.label}`);
+    }
+  }
+  return parts.join(' • ');
+}
+
+export function renderItemStatPills(itemId, refine = 0, { compact = false } = {}) {
+  const eff = getItemEffectiveStats(itemId, refine);
+  if (!eff.power && !eff.swiftness && !eff.fortune && !eff.luck) return '';
+  if (eff.isAll) {
+    return `<div class="s2-item-stat-pills"><span class="s2-item-stat-pill stat-all" title="Boosts Power, Swiftness, Fortune &amp; Luck across Monopoly, Moon Defense &amp; Cloud Dash">🌟 +${eff.allVal} ${compact ? 'All Stats' : 'All 4 Stats'}</span></div>`;
+  }
+  const pills = [];
+  for (const k of ['power', 'swiftness', 'fortune', 'luck']) {
+    const v = eff[k];
+    if (v > 0) {
+      const m = STAT_PILL_META[k];
+      pills.push(
+        `<span class="s2-item-stat-pill ${m.cls}" title="${m.label} (Monopoly • Moon Defense • Cloud Dash)">${m.icon} +${v} ${compact ? m.short : m.label}</span>`
+      );
+    }
+  }
+  return `<div class="s2-item-stat-pills">${pills.join('')}</div>`;
 }
 
 export const SHARD_OFFER_VISUALS = {
@@ -215,13 +323,13 @@ export function resolveShardOfferMeta(offerId, offer = {}, curPick = '', lineage
     sub = w ? `${w.w}×${w.h} Wonder (${w.effect})` : 'VIP Wonder Direct Exchange';
   } else if (offer.pick === 'dice') {
     const d = DICE_SKINS[targetId];
-    const st = formatStatsSummary(d?.stats);
+    const st = formatStatsSummary(d?.stats, d?.rarity || 3);
     sub = d ? `★3 Mythic 3D Dice${st ? ` (${st})` : ''}` : 'Any ★3 Mythic 3D Dice Skin';
   } else if (offer.pick === 'accessory') {
     const acc = curPick && (ACCESSORIES[curPick] || DICE_SKINS[curPick]);
     if (acc) {
       rarity = acc.rarity || rarity;
-      const st = formatStatsSummary(acc.stats);
+      const st = formatStatsSummary(acc.stats, rarity);
       sub = `${SLOT_LABELS[acc.slot] || acc.slot}${st ? ` (${st})` : ''}`;
     } else {
       sub = BAG_ITEM_CATALOG.dupe_box?.desc || 'Select Accessory for +1 Dupe';
@@ -229,7 +337,7 @@ export function resolveShardOfferMeta(offerId, offer = {}, curPick = '', lineage
   } else if (offer.item && itemDef(offer.item)) {
     const def = itemDef(offer.item);
     const slot = itemSlot(offer.item);
-    const st = formatStatsSummary(def.stats);
+    const st = formatStatsSummary(def.stats, def.rarity || 2);
     sub = `${SLOT_LABELS[slot] || slot}${st ? ` (${st})` : ''}`;
   } else if (offer.pet && PETS[offer.pet]) {
     const pdef = PETS[offer.pet];
@@ -519,55 +627,23 @@ export function renderIconThumb(id, {
  * Computes the 4 core RPG stats (Fortune, Swiftness, Power, Luck) dynamically from profile state.
  */
 export function computePlayerStats(profile) {
-  const lv = Math.max(1, profile?.level | 0);
-  const stats = {
-    fortune: 20 + lv * 4,
-    swiftness: 15 + lv * 3,
-    power: 25 + lv * 5,
-    luck: 15 + lv * 3,
+  const uni = computeUniversalStats(profile);
+  const stats = uni.total;
+  const petFamily = uni.petFamily;
+  const petPct = uni.petPct;
+
+  const monoMods = matchMods(stats, { petFamily, petPct });
+  const mbMods = moonDefenseMods(stats, { petFamily, petPct });
+  const dashMods = {
+    topSpeedPct: `+${Math.min(20, +(stats.swiftness * 0.04).toFixed(1))}%`,
+    accelPct: `+${Math.min(25, +(stats.swiftness * 0.05).toFixed(1))}%`,
+    furyChargePct: `+${Math.min(35, +(stats.power * 0.07).toFixed(1))}%`,
+    knockbackResistPct: `-${Math.min(30, +(stats.power * 0.06).toFixed(1))}%`,
+    podiumGoldPct: `+${Math.min(60, +(stats.fortune * 0.12).toFixed(1))}%`,
+    magnetRadiusPct: `+${Math.min(40, +(stats.fortune * 0.08).toFixed(1))}%`,
+    rareBoxPct: `+${Math.min(30, +(stats.luck * 0.06).toFixed(1))}%`,
+    miracleShieldPct: `${Math.min(20, +(stats.luck * 0.04).toFixed(1))}%`,
   };
-
-  const eq = profile?.equipped || {};
-  for (const s of SLOTS) {
-    const id = eq[s]?.id;
-    if (!id) continue;
-    const def = itemDef(id);
-    if (!def) continue;
-    const mult = 1 + 0.15 * Math.max(0, eq[s]?.refine | 0);
-    const st = def.stats || (def.rarity === 3 ? { all: 24 } : { all: 8 });
-    if (st.all) {
-      const v = Math.round(st.all * mult);
-      stats.fortune += v;
-      stats.swiftness += v;
-      stats.power += v;
-      stats.luck += v;
-    }
-    if (st.fortune) stats.fortune += Math.round(st.fortune * mult);
-    if (st.swiftness) stats.swiftness += Math.round(st.swiftness * mult);
-    if (st.power) stats.power += Math.round(st.power * mult);
-    if (st.luck) stats.luck += Math.round(st.luck * mult);
-  }
-
-  // Pet passive contribution (V2 random stat slots + family passive)
-  const eqPet = eq.pet;
-  if (eqPet?.id && PETS[eqPet.id]) {
-    const fam = PET_FAMILIES[PETS[eqPet.id].family];
-    const pct = petPassivePct(eqPet.id, eqPet.stars || PETS[eqPet.id].rarity, eqPet.level || 1, 100);
-    const bonus = Math.round(pct * 2.5);
-    if (fam?.passive === 'fortune' || fam?.passive === 'idle_tycoon') stats.fortune += bonus;
-    else if (fam?.passive === 'swiftness') stats.swiftness += bonus;
-    else if (fam?.passive === 'power' || fam?.passive === 'guardian') stats.power += bonus;
-    else stats.luck += bonus;
-
-    const petObj = profile?.pets?.[eqPet.id] || eqPet;
-    if (Array.isArray(petObj.slots)) {
-      const pPassives = computePetPassives(petObj);
-      stats.fortune += Math.round((pPassives.fortune || 0) * 4);
-      stats.swiftness += Math.round((pPassives.swiftness || 0) * 6);
-      stats.power += Math.round((pPassives.power || 0) * 5);
-      stats.luck += Math.round((pPassives.luck || 0) * 6);
-    }
-  }
 
   return {
     fortunePct: +(stats.fortune * 0.25).toFixed(1),
@@ -575,39 +651,128 @@ export function computePlayerStats(profile) {
     powerMult: +(1 + stats.power * 0.008).toFixed(2),
     luckPct: +(stats.luck * 0.12).toFixed(1),
     raw: stats,
+    monoMods,
+    mbMods,
+    dashMods,
+    base: uni.base,
+    gear: uni.gear,
+    pet: uni.pet,
+    bonus: uni.bonus,
+    total: uni.total,
   };
 }
 
 /**
- * Renders the 2x2 Style-2 Character Stat Breakdown Card (Screen 07 Mockup 07).
+ * Renders the 2x2 Style-2 Character Stat Breakdown Card (Screen 07 Mockup 07)
+ * plus the interactive 3-Mode Universal Stat Bridge inspector.
  */
-export function renderStatGrid(profile) {
+export function renderStatGrid(profile, selectedStat = null) {
   const st = computePlayerStats(profile);
-  const powerBonusPct = Math.max(0, Math.round((st.powerMult - 1) * 100));
+  const pts = {
+    fortune: Math.round(st.raw.fortune || 0),
+    swiftness: Math.round(st.raw.swiftness || 0),
+    power: Math.round(st.raw.power || 0),
+    luck: Math.round(st.raw.luck || 0),
+  };
+  const topStatKey = ['swiftness', 'power', 'fortune', 'luck'].reduce(
+    (best, k) => (pts[k] > pts[best] ? k : best),
+    'swiftness',
+  );
+  const activeStat = ['fortune', 'swiftness', 'power', 'luck'].includes(selectedStat)
+    ? selectedStat
+    : null;
+
+  const dashBuild = detectBuild(st.bonus);
+  const tierRoman = ['', 'I', 'II', 'III', 'IV'][dashBuild.tier] || '';
+  const tierStr = dashBuild.tier ? ` (Tier ${tierRoman})` : '';
+  const buildPerkOrTip = dashBuild.perk || (dashBuild.id && BUILD_PERKS[dashBuild.id]?.[dashBuild.tier - 1]) || BUILDS[dashBuild.id]?.tip || '';
+  let buildProgressTag = '';
+  if (dashBuild.next && dashBuild.next.need) {
+    const nxtRoman = ['', 'I', 'II', 'III', 'IV'][dashBuild.next.tier] || dashBuild.next.tier;
+    buildProgressTag = `Next Tier ${nxtRoman}: ${Math.round(dashBuild.next.have || 0)}/${dashBuild.next.need} ${dashBuild.next.stat}`;
+  } else if (dashBuild.stat && st.bonus?.[dashBuild.stat]) {
+    const sharePct = Math.round((dashBuild.share?.[dashBuild.stat] || 0) * 100);
+    buildProgressTag = `MAX TIER • ${Math.round(st.bonus[dashBuild.stat])} ${dashBuild.stat} (${sharePct}% share)`;
+  }
+
+  const bridgeDetails = {
+    fortune: {
+      icon: '🪙',
+      label: 'Fortune',
+      pts: pts.fortune,
+      mono: `Start Cash +${Math.round(st.monoMods.startCashPct * 100)}% • Rent Toll +${Math.round(st.monoMods.rentPct * 100)}% • Podium +${Math.min(200, Math.round(st.raw.fortune))}%`,
+      moon: `Start +${st.mbMods.startCoins - 100}🪙 • Kill Coins +${Math.round((st.mbMods.coinMult - 1) * 100)}% • Podium +${Math.round((st.mbMods.podiumMult - 1) * 100)}%`,
+      dash: `Podium/Track Gold ${st.dashMods.podiumGoldPct} • Coin Magnet ${st.dashMods.magnetRadiusPct}`,
+    },
+    swiftness: {
+      icon: '⚡',
+      label: 'Swiftness',
+      pts: pts.swiftness,
+      mono: `START Lap Salary +${Math.round(st.monoMods.salaryPct * 100)}% • Tempo & Sprint Boost`,
+      moon: `Fire Rate +${Math.round((st.mbMods.atkSpeedMult - 1) * 100)}% • Dash Cooldown -${Math.round((1 - st.mbMods.dashCdMult) * 100)}%`,
+      dash: `Top Speed ${st.dashMods.topSpeedPct} • Boost Pad Recovery ${st.dashMods.accelPct}`,
+    },
+    power: {
+      icon: '🔥',
+      label: 'Power',
+      pts: pts.power,
+      mono: `Ultimate Skill & Takeover Power +${Math.round(st.monoMods.ultPct * 100)}%`,
+      moon: `Shot/Ult DMG +${Math.round((st.mbMods.dmgMult - 1) * 100)}% • Ult Charge +${Math.round((st.mbMods.ultChargeMult - 1) * 100)}%`,
+      dash: `Fury Gauge ${st.dashMods.furyChargePct} • Stumble Resist ${st.dashMods.knockbackResistPct}`,
+    },
+    luck: {
+      icon: '🍀',
+      label: 'Luck',
+      pts: pts.luck,
+      mono: `Buy/Upgrade Discount -${Math.round(st.monoMods.discountPct * 100)}% • Casino & Podium Chest Boost`,
+      moon: `Crit Shot +${Math.round(st.mbMods.critChance * 100)}% (1.75×) • ★2/★3 Merc Odds +${Math.round(st.mbMods.mercLuckPct * 100)}%`,
+      dash: `Rare Item Box ${st.dashMods.rareBoxPct} • Miracle Shield ${st.dashMods.miracleShieldPct}`,
+    },
+  };
+
+  const b = activeStat ? bridgeDetails[activeStat] : null;
+
   return `
     <div class="s2-stat-panel">
       <div class="s2-stat-grid">
-        <div class="s2-stat-cell">
+        <div class="s2-stat-cell ${activeStat === 'fortune' ? 'is-active' : ''} ${topStatKey === 'fortune' ? 'is-top-stat' : ''}" data-stat-info="fortune" title="Tap to inspect Fortune bonuses across Monopoly, Island Defense &amp; Cloud Dash">
           <span class="s2-stat-ico">🍀</span>
           <span class="s2-stat-name">Fortune</span>
-          <b class="s2-stat-val">+${st.fortunePct}%</b>
+          <b class="s2-stat-val">${pts.fortune} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell">
+        <div class="s2-stat-cell ${activeStat === 'swiftness' ? 'is-active' : ''} ${topStatKey === 'swiftness' ? 'is-top-stat' : ''}" data-stat-info="swiftness" title="Tap to inspect Swiftness bonuses across Monopoly, Island Defense &amp; Cloud Dash">
           <span class="s2-stat-ico">⚡</span>
           <span class="s2-stat-name">Swiftness</span>
-          <b class="s2-stat-val">+${st.swiftnessPct}%</b>
+          <b class="s2-stat-val">${pts.swiftness} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell">
+        <div class="s2-stat-cell ${activeStat === 'power' ? 'is-active' : ''} ${topStatKey === 'power' ? 'is-top-stat' : ''}" data-stat-info="power" title="Tap to inspect Power bonuses across Monopoly, Island Defense &amp; Cloud Dash">
           <span class="s2-stat-ico">🔥</span>
           <span class="s2-stat-name">Power</span>
-          <b class="s2-stat-val">+${powerBonusPct}%</b>
+          <b class="s2-stat-val">${pts.power} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell">
+        <div class="s2-stat-cell ${activeStat === 'luck' ? 'is-active' : ''} ${topStatKey === 'luck' ? 'is-top-stat' : ''}" data-stat-info="luck" title="Tap to inspect Luck bonuses across Monopoly, Island Defense &amp; Cloud Dash">
           <span class="s2-stat-ico">✨</span>
           <span class="s2-stat-name">Luck</span>
-          <b class="s2-stat-val">+${st.luckPct}%</b>
+          <b class="s2-stat-val">${pts.luck} <small>pts</small></b>
         </div>
       </div>
+      <div class="s2-dash-build-strip">
+        <span class="s2-dash-build-main">☁️ ${String(dashBuild.icon || '').replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')} <b>Dash Build: ${escapeHtml(dashBuild.name)}${tierStr}</b>${buildProgressTag ? ` <small class="s2-dash-build-share">(${escapeHtml(buildProgressTag)})</small>` : ''}</span>
+        ${buildPerkOrTip ? `<span class="s2-dash-build-perk">${escapeHtml(buildPerkOrTip).replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')}</span>` : ''}
+      </div>
+      ${b ? `
+        <div class="s2-stat-bridge-box" data-active-stat="${activeStat}">
+          <div class="s2-stat-bridge-head">
+            <span class="s2-stat-bridge-title">${b.icon} <b>${b.label}</b> <small>(${b.pts} pts)</small> — 3-Mode Active Bonuses</span>
+            <span class="s2-stat-bridge-hint">Tap to hide ▴</span>
+          </div>
+          <div class="s2-stat-bridge-rows">
+            <div class="s2-stat-bridge-row"><span class="s2-mode-tag">🎲 Monopoly</span><span>${b.mono}</span></div>
+            <div class="s2-stat-bridge-row"><span class="s2-mode-tag">🏝️ Island Def</span><span>${b.moon}</span></div>
+            <div class="s2-stat-bridge-row"><span class="s2-mode-tag">☁️ Cloud Dash</span><span>${b.dash}</span></div>
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -617,8 +782,12 @@ export function renderStatGrid(profile) {
  * Matches Mockup 07 1:1: compact 2-line caption above a 64x64 golden filigree box with +Refine top-left,
  * item icon centered (with hair layer for outfits), and stars + eye visibility toggle along the bottom.
  */
-function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false, appearance = null) {
-  const itemId = equippedSlot?.id || null;
+function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false, appearance = null, wardrobeMode = 'stats') {
+  const statItemId = equippedSlot?.id || null;
+  const glamItemId = equippedSlot?.glamour || null;
+  const hasGlamour = Boolean(glamItemId && glamItemId !== statItemId);
+  const isGlamourMode = wardrobeMode === 'glamour';
+  const itemId = isGlamourMode ? (glamItemId || statItemId) : statItemId;
   const refine = equippedSlot?.refine | 0;
   const isHidden = Boolean(equippedSlot?.hide);
   const def = itemId ? itemDef(itemId) : null;
@@ -628,6 +797,15 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
   const filterStyle = vis?.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
   const rawName = def ? def.name : '(Empty)';
   const shortName = shortenGearName(rawName);
+  const statTip = def ? formatStatsSummary(def.stats || (rarity === 3 ? { all: 24 } : { all: 8 }), rarity, refine) : '';
+  const roleInfo = SLOT_ROLE_GUIDE[slot];
+  const glamourName = hasGlamour ? (itemDef(glamItemId)?.name || glamItemId) : null;
+  const attuneStr = equippedSlot?.attune?.stat ? ` | 🎯 Attuned: ${equippedSlot.attune.stat}` : '';
+  const fullTooltip = def
+    ? (isGlamourMode
+        ? `👗 Look: ${rawName}${hasGlamour ? ' (Custom Glamour)' : ' (Same as Stat Gear)'}`
+        : `${rawName} (+${refine})${statTip ? ` — ${statTip}` : ''}${attuneStr}${hasGlamour ? ` | 👗 Look: ${glamourName}` : ''}${roleInfo ? ` | ${roleInfo.badge}` : ''}`)
+    : `${SLOT_LABELS[slot]} (Empty)${roleInfo ? ` — ${roleInfo.text}` : ''}`;
   const slotThumbHtml = itemId
     ? (slot === 'outfit'
         ? renderOutfitThumbLayers(itemId, { lineage, appearance, url: vis.url, filter: vis.filter, alt: vis.name })
@@ -635,18 +813,20 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
     : `<span class="s2-pd-empty">+</span>`;
 
   return `
-    <div class="rpg-slot-card s2-pd-slot s2-pd-slot-v2 rpg-rarity-${rarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''}" data-slot="${slot}">
-      <div class="s2-pd-slot-caption" title="${escapeHtml(rawName)}">
+    <div class="rpg-slot-card s2-pd-slot s2-pd-slot-v2 rpg-rarity-${rarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''} ${isGlamourMode ? 'is-glamour-mode-slot' : ''} ${hasGlamour ? 'has-glamour-look' : ''}" data-slot="${slot}" title="${escapeHtml(fullTooltip)}">
+      <div class="s2-pd-slot-caption" title="${escapeHtml(fullTooltip)}">
         <span class="rpg-slot-label">${SLOT_LABELS[slot]}</span>
         <span class="rpg-slot-name">${escapeHtml(shortName)}</span>
       </div>
       <div class="s2-pd-slot-box">
-        ${itemId ? `<span class="rpg-slot-refine">+${refine}</span>` : ''}
-        ${itemId ? `
-          <button type="button" class="rpg-goforge-btn s2-pd-forge-mini" data-goforge="${itemId}" title="Forge ${escapeHtml(rawName)}">
-            🔨${hasRedDot && refine < 10 ? '<span class="rpg-red-dot"></span>' : ''}
-          </button>
-        ` : ''}
+        ${isGlamourMode
+          ? (itemId ? `<span class="rpg-slot-refine is-glam-pill">${hasGlamour ? '👗 LOOK' : '⚔️=👗'}</span>` : '')
+          : (itemId ? `<span class="rpg-slot-refine">+${refine}</span>` : '')}
+        ${isGlamourMode && hasGlamour ? `
+          <button type="button" class="rpg-slot-glam-reset" data-glamour-clear="${slot}" title="Reset ${SLOT_LABELS[slot]} to Stat Gear look">✕</button>
+        ` : (!isGlamourMode && hasGlamour ? `
+          <span class="rpg-slot-glamour" title="Custom Costume Look Active: ${escapeHtml(glamourName)}">👗</span>
+        ` : '')}
         <div class="s2-pd-thumb-wrap ${slot === 'outfit' ? 'is-outfit' : ''}">
           ${slotThumbHtml}
         </div>
@@ -711,11 +891,11 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
   });
 
   const wingsHtml = pd.wings
-    ? pd.wings.socket === 'hip'
+    ? (pd.wings.socket === 'hip' || pd.wings.socket === 'shoulders')
       ? `
       <img class="s2-pd-bone-acc s2-pd-acc-tail ${pd.wings.inFrontOfBody ? 'in-front' : 'behind'}"
            src="${pd.wings.url}"
-           style="left:calc(50% + ${pd.wings.cxPct.toFixed(2)}%);bottom:${pd.wings.cyPct.toFixed(2)}%;width:${pd.wings.wPct.toFixed(2)}%;height:${pd.wings.hPct.toFixed(2)}%;z-index:${pd.wings.inFrontOfBody ? 16 : 2};transform:translate(-50%, 50%) scaleX(${pd.wings.scaleX});"
+           style="left:calc(50% + ${pd.wings.cxPct.toFixed(2)}%);bottom:${pd.wings.cyPct.toFixed(2)}%;width:${pd.wings.wPct.toFixed(2)}%;height:${pd.wings.hPct.toFixed(2)}%;z-index:${pd.wings.inFrontOfBody ? 15 : 2};transform:translate(-50%, 50%) scaleX(${pd.wings.scaleX});"
            alt="" />
       `
       : `
@@ -744,7 +924,7 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
     ? `
       <img class="s2-pd-bone-acc s2-pd-acc-hair is-behind"
            src="${pd.hair.url}"
-           style="left:calc(50% + ${pd.hair.cxPct.toFixed(2)}%);bottom:${pd.hair.cyPct.toFixed(2)}%;width:${pd.hair.wPct.toFixed(2)}%;height:${pd.hair.hPct.toFixed(2)}%;z-index:4;transform:translate(-50%, 50%) scaleX(${pd.hair.scaleX});"
+           style="left:calc(50% + ${pd.hair.cxPct.toFixed(2)}%);bottom:${pd.hair.cyPct.toFixed(2)}%;width:${pd.hair.wPct.toFixed(2)}%;height:${pd.hair.hPct.toFixed(2)}%;z-index:4;transform:translate(-50%, 50%) scaleX(${pd.hair.scaleX});${pd.hair.behindClipPolygon && pd.hair.behindClipPolygon !== 'none' ? `clip-path:${pd.hair.behindClipPolygon};` : ''}"
            alt="" />
     `
     : '';
@@ -786,12 +966,19 @@ export function renderPaperDollDomLayers(lineage, equipped, view = 'front', appe
  * Renders the Screen 07 Central Paper-Doll Hero Stage:
  * Gold Ribbon Title Header + 3 Status Pills + Left 3 Slots + Center Live Animated ChibiRig Stage + Right 3 Slots.
  */
-export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPoseOverride = null) {
+export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPoseOverride = null, wardrobeMode = 'stats') {
   const lineage = profile?.lineage === 'dxb' ? 'dxb' : 'bkk';
   const eq = profile?.equipped || {};
   const app = profile?.appearance || {};
   const curHairDef = HAIRSTYLES[app.hair] || HAIRSTYLES[lineage === 'dxb' ? 'hair_girl_waves' : 'hair_boy_fluffy'];
   const isCelestialHair = curHairDef?.tier === 'celestial';
+  const isGlamourMode = wardrobeMode === 'glamour';
+  const isHairMode = wardrobeMode === 'hair';
+  const isStatsMode = !isGlamourMode && !isHairMode;
+  const activeGlamCount = SLOTS.filter((s) => {
+    const gId = profile?.glamour?.[s] || eq[s]?.glamour;
+    return Boolean(gId && gId !== eq[s]?.id);
+  }).length;
 
   // Highest refine for aura glow
   const maxRefine = Math.max(0, ...SLOTS.map((s) => eq[s]?.refine | 0));
@@ -824,11 +1011,11 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPo
   const isForgeReady = forgeReady(profile);
 
   const leftSlots = ['outfit', 'gloves', 'boots']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode))
     .join('');
 
   const rightSlots = ['hat', 'face', 'wings']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode))
     .join('');
 
   const titleText = profile?.title || (maxRefine >= 10 ? '+10 Sovereign' : 'Sky Sovereign');
@@ -848,7 +1035,32 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPo
       </div>
     </div>
 
-    <div class="s2-wardrobe-stage">
+    <div class="s2-pd-big-subtabs is-three-tabs" role="tablist" aria-label="Switch between Gear Stats, Costume Look, and Hair Salon">
+      <button type="button" class="s2-pd-big-tab is-stats ${isStatsMode ? 'active' : ''}" data-wardrobe-mode="stats">
+        <span class="s2-pd-big-tab-ico">⚔️</span>
+        <span class="s2-pd-big-tab-txt">
+          <b>GEAR STATS</b>
+          <small>Power &amp; ULT</small>
+        </span>
+      </button>
+      <button type="button" class="s2-pd-big-tab is-glamour ${isGlamourMode ? 'active' : ''}" data-wardrobe-mode="glamour">
+        <span class="s2-pd-big-tab-ico">👗</span>
+        <span class="s2-pd-big-tab-txt">
+          <b>COSTUME</b>
+          <small>Glamour${activeGlamCount > 0 ? ` (${activeGlamCount}/6)` : ' Look'}</small>
+        </span>
+      </button>
+      <button type="button" class="s2-pd-big-tab is-hair ${isHairMode ? 'active' : ''}" data-wardrobe-mode="hair">
+        <span class="s2-pd-big-tab-ico">💇</span>
+        <span class="s2-pd-big-tab-txt">
+          <b>HAIR SALON</b>
+          <small>Cut &amp; Dye</small>
+        </span>
+      </button>
+    </div>
+
+    ${isHairMode ? '' : `
+    <div class="s2-wardrobe-stage ${isGlamourMode ? 'is-glamour-stage' : 'is-stats-stage'}">
       <div class="s2-pd-col s2-pd-left">
         ${leftSlots}
       </div>
@@ -861,6 +1073,9 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPo
             </button>
             <button type="button" class="s2-pd-ctrl-btn ${liveStageState.walking ? 'active' : ''}" data-pd-walk="1" title="Toggle Walk / Idle Motion">
               ${liveStageState.walking ? '🏃 Walk' : '🧍 Idle'}
+            </button>
+            <button type="button" class="s2-pd-ctrl-btn" data-pd-photo="1" title="Open Polaroid Photobooth Studio">
+              📸 Photo
             </button>
           </div>
 
@@ -883,6 +1098,7 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPo
         ${rightSlots}
       </div>
     </div>
+    `}
   `;
 }
 
@@ -956,10 +1172,29 @@ export async function mountLivePaperDollStage(rootEl, profile) {
       gl.rig.dispose();
     }
     gl.rig = new ChibiRig({ lineage, appearance: profile.appearance, name: '', sub: '', wings: null });
+    gl.rig._isStagePreview = true;
     gl.rig.shadow.visible = false;
     gl.rig.nameTag.visible = false;
     gl.scene.add(gl.rig.ROOT);
     gl.lineage = lineage;
+  }
+  gl.rig._isStagePreview = true;
+
+  const isCharmStage = fig.classList.contains('s2-charm-stage-fig') || Boolean(profile.equipped?.charm);
+  if (isCharmStage) {
+    gl.renderer.setSize(196, 184);
+    gl.cam.left = -1.24;
+    gl.cam.right = 1.24;
+    gl.cam.top = 2.04;
+    gl.cam.bottom = -0.22;
+    gl.cam.updateProjectionMatrix();
+  } else {
+    gl.renderer.setSize(160, 160);
+    gl.cam.left = -1.025;
+    gl.cam.right = 1.025;
+    gl.cam.top = 1.90;
+    gl.cam.bottom = -0.15;
+    gl.cam.updateProjectionMatrix();
   }
 
   await gl.rig.ready;
@@ -1038,12 +1273,14 @@ export function stopWardrobePreview() {
 /**
  * Renders the 10-Star Blacksmith Star-Force Arc (Screen 20).
  */
-export function renderStarForceArc(refine, max = 10) {
+export function renderStarForceArc(refine, max = 10, justForgedStar = 0) {
   const stars = [];
   for (let i = 1; i <= max; i++) {
     const state = i <= refine ? 'filled' : i === refine + 1 ? 'target' : 'empty';
+    const popCls = justForgedStar === i ? 'just-forged' : '';
     const arcY = Math.round(Math.pow(i - 5.5, 2) * 1.1); // subtle upward arch
-    stars.push(`<span class="s2-sf-star ${state}" style="transform: translateY(${arcY}px);">★</span>`);
+    stars.push(`<span class="s2-sf-star ${state} ${popCls}" style="--arc-y:${arcY}px;transform:translateY(${arcY}px);">★</span>`);
   }
   return `<div class="s2-sf-arc">${stars.join('')}</div>`;
 }
+

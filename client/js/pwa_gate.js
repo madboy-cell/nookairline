@@ -5,7 +5,7 @@ export const env = (() => {
   const android = /Android/i.test(ua);
   const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
   const params = new URLSearchParams(location.search);
-  const dev = params.has('dev') || ['localhost', '127.0.0.1'].includes(location.hostname);
+  const dev = params.has('dev') || params.has('user') || ['localhost', '127.0.0.1'].includes(location.hostname);
   return { iOS, android, mobile: iOS || android, standalone, dev, params };
 })();
 

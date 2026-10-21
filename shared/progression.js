@@ -42,6 +42,11 @@ export function recalcPlayerCP(profile) {
   let cp = (profile.level | 0) * 120;
   for (const s of SLOTS) if (eq[s]?.id) cp += slotCP(s, eq[s].id, eq[s].refine);
   if (eq.dice?.id) cp += slotCP('dice', eq.dice.id, eq.dice.refine);
+  if (eq.charm?.id) {
+    const tier = Math.max(1, Math.min(4, Number(eq.charm.tier) || 1));
+    const lv = Math.max(1, Math.min(10, Number(eq.charm.level) || 1));
+    cp += tier * 250 + (lv - 1) * 45;
+  }
   const pet = eq.pet;
   if (pet?.id && PETS[pet.id]) cp += (pet.stars ?? PETS[pet.id].rarity) * 450 + (pet.level | 0) * 35;
   cp += Math.floor((profile.village?.comfort || 0) * 0.5);

@@ -926,9 +926,17 @@ export class RunwayReveal {
         ? `<div class="rw-walker-relic ${TIERS[tier].cls}"><img src="${itemVis.url}" alt="" decoding="async" /></div>`
         : '';
 
+    const smRelicMap = (id) => {
+      const s = String(id || '');
+      if (s.includes('aurora')) return 'mono_ult_sm_aurora';
+      if (s.includes('seraphim')) return 'mono_ult_sm_seraphim';
+      if (s.includes('cyber')) return 'mono_ult_sm_cyber';
+      if (s.includes('ribbon')) return 'mono_ult_sm_ribbon';
+      return 'mono_ult_sm_eclipse';
+    };
     const smReliquaryImg =
       tier === SM_TIER
-        ? `<img class="rw-walker-sm-relic" src="/assets/monopoly/${String(item?.id || '').includes('aurora') ? 'mono_ult_sm_aurora' : 'mono_ult_sm_eclipse'}.png" alt="" decoding="async" />`
+        ? `<img class="rw-walker-sm-relic" src="/assets/monopoly/${smRelicMap(item?.id)}.png" alt="" decoding="async" />`
         : '';
 
     S.catwalkStage.innerHTML = `

@@ -21,6 +21,10 @@ export const login = (username, password, lineage, appearance) =>
   api('/api/auth/login', { username, password, lineage, ...(appearance ? { appearance } : {}) });
 export const fetchMe = () => api('/api/me');
 export const claimA2HS = () => api('/api/a2hs/claim', {});
+export const logoutApi = () => api('/api/auth/logout', {});
+export const bindEmailApi = (email) => api('/api/auth/bind-email', { email });
+export const changePasswordApi = (currentPassword, newPassword) =>
+  api('/api/auth/change-password', { currentPassword, newPassword });
 
 export class Net extends EventTarget {
   constructor() {
@@ -29,9 +33,23 @@ export class Net extends EventTarget {
     this.connected = false;
     this.closedByUser = false;
     this.retry = 0;
+    this.retryTimer = 0;
     this.rtt = null;
     this.lastMoveSent = 0;
-    document.addEventListener('visibilitychange', () => this.onVisibility());
+    this.zoneSeq = 1;
+    this._onVis = () => this.onVisibility();
+    this._onOnline = () => {
+      if (this.closedByUser) return;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (!this.ws || this.ws.readyState === 2 || this.ws.readyState === 3) {
+        this.retry = 0;
+        this.connect();
+      } else if (this.ws?.readyState === 1) {
+        this.send({ type: 'auth_resume' });
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVis);
+    if (typeof window !== 'undefined') window.addEventListener('online', this._onOnline);
   }
 
   emit(type, detail) { this.dispatchEvent(new CustomEvent(type, { detail })); }
@@ -39,12 +57,24 @@ export class Net extends EventTarget {
 
   connect() {
     this.closedByUser = false;
+    clearTimeout(this.retryTimer);
+    this.retryTimer = 0;
+    if (this.ws) {
+      const prev = this.ws;
+      this.ws = null;
+      try { prev.onopen = null; prev.onmessage = null; prev.onclose = null; prev.onerror = null; prev.close(); } catch {}
+    }
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${proto}://${location.host}/ws`);
     this.ws = ws;
-    ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token: session.token }));
+    ws.onopen = () => {
+      if (this.ws !== ws) return;
+      ws.send(JSON.stringify({ type: 'auth', token: session.token }));
+    };
     ws.onmessage = (ev) => {
+      if (this.ws !== ws) return;
       let m; try { m = JSON.parse(ev.data); } catch { return; }
+      if (m.zoneSeq) this.zoneSeq = m.zoneSeq;
       switch (m.type) {
         case 'ping': ws.send(JSON.stringify({ type: 'pong', t: m.t })); if (m.rtt != null) this.rtt = m.rtt; this.emit('status'); break;
         case 'auth_ok': this.connected = true; this.retry = 0; this.emit('status'); this.emit('auth_ok', m); break;
@@ -58,9 +88,17 @@ export class Net extends EventTarget {
       this.connected = false;
       this.emit('status');
       if (this.closedByUser) return;
-      const delay = this.retry === 0 ? 0 : Math.min(8000, 500 * 2 ** this.retry);
+      // Never auto-reconnect from a hidden background tab (prevents a sleeping tab from kicking the active foreground tab)
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const delay = this.retry === 0 ? 150 : Math.min(8000, 500 * 2 ** this.retry);
       this.retry++;
-      setTimeout(() => { if (!this.closedByUser) this.connect(); }, delay);
+      clearTimeout(this.retryTimer);
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = 0;
+        if (!this.closedByUser && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) {
+          this.connect();
+        }
+      }, delay);
     };
     ws.onerror = () => {};
   }
@@ -72,14 +110,22 @@ export class Net extends EventTarget {
     const now = performance.now();
     if (!force && now - this.lastMoveSent < 66) return;
     this.lastMoveSent = now;
-    this.send({ type: 'move_step', ...state });
+    this.send({ type: 'move_step', zoneSeq: this.zoneSeq, ...state });
   }
 
   onVisibility() {
     if (document.visibilityState !== 'visible' || this.closedByUser) return;
     if (this.ws?.readyState === 1) this.send({ type: 'auth_resume' });
-    else if (!this.ws || this.ws.readyState === 3) { this.retry = 0; this.connect(); }
+    else if (!this.ws || this.ws.readyState === 2 || this.ws.readyState === 3) { this.retry = 0; this.connect(); }
   }
 
-  close() { this.closedByUser = true; this.ws?.close(); }
+  close() {
+    this.closedByUser = true;
+    clearTimeout(this.retryTimer);
+    this.retryTimer = 0;
+    if (this._onVis) document.removeEventListener('visibilitychange', this._onVis);
+    const prev = this.ws;
+    this.ws = null;
+    try { prev?.close(); } catch {}
+  }
 }

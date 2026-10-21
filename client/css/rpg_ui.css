@@ -634,7 +634,7 @@
   pointer-events: none;
 }
 .s2-pd-wings-pivot.behind { z-index: 2; }
-.s2-pd-wings-pivot.in-front { z-index: 25; }
+.s2-pd-wings-pivot.in-front { z-index: 15; }
 
 .s2-pd-wing-half {
   position: absolute;
@@ -4374,6 +4374,150 @@
   font-weight: 900;
 }
 
+.s2-stat-panel .s2-stat-cell {
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.s2-stat-panel .s2-stat-cell.is-active {
+  background: linear-gradient(180deg, #fff8dc 0%, #ffe699 100%);
+  border-color: #b86b11;
+  box-shadow: 0 0 0 1.5px rgba(255, 196, 54, 0.55), 0 1px 0 #8a5a2b;
+}
+
+.s2-stat-bridge-box {
+  margin-top: 5px;
+  background: rgba(255, 251, 240, 0.92);
+  border: 1px dashed #c6923a;
+  border-radius: 9px;
+  padding: 4px 7px;
+  font-size: 9.5px;
+  color: #4f2d12;
+}
+
+.s2-stat-bridge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 3px;
+  color: #6b3b14;
+  font-size: 9.5px;
+}
+
+.s2-stat-bridge-hint {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #9c6223;
+  background: rgba(255, 224, 150, 0.55);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+
+.s2-stat-bridge-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.s2-stat-bridge-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  line-height: 1.25;
+  font-size: 9px;
+  color: #3d220d;
+}
+
+.s2-mode-tag {
+  flex: 0 0 74px;
+  font-weight: 900;
+  color: #7a4212;
+}
+
+.s2-item-stat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 2px 0 3px;
+}
+
+.s2-item-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1.5px 5px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  background: #f8ebd0;
+  border: 1px solid #d4a656;
+  color: #5a3211;
+}
+
+.s2-item-stat-pill.stat-power {
+  background: #ffe8df;
+  border-color: #e07a5f;
+  color: #8f2d14;
+}
+
+.s2-item-stat-pill.stat-swiftness {
+  background: #e3f4ff;
+  border-color: #5fa8d3;
+  color: #164e78;
+}
+
+.s2-item-stat-pill.stat-fortune {
+  background: #fff4d1;
+  border-color: #dca726;
+  color: #784f08;
+}
+
+.s2-item-stat-pill.stat-luck {
+  background: #e4f8e5;
+  border-color: #5ab866;
+  color: #195e24;
+}
+
+.s2-item-stat-pill.stat-all {
+  background: linear-gradient(90deg, #fff1c9 0%, #ffe0ec 50%, #e1f4ff 100%);
+  border-color: #d4942a;
+  color: #5e2f0d;
+}
+
+.s2-slot-role-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding: 5px 8px;
+  background: linear-gradient(180deg, #fff9ea 0%, #f5e5c1 100%);
+  border: 1.5px solid #cfa04e;
+  border-radius: 10px;
+  font-size: 10px;
+  color: #4d2c12;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.s2-slot-role-badge {
+  background: #7d451b;
+  color: #fff8e7;
+  font-weight: 900;
+  font-size: 9.5px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.s2-slot-role-text {
+  flex: 1;
+  min-width: 180px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 /* 4 Glossy Candy Buttons Row (Screen 07) */
 .s2-wardrobe-candy-row {
   display: grid;
@@ -5659,4 +5803,2231 @@
   color: #ffe8a3;
   text-align: center;
   padding-bottom: 2px;
+}
+
+/* ============================================================================
+   IPHONE 18 PRO (402x874) LIVE UX POLISH — NAVIGATION, WARDROBE, FORGE & PETS
+   ============================================================================ */
+
+/* Fix 1: Consolidate Top Navigation into 1 Primary Folder-Tab Bar */
+.rpg-header-bar .rpg-top-bar,
+.rpg-top-tabs {
+  display: none !important;
+}
+
+.rpg-header-bar {
+  justify-content: flex-end;
+}
+
+.rpg-header-bar .rpg-currencies {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+/* Fix 2: Wardrobe Fashion — Centered Title Ribbon, Clean Slot Labels & Gold Icon */
+.s2-avatar-card-header .s2-gold-ribbon-banner,
+.s2-title-ribbon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  text-align: center !important;
+}
+
+.s2-avatar-card-header .s2-gold-ribbon-banner .s2-ribbon-crown,
+.s2-title-ribbon .s2-ribbon-crown {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
+.s2-pd-slot-caption .rpg-slot-name {
+  display: none !important;
+}
+
+.s2-pd-slot-caption .rpg-slot-label {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.s2-inline-ico {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: -2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Fix 3: Blacksmith Forge — Single-Line Artisan Scroll Toggle & Unclipped Controls */
+.s2-forge-mid-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.s2-forge-controls-col {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.s2-forge-controls-col .rpg-safe-badge,
+.s2-forge-controls-col .rpg-berries-check,
+.s2-forge-controls-col .rpg-scroll-check {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 5px 8px !important;
+  gap: 5px !important;
+}
+
+.rpg-scroll-check span,
+.rpg-berries-check span,
+.rpg-safe-badge span {
+  font-size: 9.8px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Fix 4: Pet Sanctuary — Contained Sky-Island Stage, Wrapped Controls & Pose Drawer */
+.s2-pet-sanctuary-stage.pet-v2-hero-stage {
+  background:
+    url('/assets/ui/stage_sakura_sky_nest.png') center 6px / 230px 124px no-repeat,
+    linear-gradient(180deg, #cdeeff 0%, #e9f7ff 52%, #f8ebd2 100%) !important;
+  padding: 5px 7px 6px !important;
+}
+
+.s2-pet-sanctuary-stage .s2-single-nest-diorama {
+  min-height: 98px;
+  padding: 2px 4px 2px;
+}
+
+.s2-pet-sanctuary-stage .s2-single-nest-focus {
+  width: 90px;
+  height: 82px;
+}
+
+.s2-pet-sanctuary-stage .s2-single-nest-magic {
+  width: 96px;
+  height: 96px;
+}
+
+.s2-pet-sanctuary-stage .s2-nest-pet-hero {
+  width: 78px !important;
+  height: 78px !important;
+}
+
+.pet-v2-stage-bar.s2-pet-stage-controls,
+.pet-v2-stage-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 3px 6px !important;
+  margin-top: 3px !important;
+  background: rgba(255, 251, 240, 0.92);
+  border: 1px solid rgba(181, 133, 72, 0.45);
+  border-radius: 10px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.pet-v2-stage-bar .pet-v2-mini-pill {
+  padding: 3px 6px !important;
+  font-size: 8.8px !important;
+  flex-shrink: 0;
+}
+
+.s2-pet-pose-drawer {
+  margin-top: 4px;
+  background: rgba(255, 250, 238, 0.94);
+  border: 1.5px solid #c99b56;
+  border-radius: 10px;
+  padding: 3px 7px;
+  position: relative;
+  z-index: 4;
+}
+
+.s2-pet-pose-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #522e12;
+  text-align: center;
+  padding: 2px 4px;
+  user-select: none;
+}
+
+.s2-pet-pose-summary::-webkit-details-marker {
+  display: none;
+}
+
+.s2-pet-pose-drawer[open] .s2-pet-pose-summary {
+  border-bottom: 1px dashed #d8b884;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.s2-pet-pose-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Compact Pet Cards so Stage + Companion Level/Traits + 4-Pet Switcher fit on 402x874 */
+.pet-v2-main-card {
+  padding: 5px 8px !important;
+  gap: 3px !important;
+}
+
+.pet-v2-costume-card {
+  padding: 5px 8px !important;
+}
+
+.pet-v2-costume-lock-banner {
+  margin-top: 3px !important;
+  padding: 3px 6px !important;
+  font-size: 8.5px !important;
+}
+
+.pet-v2-traits-card {
+  padding: 5px 8px !important;
+}
+
+.s2-pet-bottom-dock-area {
+  padding: 5px 6px 6px !important;
+  gap: 4px !important;
+}
+
+.s2-pet-bottom-dock-area .s2-pet-avatar-circle {
+  width: 34px;
+  height: 34px;
+}
+
+/* ============================================================================
+   WARDROBE & CLOSET V2 — TAP-TO-INSPECT SPOTLIGHT + 3-COLUMN UNIFORM TILE GRID
+   ============================================================================ */
+
+/* Collapsible 1-Line Ultimate Skill Pill on Main Wardrobe Card */
+.rpg-costume-skill-banner.s2-ult-skill-box {
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #faf2ff 0%, #f1e0ff 100%);
+  border: 1.5px solid #c08cf0;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.rpg-costume-skill-banner.s2-ult-skill-box:active {
+  transform: translateY(1px);
+}
+
+.rpg-costume-skill-banner.s2-ult-skill-box .rpg-costume-skill-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 0;
+  font-size: 10.5px;
+  color: #4a1c6d;
+}
+
+.rpg-costume-skill-banner.s2-ult-skill-box.is-expanded .rpg-costume-skill-head {
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(156, 98, 212, 0.45);
+}
+
+.s2-ult-head-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.s2-ult-head-title b {
+  font-weight: 900;
+  color: #3b125c;
+}
+
+.s2-ult-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.s2-ult-expand-chip {
+  font-size: 9px;
+  font-weight: 900;
+  color: #5e238c;
+  background: rgba(192, 140, 240, 0.28);
+  border: 1px solid rgba(154, 92, 214, 0.45);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+/* Closet Drawer Layout & Tap Hint */
+.s2-closet-drawer > .rpg-card {
+  max-height: 86%;
+  padding: 9px 9px 10px;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.s2-closet-tap-hint {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #7a4b1e;
+  background: #f5e3be;
+  border: 1px solid #d4a656;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Selected Item Spotlight Inspector Card (.s2-closet-inspector) */
+.s2-closet-inspector {
+  background: linear-gradient(180deg, #fffdf7 0%, #f6e6c4 100%);
+  border: 2px solid #d49a2a;
+  border-radius: 13px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(58, 36, 21, 0.14);
+  flex-shrink: 0;
+}
+
+.s2-closet-inspector.s2-rarity-3 {
+  border-color: #e09b1b;
+  background: linear-gradient(180deg, #fffdf4 0%, #f9e6b3 100%);
+}
+
+.s2-closet-inspector.s2-rarity-super_mythic {
+  border-color: #a855f7;
+  background: linear-gradient(135deg, #fff9eb 0%, #f5e6ff 55%, #e3f6ff 100%);
+}
+
+.s2-insp-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.s2-insp-thumb {
+  flex-shrink: 0;
+}
+
+.s2-insp-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.s2-insp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.s2-insp-name {
+  font-size: 12px;
+  font-weight: 900;
+  color: #3a2008;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-insp-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 10px;
+}
+
+.s2-insp-cp {
+  font-weight: 900;
+  color: #1f7a24;
+  background: #e3f7e2;
+  border: 1px solid #86d183;
+  padding: 0.5px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+}
+
+.s2-insp-delta {
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.s2-insp-delta.pos {
+  color: #15803d;
+}
+
+.s2-insp-delta.neg {
+  color: #b45309;
+}
+
+.s2-insp-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 78px;
+}
+
+.s2-insp-btn {
+  position: relative;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: 900 10px var(--font, inherit);
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  transition: transform 0.1s ease;
+}
+
+.s2-insp-btn:active {
+  transform: translateY(1px);
+}
+
+.s2-insp-btn.equip {
+  background: linear-gradient(180deg, #6ee755 0%, #268e22 100%);
+  border: 1.5px solid #c8f9be;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 0 #165614;
+}
+
+.s2-insp-btn.unequip {
+  background: linear-gradient(180deg, #f5e4c3 0%, #dfc08a 100%);
+  border: 1.5px solid #a87938;
+  color: #4b2a12;
+  box-shadow: 0 1.5px 0 #7a5220;
+}
+
+.s2-insp-btn.forge {
+  background: linear-gradient(180deg, #ffe285 0%, #d98e16 100%);
+  border: 1.5px solid #fff3c4;
+  color: #3a1d04;
+  box-shadow: 0 2px 0 #8a5210;
+}
+
+.s2-insp-equipped-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: #dcfce7;
+  border: 1.5px solid #2e8b2a;
+  color: #166534;
+  font-size: 9.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* Full-width Skill / Role Strip inside Spotlight Inspector */
+.s2-insp-skill-strip {
+  background: linear-gradient(180deg, #faf3ff 0%, #f1e2ff 100%);
+  border: 1px solid #c695f0;
+  border-radius: 9px;
+  padding: 4px 7px;
+  color: #3e165c;
+  font-size: 9.5px;
+  line-height: 1.28;
+}
+
+.s2-insp-skill-strip.is-gear-role {
+  background: rgba(255, 249, 234, 0.85);
+  border-color: #d4a656;
+  color: #522e12;
+}
+
+.s2-insp-skill-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.s2-insp-turf-pill {
+  background: #ede9fe;
+  border: 1px solid #a78bfa;
+  color: #4c1d95;
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 0.5px 5px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.s2-insp-skill-desc {
+  color: #4a2366;
+  font-weight: 700;
+}
+
+/* 3-Column Uniform Closet Tile Grid (.s2-closet-grid-v2) */
+.rpg-items-grid.s2-closet-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 295px;
+  overflow-y: auto;
+  padding: 2px;
+  flex: 1;
+}
+
+.s2-closet-tile {
+  position: relative;
+  min-width: 0;
+  background: #fffdf9;
+  border: 2px solid #d3b27a;
+  border-radius: 12px;
+  padding: 5px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: transform 0.1s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.s2-closet-tile:active {
+  transform: scale(0.97);
+}
+
+.s2-closet-tile.equipped {
+  background: #f5fcee;
+  border-color: #4ca647;
+}
+
+.s2-closet-tile.is-selected {
+  background: #fff8df;
+  border-color: #ff9800 !important;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.55), 0 3px 8px rgba(58, 36, 21, 0.18);
+}
+
+.s2-tile-eq-tag {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 7;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #2e8b2a;
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.s2-tile-thumb-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.s2-tile-name {
+  width: 100%;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #3a2415;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.s2-tile-meta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 0 2px;
+  font-size: 8.5px;
+  line-height: 1.1;
+}
+
+.s2-tile-meta .rpg-stars {
+  font-size: 8.5px;
+  letter-spacing: -0.5px;
+}
+
+.s2-tile-meta .s2-cp-mini {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #1f7a24;
+}
+
+/* ============================================================================
+   PHASE 6B: DASH BUILD STRIP, GLAMOUR BADGES & BLACKSMITH STAT ATTUNEMENT
+   ============================================================================ */
+.s2-dash-build-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  margin-top: 5px;
+  padding: 5px 8px;
+  background: linear-gradient(180deg, #fff9e6 0%, #f5dfad 100%);
+  border: 1.5px solid #c9932c;
+  border-radius: 9px;
+  font-size: 10px;
+  color: #4a2a10;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 0 #8a5a2b;
+}
+
+.s2-dash-build-strip .s2-dash-build-main {
+  font-weight: 800;
+  color: #3a1d04;
+}
+
+.s2-dash-build-strip .s2-dash-build-main b {
+  font-weight: 900;
+  color: #7c2d12;
+}
+
+.s2-dash-build-strip .s2-dash-build-perk {
+  font-size: 9px;
+  font-weight: 800;
+  color: #6b3f1f;
+}
+
+.s2-pd-slot-v2 .rpg-slot-glamour {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 6;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff85b3 0%, #d93870 100%);
+  border: 1.5px solid #fff;
+  font-size: 9.5px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.s2-tile-glamour-tag {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 7;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff85b3 0%, #d93870 100%);
+  border: 1.5px solid #fff;
+  font-size: 9px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.s2-wardrobe-mode-toggle,
+.s2-forge-mode-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 6px;
+}
+
+.s2-wardrobe-mode-toggle .s2-slot-pill,
+.s2-forge-mode-bar .s2-slot-pill {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 2px solid #b58442;
+  background: linear-gradient(180deg, #fdf1d6 0%, #ebd2a4 100%);
+  color: #5c3416;
+  font-size: 10.5px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 0 #8a5a2b;
+}
+
+.s2-wardrobe-mode-toggle .s2-slot-pill.active,
+.s2-forge-mode-bar .s2-slot-pill.active {
+  background: linear-gradient(180deg, #ffe896 0%, #f0a828 100%);
+  border-color: #7c4312;
+  color: #3a1d04 !important;
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.85), 0 2.5px 0 #5c3416;
+}
+
+.s2-insp-build-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 7px;
+  background: linear-gradient(180deg, #fff8e1 0%, #fce3a1 100%);
+  border: 1px solid #d49a2a;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #5a2e0d;
+  margin-top: 2px;
+}
+
+.rpg-build-toast-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #fff6d6 0%, #f7d47c 100%);
+  border: 2px solid #9a5a10;
+  border-radius: 11px;
+  margin: 2px 4px 4px;
+  color: #3a1d04;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 8px rgba(58, 36, 21, 0.25);
+}
+
+.rpg-build-toast-banner .s2-banner-dismiss-btn {
+  background: rgba(92, 52, 22, 0.14);
+  border: 1px solid rgba(92, 52, 22, 0.35);
+  border-radius: 6px;
+  color: #4b2a12;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 1px 5px;
+}
+
+/* Stat Attune Console inside .s2-forge-parchment */
+.s2-attune-console {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.s2-attune-stat-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: linear-gradient(180deg, #fffaf0 0%, #f5e3be 100%);
+  border: 1.5px solid #c9932c;
+  border-radius: 10px;
+  color: #3a2008;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.s2-attune-main-stat span,
+.s2-attune-sec-stat span {
+  font-size: 10px;
+  font-weight: 800;
+  color: #7a4618;
+  display: block;
+}
+
+.s2-attune-main-stat b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #3a1d04;
+}
+
+.s2-attune-sec-stat b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #b45309;
+}
+
+.s2-attune-main-stat small,
+.s2-attune-sec-stat small {
+  font-size: 9px;
+  font-weight: 700;
+  color: #6b4423;
+  display: block;
+}
+
+.s2-attune-choose-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #4b2a12;
+  margin-bottom: -2px;
+}
+
+.s2-attune-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.s2-attune-stat-card {
+  cursor: pointer;
+  padding: 7px 5px;
+  border-radius: 11px;
+  border: 2px solid #cfa566;
+  background: linear-gradient(180deg, #fffdf9 0%, #f7ebd2 100%);
+  text-align: center;
+  color: #3a2008;
+  box-shadow: inset 0 1px 0 #fff, 0 2px 0 #9c6e32;
+  transition: transform 0.1s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.s2-attune-stat-card:active {
+  transform: translateY(1px);
+}
+
+.s2-attune-stat-card.selected {
+  border-color: #d97706;
+  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 100%);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45), 0 2.5px 0 #92400e;
+}
+
+.s2-attune-stat-card .s2-attune-ico {
+  font-size: 16px;
+  line-height: 1.1;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.s2-attune-stat-card .s2-attune-ico img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
+.s2-attune-stat-card .s2-attune-name {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #3a1d04;
+}
+
+.s2-attune-stat-card .s2-attune-val {
+  font-size: 11px;
+  font-weight: 900;
+  color: #15803d;
+}
+
+.s2-attune-stat-card .s2-attune-active-tag {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 999px;
+  padding: 0.5px 5px;
+}
+
+.s2-attune-stat-card .s2-attune-build-preview {
+  width: 100%;
+  margin-top: 2px;
+  padding: 2.5px 4px;
+  border-radius: 6px;
+  background: rgba(120, 68, 22, 0.1);
+  border: 1px solid rgba(180, 120, 50, 0.35);
+  font-size: 8.8px;
+  font-weight: 800;
+  color: #4b2a12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-attune-cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #f5e5c6;
+  border: 1.5px solid #d4a656;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4b2a12;
+}
+
+.s2-attune-cost-row b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #3a1d04;
+  font-weight: 900;
+}
+
+.s2-attune-locked-notice {
+  padding: 12px 10px;
+  text-align: center;
+  background: linear-gradient(180deg, #fffaf0 0%, #f5e3be 100%);
+  border: 1.5px dashed #c9932c;
+  border-radius: 10px;
+  color: #4b2a12;
+}
+
+.s2-attune-locked-notice b {
+  font-size: 12.5px;
+  color: #3a1d04;
+  display: block;
+}
+
+.s2-attune-locked-notice p {
+  font-size: 10.5px;
+  font-weight: 700;
+  margin: 5px 0 8px;
+  color: #6b3f1f;
+}
+
+/* ==========================================================================
+   Pet Rig V3 — Species Locomotion & Directional View Stage Kinematics
+   ========================================================================== */
+@keyframes petV3FlyHover {
+  0%, 100% { transform: translateY(-2px) rotate(-1.5deg) scale(1, 1); }
+  45% { transform: translateY(-8px) rotate(1.8deg) scale(1.03, 0.98); }
+  55% { transform: translateY(-9px) rotate(2.2deg) scale(1.04, 0.97); }
+}
+
+@keyframes petV3FlyGlideActive {
+  0%, 100% { transform: translate(-2px, -2px) rotate(-4deg) scale(1.02, 0.98); }
+  45% { transform: translate(3px, -10px) rotate(2.5deg) scale(1.05, 0.96); }
+}
+
+@keyframes petV3HopTrotActive {
+  0%, 100% { transform: translateY(0px) rotate(-3deg) scale(1.04, 0.95); }
+  25% { transform: translateY(-7px) rotate(0deg) scale(0.96, 1.06); }
+  50% { transform: translateY(0px) rotate(3deg) scale(1.04, 0.95); }
+  75% { transform: translateY(-7px) rotate(0deg) scale(0.96, 1.06); }
+}
+
+@keyframes petV3SpiritFloatActive {
+  0%, 100% { transform: translate(-2px, -1px) rotate(-2deg); }
+  50% { transform: translate(2px, -8px) rotate(2.5deg); }
+}
+
+@keyframes petV3SkySwimActive {
+  0%, 100% { transform: translateY(-1px) rotate(-3.5deg) scale(1.02, 0.98); }
+  50% { transform: translateY(-8px) rotate(3.5deg) scale(0.98, 1.03); }
+}
+
+.pet-v2-hero-focus.s2-loco-FLY_FLUTTER {
+  animation: petV3FlyHover 1.15s ease-in-out infinite;
+}
+.pet-v2-hero-focus.s2-loco-FLY_FLUTTER.is-moving-preview {
+  animation: petV3FlyGlideActive 0.68s ease-in-out infinite;
+}
+.pet-v2-hero-focus.s2-loco-HOP_WADDLE.is-moving-preview {
+  animation: petV3HopTrotActive 0.64s ease-in-out infinite;
+}
+.pet-v2-hero-focus.s2-loco-FLOAT_SPIRIT.is-moving-preview {
+  animation: petV3SpiritFloatActive 0.78s ease-in-out infinite;
+}
+.pet-v2-hero-focus.s2-loco-SKY_SWIM.is-moving-preview {
+  animation: petV3SkySwimActive 0.88s ease-in-out infinite;
+}
+
+.pet-v2-dir-bar {
+  background: rgba(242, 226, 196, 0.85);
+  border-radius: 999px;
+  padding: 1px 3px;
+  border: 1px solid rgba(181, 133, 72, 0.45);
+}
+.pet-v2-dir-bar .pet-v2-vtier-pill {
+  font-size: 8.5px !important;
+  padding: 2px 5px !important;
+}
+
+/* ==========================================================================
+   Blacksmith Star-Force & Stat Attunement V2 — Dopamine Stage & Console
+   ========================================================================== */
+.s2-forge-mode-bar-v2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.s2-forge-mode-pill {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px !important;
+  border-radius: 13px !important;
+  border: 2px solid #b8833e !important;
+  background: linear-gradient(180deg, #fffaf0 0%, #ebd2a4 100%) !important;
+  color: #4b2a12 !important;
+  box-shadow: inset 0 1px 0 #fff, 0 2.5px 0 #7a4a1a !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.s2-forge-mode-pill.active {
+  border-color: #ffe89e !important;
+  background: linear-gradient(180deg, #ffe794 0%, #f59e0b 65%, #d97706 100%) !important;
+  color: #3a1802 !important;
+  text-shadow: 0 1px 0 rgba(255, 250, 220, 0.75) !important;
+  box-shadow: inset 0 1.5px 0 #fff8d6, 0 3px 0 #78350f, 0 0 12px rgba(245, 158, 11, 0.45) !important;
+}
+
+
+.s2-mode-pill-ico {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+}
+
+.s2-mode-pill-txt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.s2-mode-pill-txt b {
+  font-size: 11.5px;
+  font-weight: 900;
+}
+
+.s2-mode-pill-txt small {
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.88;
+}
+
+/* Scenic Stage Backdrop & Lighting */
+.s2-forge-stage-v2 {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(255, 220, 130, 0.36) 0%, rgba(42, 20, 8, 0.62) 78%, rgba(24, 11, 4, 0.82) 100%),
+    url('/assets/ui/stage_forge_bg.jpg') center 52% / cover no-repeat !important;
+  border: 2.5px solid #d4982f !important;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 190, 0.6), 0 3.5px 0 #5c3416 !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.s2-forge-stage-v2.is-attune-mode {
+  background:
+    radial-gradient(circle at 50% 56%, rgba(125, 211, 252, 0.34) 0%, rgba(30, 27, 75, 0.68) 74%, rgba(15, 23, 42, 0.86) 100%),
+    url('/assets/ui/stage_forge_bg.jpg') center 52% / cover no-repeat !important;
+  border-color: #38bdf8 !important;
+  box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.32), 0 3.5px 0 #1e3a8a !important;
+}
+
+.s2-forge-stage-v2.is-attune-mode.elem-power {
+  border-color: #fb7185 !important;
+  box-shadow: inset 0 0 18px rgba(244, 63, 94, 0.32), 0 3.5px 0 #881337 !important;
+}
+
+.s2-forge-stage-v2.is-attune-mode.elem-fortune {
+  border-color: #fbbf24 !important;
+  box-shadow: inset 0 0 18px rgba(251, 191, 36, 0.34), 0 3.5px 0 #78350f !important;
+}
+
+.s2-forge-stage-v2.is-attune-mode.elem-luck {
+  border-color: #34d399 !important;
+  box-shadow: inset 0 0 18px rgba(16, 185, 129, 0.32), 0 3.5px 0 #065f46 !important;
+}
+
+.s2-attune-stage-header {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 6px;
+}
+
+.s2-ash-pill {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1.5px solid rgba(125, 211, 252, 0.72);
+  color: #e0f2fe;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2.5px 11px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.s2-ash-pill b {
+  color: #fde047;
+}
+
+/* Rotating Magic Circle & Alchemical Wheel */
+@keyframes forgeWheelIdleSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.s2-forge-stage-v2 .s2-anvil-magic {
+  animation: forgeWheelIdleSpin 20s linear infinite;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 106, 0.65));
+}
+
+.s2-forge-stage-v2.is-attune-mode .s2-anvil-magic {
+  top: -12px;
+  width: 112px;
+  height: 112px;
+  opacity: 0.96;
+  animation: forgeWheelIdleSpin 12s linear infinite;
+  filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.85));
+}
+
+/* Floating Royal Star-Hammer Prop */
+@keyframes forgeHammerIdle {
+  0%, 100% { transform: translate(0, 0) rotate(-14deg); }
+  50% { transform: translate(2px, -5px) rotate(-6deg); }
+}
+
+@keyframes forgeHammerStrike {
+  0% { transform: translate(0, 0) rotate(-14deg) scale(1); }
+  22% { transform: translate(16px, -16px) rotate(32deg) scale(1.12); }
+  42% { transform: translate(-24px, 18px) rotate(-52deg) scale(1.22); filter: drop-shadow(0 0 18px #fff) brightness(1.35); }
+  62% { transform: translate(-8px, 4px) rotate(-26deg) scale(1.06); }
+  100% { transform: translate(0, 0) rotate(-14deg) scale(1); }
+}
+
+.s2-forge-hammer-prop {
+  position: absolute;
+  top: -4px;
+  right: 6px;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 8px rgba(56, 189, 248, 0.55));
+  animation: forgeHammerIdle 2.2s ease-in-out infinite;
+}
+
+.s2-forge-stage-v2.is-striking-win .s2-forge-hammer-prop,
+.s2-forge-stage-v2.is-striking-pity .s2-forge-hammer-prop {
+  animation: forgeHammerStrike 0.68s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Stage Flanking Orbs in Attune Mode */
+.s2-stage-stat-orb {
+  position: absolute;
+  top: 24px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.s2-stage-stat-orb.is-locked {
+  left: -26px;
+}
+
+.s2-stage-stat-orb.is-target {
+  right: -26px;
+}
+
+.s2-stage-stat-orb img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+}
+
+.s2-stage-stat-orb span {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.s2-stage-stat-orb.is-target span {
+  border-color: #fde047;
+  color: #fef08a;
+}
+
+/* Dopamine Impact Animations (Item Box, Wheel Spin, Shockwave, Sparks, Banner, Star Pop) */
+@keyframes forgeItemImpactWin {
+  0% { transform: scale(1); }
+  36% { transform: scale(1.0) translateY(0); }
+  44% { transform: scale(1.22, 0.82) translateY(5px); filter: brightness(1.65) drop-shadow(0 0 18px #fde047); }
+  64% { transform: scale(0.92, 1.14) translateY(-8px); filter: brightness(1.25) drop-shadow(0 0 16px #f59e0b); }
+  82% { transform: scale(1.05, 0.97) translateY(0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes forgeItemImpactPity {
+  0% { transform: translateX(0) scale(1); }
+  38% { transform: translateX(0) scale(1); }
+  46% { transform: translateX(-5px) scale(1.06, 0.92); filter: drop-shadow(0 0 14px #fbbf24); }
+  56% { transform: translateX(5px) scale(0.96, 1.04); }
+  68% { transform: translateX(-3px); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes attuneWheelBurstSpin {
+  0% { transform: rotate(0deg) scale(1); filter: brightness(1) drop-shadow(0 0 12px #38bdf8); }
+  45% { transform: rotate(380deg) scale(1.18); filter: brightness(1.55) drop-shadow(0 0 24px #fde047); }
+  100% { transform: rotate(720deg) scale(1); filter: brightness(1.08) drop-shadow(0 0 14px #38bdf8); }
+}
+
+@keyframes forgeShockwaveAnim {
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0.95; border-width: 7px; }
+  35% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.45); opacity: 0; border-width: 1px; }
+}
+
+@keyframes forgeSparkBurst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  28% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx, 40px)), calc(-50% + var(--ty, -40px))) scale(0.15); opacity: 0; }
+}
+
+@keyframes forgeBannerPop {
+  0% { transform: translate(-50%, 10px) scale(0.45); opacity: 0; }
+  18% { transform: translate(-50%, -8px) scale(1.08); opacity: 1; }
+  30% { transform: translate(-50%, -5px) scale(1); opacity: 1; }
+  82% { transform: translate(-50%, -12px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -22px) scale(0.92); opacity: 0; }
+}
+
+@keyframes starForceJustForged {
+  0% { transform: translateY(var(--arc-y, 0px)) scale(0.4) rotate(-25deg); filter: brightness(2); }
+  55% { transform: translateY(var(--arc-y, 0px)) scale(1.42) rotate(10deg); box-shadow: 0 0 18px #fff, 0 0 26px #f59e0b; }
+  100% { transform: translateY(var(--arc-y, 0px)) scale(1) rotate(0deg); }
+}
+
+@keyframes forgeChibiCheerJump {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-9px) scale(1.04); }
+  65% { transform: translateY(-5px) scale(1.02); }
+}
+
+.s2-sf-star.just-forged {
+  animation: starForceJustForged 0.75s cubic-bezier(0.22, 1.4, 0.36, 1) forwards;
+  z-index: 4;
+}
+
+.s2-forge-stage-v2.is-striking-win .s2-anvil-item-box,
+.s2-forge-stage-v2.is-attuning-win .s2-anvil-item-box {
+  animation: forgeItemImpactWin 0.78s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.s2-forge-stage-v2.is-striking-pity .s2-anvil-item-box {
+  animation: forgeItemImpactPity 0.68s ease-out forwards;
+}
+
+.s2-forge-stage-v2.is-attuning-win .s2-anvil-magic {
+  animation: attuneWheelBurstSpin 0.88s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.s2-forge-stage-v2.is-striking-win .s2-anvil-chibi-cheer,
+.s2-forge-stage-v2.is-attuning-win .s2-anvil-chibi-cheer {
+  animation: forgeChibiCheerJump 0.7s ease-out;
+}
+
+.s2-forge-vfx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.s2-forge-shockwave {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 5px solid #fde047;
+  box-shadow: 0 0 18px #f59e0b, inset 0 0 12px #fef08a;
+  animation: forgeShockwaveAnim 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+   animation-delay: 0.22s;
+  opacity: 0;
+}
+
+.s2-forge-shockwave.attune_win {
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px #38bdf8, inset 0 0 12px #bae6fd;
+  animation-delay: 0.05s;
+}
+
+.s2-forge-shockwave.forge_pity {
+  border-color: #fbbf24;
+  box-shadow: 0 0 14px #fbbf24;
+  animation-delay: 0.22s;
+}
+
+.s2-forge-sparks-wrap {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 0;
+  height: 0;
+}
+
+.s2-forge-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--spark-col, #fde047);
+  box-shadow: 0 0 8px var(--spark-col, #fde047), 0 0 14px #fff;
+  opacity: 0;
+  animation: forgeSparkBurst 0.72s cubic-bezier(0.15, 0.85, 0.3, 1) forwards;
+}
+
+.s2-forge-dopamine-banner {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translate(-50%, 0);
+  white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #fffdf5;
+  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+  border: 2px solid #fef08a;
+  text-shadow: 0 1.5px 0 #451a03;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 16px rgba(251, 191, 36, 0.8);
+  animation: forgeBannerPop 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 12;
+}
+
+.s2-forge-dopamine-banner.attune_win {
+  background: linear-gradient(180deg, #0284c7 0%, #1e3a8a 100%);
+  border-color: #bae6fd;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.85);
+}
+
+.s2-forge-dopamine-banner.forge_pity {
+  background: linear-gradient(180deg, #059669 0%, #065f46 100%);
+  border-color: #a7f3d0;
+}
+
+/* Star-Force Console V2: Visual Stat Delta Pills */
+.s2-forge-console-v2 {
+  gap: 7px !important;
+  padding: 8px 10px !important;
+}
+
+.s2-forge-stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: linear-gradient(90deg, #fff5d6, #ffe6a3, #fff5d6);
+  border: 1.5px solid #d49424;
+  border-radius: 10px;
+  padding: 5px 7px;
+}
+
+.s2-forge-delta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 253, 248, 0.94);
+  border: 1.5px solid #cfa358;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #4b2a12;
+  box-shadow: 0 1px 0 rgba(122, 74, 26, 0.2);
+}
+
+.s2-forge-delta-pill.is-cp {
+  background: linear-gradient(180deg, #fffbeb, #fef08a);
+  border-color: #d97706;
+}
+
+.s2-fdp-ico {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.s2-fdp-label {
+  font-weight: 900;
+  color: #6b3810;
+}
+
+.s2-fdp-vals {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.s2-fdp-arr {
+  color: #b45309;
+  font-size: 10px;
+}
+
+.s2-fdp-next {
+  color: #15803d;
+  font-weight: 900;
+}
+
+.s2-fdp-diff {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 900;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+  border-radius: 999px;
+  padding: 0 4px;
+}
+
+.s2-forge-milestone-chip {
+  font-size: 9.5px;
+  font-weight: 900;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.s2-forge-milestone-chip.gold {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+/* True Conic-Gradient Success Ring + Tactile Booster Chips */
+.s2-conic-gauge {
+  width: 82px !important;
+  height: 82px !important;
+  padding: 5px;
+  border: 2px solid #8a5a24 !important;
+  background: conic-gradient(
+    #2eb82e calc(var(--chance-pct, 50) * 1%),
+    #e5d1ad 0
+  ) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16), inset 0 1px 2px rgba(255, 255, 255, 0.6) !important;
+}
+
+.s2-gauge-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #eefbe8 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.s2-gauge-safe-tag {
+  margin-top: 1px;
+  font-size: 8px;
+  font-weight: 900;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 999px;
+  padding: 0.5px 5px;
+}
+
+.s2-booster-col {
+  gap: 6px !important;
+}
+
+.s2-booster-chip {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  gap: 7px !important;
+  padding: 5px 8px !important;
+  border-radius: 11px !important;
+  border: 2px solid #cfa566 !important;
+  background: linear-gradient(180deg, #fffdf9 0%, #f5e6c8 100%) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 2px 0 #9c6e32;
+  transition: transform 0.1s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.s2-booster-chip.is-on {
+  border-color: #e11d48 !important;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%) !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.22), 0 2px 0 #9f1239;
+}
+
+.rpg-scroll-check.s2-booster-chip.is-on {
+  border-color: #d97706 !important;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25), 0 2px 0 #92400e;
+}
+
+.s2-booster-ico {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.s2-booster-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.s2-booster-meta b {
+  font-size: 11px;
+  font-weight: 900;
+  color: #3a1d04;
+}
+
+.s2-booster-meta small {
+  font-size: 9px;
+  font-weight: 800;
+  color: #6b4423;
+}
+
+.s2-booster-badge {
+  background: #ffe4e6;
+  border: 1.5px solid #f43f5e;
+  color: #9f1239;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.s2-booster-badge.gold {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* 8-Flame-Pip Artisan Pity & Material Bar */
+.s2-forge-pity-cost-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: #f5e5c6;
+  border: 1.5px solid #d4a656;
+  border-radius: 10px;
+  padding: 5px 8px;
+}
+
+.s2-pity-flame-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.s2-pity-head-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #5c3416;
+}
+
+.s2-pity-bonus-tag {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 900;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  padding: 0 5px;
+}
+
+.s2-pity-pips-row {
+  display: flex;
+  gap: 2px;
+}
+
+.s2-pity-pip {
+  font-size: 11px;
+  line-height: 1;
+  filter: grayscale(1) opacity(0.32);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.s2-pity-pip.filled {
+  filter: none;
+  transform: scale(1.1);
+}
+
+.s2-forge-mat-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.s2-mat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fffdf8;
+  border: 1.5px solid #c99b56;
+  border-radius: 8px;
+  padding: 3px 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #3a1d04;
+}
+
+.s2-mat-pill.s2-lack {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+/* Stat Attunement V2: Transmutation Strip & Elemental Rune Cards */
+.s2-attune-transmute-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: linear-gradient(90deg, #fdf6e7, #f5e1b9);
+  border: 1.5px solid #cfa358;
+  border-radius: 11px;
+  padding: 6px 8px;
+}
+
+.s2-transmute-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffdf9;
+  border: 1.5px solid #d4a656;
+  border-radius: 9px;
+  padding: 4px 7px;
+}
+
+.s2-transmute-pill.morph {
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-color: #38bdf8;
+}
+
+.s2-transmute-pill.morph.elem-power {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  border-color: #fb7185;
+}
+
+.s2-transmute-pill.morph.elem-fortune {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fbbf24;
+}
+
+.s2-transmute-pill.morph.elem-luck {
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #34d399;
+}
+
+.s2-transmute-pill img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.s2-transmute-pill small {
+  display: block;
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #7a4618;
+  line-height: 1.1;
+}
+
+.s2-transmute-pill b {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #3a1d04;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-transmute-arrow {
+  font-size: 14px;
+  font-weight: 900;
+  color: #b45309;
+  flex-shrink: 0;
+}
+
+.s2-rune-card {
+  position: relative;
+  padding: 8px 6px 6px !important;
+  border-radius: 13px !important;
+  gap: 2px !important;
+}
+
+.s2-rune-card.elem-swiftness.selected {
+  border-color: #0284c7 !important;
+  background: linear-gradient(180deg, #f0f9ff 0%, #bae6fd 100%) !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.35), 0 3px 0 #0369a1 !important;
+}
+
+.s2-rune-card.elem-power.selected {
+  border-color: #e11d48 !important;
+  background: linear-gradient(180deg, #fff1f2 0%, #fecdd3 100%) !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.35), 0 3px 0 #9f1239 !important;
+}
+
+.s2-rune-card.elem-fortune.selected {
+  border-color: #d97706 !important;
+  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 100%) !important;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.38), 0 3px 0 #92400e !important;
+}
+
+.s2-rune-card.elem-luck.selected {
+  border-color: #059669 !important;
+  background: linear-gradient(180deg, #ecfdf5 0%, #a7f3d0 100%) !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.35), 0 3px 0 #065f46 !important;
+}
+
+.s2-rune-medallion-wrap {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1px;
+}
+
+.s2-rune-medallion-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  transition: transform 0.15s ease;
+}
+
+.s2-rune-card.selected .s2-rune-medallion-img {
+  transform: scale(1.1);
+}
+
+.s2-rune-sub-role {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #6b4423;
+  line-height: 1.1;
+}
+
+.s2-attune-target-tag {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  padding: 0.5px 5px;
+}
+
+.s2-locked-wheel-ico {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  margin: 0 auto 4px;
+  display: block;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.25));
+}
+
+.s2-attune-cta {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15 !important;
+  padding: 6px 10px !important;
+}
+
+.s2-cta-sub-cost {
+  font-size: 9.5px;
+  font-weight: 800;
+  opacity: 0.92;
+}
+
+/* Starlight Charm Reliquary 3D Stage */
+.s2-charm-mirror-card {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: linear-gradient(180deg, #1e1230 0%, #321d4c 65%, #2a1820 100%) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), inset 0 0 22px rgba(255, 215, 130, 0.18) !important;
+}
+
+.s2-charm-stage-fig {
+  max-width: 280px !important;
+  height: 188px !important;
+  min-height: 188px !important;
+  background:
+    radial-gradient(circle at 50% 54%, rgba(116, 68, 188, 0.42) 0%, rgba(28, 14, 48, 0.92) 72%, rgba(14, 8, 26, 0.98) 100%) !important;
+  border-color: #d8a43a !important;
+}
+
+.s2-charm-stage-fig .s2-pd-webgl-host {
+  width: 196px !important;
+  height: 184px !important;
+  bottom: 2px !important;
+}
+
+/* ============================================================================
+   UNIFIED INLINE WARDROBE, DUAL STAT/GLAMOUR BAR & PIP GLAMOUR BADGE
+   ============================================================================ */
+.s2-pd-slot-v2 .rpg-slot-glamour.rpg-slot-glamour-pip {
+  width: 22px;
+  height: 22px;
+  top: -5px;
+  right: -5px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff0f6 0%, #ffd6e7 100%);
+  border: 1.5px solid #e11d74;
+  padding: 1px;
+  overflow: visible;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.s2-pd-slot-v2 .rpg-slot-glamour-pip img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+.s2-pd-slot-v2 .rpg-slot-glamour-pip small {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 8px;
+  line-height: 1;
+  background: #e11d74;
+  color: #fff;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fff;
+}
+
+.s2-compact-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  margin-top: 2px;
+  background: linear-gradient(180deg, #fffdf6 0%, #f3e1bc 100%);
+  border: 1.5px solid #c9974c;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(58, 36, 21, 0.12);
+}
+.s2-compact-stats-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 7px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #4a2a10;
+  min-width: 0;
+}
+.s2-compact-stats-pills b {
+  color: #166534;
+  font-weight: 900;
+}
+.s2-compact-build-pill {
+  background: #fef3c7;
+  border: 1px solid #d97706;
+  color: #7c2d12;
+  font-weight: 900;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.s2-compact-stats-toggle {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+  border: 1px solid #8b5cf6;
+  color: #4c1d95;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2.5px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.s2-expanded-stats-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+.s2-inline-closet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1.5px dashed rgba(168, 118, 52, 0.45);
+}
+
+.s2-active-loadout-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.s2-loadout-half {
+  background: linear-gradient(180deg, #fffdf8 0%, #f5e6c8 100%);
+  border: 1.5px solid #c99a49;
+  border-radius: 10px;
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 #fff;
+}
+.s2-loadout-half.is-stat-gear {
+  border-color: #4ca647;
+  background: linear-gradient(180deg, #f8fff6 0%, #e7f6e3 100%);
+}
+.s2-loadout-half.is-glamour-look.is-overridden {
+  border-color: #e11d74;
+  background: linear-gradient(180deg, #fff7fb 0%, #fce4f0 100%);
+}
+.s2-loadout-half-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #4a2a10;
+  letter-spacing: 0.01em;
+}
+.s2-loadout-half.is-stat-gear .s2-loadout-half-tag {
+  color: #166534;
+}
+.s2-loadout-half.is-glamour-look.is-overridden .s2-loadout-half-tag {
+  color: #be185d;
+}
+.s2-loadout-half-tag small {
+  font-weight: 700;
+  opacity: 0.8;
+}
+.s2-loadout-clear-btn {
+  background: #be185d;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  line-height: 1.1;
+}
+.s2-loadout-half-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.s2-loadout-mini-thumb {
+  flex-shrink: 0;
+}
+.s2-loadout-half-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.18;
+}
+.s2-loadout-half-txt b {
+  font-size: 10px;
+  font-weight: 900;
+  color: #3a2008;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-loadout-half-txt span {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #6b4423;
+}
+.s2-loadout-half-txt span.is-glam-active {
+  color: #be185d;
+}
+
+.s2-insp-btn.glamour {
+  background: linear-gradient(180deg, #ff85b3 0%, #d93870 100%);
+  border: 1.5px solid #ffd1e3;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 0 #8c1943;
+}
+.s2-insp-sub-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.s2-insp-sub-actions .s2-insp-btn {
+  padding: 5px 5px;
+  font-size: 9.5px;
+}
+.s2-insp-btn.gift {
+  background: linear-gradient(180deg, #f3e8ff 0%, #d8b4fe 100%);
+  border: 1.5px solid #9333ea;
+  color: #4c1d95;
+  box-shadow: 0 2px 0 #6b21a8;
+}
+.s2-insp-btn.glamour-clear {
+  background: linear-gradient(180deg, #fce7f3 0%, #fbcfe8 100%);
+  border: 1.5px solid #db2777;
+  color: #831843;
+  box-shadow: 0 1.5px 0 #9d174d;
+}
+.s2-insp-glamour-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5px 6px;
+  border-radius: 8px;
+  background: #fce7f3;
+  border: 1.5px solid #db2777;
+  color: #9d174d;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.s2-tile-eq-tag.s2-tile-pill-tag,
+.s2-tile-glamour-tag.s2-tile-pill-tag {
+  width: auto;
+  height: 15px;
+  padding: 0 4.5px;
+  border-radius: 999px;
+  font-size: 7.5px;
+  letter-spacing: 0.02em;
+}
+.s2-closet-tile.is-glamour-tile {
+  border-color: #ec4899;
+  background: #fff7fb;
+}
+
+.s2-wardrobe-unified-card .rpg-items-grid.s2-closet-grid-v2 {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.s2-stat-cell.is-top-stat {
+  border-color: #d97706 !important;
+  background: linear-gradient(180deg, #fffdf0 0%, #fef3c7 100%) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(217, 119, 6, 0.35);
+}
+.s2-stat-val small {
+  font-size: 8.5px;
+  font-weight: 800;
+  opacity: 0.78;
+}
+.s2-dash-build-share {
+  font-size: 9px;
+  font-weight: 800;
+  color: #92400e;
+  margin-left: 3px;
+}
+
+/* ============================================================================
+   3 FASHION SUB-TABS: [ ⚔️ GEAR STATS ] | [ 👗 COSTUME ] | [ 💇 HAIR SALON ]
+   ============================================================================ */
+.s2-pd-big-subtabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 2px 0 4px;
+}
+
+.s2-pd-big-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5.5px 5px;
+  border-radius: 10px;
+  border: 2px solid #c49a52;
+  background: linear-gradient(180deg, #f8ecd2 0%, #e7d1a7 100%);
+  color: #5c3818;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 0 #8c5c25;
+  transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.s2-pd-big-tab:active {
+  transform: translateY(1px);
+}
+
+.s2-pd-big-tab-ico {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.s2-pd-big-tab-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.12;
+}
+
+.s2-pd-big-tab-txt b {
+  font-size: 9.8px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-pd-big-tab-txt small {
+  font-size: 8px;
+  font-weight: 800;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s2-pd-big-tab.is-stats.active {
+  background: linear-gradient(180deg, #52b848 0%, #2a8324 100%);
+  border-color: #ffe380;
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1.5px #1b5c16, 0 2px 6px rgba(42, 131, 36, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.s2-pd-big-tab.is-glamour.active {
+  background: linear-gradient(180deg, #ff6fa5 0%, #d42669 100%);
+  border-color: #ffd6e8;
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1.5px #881343, 0 2px 6px rgba(212, 38, 105, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.s2-pd-big-tab.is-hair.active {
+  background: linear-gradient(180deg, #a855f7 0%, #6d28d9 100%);
+  border-color: #f3e8ff;
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1.5px #4c1d95, 0 2px 6px rgba(109, 40, 217, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.s2-inline-hair-studio-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* Stage & Slot visual cue when viewing COSTUME LOOK tab */
+.s2-wardrobe-stage.is-glamour-stage {
+  background: radial-gradient(circle at 50% 45%, rgba(255, 230, 242, 0.65) 0%, rgba(247, 212, 230, 0.28) 100%);
+  border-radius: 12px;
+}
+
+.s2-pd-slot-v2.is-glamour-mode-slot .s2-pd-slot-box {
+  border-color: #e879a7;
+  background: linear-gradient(180deg, #fff7fb 0%, #fce7f3 100%);
+}
+
+.s2-pd-slot-v2.is-glamour-mode-slot.has-glamour-look .s2-pd-slot-box {
+  border-color: #db2777;
+  box-shadow: 0 0 0 1.5px rgba(219, 39, 119, 0.3), inset 0 1px 0 #fff;
+}
+
+.s2-pd-slot-v2.is-glamour-mode-slot.selected .s2-pd-slot-box {
+  border-color: #db2777 !important;
+  box-shadow: 0 0 0 2.5px #f472b6, 0 2px 6px rgba(219, 39, 119, 0.35) !important;
+}
+
+.rpg-slot-refine.is-glam-pill {
+  background: linear-gradient(180deg, #ec4899 0%, #be185d 100%) !important;
+  border: 1px solid #ffd6e8 !important;
+  color: #fff !important;
+  font-size: 7.5px !important;
+  padding: 0 4px !important;
+  letter-spacing: 0.01em;
+}
+
+.rpg-slot-glam-reset {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 6;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%);
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }

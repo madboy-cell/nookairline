@@ -244,8 +244,7 @@ export class HallOfFameUI {
 
       return `
         <div class="hall-statue-card v-pos-${idx + 1} ${isSelected ? 'active' : ''}" data-hall-cat="${cat.key}">
-          <div class="statue-pedestal-num">Pedestal ${idx + 1}</div>
-          <div class="statue-badge">${meta.icon} #1 ${esc(meta.badge)}</div>
+          <div class="statue-badge">${meta.icon} ${esc(meta.badge)}</div>
           <div class="statue-diorama-figure">
             <div class="statue-chibi-wrap">
               ${chibiHtml}
@@ -274,9 +273,8 @@ export class HallOfFameUI {
     const rowsHtml = rows.length ? rows.map((r, i) => {
       const rankNum = r.rank || (i + 1);
       const rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-      const rankBadge = i === 0 ? '🥇 1' : (i === 1 ? '🥈 2' : (i === 2 ? '🥉 3' : `#${rankNum}`));
+      const rankBadge = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : `#${rankNum}`));
       const valStr = r.value != null ? Number(r.value).toLocaleString() : '0';
-      const titleStr = r.title ? `👑 ${esc(r.title)}` : '👑 Sky Party Founder';
       const look = this.resolvePlayerLook(r.userId || r.username, i);
       const miniChibiHtml = renderOutfitThumbLayers(look.outfit, {
         lineage: look.lineage,
@@ -291,14 +289,10 @@ export class HallOfFameUI {
           <div class="hall-row-avatar">${miniChibiHtml}</div>
           <div class="hall-player-meta">
             <div class="hall-player-name">${esc(r.username)}</div>
-            <div class="hall-player-sub">
-              <span class="hall-title-pill">${titleStr}</span>
-              <span class="hall-cp-tag">⚔️ CP ${Number(r.cp || 0).toLocaleString()}</span>
-            </div>
+            <div class="hall-score">${valStr}</div>
           </div>
-          <div class="hall-score">${valStr}</div>
           <div class="hall-actions">
-            <button type="button" class="btn-gold small hall-act-btn" data-inspect-user="${esc(r.userId)}">🔍 Inspect</button>
+            <button type="button" class="btn-gold small hall-act-btn icon-only" data-inspect-user="${esc(r.userId)}" title="Inspect">🔍</button>
             <button type="button" class="btn-gold small outline hall-act-btn" data-visit-user="${esc(r.userId)}" data-visit-name="${esc(r.username)}">🏠 Visit</button>
           </div>
         </div>
@@ -334,7 +328,7 @@ export class HallOfFameUI {
         <div class="hall-statues-stage">
           <div class="hall-stage-ribbon">
             <img src="/assets/ui/ui_ribbon_gold_title.png" alt="" class="hall-ribbon-bg" />
-            <span>🏛️ HALL OF FAME LEADERBOARD</span>
+            <span>🏛️ HALL OF FAME</span>
           </div>
 
           <div class="hall-statues-grid">
@@ -343,7 +337,7 @@ export class HallOfFameUI {
 
           <div class="hall-crowd-strip">
             <img src="/assets/monopoly/gacha_vip_crowd.png" alt="" class="hall-crowd-img" />
-            <span>👏 Villagers cheering at the Grand Colonnade!</span>
+            <span>👏 Tap a Champion Statue to view rankings</span>
           </div>
         </div>
 
@@ -359,8 +353,7 @@ export class HallOfFameUI {
 
         <div class="hall-footer">
           <button type="button" class="btn-gold hall-worship-btn" data-act="hall-worship" ${this.worshippedToday ? 'disabled' : ''}>
-            <span>${this.worshippedToday ? '✅ Worshipped Champions Today' : '🙏 Worship Statues (+100 🪙, +20 🍓 — 1/day)'}</span>
-            <small>${this.worshippedToday ? '(Resets daily at 00:00 UTC)' : '(Daily Free Blessing: +200 🪙 & +15 💎!)'}</small>
+            <span>${this.worshippedToday ? '✅ Worshipped Champions Today' : '🙏 Worship Statues (+200 <img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt=""> &amp; +15 <img class="inline-curr-ico" src="/assets/ui/icon_diamond.png" alt="">)'}</span>
           </button>
         </div>
 

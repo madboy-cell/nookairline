@@ -222,9 +222,15 @@ test('box 1 banners: bad banner refunds nothing taken, relics = accessories with
     'wings_astral_eclipse_six', 'back_astral_eclipse_comet_tail', 'back_astral_eclipse_regalia_cape',
     'hat_aurora_spirit_hood', 'face_aurora_starlight_glasses', 'gloves_aurora_orb_mitts', 'boots_aurora_spirit_slippers',
     'wings_aurora_crystal_wings', 'back_aurora_spirit_tail', 'back_aurora_starlit_mantle',
+    'wings_mythic_prism_valkyrie', 'wings_mythic_sakura_phoenix', 'wings_mythic_abyssal_poseidon',
+    'wings_mythic_chrono_celestial', 'wings_mythic_void_bahamut', 'wings_mythic_eden_peacock',
+    'back_mythic_jackpot_roulette', 'back_mythic_ferris_carnival', 'back_mythic_dragon_hoard_vault',
+    'hat_mythic_jackpot_crown', 'gloves_mythic_croupier_rake', 'boots_mythic_roulette_heels',
+    'hat_mythic_carnival_carousel_crown', 'gloves_mythic_ferris_star_scepter', 'boots_mythic_coaster_wing_boots',
+    'hat_mythic_dragon_hoard_crown', 'gloves_mythic_vault_key_scepter', 'boots_mythic_dragon_bullion_greaves',
   ]);
-  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.05)).items[0].id, 'hat_glowing_bunny');
-  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.10)).items[0].id, 'face_oracle_monocle');
+  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.02)).items[0].id, 'hat_glowing_bunny');
+  assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.05)).items[0].id, 'face_oracle_monocle');
   p.gacha.box1_pity = 30; p.gacha.box1_relics_pity = 0;
   const r = rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, fixed(0.99));
   assert.equal(r.banner, 'relics'); assert.equal(r.pity, 1); assert.equal(p.gacha.box1_pity, 30);

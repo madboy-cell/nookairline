@@ -15,12 +15,10 @@ export const TOWNHALL = Object.freeze({
     Object.freeze({ id: 'statue_5', label: 'Couple Statue', icon: '💞', x: 8, z: -13, action: 'hall_of_fame', category: 'couple' }),
     Object.freeze({ id: 'casino_palace', label: 'Casino Palace', icon: '🎰', x: -10.5, z: -5.5, action: 'table_hub_casino' }),
     Object.freeze({ id: 'monopoly_arch', label: 'Monopoly Arch', icon: '🎲', x: 10.5, z: -5.5, action: 'table_hub_monopoly' }),
-    Object.freeze({ id: 'forge', label: 'Sovereign Forge', icon: '🔨', x: 10, z: 4.5, action: 'forge' }),
-    Object.freeze({ id: 'owl_postbox', label: 'Owl Postbox', icon: '📮', x: -5, z: 2.5, action: 'owl_postbox' }),
-    Object.freeze({ id: 'vip_table_1', label: 'VIP Table 1', icon: '🪑', x: -6, z: 8, action: 'table_hub_sit' }),
-    Object.freeze({ id: 'vip_table_2', label: 'VIP Table 2', icon: '🪑', x: 6, z: 8, action: 'table_hub_sit' }),
-    Object.freeze({ id: 'vip_table_3', label: 'VIP Table 3', icon: '🪑', x: -11, z: 2, action: 'table_hub_sit' }),
-    Object.freeze({ id: 'vip_table_4', label: 'VIP Table 4', icon: '🪑', x: 11, z: 10, action: 'table_hub_sit' }),
+    Object.freeze({ id: 'forge', label: 'Sovereign Forge', icon: '🔨', x: 9.5, z: 3.5, action: 'forge' }),
+    Object.freeze({ id: 'owl_postbox', label: 'Owl Postbox', icon: '📮', x: -9.5, z: 3.5, action: 'owl_postbox' }),
+    Object.freeze({ id: 'vip_table_1', label: 'VIP Table 1', icon: '🪑', x: -6, z: 8.5, action: 'table_hub_sit' }),
+    Object.freeze({ id: 'vip_table_2', label: 'VIP Table 2', icon: '🪑', x: 6, z: 8.5, action: 'table_hub_sit' }),
   ]),
 });
 
@@ -150,9 +148,24 @@ export const WORSHIP = Object.freeze({
   DIAMONDS: 15,
 });
 
+export const NOOK_NEEN_COUPLE_SINCE = '2026-10-05';
+
 export function utcDay(now = Date.now()) {
   const d = typeof now === 'number' ? new Date(now) : (now instanceof Date ? now : new Date(now));
   return d.toISOString().slice(0, 10);
+}
+
+export function coupleDaysSince(coupleSince, now = Date.now()) {
+  if (!coupleSince) return 0;
+  const sinceDay = typeof coupleSince === 'number'
+    ? new Date(coupleSince).toISOString().slice(0, 10)
+    : String(coupleSince).slice(0, 10);
+  const sinceMs = Date.parse(`${sinceDay}T00:00:00.000Z`);
+  if (!Number.isFinite(sinceMs)) return 0;
+  const todayDay = utcDay(now);
+  const todayMs = Date.parse(`${todayDay}T00:00:00.000Z`);
+  if (!Number.isFinite(todayMs) || todayMs < sinceMs) return 0;
+  return Math.floor((todayMs - sinceMs) / 86400000) + 1;
 }
 
 export function yesterday(day) {
@@ -163,3 +176,4 @@ export function yesterday(day) {
   const t = Date.parse(str.includes('T') ? str : `${str}T00:00:00.000Z`);
   return new Date(t - 86400000).toISOString().slice(0, 10);
 }
+

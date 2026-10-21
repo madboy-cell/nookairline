@@ -9,7 +9,7 @@
 // 4-phase turn pipeline: 1) pre-roll status (skip / fixed roll / reverse) → 2) primary move (modulo math)
 // → 3) tile trigger (max 1 secondary hop) → 4) atomic turn end.
 import {
-  MONO, CHAOS, TILES, ZONES, ZONE_TILES, PROPERTY_IDX, wrap, matchMods, rentFor, netWorth, ownedTiles, bestTile, buyCost, upgradeCost,
+  MONO, CHAOS, TILES, ZONES, ZONE_TILES, PROPERTY_IDX, wrap, stepsBetween, matchMods, rentFor, netWorth, ownedTiles, bestTile, buyCost, upgradeCost,
   takeoverCost, canTakeover, investedValue, affinityFor, ownsZone, petMatchStats,
 } from './monopoly_rules.js';
 import { castUltimate, runChoice, playerSkill, petSkill, richestRival } from './skill_engine.js';
@@ -90,9 +90,16 @@ export function createMatch({ players, seed = 1, maxRounds = MONO.MAX_ROUNDS, ta
 const petCapped = (p) => p.petCap != null && (p.petCasts || 0) >= p.petCap;
 const petFull = (p) => !!p.hasPet && !petCapped(p) && (p.petUlt || 0) >= MONO.ULT_MAX;
 
-function gainUlt(p, base) {
+function gainUlt(p, base, m = null) {
   if (p.bankrupt) return;
-  const mult = (1 + (p.mods.ultPct || 0)) * (p.ultGain || 1);
+  const phaseMult = (!m || m.chaos)
+    ? 1
+    : m.round >= MONO.OVERDRIVE_ROUND
+      ? MONO.OVERDRIVE_ULT_MULT
+      : m.round >= MONO.MID_ROUND
+        ? MONO.MID_ULT_MULT
+        : 1;
+  const mult = (1 + (p.mods.ultPct || 0)) * (p.ultGain || 1) * phaseMult;
   p.ult = Math.min(MONO.ULT_MAX, Math.round((p.ult + base * mult) * 10) / 10);
   if (p.hasPet && !petCapped(p)) {
     // overflow past 100% is banked (up to PET_BANK_MAX) and carried into the next fill — charge is never wasted
@@ -100,6 +107,18 @@ function gainUlt(p, base) {
     if (raw > MONO.ULT_MAX) p.petBank = Math.min(MONO.PET_BANK_MAX, Math.round(((p.petBank || 0) + raw - MONO.ULT_MAX) * 10) / 10);
     p.petUlt = Math.min(MONO.ULT_MAX, raw);
   }
+}
+
+/** Auto-upgrade the cheapest buildable (< Tier 3) property owned by `seat` for free. Returns tile index or null. */
+function freeUpgradeCheapest(m, seat, reason = 'bonus') {
+  const candidates = ownedTiles(m, seat)
+    .filter((k) => m.tiles[k].level < MONO.MAX_BUILD_TIER)
+    .sort((a, b) => m.tiles[a].level - m.tiles[b].level || investedValue(TILES[a], m.tiles[a].level) - investedValue(TILES[b], m.tiles[b].level));
+  if (!candidates.length) return null;
+  const i = candidates[0];
+  m.tiles[i].level++;
+  ev(m, { t: 'upgrade', seat, tile: i, level: m.tiles[i].level, cost: 0, [reason]: true });
+  return i;
 }
 
 /** Sell the cheapest properties at 50% until `need` cash is available. */
@@ -123,8 +142,17 @@ function goBankrupt(m, seat, creditor) {
   for (const i of PROPERTY_IDX) if (m.tiles[i].owner === seat) m.tiles[i] = { owner: null, level: 0, modifier: null };
   for (const t of m.tiles) if (t.modifier?.owner === seat) t.modifier = null;
   ev(m, { t: 'bankrupt', seat, by: creditor, finisher: m.inUlt });
+  const killerSeat = creditor ?? (m.inUlt ? m.turn?.seat : null);
+  if (killerSeat != null && killerSeat !== seat && !m.players[killerSeat]?.bankrupt) {
+    const killer = m.players[killerSeat];
+    killer.kills = (killer.kills || 0) + 1;
+    killer.cash += MONO.KILL_BOUNTY_CASH;
+    gainUlt(killer, MONO.KILL_BOUNTY_ULT, m);
+    const upgradedTile = freeUpgradeCheapest(m, killerSeat, 'bountyUpgrade');
+    ev(m, { t: 'bounty', seat: killerSeat, victim: seat, cash: MONO.KILL_BOUNTY_CASH, ult: MONO.KILL_BOUNTY_ULT, upgradedTile });
+  }
   if (m.players.filter((q) => !q.bankrupt).length <= 1) {
-    endMatch(m, m.inUlt ? 'finisher' : 'last_standing', { by: m.inUlt ? m.turn.seat : null });
+    endMatch(m, m.inUlt ? 'finisher' : 'last_standing', { by: m.inUlt ? m.turn.seat : killerSeat });
   }
 }
 
@@ -163,7 +191,8 @@ export const upgradeCostFor = (m, seat, i) => upgradeCost(TILES[i], m.tiles[i].l
 // ------------------------------------------------------------------------------------------- movement
 function passStart(m, seat) {
   const p = m.players[seat];
-  let amount = Math.round(MONO.SALARY * (1 + (p.mods.salaryPct || 0)));
+  const baseSalary = (!m.chaos && m.round >= MONO.MID_ROUND) ? MONO.MID_SALARY : MONO.SALARY;
+  let amount = Math.round(baseSalary * (1 + (p.mods.salaryPct || 0)));
   let underdog = false;
   let bonus = 0;
   const alive = m.players.filter((q) => !q.bankrupt);
@@ -183,19 +212,23 @@ function passStart(m, seat) {
   pay(m, null, seat, amount - cut, 'salary');
   if (cut) pay(m, null, thief.seat, cut, 'heist');
   p.boost += 1;
-  gainUlt(p, MONO.ULT_START);
+  gainUlt(p, MONO.ULT_START, m);
   let diamonds = 0;
   if ((p.lapDiamondsCount || 0) < MONO.MAX_START_DIAMOND_LAPS) {
     p.lapDiamondsCount = (p.lapDiamondsCount || 0) + 1;
     diamonds = MONO.START_DIAMONDS;
     p.boardDiamonds = (p.boardDiamonds || 0) + diamonds;
   }
+  const lapUpgradedTile = (!m.chaos && m.round >= MONO.LAP_AUTO_UPGRADE_ROUND)
+    ? freeUpgradeCheapest(m, seat, 'lapBonus')
+    : null;
   ev(m, {
     t: 'salary',
     seat,
     amount: amount - cut,
     diamonds,
     heist: cut ? { seat: thief.seat, amount: cut } : null,
+    ...(lapUpgradedTile != null ? { lapUpgradedTile } : {}),
     ...(underdog ? { underdog: true, bonus } : {}),
   });
 }
@@ -226,9 +259,10 @@ function payRent(m, seat, i) {
   const p = m.players[seat], t = m.tiles[i];
   const owner = t.owner;
   const amount = rentFor(m, i);
-  if (t.modifier?.reverseTrap && t.modifier.owner === seat) {
-    ev(m, { t: 'rent', payer: owner, owner: seat, tile: i, amount, reversed: true });
-    if (amount) pay(m, owner, seat, amount, 'mirror');
+  if (t.modifier?.reverseTrap && !m.players[t.modifier.owner]?.bankrupt) {
+    const mirrorOwner = t.modifier.owner;
+    ev(m, { t: 'rent', payer: owner, owner: mirrorOwner, tile: i, amount, reversed: true });
+    if (amount && owner !== mirrorOwner) pay(m, owner, mirrorOwner, amount, 'mirror');
     return 0;
   }
   if (!amount) { ev(m, { t: 'rent', payer: seat, owner, tile: i, amount: 0, frozen: true }); return 0; }
@@ -239,7 +273,11 @@ function payRent(m, seat, i) {
   }
   ev(m, { t: 'rent', payer: seat, owner, tile: i, amount });
   const paid = pay(m, seat, owner, amount, 'rent');
-  gainUlt(p, MONO.ULT_ON_RENT_PAID);
+  if (t.modifier?.grantOwnerCoupon && !m.players[owner]?.bankrupt) {
+    m.players[owner].coupons = (m.players[owner].coupons || 0) + 1;
+    ev(m, { t: 'grant', seat: owner, coupons: 1, tile: i });
+  }
+  gainUlt(p, MONO.ULT_ON_RENT_PAID, m);
   if (m.highlights && paid > 0) {
     m.highlights.rentEarned[owner] = (m.highlights.rentEarned[owner] || 0) + paid;
     if (!m.highlights.bigRent || paid > m.highlights.bigRent.amount) {
@@ -261,6 +299,11 @@ function land(m, seat, i, { allowHop, via }) {
     if (mod.burnSiphon) {
       ev(m, { t: 'trap', seat, tile: i, kind: 'burn', owner: mod.owner, amount: mod.burnSiphon });
       pay(m, seat, mod.owner, mod.burnSiphon, 'burn');
+      if (mod.stealCoupon && p.coupons > 0 && !m.players[mod.owner]?.bankrupt) {
+        p.coupons--;
+        m.players[mod.owner].coupons = (m.players[mod.owner].coupons || 0) + 1;
+        ev(m, { t: 'grant', seat: mod.owner, coupons: 1, from: seat, tile: i });
+      }
       if (p.bankrupt || m.ended) return;
     }
     if (mod.prison) {
@@ -272,6 +315,19 @@ function land(m, seat, i, { allowHop, via }) {
       ev(m, { t: 'trap', seat, tile: i, kind: 'push', owner: mod.owner, steps: mod.pushSteps });
       walk(m, seat, mod.pushSteps, 1, 'push');
       return land(m, seat, p.pos, { allowHop: false, via: 'push' });
+    }
+    if (allowHop && mod.pullTowardOwnerBest) {
+      const dest = bestTile(m, mod.owner);
+      if (dest != null && dest !== p.pos) {
+        const d = stepsBetween(p.pos, dest);
+        if (d !== 0) {
+          const stepDir = Math.sign(d);
+          const steps = Math.min(mod.pullTowardOwnerBest, Math.abs(d));
+          ev(m, { t: 'trap', seat, tile: i, kind: 'push', owner: mod.owner, steps: stepDir * steps });
+          walk(m, seat, steps, stepDir, 'push');
+          return land(m, seat, p.pos, { allowHop: false, via: 'push' });
+        }
+      }
     }
     if (allowHop && mod.warpToOwnerBest) {
       const dest = bestTile(m, mod.owner);
@@ -306,14 +362,14 @@ function land(m, seat, i, { allowHop, via }) {
       const owner = t.owner;
       const rentPaid = payRent(m, seat, i);
       if (p.bankrupt || m.ended) return;
-      if (m.tiles[i].owner === owner && canTakeover(m.tiles[i].level)) {
+      if (allowHop && m.tiles[i].owner === owner && canTakeover(m.tiles[i].level)) {
         const cost = takeoverCost(tile, m.tiles[i].level);
         if (p.cash >= cost) m.pending = { kind: 'takeover', seat, tile: i, cost, from: owner, rentPaid, canSkip: true, options: [{ id: 'takeover', label: 'Hostile Takeover' }] };
       }
       return;
     }
     case 'airdrop': {
-      gainUlt(p, MONO.ULT_AIRDROP);
+      gainUlt(p, MONO.ULT_AIRDROP, m);
       const r = rand(m);
       const supply = r < 1 / 3 ? 'cash' : r < 2 / 3 ? 'shield' : 'coupon';
       if (supply === 'cash') pay(m, null, seat, MONO.AIRDROP_CASH, 'airdrop');
@@ -424,7 +480,7 @@ function endTurn(m) {
   if (m.ended) return;
   const cur = m.turn.seat;
   const p = m.players[cur];
-  if (!p.bankrupt) gainUlt(p, MONO.ULT_PER_TURN);
+  if (!p.bankrupt) gainUlt(p, MONO.ULT_PER_TURN, m);
   // 🐾 Auto: full for PET_HOLD_TURNS of your turns with no combo → solo-cast; also on your last turn of the
   // match, so the charge is never wasted.
   const lastTurn = m.round >= m.maxRounds;
@@ -442,6 +498,9 @@ function endTurn(m) {
     m.round++;
     tickModifiers(m);
     if (m.round > m.maxRounds) { m.round = m.maxRounds; return endMatch(m, 'rounds'); }
+    if (!m.chaos && (m.round === MONO.MID_ROUND || m.round === MONO.OVERDRIVE_ROUND)) {
+      ev(m, { t: 'phase_shift', round: m.round, phase: m.round >= MONO.OVERDRIVE_ROUND ? 'overdrive' : 'mid' });
+    }
     if (m.chaos) chaosEvent(m);
   }
   beginTurn(m, next);
@@ -538,6 +597,7 @@ const fail = (error) => ({ ok: false, error });
 const ops = (m) => ({
   pay: (f, t, a, r) => pay(m, f, t, a, r),
   forcedLand: (s, i, path, kind) => forcedLand(m, s, i, path, kind),
+  walkSelf: (s, steps, kind = 'dive') => { walk(m, s, steps, 1, kind); },
   setPending: (pd) => { m.pending = { canSkip: false, ...pd }; },
   ev: (e) => ev(m, e),
   rand: () => rand(m),
@@ -551,7 +611,7 @@ export function legalActions(m, seat) {
   return {
     myTurn,
     canRoll,
-    can2d6: canRoll && p.boost > 0 && !p.status?.fixedRoll,
+    can2d6: canRoll && p.boost > 0 && !p.status?.fixedRoll && !p.status?.maxRoll,
     canUlt: canRoll && !m.turn.ultUsed && p.ult >= MONO.ULT_MAX,
     pending: myTurn && m.pending?.seat === seat ? m.pending : null,
     // 🐾 Soul-Link
@@ -571,15 +631,17 @@ export function roll(m, seat, { use2d6 = false } = {}) {
   if (m.phase !== 'await_roll') return fail('bad_phase');
   const p = m.players[seat];
   const fixed = p.status?.fixedRoll || 0;
+  const maxRoll = p.status?.maxRoll || 0;
   const dir = p.status?.moveDir === -1 ? -1 : 1;
   let dice;
   let boosted = false;
   if (fixed) dice = [fixed];
+  else if (maxRoll) dice = [Math.min(maxRoll, d6(m))];
   else if (use2d6 && p.boost > 0) { p.boost--; boosted = true; dice = [d6(m), d6(m)]; }
   else dice = [d6(m)];
   const steps = dice.reduce((s, d) => s + d, 0);
   m.turn.rolled = true;
-  ev(m, { t: 'dice', seat, dice, steps, dir, fixed: !!fixed, boosted, diceSkin: p.diceSkin || null });
+  ev(m, { t: 'dice', seat, dice, steps, dir, fixed: !!fixed, maxRoll: maxRoll || undefined, boosted, diceSkin: p.diceSkin || null });
   walk(m, seat, steps, dir, 'walk');
   land(m, seat, p.pos, { allowHop: true, via: 'walk' });
   afterAction(m);
@@ -627,7 +689,9 @@ function petCast(m, seat, { combo = false, reason = 'manual', ownerSkillId = nul
   m.inUlt = true;
   castUltimate(m, seat, ops(m), { scale: potency, skill, autoChoice: true, isPetUlt: true });
   m.inUlt = false;
-  if (!m.ended && m.bankruptCount > before) endMatch(m, 'finisher', { by: seat });
+  if (!m.ended && m.bankruptCount > before && (m.round >= MONO.OVERDRIVE_ROUND || m.players.filter((q) => !q.bankrupt).length <= 1)) {
+    endMatch(m, 'finisher', { by: seat });
+  }
   return true;
 }
 
@@ -653,7 +717,9 @@ export function ultimate(m, seat) {
   m.inUlt = true;
   castUltimate(m, seat, ops(m), { scale });
   m.inUlt = false;
-  if (!m.ended && m.bankruptCount > before) endMatch(m, 'finisher', { by: seat });
+  if (!m.ended && m.bankruptCount > before && (m.round >= MONO.OVERDRIVE_ROUND || m.players.filter((q) => !q.bankrupt).length <= 1)) {
+    endMatch(m, 'finisher', { by: seat });
+  }
   // 🔗 Soul-Link Combo: the pet casts right after its owner (+15%, Chaos +30%)
   let combo = false;
   if (willCombo && !m.ended && !p.bankrupt) combo = petCast(m, seat, { combo: true, ownerSkillId: skill.id });
@@ -765,7 +831,9 @@ export function decide(m, seat, { choice } = {}) {
         m.inUlt = true;
         runChoice(m, seat, pd.skillId, opt.id, ops(m), { scale: m.ultScale || 1 });
         m.inUlt = false;
-        if (!m.ended && m.bankruptCount > before) endMatch(m, 'finisher', { by: seat });
+        if (!m.ended && m.bankruptCount > before && (m.round >= MONO.OVERDRIVE_ROUND || m.players.filter((q) => !q.bankrupt).length <= 1)) {
+          endMatch(m, 'finisher', { by: seat });
+        }
         break;
       }
       default:

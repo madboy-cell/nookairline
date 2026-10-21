@@ -32,12 +32,13 @@ function drive(mgr, clock, policy = () => null, maxMs = 3_600_000) {
   return false;
 }
 
-test('modes: Monopoly + Casino playable (Phase 5); Moon Bunny / Cloud Dash locked to later phases', () => {
+test('modes: Monopoly + Casino + Moon Defense + Cloud Dash playable', () => {
   assert.equal(MODES.monopoly.available, true);
   assert.equal(MODES.casino.available, true);
-  for (const k of ['moon_bunny', 'cloud_dash']) assert.equal(MODES[k].available, false);
+  assert.equal(MODES.moon_bunny.available, true);
+  assert.equal(MODES.cloud_dash.available, true);
   const { mgr } = harness();
-  assert.equal(mgr.create('nook', { mode: 'moon_bunny' }).error, 'mode_locked');
+  assert.notEqual(mgr.create('nook', { mode: 'cloud_dash' }).error, 'mode_locked');
 });
 
 test('lobby: create → host seat 1; friend sits; bot seats; only the host can start; friend must be ready', () => {
@@ -207,13 +208,13 @@ test('tables with no connected humans are closed after the reconnect grace perio
   assert.equal(mgr.byUser.has('nook'), false);
 });
 
-test('solo match survives brief socket disconnect on Round 15 and re-delivers podium on reconnect', () => {
+test('solo match survives brief socket disconnect on final round and re-delivers podium on reconnect', () => {
   const { mgr, clock, inbox } = harness({ onMatchEnd: () => ({ nook: { gold: 1800, diamonds: 220 } }) });
   mgr.connect('nook');
   const { tableId } = mgr.solo('nook', { diff: 'hard' });
   const t = mgr.tables.get(tableId);
-  // Fast-forward to Round 15, seat 3 (Bot Mina) awaiting buy decision on Akiba
-  t.match.round = 15;
+  // Fast-forward to final round, seat 3 (Bot Mina) awaiting buy decision on Akiba
+  t.match.round = t.match.maxRounds;
   t.match.turn = { seat: 3, n: 60, rolled: true, ultUsed: false, petCastUsed: false };
   t.match.pending = { kind: 'buy', seat: 3, tile: 2, price: 240, canSkip: true, options: [{ id: 'buy', label: 'Buy' }, { id: 'skip', label: 'Skip' }] };
   // Brief socket drop right before Bot Mina's buy decision runs
@@ -232,3 +233,118 @@ test('solo match survives brief socket disconnect on Round 15 and re-delivers po
   assert.equal(pod.rewards?.gold, 1800);
 });
 
+test('regression: Round 13 Bot Mina turn never stalls on reconnect or malformed pending', () => {
+  const { mgr, clock, inbox } = harness();
+  mgr.connect('nook');
+  const { tableId } = mgr.solo('nook', { diff: 'hard' });
+  const t = mgr.tables.get(tableId);
+  t.match.round = 13;
+  t.match.turn = { seat: 3, n: 52, rolled: false, ultUsed: false };
+  t.match.players[3].ult = 100;
+  t.match.players[3].petUlt = 100;
+  t.nextBotAt = clock.now() + 9000;
+  // Simulate reconnect during Bot Mina's turn on Round 13
+  mgr.disconnect('nook');
+  mgr.connect('nook');
+  assert.ok(t.nextBotAt <= clock.now() + 500, 'connect() schedules Bot Mina promptly within 450ms');
+  clock.advance(500);
+  mgr.tick(); // Bot Mina casts Ultimate + Pet Soul-Link Combo
+  clock.advance(4000);
+  mgr.tick(); // Bot Mina rolls
+  if (t.match.pending && t.match.turn.seat === 3) {
+    clock.advance(2000);
+    mgr.tick(); // Bot Mina decides
+  }
+  assert.equal(t.match.turn.seat, 0, 'turn cleanly advances from Bot Mina (seat 3) to Nook (seat 0) on Round 14');
+  assert.equal(t.match.round, 14);
+  const resolved = inbox('nook').filter((m) => m.type === 'mono_turn_resolved');
+  assert.ok(resolved.length >= 2, 'client received Bot Mina ultimate and roll batches');
+});
+
+test('solo Play Again (table_rematch): starts a fresh 20-round match with a new seed and plays to a second podium', () => {
+  const ends = [];
+  const { mgr, clock, inbox } = harness({ onMatchEnd: (t, result) => { ends.push(result); return { nook: { gold: 2400 } }; } });
+  mgr.connect('nook');
+  const { tableId } = mgr.solo('nook', { diff: 'hard' });
+  const t = mgr.tables.get(tableId);
+  const firstSeed = t.match.seed;
+  const policy = (tbl, p) => {
+    const la = tbl.match.pending;
+    if (la && la.seat === p.seat) return { type: 'decide', choice: la.canSkip ? la.options[0].id : la.options.find((o) => !o.disabled).id };
+    if (p.ult >= 100 && !tbl.match.turn.ultUsed) return { type: 'ultimate' };
+    return { type: 'roll', use2d6: p.boost > 0 };
+  };
+  assert.ok(drive(mgr, clock, policy), 'Match #1 finished');
+  assert.equal(t.status, 'ended');
+  assert.equal(ends.length, 1);
+  mgr.flush();
+
+  // Click Play Again (table_rematch) in solo mode
+  assert.ok(mgr.handle('nook', { type: 'table_rematch' }).ok);
+  assert.equal(t.status, 'playing', 'Solo rematch immediately starts Match #2');
+  assert.equal(t.match.round, 1);
+  assert.equal(t.match.ended, false);
+  assert.notEqual(t.match.seed, firstSeed, 'Match #2 gets a fresh RNG seed');
+  assert.ok(inbox('nook').some((m) => m.type === 'table_state' && m.match && m.match.seed === t.match.seed && !m.match.ended));
+
+  assert.ok(drive(mgr, clock, policy), 'Match #2 finished');
+  assert.equal(t.status, 'ended');
+  assert.equal(ends.length, 2, 'Both Match #1 and Match #2 reached the Victory Podium');
+});
+
+test('table_set_option switches mode in-place across all 4 modes while preserving guests and bots', () => {
+  const { mgr } = harness();
+  mgr.connect('nook');
+  mgr.connect('beam');
+  const { tableId } = mgr.create('nook', { mode: 'monopoly' });
+  mgr.sit('beam', tableId, 1);
+  mgr.setBot('nook', 2, 'hard');
+  const t = mgr.tables.get(tableId);
+  assert.equal(t.mode, 'monopoly');
+  assert.equal(t.seats[1].ready, false);
+
+  // Switch to Moon Defense via handle('table_set_option')
+  assert.ok(mgr.handle('nook', { type: 'table_set_option', mode: 'moon_bunny' }).ok);
+  assert.equal(t.mode, 'moon_bunny');
+  assert.equal(t.seats[1].ready, true, 'non-monopoly modes auto-ready human guests');
+  assert.equal(t.seats[2].kind, 'bot', 'configured bot in seat 3 is preserved');
+
+  // Switch to Grand Casino Roulette
+  assert.ok(mgr.handle('nook', { type: 'table_set_option', mode: 'casino', casinoGame: 'roulette' }).ok);
+  assert.equal(t.mode, 'casino');
+  assert.equal(t.options.casinoGame, 'roulette');
+
+  // Switch to Cloud Dash Chaos
+  assert.ok(mgr.handle('nook', { type: 'table_set_option', mode: 'cloud_dash', dashMode: 'chaos' }).ok);
+  assert.equal(t.mode, 'cloud_dash');
+  assert.equal(t.options.dashMode, 'chaos');
+});
+
+test('lobby disconnect preserves seat with connected=false and reconnects cleanly within grace window', () => {
+  const { mgr, clock } = harness();
+  mgr.connect('nook');
+  mgr.connect('beam');
+  const { tableId } = mgr.create('nook', { mode: 'monopoly' });
+  mgr.sit('beam', tableId, 1);
+  const t = mgr.tables.get(tableId);
+
+  // Brief disconnect of guest in lobby
+  mgr.disconnect('beam');
+  assert.equal(mgr.byUser.get('beam'), tableId, 'guest remains seated during brief disconnect');
+  const pubOffline = mgr.publicTable(t);
+  assert.equal(pubOffline.seats[1].connected, false, 'seat is marked offline for UI badge');
+
+  // Reconnect 3s later
+  clock.advance(3000);
+  mgr.tick();
+  mgr.connect('beam');
+  const pubOnline = mgr.publicTable(t);
+  assert.equal(pubOnline.seats[1].connected, true, 'seat is back online after reconnect');
+
+  // If guest disconnects for >15s while host is waiting in lobby, stale lobby seat is cleaned up
+  mgr.disconnect('beam');
+  clock.advance(16_000);
+  mgr.tick();
+  assert.equal(mgr.byUser.has('beam'), false, 'stale disconnected guest is removed after 15s');
+  assert.equal(t.seats[1].kind, 'empty');
+});

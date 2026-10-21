@@ -11,10 +11,10 @@
 import * as THREE from 'three';
 import { loadSprite } from './assets.js';
 import { FacingState, CHIBI_FACING } from '/shared/locomotion.js';
-import { ATTACH, getAttachDef, getWingScale, RIG_METRICS, OUTFIT_FALLBACK, visibleSlotId, outfitHem, resolveAccessoryLayout, resolveHairLayout } from '/shared/accessory_attach.js';
+import { ATTACH, getAttachDef, getWingScale, resolveWingDimensions, RIG_METRICS, OUTFIT_FALLBACK, visibleSlotId, outfitHem, resolveAccessoryLayout, resolveHairLayout } from '/shared/accessory_attach.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { HAIRSTYLES, hairSpriteName, hairAttach, hairHatFit, resolveHairColor } from '/shared/hair_catalog.js';
-import { WearAura } from './wear_aura.js';
+import { WearAura } from './wear_aura.js?v=cd37';
 
 export const CHIBI_HEIGHT = RIG_METRICS.CHIBI_HEIGHT; // world metres for the Front-3/4 sprite
 const BILLBOARD_TILT = 0.55;                          // fraction of camera pitch the sprite leans back (reduces foreshortening)
@@ -175,7 +175,7 @@ const accFragShader = /* glsl */`
     float xFacing = uHairBox.x + (vUv.x - 0.5) * uHairBox.z;
     float yHead = uHairBox.y + (vUv.y - 0.5) * uHairBox.w;
     if (uFrontViewMode > 0.5 && uFrontViewMode < 1.5) {
-      if (yHead < 0.18 && xFacing >= -0.08 && xFacing <= 0.31) discard;
+      if (yHead < 0.08 && xFacing >= -0.01 && xFacing <= 0.22) discard;
     }
     if (uClipTopY < -2.5) {
       // Full hood clip (hairCover: 'hood'): clips the upper crown (yHead > 0.78) and wide lateral hair/buns
@@ -194,20 +194,22 @@ const accFragShader = /* glsl */`
         c.a *= (1.0 - topMask) * (1.0 - sideBuns);
       }
     } else if (uClipTopY < -0.5) {
-      // Open-crown winged helm / diadem clip (hairCover: 'helm'): keeps the rounded center skull dome,
-      // all forehead bangs, and all hair below yHead = 0.84 100% visible, while smoothly tucking
-      // high outer buns (hair_double_buns at yHead > 0.86 outside the skull dome) into the helm wings.
-      float domeCenterX = uClipTopY < -1.5 ? -0.12 : 0.04;
-      vec2 skullP = vec2((xFacing - domeCenterX) / 0.53, (yHead - 0.56) / 0.60);
-      float skullR = length(skullP);
-      float sideMask = uClipTopY < -1.5 ? (1.0 - smoothstep(-0.18, -0.05, xFacing)) : 1.0;
-      float bunClip = sideMask * smoothstep(0.84, 0.90, yHead) * smoothstep(0.96, 1.05, skullR);
-      c.a *= 1.0 - bunClip;
+      // Open-crown winged helm / diadem clip (hairCover: 'helm'): keeps the entire rounded skull dome
+      // and spiky/fluffy hair tips (yHead <= 1.32), forehead bangs, side buns, and ponytails 100% intact.
+      float inCrownX = uClipTopY < -1.5
+        ? smoothstep(-0.28, -0.18, xFacing) * (1.0 - smoothstep(0.16, 0.24, xFacing))
+        : 1.0 - smoothstep(0.30, 0.38, abs(xFacing - 0.01));
+      float topOrnClip = inCrownX * smoothstep(1.32, 1.38, yHead);
+      c.a *= 1.0 - topOrnClip;
     } else if (uClipTopY < 1.5) {
-      // Full-crown hat clip in physical HEAD_H coordinates: follows the angled brim in front/side views
-      // (lower on the left/back bun side, higher on the right forehead/bangs side) and level in back view.
-      float hatClipY = uClipTopY > 0.5 ? (0.81 + 0.24 * xFacing) : 0.78;
-      c.a *= smoothstep(hatClipY + 0.02, hatClipY - 0.03, yHead);
+      // Full-crown hat / beret clip in physical HEAD_H coordinates: clips central upper-crown peaks
+      // above the skull dome (yHead > 1.14) so all forehead bangs, parted hairlines, and side tails stay uncut.
+      float inHatX = (uClipTopY > 0.6 && uClipTopY < 0.9)
+        ? smoothstep(-0.38, -0.28, xFacing) * (1.0 - smoothstep(0.18, 0.26, xFacing))
+        : 1.0 - smoothstep(0.32, 0.40, abs(xFacing - 0.01));
+      float hatClipY = 1.14;
+      float topClip = inHatX * smoothstep(hatClipY - 0.03, hatClipY + 0.03, yHead);
+      c.a *= 1.0 - topClip;
     }
     if (c.a < 0.06) discard;
     if (uIsHair > 0.5) {
@@ -339,11 +341,11 @@ export const HEAD_H = CHIBI_HEIGHT / 2.8;
 export const ACC_SLOTS = ['hat', 'face', 'gloves', 'boots'];
 // Painter's Z stack (Section 3.D.3) relative to the body plane: L3 boots, L5/L9 gloves, L7 hat/helm, L8 face (glasses/masks sit on top of helm temple guards).
 const ACC_Z = {
-  front: { boots: 0.01, gloves: 0.05, hat: 0.08, face: 0.10 },
-  side: { boots: 0.01, gloves: 0.05, hat: 0.08, face: 0.10 },
-  back: { boots: 0.01, gloves: 0.03, hat: 0.08, face: 0.08 },
+  front: { boots: 0.01, gloves: 0.068, hat: 0.08, face: 0.10 },
+  side: { boots: 0.01, gloves: 0.068, hat: 0.08, face: 0.10 },
+  back: { boots: 0.01, gloves: 0.068, hat: 0.08, face: 0.08 },
 };
-const ACC_ORDER = { boots: 1, gloves: 2, hat: 3, face: 4 };
+const ACC_ORDER = { boots: 1, gloves: 2.75, hat: 3, face: 4 };
 
 export class ChibiRig {
   /**
@@ -372,6 +374,7 @@ export class ChibiRig {
     this.material = makeBodyMaterial();
     this.body = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 12, 16).translate(0, 0.5, 0), this.material);
     this.body.frustumCulled = false; // vertex shader resizes the unit plane
+    this.body.renderOrder = 2;       // above mounted pet (1) and saddle (1.5), below accessories (2.5+)
     this.HIP.add(this.body);
 
     // WINGS_L / WINGS_R (shoulder-blade pivots); z flips in front of the body when facing back
@@ -490,19 +493,30 @@ export class ChibiRig {
   async setEquipment(eq) {
     if (!eq) return;
     const vis = (s) => visibleSlotId(eq, s);   // 👁️ hide + costume signature parts (headgear / face cover / tail)
-    const key = JSON.stringify(['outfit', ...ACC_SLOTS, 'wings'].map(vis));
+    const charmSig = eq.charm ? `${eq.charm.id || eq.charm}:${eq.charm.grade || 'B'}:${eq.charm.level || 1}:${eq.charm.hide ? 1 : 0}` : null;
+    const key = JSON.stringify([...['outfit', ...ACC_SLOTS, 'wings'].map(vis), charmSig]);
     if (key === this.equipKey) {
       if (this.equipPromise) await this.equipPromise;
       return;
     }
     if (!this.views) { this.pendingEquip = eq; return; }
     this.equipKey = key;
+    const nextCharm = eq.charm && !eq.charm.hide ? eq.charm : null;
+    const charmChanged = (this.charm?.id || null) !== (nextCharm?.id || null);
+    this.charm = nextCharm;
     this.equipPromise = (async () => {
       await this.setOutfit(vis('outfit'));
       await this.setWings(vis('wings'));
       await this.setAccessories(Object.fromEntries(ACC_SLOTS.map((s) => [s, vis(s)])));
+      try { WearAura.sync(this, this.outfitId, { suitUp: charmChanged && !!this._outfitApplied, charm: this.charm }); } catch (e) { /* cosmetic */ }
     })();
     await this.equipPromise;
+  }
+
+  /** Live-equip or preview a Starlight Aura Charm on this ChibiRig. */
+  setCharm(charmObj, { suitUp = true } = {}) {
+    this.charm = charmObj && !charmObj.hide ? charmObj : null;
+    try { WearAura.sync(this, this.outfitId, { suitUp, charm: this.charm }); } catch (e) { /* cosmetic */ }
   }
 
   /** Full-body Mythic costume art per lineage (`<lineage>_<outfitId>_front|back|side`); falls back to mapped silhouette or base body. */
@@ -533,8 +547,8 @@ export class ChibiRig {
     this.material.uniforms.uTint.value.setRGB(tint[0], tint[1], tint[2]);
     this.views = views;
     this.applyView(this.shownView, this.shownRight);
-    // ✦ Super Mythic wear aura (client/js/wear_aura.js): suit-up only on an in-session equip change
-    try { WearAura.sync(this, id, { suitUp: !!this._outfitApplied }); } catch (e) { /* cosmetic only */ }
+    // ✦ Super Mythic & Starlight Charm wear aura (client/js/wear_aura.js): suit-up only on an in-session equip change
+    try { WearAura.sync(this, id, { suitUp: !!this._outfitApplied, charm: this.charm }); } catch (e) { /* cosmetic only */ }
     this._outfitApplied = true;
   }
 
@@ -555,7 +569,7 @@ export class ChibiRig {
       for (const side of sides) {
         const mat = makeAccMaterial();
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
-        mesh.renderOrder = 2 + ACC_ORDER[slot];
+        mesh.renderOrder = def.singleHand ? 6 : 2 + ACC_ORDER[slot];
         built.push({ mesh, slot, side, def, sprites, itemId: id });
       }
     }
@@ -603,9 +617,10 @@ export class ChibiRig {
       const name = a.def.views[v];
       const s = name && a.sprites[name];
       const isBoot = a.def.bone === 'LEG';
-      // side view (arms only) or single-hand held weapon: only the leading arm is visible
+      // side view (arms only) or single-hand held weapon: only the leading arm is visible; stow weapons during couple poses or while riding a mount
+      const stowWeapon = !!((this.couplePose || this.riding) && a.def.singleHand);
       const hiddenSide = ((v === 'side' && !isBoot) || a.def.singleHand) && a.side !== 0 && a.side !== flip;
-      if (!s || s.fallback || hiddenSide) { a.mesh.visible = false; continue; }
+      if (!s || s.fallback || hiddenSide || stowWeapon) { a.mesh.visible = false; continue; }
       a.mesh.visible = true;
       const u = a.mesh.material.uniforms;
       if (u.map.value !== s.texture) u.map.value = s.texture;
@@ -630,7 +645,7 @@ export class ChibiRig {
       const posSign = isBoot || a.def.singleHand || v === 'side' || a.side === 0 ? flip : a.side;
       // In 3/4 and side views, the leading foot sits slightly lower and in front of the trailing foot
       const stepY = isBoot ? (a.side === flip ? -0.008 : 0.008) : 0;
-      const stepZ = isBoot && a.side === flip ? 0.004 : 0;
+      const stepZ = isBoot && a.side === flip ? 0.004 : (a.def.singleHand && v === 'back' ? 0.062 : 0);
       const armTilt = isGlove && v !== 'side' ? -a.side * 0.14 : rotZ * scaleSign;
       a.mesh.rotation.z = armTilt;
       a.mesh.scale.set(wM * scaleSign, hM, 1);
@@ -684,7 +699,7 @@ export class ChibiRig {
       mat.uniforms.uCelestialMode.value = resolved.celestialMode;
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
       mesh.userData.layer = layer;
-      mesh.renderOrder = layer === 'front' ? 2 + ACC_ORDER.hat - 0.5 : 0;   // front copy sits under hats/helms and facewear
+      mesh.renderOrder = layer === 'front' ? 2 + ACC_ORDER.hat - 0.5 : 1.8;   // front copy sits under hats/helms; behind copy sits behind body (2) & above pet/saddle (1.5)
       this.HEAD_G.add(mesh);
       this.hairMeshes.push(mesh);
     }
@@ -719,7 +734,7 @@ export class ChibiRig {
     // neck line in the wig's own UV: yHead = -0.04 below the HEAD pivot (y = 0)
     const neckV = Math.min(1, Math.max(0, 0.5 + (-0.04 - oy) / hH));
     const activeHatCover = this.accMeshes.find((a) => a.slot === 'hat' && a.mesh.visible && a.def?.hairCover)?.def?.hairCover;
-    const topClipV = activeHatCover === 'top' ? (v === 'back' ? 0.25 : 1.0) : activeHatCover === 'helm' ? (v === 'side' ? -2.0 : -1.0) : activeHatCover === 'hood' ? (v === 'side' ? -4.0 : v === 'back' ? -3.5 : -3.0) : 2.0;
+    const topClipV = activeHatCover === 'top' ? (v === 'back' ? 0.25 : v === 'side' ? 0.75 : 1.0) : activeHatCover === 'helm' ? (v === 'side' ? -2.0 : -1.0) : activeHatCover === 'hood' ? (v === 'side' ? -4.0 : v === 'back' ? -3.5 : -3.0) : 2.0;
     for (const m of this.hairMeshes) {
       const front = m.userData.layer === 'front';
       const u = m.material.uniforms;
@@ -769,8 +784,7 @@ export class ChibiRig {
       return;
     }
     const s = await loadSprite(id);
-    const wingScale = getWingScale(id);
-    const w = s.w * this.ppm * wingScale, h = s.h * this.ppm * wingScale;
+    const { w, h } = resolveWingDimensions(id, s.w, s.h, this.ppm);
     for (const side of [-1, 1]) {
       // each half pivots at the wing root (centre of the sprite)
       const geo = new THREE.PlaneGeometry(w / 2, h);
@@ -834,6 +848,52 @@ export class ChibiRig {
     this.castT = this.castMax;
   }
 
+  triggerAttack(kind = 'slash', { dur = 0.42 } = {}) {
+    if (kind === 'spell_cast') {
+      this.triggerCast(dur);
+      return;
+    }
+    this.combatAnim = { kind, t: 0, dur: Math.max(0.18, dur) };
+  }
+
+  triggerHitRecoil(dur = 0.24) {
+    this.hitRecoilT = Math.max(0.1, dur);
+    this.hitRecoilMax = this.hitRecoilT;
+  }
+
+  /**
+   * Synchronized 2-player Couple Pose choreography (Screen 19 & In-World Proximity):
+   * pose: 'hug' | 'heart_hands' | 'kiss' | 'dance' | 'picnic'
+   * role: 'left' (stands on left, faces right) | 'right' (stands on right, faces left)
+   */
+  setCouplePose(pose, { role = 'left', dur = 2.5, loop = false } = {}) {
+    if (!pose) {
+      this.clearCouplePose();
+      return;
+    }
+    const r = role === 'right' ? 'right' : 'left';
+    this.facing.turn = null;
+    this.walkWeight = 0;
+    this.couplePose = {
+      pose,
+      role: r,
+      t: 0,
+      dur: Math.max(0.5, dur),
+      loop: !!loop,
+    };
+    if (this.nameTag) this.nameTag.position.x = r === 'right' ? 0.18 : -0.18;
+    const wantRight = r !== 'right';
+    const wantView = pose === 'kiss' && this.hasSide ? 'side' : 'front';
+    if (this.views) this.applyView(wantView, wantRight);
+  }
+
+  clearCouplePose() {
+    const hadPose = !!this.couplePose;
+    this.couplePose = null;
+    if (this.nameTag) this.nameTag.position.x = 0;
+    if (hadPose && this.views) this.applyView(this.shownView, this.shownRight);
+  }
+
   /** Copy the shader's bone angles onto the paper-doll groups (same pivots, same signs). */
   syncBones() {
     const u = this.material.uniforms;
@@ -861,13 +921,157 @@ export class ChibiRig {
     for (const hm of this.hairMeshes) hm.material.uniforms.uTime.value = this.t;
     const speed = Math.hypot(m.vx, m.vz);
     const f = this.facing;
-    const wasTurning = f.turn;
-    f.update(dt, m.vx, m.vz);
-    if (f.turn && f.turn !== wasTurning) this.onTurn?.(f.turn.fromBack, f.back);
-    this.walkWeight = m.walkWeight ?? Math.min(1, speed / 1.5);
+    if (!this.couplePose || this.lifted) {
+      const wasTurning = f.turn;
+      f.update(dt, m.vx, m.vz);
+      if (f.turn && f.turn !== wasTurning) this.onTurn?.(f.turn.fromBack, f.back);
+    }
+    this.walkWeight = (this.couplePose && !this.lifted) ? 0 : (m.walkWeight ?? Math.min(1, speed / 1.5));
     const ww = this.walkWeight;
     this.legPhase += dt * (5 + 6 * Math.min(1, speed / 4.5)) * (ww > 0.01 ? 1 : 0);
     const ph = this.legPhase * 2.0;
+
+    const u = this.material.uniforms;
+    if (this.couplePose && !this.lifted) {
+      const cp = this.couplePose;
+      cp.t += dt;
+      if (!cp.loop && cp.t >= cp.dur) {
+        this.clearCouplePose();
+      } else {
+        const pt = cp.t;
+        const isLeft = cp.role !== 'right';
+        const dir = isLeft ? 1 : -1; // +1 = screen-right is toward partner, -1 = screen-left is toward partner
+        const wantRight = isLeft;
+        const wantView = cp.pose === 'kiss' && this.hasSide ? 'side' : (cp.viewOverride || 'front');
+        const effRight = cp.rightOverride !== undefined ? cp.rightOverride : wantRight;
+        if (this.shownView !== wantView || this.shownRight !== effRight) {
+          this.applyView(wantView, effRight);
+        }
+        u.uTime.value = this.t;
+        let torso = 0, head = 0, armL = 0, armR = 0, legL = 0, legR = 0;
+        let hop = 0, sx = 1, sy = 1, wingHz = 3.2;
+
+        if (cp.pose === 'hug') {
+          // Warm Embrace: lean chest-to-chest, rest head on shoulder, wrap both arms & gentle cuddle bounce
+          const sway = Math.sin(pt * 5.2);
+          const pat = Math.sin(pt * 9.5);
+          torso = -dir * (0.17 + 0.04 * sway);
+          head = -dir * (0.20 + 0.05 * Math.sin(pt * 7.5));
+          const innerReach = 0.82 + 0.12 * pat;
+          const outerWrap = -0.38 - 0.10 * pat;
+          armR = isLeft ? innerReach : -outerWrap;
+          armL = isLeft ? outerWrap : -innerReach;
+          legL = Math.sin(pt * 5.2) * 0.12;
+          legR = -Math.sin(pt * 5.2) * 0.12;
+          hop = Math.abs(Math.sin(pt * 5.2)) * 0.065;
+          sx = 1.04 - 0.02 * Math.abs(sway);
+          sy = 0.97 + 0.03 * Math.abs(sway);
+          wingHz = 5.2;
+        } else if (cp.pose === 'heart_hands') {
+          // Heart-Hands: raise inner arms high to touch overhead, curve outer arms, playful outer-leg kick
+          const beat = Math.sin(pt * 4.6);
+          torso = -dir * (0.11 + 0.025 * beat);
+          head = -dir * (0.14 + 0.04 * beat);
+          const innerHigh = 0.98 + 0.07 * beat;
+          const outerWave = 0.45 + 0.12 * Math.cos(pt * 4.6);
+          armR = isLeft ? innerHigh : outerWave;
+          armL = isLeft ? -outerWave : -innerHigh;
+          const kick = this.tailBody ? 0 : Math.max(0, beat) * 0.28;
+          legL = isLeft ? -kick : 0;
+          legR = isLeft ? 0 : kick;
+          hop = Math.abs(beat) * 0.075;
+          sx = 1.02;
+          sy = 1.02;
+          wingHz = 4.6;
+        } else if (cp.pose === 'kiss') {
+          // Sweet Forehead Kiss / Nuzzle: nose-to-nose side profile, left leans in on tiptoes, right blushes & squishes
+          const pulse = Math.sin(pt * 5.0);
+          if (isLeft) {
+            torso = -dir * (0.22 + 0.05 * Math.max(0, pulse));
+            head = -dir * (0.16 + 0.04 * pulse);
+            armR = 0.68 + 0.08 * pulse;
+            armL = 0.25;
+            legL = -0.18;
+            legR = 0.14;
+            hop = 0.06 + Math.max(0, pulse) * 0.04;
+            sx = 0.98;
+            sy = 1.04;
+          } else {
+            torso = dir * (0.08 + 0.03 * pulse);
+            head = -dir * (0.12 + 0.04 * pulse);
+            armL = -0.45 - 0.08 * pulse;
+            armR = -0.25;
+            hop = Math.abs(Math.sin(pt * 7.0)) * 0.035;
+            sx = 1.05;
+            sy = 0.94 + 0.03 * Math.abs(pulse);
+          }
+          wingHz = 6.4;
+        } else if (cp.pose === 'dance') {
+          // Ballroom Spin & Finale Dip
+          const waltz = Math.sin(pt * 6.4);
+          const inDip = !cp.loop && pt > cp.dur - 0.65;
+          if (inDip) {
+            torso = isLeft ? -0.22 : 0.32;
+            head = isLeft ? -0.14 : 0.20;
+            armL = -0.78;
+            armR = 0.78;
+            legL = -0.26;
+            legR = 0.28;
+            hop = isLeft ? 0.03 : -0.04;
+          } else {
+            torso = waltz * 0.16;
+            head = -waltz * 0.10;
+            armL = -0.65 + 0.14 * waltz;
+            armR = 0.65 + 0.14 * waltz;
+            legL = waltz * (this.tailBody ? 0 : 0.28);
+            legR = -waltz * (this.tailBody ? 0 : 0.28);
+            hop = Math.abs(waltz) * 0.10;
+          }
+          wingHz = 5.8;
+        } else if (cp.pose === 'picnic') {
+          // Berry Tart Picnic: seated on the blanket, legs tucked forward, sipping boba & cheering
+          const sip = Math.sin(pt * 4.2);
+          torso = -dir * 0.08 + Math.sin(pt * 2.6) * 0.05;
+          head = -dir * 0.10 + sip * 0.07;
+          const toastArm = 0.62 + 0.26 * Math.max(0, sip);
+          armR = isLeft ? toastArm : 0.22;
+          armL = isLeft ? -0.22 : -toastArm;
+          legL = this.tailBody ? 0 : -0.52;
+          legR = this.tailBody ? 0 : 0.52;
+          hop = -0.15 + Math.abs(sip) * 0.025;
+          sx = 1.05;
+          sy = 0.91;
+          wingHz = 2.4;
+        }
+
+        u.uTorso.value = torso;
+        u.uHead.value = head;
+        u.uArmL.value = armL;
+        u.uArmR.value = armR;
+        u.uLegL.value = legL;
+        u.uLegR.value = legR;
+        u.uBreath.value = Math.sin(pt * 4.0) * 0.025;
+        u.uCloth.value = 0.018;
+        u.uRim.value = 1.45;
+        this.syncBones();
+        if (this.tail) {
+          this.tail.pivot.rotation.z = Math.sin(pt * 6.5) * 0.24 * (this.shownRight ? 1 : -1);
+        }
+        this.HIP.position.y = hop;
+        this.HIP.scale.set(sx, sy, 1);
+        this.shadow.scale.set(Math.max(0.4, 0.95 - Math.max(0, hop) * 1.1), 1, 0.48);
+        const flap = Math.sin(this.t * Math.PI * 2 * wingHz);
+        for (const w of this.wingMeshes) {
+          w.scale.x = 1 - 0.16 * (0.5 + 0.5 * flap);
+          w.rotation.z = w.userData.side * (0.06 + 0.14 * flap);
+        }
+        if (cam) {
+          _scratchEuler.setFromQuaternion(cam.quaternion, 'YXZ');
+          this.billboard.rotation.set(_scratchEuler.x * BILLBOARD_TILT, _scratchEuler.y, 0, 'YXZ');
+        }
+        return;
+      }
+    }
 
     // pop turn: the art swaps at the bottom of the crouch (front -> side -> back for up/down turns)
     const s = f.shown(this.hasSide);
@@ -875,7 +1079,6 @@ export class ChibiRig {
       if (this.shownView !== 'lifted' && this.views?.lifted) this.applyView('lifted', this.shownRight);
     } else if (s.view !== this.shownView || s.right !== this.shownRight) this.applyView(s.view, s.right);
 
-    const u = this.material.uniforms;
     if (this.lifted) {
       // dangling by the scruff: legs kick out of phase, body swings like a pendulum
       const k = Math.sin(this.t * 13);
@@ -896,6 +1099,21 @@ export class ChibiRig {
       }
       return;
     }
+
+    const rideCfg = m?.riding !== undefined ? m.riding : this.riding;
+    const wasRiding = !!this._wasRiding;
+    this._wasRiding = !!rideCfg;
+    if (rideCfg) {
+      this.riding = rideCfg;
+      this.applyRidingPose(rideCfg, cam);
+      return;
+    }
+    if (wasRiding) {
+      this.riding = null;
+      if (this.views) this.layoutAccessories(this.shownView, this.shownRight, (this.views[this.shownView] || this.views.front)?.hem);
+    }
+    if (!this.shadow.visible) this.shadow.visible = true;
+
     const step = Math.sin(ph);
     u.uTime.value = this.t;
     let castArc = 0;
@@ -904,26 +1122,97 @@ export class ChibiRig {
       const ck = 1 - this.castT / Math.max(0.01, this.castMax || 1.15);
       castArc = Math.sin(ck * Math.PI);
     }
+
+    let cArmL = 0, cArmR = 0, cTorso = 0, cHop = 0, cSx = 1, cSy = 1, cRim = 0;
+    if (this.combatAnim) {
+      this.combatAnim.t += dt;
+      if (this.combatAnim.t >= this.combatAnim.dur) {
+        this.combatAnim = null;
+        this.TORSO_G.rotation.y = 0;
+      } else {
+        const ck = this.combatAnim.t / this.combatAnim.dur;
+        const cArc = Math.sin(ck * Math.PI);
+        const dir = this.shownRight ? 1 : -1;
+        const kind = this.combatAnim.kind;
+        if (kind === 'slash') {
+          this.TORSO_G.rotation.y = 0;
+          const swing = ck < 0.25
+            ? -0.85 * (ck / 0.25)
+            : -0.85 + 2.10 * Math.sin(((ck - 0.25) / 0.75) * Math.PI);
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = -0.25 * cArc;
+          } else {
+            cArmL = -swing;
+            cArmR = 0.25 * cArc;
+          }
+          cTorso = dir * 0.24 * cArc;
+          cHop = 0.09 * cArc;
+          cRim = 1.4 * cArc;
+        } else if (kind === 'spin_slash') {
+          this.TORSO_G.rotation.y = ck * Math.PI * 2;
+          cArmL = -1.05 * cArc;
+          cArmR = 1.05 * cArc;
+          cHop = 0.16 * cArc;
+          cRim = 1.6 * cArc;
+        } else if (kind === 'ground_slam') {
+          this.TORSO_G.rotation.y = 0;
+          cHop = Math.sin(ck * Math.PI) * 0.52;
+          if (ck < 0.6) {
+            const uk = Math.sin((ck / 0.6) * (Math.PI * 0.5));
+            cArmL = -1.15 * uk;
+            cArmR = 1.15 * uk;
+            cSx = 0.94;
+            cSy = 1.08;
+          } else {
+            const dk = 1 - (ck - 0.6) / 0.4;
+            cArmL = 0.75 * dk;
+            cArmR = -0.75 * dk;
+            cTorso = dir * 0.18 * dk;
+            cSx = 1.18 - 0.18 * (1 - dk);
+            cSy = 0.84 + 0.16 * (1 - dk);
+          }
+          cRim = 1.8 * cArc;
+        } else if (kind === 'dash_strike') {
+          this.TORSO_G.rotation.y = 0;
+          cTorso = dir * 0.34 * cArc;
+          cArmL = -0.65 * cArc;
+          cArmR = 0.95 * cArc;
+          cHop = 0.12 * cArc;
+          cRim = 2.2 * cArc;
+        }
+      }
+    } else if (this.TORSO_G.rotation.y !== 0) {
+      this.TORSO_G.rotation.y = 0;
+    }
+
+    if (this.hitRecoilT > 0) {
+      this.hitRecoilT = Math.max(0, this.hitRecoilT - dt);
+      const rk = this.hitRecoilT / Math.max(0.01, this.hitRecoilMax || 0.24);
+      cTorso -= (this.shownRight ? 1 : -1) * 0.22 * rk;
+      cRim += 2.5 * rk;
+    }
+
     const legAmp = this.tailBody ? 0 : 0.30;
     u.uLegL.value = step * legAmp * ww - castArc * (this.tailBody ? 0 : 0.16);
     u.uLegR.value = -step * legAmp * ww + castArc * (this.tailBody ? 0 : 0.16);
-    u.uArmL.value = -step * 0.22 * ww - castArc * 0.68;
-    u.uArmR.value = step * 0.22 * ww + castArc * 0.68;
-    u.uTorso.value = Math.sin(ph) * 0.05 * ww + Math.sin(this.t * 10) * 0.03 * castArc;
+    u.uArmL.value = -step * 0.22 * ww - castArc * 0.68 + cArmL;
+    u.uArmR.value = step * 0.22 * ww + castArc * 0.68 + cArmR;
+    u.uTorso.value = Math.sin(ph) * 0.05 * ww + Math.sin(this.t * 10) * 0.03 * castArc + cTorso;
     // head/hair lags behind the turn for a beat (secondary motion)
     u.uHead.value = -Math.sin(ph - 0.45) * 0.06 * ww + Math.sin(this.t * 1.3) * 0.025 * (1 - ww) + f.turnLag * 0.09 - castArc * 0.05;
     u.uBreath.value = Math.sin(this.t * 2.2) * 0.015 * (1 - ww) + castArc * 0.03;
     u.uCloth.value = 0.006 + (this.tailBody ? 0.022 : 0.01) * ww + Math.abs(f.turnLag) * 0.02 + castArc * 0.025;
-    u.uRim.value = 0.6 + castArc * 1.8;
+    u.uRim.value = 0.6 + castArc * 1.8 + cRim;
     this.syncBones();
     if (this.tail) this.tail.pivot.rotation.z = (Math.sin(this.t * 2.1) * 0.10 + Math.sin(ph) * 0.16 * ww) * (this.shownRight ? 1 : -1) * (this.shownView === 'back' ? 0.6 : 1);
 
-    // HIP: rhythmic waddle-hop + pop-turn hop + cast levitation + squash/stretch (width never collapses)
-    const hop = Math.abs(Math.sin(ph)) * (this.tailBody ? 0.025 : 0.08) * ww + f.turnHop * 0.06 + castArc * 0.42;
+    // HIP: rhythmic waddle-hop + pop-turn hop + cast levitation + combat hop + squash/stretch (width never collapses)
+    const hop = Math.abs(Math.sin(ph)) * (this.tailBody ? 0.025 : 0.08) * ww + f.turnHop * 0.06 + castArc * 0.42 + cHop;
     this.HIP.position.y = hop;
     const walkSquash = 1 - (1 - Math.abs(Math.sin(ph))) * 0.03 * ww;
     const ts = f.turnSquash;
-    this.HIP.scale.set(ts.sx * (2 - walkSquash), ts.sy * walkSquash * (1 + castArc * 0.04), 1);
+    this.HIP.scale.set(ts.sx * (2 - walkSquash) * cSx, ts.sy * walkSquash * (1 + castArc * 0.04) * cSy, 1);
     this.shadow.scale.set(Math.max(0.35, 0.95 - hop * 1.1), 1, Math.max(0.2, 0.5 - hop * 0.45));
 
     // WINGS: 1.2 Hz idle → 3.4 Hz moving → 5.0 Hz casting
@@ -934,6 +1223,64 @@ export class ChibiRig {
     }
 
     // billboard: face the camera's yaw and lean back a bit so 2.8-head proportions read well
+    if (cam) {
+      _scratchEuler.setFromQuaternion(cam.quaternion, 'YXZ');
+      this.billboard.rotation.set(_scratchEuler.x * BILLBOARD_TILT, _scratchEuler.y, 0, 'YXZ');
+    }
+  }
+
+  /**
+   * Seated astride riding pose & kinematics for mounted companions (`m.riding`).
+   * Zero per-frame heap allocations.
+   */
+  applyRidingPose(rideCfg, cam = null) {
+    const ride = typeof rideCfg === 'object' && rideCfg !== null ? rideCfg : {};
+    const u = this.material.uniforms;
+    const rPh = Number.isFinite(ride.phase) ? ride.phase : this.legPhase * 2.0;
+    this.shadow.visible = false;
+    u.uTime.value = this.t;
+    for (let i = 0; i < this.accMeshes.length; i++) {
+      const a = this.accMeshes[i];
+      if (a.def?.singleHand && a.mesh.visible) a.mesh.visible = false;
+    }
+
+    // Seated Astride Legs: straddle wide astride the pet's back so boots hug the flanks/stirrups
+    const straddle = this.shownView === 'side' ? 0.38 : 0.50;
+    u.uLegL.value = this.tailBody ? 0 : (-straddle - Math.sin(rPh) * 0.06);
+    u.uLegR.value = this.tailBody ? 0 : ((this.shownView === 'side' ? -0.18 : straddle) + Math.sin(rPh) * 0.06);
+
+    // Reins-Holding & Cheering Arms: hands reach forward holding golden reins; raise right arm high when cheering
+    const rein = 0.42 + Math.sin(rPh) * 0.08 + (ride.reinPull || 0) * 0.18;
+    u.uArmL.value = -rein;
+    u.uArmR.value = (ride.cheer > 0)
+      ? (0.88 + Math.sin(this.t * 12) * 0.10)
+      : rein;
+
+    // Dynamic Rider Torso, Head & Hair
+    const bank = ride.bank || 0;
+    u.uTorso.value = bank * 0.45 + Math.sin(rPh) * 0.04;
+    u.uHead.value = -bank * 0.25 - Math.sin(rPh - 0.5) * 0.05;
+    u.uBreath.value = Math.sin(rPh) * 0.020;
+    u.uCloth.value = 0.022;
+    u.uRim.value = 1.15;
+    this.syncBones();
+
+    if (this.tail) {
+      this.tail.pivot.rotation.z = Math.sin(rPh * 1.15) * 0.22 * (this.shownRight ? 1 : -1) * (this.shownView === 'back' ? 0.65 : 1);
+    }
+
+    // Absorb mount landing squash on HIP
+    const sq = ride.squash || 0;
+    this.HIP.position.y = -0.06 * sq;
+    this.HIP.scale.set(1 + 0.14 * sq, 1 - 0.16 * sq, 1);
+
+    // Flap equipped Chibi wings gracefully (2.6 Hz glide/assist beat)
+    const flap = Math.sin(this.t * Math.PI * 2 * 2.6);
+    for (const w of this.wingMeshes) {
+      w.scale.x = 1 - 0.16 * (0.5 + 0.5 * flap);
+      w.rotation.z = w.userData.side * (0.06 + 0.10 * flap);
+    }
+
     if (cam) {
       _scratchEuler.setFromQuaternion(cam.quaternion, 'YXZ');
       this.billboard.rotation.set(_scratchEuler.x * BILLBOARD_TILT, _scratchEuler.y, 0, 'YXZ');

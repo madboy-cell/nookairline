@@ -40,7 +40,7 @@ const fragmentShader = /* glsl */`
   varying vec3 vTint;
   void main() {
     vec4 c = texture2D(map, vUv);
-    c.rgb *= vTint;
+    c.rgb = min(vec3(1.0), c.rgb * vTint * 1.15);
     c.a *= vAlpha;
     if (c.a < 0.02) discard;
     gl_FragColor = c;

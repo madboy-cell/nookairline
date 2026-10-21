@@ -26,12 +26,13 @@ export const ROOM = Object.freeze({
 });
 
 export const MATCH_MODES = Object.freeze(['normal', 'chaos']);
+export const DASH_MODES = Object.freeze(['quick', 'chaos', 'league', 'ghost']);
 
 export const MODES = Object.freeze({
   monopoly:   { label: 'Sky Monopoly', icon: '🎲', available: true,  minSeats: 2 },
   casino:     { label: 'Grand Casino', icon: '🎰', available: true,  minSeats: 1 },
-  moon_bunny: { label: 'Moon Bunny',   icon: '🌙', available: false, phase: 6, minSeats: 1 },
-  cloud_dash: { label: 'Cloud Dash',   icon: '☁️', available: false, phase: 6, minSeats: 1 },
+  moon_bunny: { label: 'Moon Defense', icon: '🌙', available: true,  minSeats: 1 },
+  cloud_dash: { label: 'Cloud Dash',   icon: '☁️', available: true,  phase: 6, minSeats: 1 },
 });
 
 const BOT_NAMES = ['Bot Nova', 'Bot Mochi', 'Bot Leo', 'Bot Mina'];   // by chair, so 3 bots never share a name
@@ -112,10 +113,35 @@ export class TableManager {
     if (t.mode === 'casino') {
       options.casinoGame = t.options?.casinoGame || 'pokdeng';
     }
+    if (t.mode === 'cloud_dash') {
+      options.dashMode = t.options?.dashMode || 'quick';
+    }
     return {
       id: t.id, num: t.num, name: t.name, mode: t.mode, hostId: t.hostId, status: t.status, solo: !!t.solo,
       options,
-      seats: t.seats.map((s, idx) => ({ idx, kind: s.kind, userId: s.userId || null, name: s.name || null, botDiff: s.botDiff || null, ready: !!s.ready, connected: s.kind !== 'human' || this.connected.has(s.userId), lineage: s.lineage || null, outfit: s.outfit || null, level: s.level || null })),
+      seats: t.seats.map((s, idx) => {
+        if (s.kind === 'human' && s.userId && t.status === 'lobby') {
+          const live = this.info(s.userId);
+          s.name = live.name || s.name;
+          s.lineage = live.lineage || s.lineage;
+          s.outfit = live.outfit || s.outfit;
+          s.level = live.level || s.level;
+          s.appearance = live.appearance || s.appearance || null;
+        }
+        return {
+          idx,
+          kind: s.kind,
+          userId: s.userId || null,
+          name: s.name || null,
+          botDiff: s.botDiff || null,
+          ready: !!s.ready,
+          connected: s.kind !== 'human' || this.connected.has(s.userId),
+          lineage: s.lineage || null,
+          outfit: s.outfit || null,
+          level: s.level || null,
+          appearance: s.appearance || null,
+        };
+      }),
       players: t.seats.filter((s) => s.kind !== 'empty').length,
       humans: this.humans(t).length,
     };
@@ -144,10 +170,10 @@ export class TableManager {
   // -------------------------------------------------------------------------------- lobby
   info(userId) {
     const i = this.playerInfo(userId) || {};
-    return { name: i.name || userId, lineage: i.lineage || 'bkk', outfit: i.outfit || 'newbie_outfit', level: i.level || 1 };
+    return { name: i.name || userId, lineage: i.lineage || 'bkk', outfit: i.outfit || 'newbie_outfit', level: i.level || 1, appearance: i.appearance || null };
   }
 
-  create(userId, { mode = 'monopoly', name = null, solo = false, matchMode = 'normal', options = {}, casinoGame } = {}) {
+  create(userId, { mode = 'monopoly', name = null, solo = false, matchMode = 'normal', options = {}, casinoGame, dashMode } = {}) {
     if (!MODES[mode]) return this.error(userId, 'bad_mode');
     if (!MODES[mode].available) return this.error(userId, 'mode_locked');
     if (this.tables.size >= ROOM.MAX_TABLES) return this.error(userId, 'too_many_tables');
@@ -157,8 +183,12 @@ export class TableManager {
     const resolvedMatchMode = MATCH_MODES.includes(matchMode) ? matchMode : 'normal';
     const rawCg = casinoGame ?? options?.casinoGame ?? 'pokdeng';
     const resolvedCg = ['pokdeng', 'roulette'].includes(rawCg) ? rawCg : 'pokdeng';
+    const rawDm = dashMode ?? options?.dashMode ?? (matchMode === 'chaos' ? 'chaos' : 'quick');
+    const resolvedDm = DASH_MODES.includes(rawDm) ? rawDm : 'quick';
     const tableOptions = { matchMode: resolvedMatchMode };
     if (mode === 'casino') tableOptions.casinoGame = resolvedCg;
+    if (mode === 'cloud_dash') tableOptions.dashMode = resolvedDm;
+    if (options?.fastSim) tableOptions.fastSim = true;
     const t = {
       id: `t${num}`, num, mode, solo, hostId: userId, status: 'lobby', createdAt: this.now(),
       name: name || `${me.name}'s ${solo ? 'Solo' : 'VIP'} Room`,
@@ -180,6 +210,10 @@ export class TableManager {
     if (!t) return this.error(userId, 'no_table');
     if (t.solo && t.hostId !== userId) return this.error(userId, 'private_table');
     if (this.byUser.get(userId) === tableId) {
+      if (t.status === 'playing') {
+        this.connect(userId);
+        return { ok: true, tableId };
+      }
       // switching chairs inside the same lobby
       if (t.status !== 'lobby' || seatIdx == null) return { ok: true, tableId };
       const from = t.seats.findIndex((s) => s.userId === userId);
@@ -188,20 +222,14 @@ export class TableManager {
       [t.seats[from], t.seats[seatIdx]] = [t.seats[seatIdx], t.seats[from]];
       this.pushState(t); return { ok: true, tableId };
     }
-    if (t.status !== 'lobby') {
-      if (t.mode === 'casino' && t.status === 'playing') {
-        // mid-session join allowed for casino
-      } else {
-        return this.error(userId, 'match_running');
-      }
-    }
+    if (t.status !== 'lobby') return this.error(userId, 'match_running');
     let idx = seatIdx;
     if (idx == null) idx = t.seats.findIndex((s) => s.kind === 'empty');
     if (idx < 0) idx = t.seats.findIndex((s) => s.kind === 'bot');      // "claims the next chair" (replaces a bot)
     const seat = t.seats[idx];
     if (!seat || seat.kind === 'human') return this.error(userId, 'seat_taken');
     this.leave(userId, { silent: true });
-    t.seats[idx] = { kind: 'human', userId, ready: t.status === 'playing', ...this.info(userId) };
+    t.seats[idx] = { kind: 'human', userId, ready: t.status === 'playing' || t.mode !== 'monopoly', ...this.info(userId) };
     this.byUser.set(userId, t.id);
     this.connected.add(userId);
     if (t.seatOf) t.seatOf[userId] = idx;
@@ -289,9 +317,20 @@ export class TableManager {
     if (!t) return this.error(userId, 'no_table');
     if (t.hostId !== userId) return this.error(userId, 'host_only');
     if (t.status !== 'lobby') return this.error(userId, 'match_running');
+    const prevMode = t.mode;
+    const newMode = opts.mode;
     const mm = opts.matchMode ?? opts.options?.matchMode;
     const cg = opts.casinoGame ?? opts.options?.casinoGame;
+    const dm = opts.dashMode ?? opts.options?.dashMode;
     let changed = false;
+    if (newMode != null) {
+      if (!MODES[newMode] || !MODES[newMode].available) return this.error(userId, 'bad_option');
+      t.mode = newMode;
+      if (newMode !== 'monopoly') {
+        t.seats.forEach((s) => { if (s.kind === 'human') s.ready = true; });
+      }
+      changed = true;
+    }
     if (mm != null) {
       if (!MATCH_MODES.includes(mm)) return this.error(userId, 'bad_option');
       t.options = { ...(t.options || {}), matchMode: mm };
@@ -302,9 +341,17 @@ export class TableManager {
       t.options = { ...(t.options || {}), casinoGame: cg };
       changed = true;
     }
+    if (dm != null) {
+      if (!DASH_MODES.includes(dm)) return this.error(userId, 'bad_option');
+      t.options = { ...(t.options || {}), dashMode: dm };
+      changed = true;
+    }
     if (!changed) return this.error(userId, 'bad_option');
     this.pushState(t);
-    if (!t.solo) this.pushList(t.mode);
+    if (!t.solo) {
+      if (prevMode && prevMode !== t.mode) this.pushList(prevMode);
+      this.pushList(t.mode);
+    }
     return { ok: true };
   }
 
@@ -315,7 +362,7 @@ export class TableManager {
     if (t.status === 'playing') return this.error(userId, 'match_running');
     const occupied = t.seats.map((s, idx) => ({ s, idx })).filter(({ s }) => s.kind !== 'empty');
     if (occupied.length < MODES[t.mode].minSeats) return this.error(userId, 'need_players');
-    if (occupied.some(({ s }) => s.kind === 'human' && s.userId !== userId && !s.ready)) return this.error(userId, 'not_ready');
+    if (t.mode === 'monopoly' && occupied.some(({ s }) => s.kind === 'human' && s.userId !== userId && !s.ready)) return this.error(userId, 'not_ready');
 
     if (t.mode !== 'monopoly') {
       const g = this.games?.[t.mode];
@@ -357,10 +404,16 @@ export class TableManager {
   }
 
   /** "⚡ Play Solo Now (Instant)": private table, 3 bots, starts immediately. */
-  solo(userId, { mode = 'monopoly', diff = 'hard', matchMode = 'normal', ...opts } = {}) {
+  solo(userId, { mode = 'monopoly', diff = 'hard', matchMode = 'normal', bots = null, ...opts } = {}) {
     const r = this.create(userId, { mode, solo: true, matchMode, ...opts });
     if (!r.ok) return r;
-    for (let k = 1; k < ROOM.SEATS; k++) this.setBot(userId, k, BOT_DIFFS.includes(diff) ? diff : 'hard');
+    const t = this.tables.get(r.tableId);
+    for (let k = 1; k < ROOM.SEATS; k++) {
+      const bSpec = Array.isArray(bots) ? bots[k - 1] : null;
+      const bDiff = bSpec?.diff && BOT_DIFFS.includes(bSpec.diff) ? bSpec.diff : (BOT_DIFFS.includes(diff) ? diff : 'hard');
+      this.setBot(userId, k, bDiff);
+      if (bSpec?.outfit && t?.seats?.[k]) t.seats[k].outfit = bSpec.outfit;
+    }
     return { ...this.start(userId), tableId: r.tableId };
   }
 
@@ -370,9 +423,12 @@ export class TableManager {
     if (!t || t.status !== 'ended') return this.error(userId, 'no_table');
     t.status = 'lobby';
     t.match = null; t.seatOf = null; t.deadline = null; t.podiumRewards = null;
-    t.seats = t.seats.map((s) => (s.leftUserId ? { kind: 'empty' } : { ...s, ready: s.kind === 'bot' || s.userId === t.hostId }));
+    t.moonDefense = null; t.cloudDash = null;
+    t.seats = t.seats.map((s) => (s.leftUserId ? { kind: 'empty' } : { ...s, ready: s.kind === 'bot' || t.mode !== 'monopoly' || s.userId === t.hostId }));
     this.pushState(t);
-    if (t.solo) return this.start(t.hostId);
+    if (t.solo || ((t.mode === 'moon_bunny' || t.mode === 'cloud_dash') && (userId === t.hostId || this.humans(t).length <= 1))) {
+      return this.start(t.hostId);
+    }
     this.pushList(t.mode);
     return { ok: true };
   }
@@ -380,6 +436,11 @@ export class TableManager {
   // -------------------------------------------------------------------------------- match
   schedule(t, events, { botTurn = false } = {}) {
     const now = this.now();
+    if (t.options?.fastSim) {
+      t.nextBotAt = now + 20;
+      t.deadline = now + ROOM.TURN_MS;
+      return;
+    }
     const anim = cutsceneMs(events, { botTurn });
     t.nextBotAt = now + anim + ROOM.BOT_THINK_MS;
     t.deadline = now + anim + ROOM.TURN_MS;
@@ -453,24 +514,46 @@ export class TableManager {
             this.games[t.mode].tick(t, now);
           }
         } else {
-          const m = t.match;
-          const seat = m.turn.seat;
-          const p = m.players[seat];
-          const humanId = p.isBot ? null : p.id;
-          const away = humanId && !this.connected.has(humanId) && !t.solo;
-          if ((p.isBot || away) && now >= t.nextBotAt) {
-            const a = botAction(m, seat, p.isBot ? p.botDiff : 'hard');
-            if (a) this.apply(t, seat, { ...a, auto: !p.isBot });
-          } else if (humanId && !t.solo && t.deadline && now >= t.deadline) {
-            const a = botAction(m, seat, 'hard');                    // AFK autopilot (§21.E.2)
-            if (a) this.apply(t, seat, { ...a, auto: true });
+          const maxSteps = t.options?.fastSim ? 12 : 1;
+          for (let step = 0; step < maxSteps && t.status === 'playing' && !t.match.ended; step++) {
+            const m = t.match;
+            const seat = m.turn.seat;
+            const p = m.players[seat];
+            const humanId = p.isBot ? null : p.id;
+            const away = humanId && !this.connected.has(humanId) && !t.solo;
+            if ((p.isBot || away) && now >= (t.nextBotAt || 0)) {
+              const a = botAction(m, seat, p.isBot ? p.botDiff : 'hard');
+              const res = a ? this.apply(t, seat, { ...a, auto: !p.isBot }) : { ok: false };
+              if (!res?.ok && !m.ended && m.turn?.seat === seat) {
+                // Fail-safe fallback so a bot turn can never stall the room
+                const fallback = m.pending
+                  ? { type: 'decide', choice: m.pending.canSkip ? 'skip' : m.pending.options?.[0]?.id }
+                  : { type: 'roll', use2d6: false };
+                this.apply(t, seat, { ...fallback, auto: !p.isBot });
+              }
+              if (t.options?.fastSim && t.nextBotAt) t.nextBotAt = now;
+            } else if (humanId && !t.solo && t.deadline && now >= t.deadline) {
+              const a = botAction(m, seat, 'hard');                    // AFK autopilot (§21.E.2)
+              if (a) this.apply(t, seat, { ...a, auto: true });
+              break;
+            } else {
+              break;
+            }
           }
         }
       }
       // close tables nobody can see any more
       const anyone = this.humans(t).some((u) => this.connected.has(u));
-      if (anyone) t.emptySince = null;
-      else if (t.emptySince == null) t.emptySince = now;
+      if (anyone) {
+        t.emptySince = null;
+        if (t.status === 'lobby') {
+          for (const s of t.seats) {
+            if (s.kind === 'human' && s.userId && !this.connected.has(s.userId) && s.disconnectedAt && now - s.disconnectedAt > 15_000) {
+              this.leave(s.userId);
+            }
+          }
+        }
+      } else if (t.emptySince == null) t.emptySince = now;
       else if (now - t.emptySince > ROOM.RECONNECT_GRACE_MS) {
         for (const u of this.humans(t)) this.byUser.delete(u);
         this.tables.delete(t.id);
@@ -483,6 +566,12 @@ export class TableManager {
     this.connected.add(userId);
     const t = this.tableOf(userId);
     if (!t) return;
+    const seat = t.seats.find((s) => s.userId === userId);
+    if (seat) delete seat.disconnectedAt;
+    if (t.status === 'playing' && t.mode === 'monopoly' && t.match && !t.match.ended) {
+      const cur = t.match.players[t.match.turn?.seat];
+      if (cur?.isBot) t.nextBotAt = Math.min(t.nextBotAt || 0, this.now() + 450);
+    }
     this.pushState(t, { resumed: true });     // §21.E.2 reconnect: re-attach + live snapshot
     if (t.status === 'playing' && t.mode !== 'monopoly' && this.games?.[t.mode]?.onJoin) {
       try { this.games[t.mode].onJoin(t, userId); } catch {}
@@ -502,17 +591,19 @@ export class TableManager {
     this.connected.delete(userId);
     const t = this.tableOf(userId);
     if (!t) return;
-    if (t.mode !== 'monopoly' && this.games?.[t.mode]?.leave) {
-      try { this.games[t.mode].leave(t, userId); } catch {}
+    const seat = t.seats.find((s) => s.userId === userId);
+    if (seat) seat.disconnectedAt = this.now();
+    if (t.status === 'playing' && t.mode !== 'monopoly' && this.games?.[t.mode]?.onDisconnect) {
+      try { this.games[t.mode].onDisconnect(t, userId); } catch {}
     }
-    if (t.status === 'lobby') this.leave(userId);
-    else this.pushState(t);
+    this.pushState(t);
+    if (!t.solo) this.pushList(t.mode);
   }
 
   /** Single entry point for every table_* / mono_* client message. */
   handle(userId, m) {
-    if (m?.type === 'casino_leave') return this.leave(userId);
-    if (typeof m?.type === 'string' && m.type.startsWith('casino_')) {
+    if (m?.type === 'casino_leave' || m?.type === 'mb_leave' || m?.type === 'cd_leave') return this.leave(userId);
+    if (typeof m?.type === 'string' && (m.type.startsWith('casino_') || m.type.startsWith('mb_') || m.type.startsWith('cd_'))) {
       const t = this.tableOf(userId) || (m.tableId ? this.tables.get(m.tableId) : null);
       if (!t) return this.error(userId, 'no_table');
       const game = this.games?.[t.mode];
@@ -527,6 +618,7 @@ export class TableManager {
         matchMode: matchModeOf(m),
         options: m.options,
         casinoGame: m.casinoGame ?? m.options?.casinoGame,
+        dashMode: m.dashMode ?? m.options?.dashMode,
       });
       case 'table_sit': return this.sit(userId, String(m.tableId || ''), Number.isInteger(m.seatIdx) ? m.seatIdx : null);
       case 'table_leave': return this.leave(userId);
@@ -538,11 +630,15 @@ export class TableManager {
         diff: String(m.diff || 'hard'),
         matchMode: matchModeOf(m),
         casinoGame: m.casinoGame ?? m.options?.casinoGame,
+        dashMode: m.dashMode ?? m.options?.dashMode,
         options: m.options,
+        bots: m.bots,
       });
       case 'table_set_option': return this.setOption(userId, {
+        mode: m.mode ?? m.options?.mode,
         matchMode: m.matchMode ?? m.options?.matchMode,
         casinoGame: m.casinoGame ?? m.options?.casinoGame,
+        dashMode: m.dashMode ?? m.options?.dashMode,
         options: m.options,
       });
       case 'table_rematch': return this.rematch(userId);

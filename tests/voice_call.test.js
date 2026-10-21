@@ -312,3 +312,56 @@ test('grace expiry ends call', () => {
   assert.ok(u2End);
   assert.equal(h.voiceService.activeCallOf('u1'), null);
 });
+
+test('self-healing: call_heal from either peer, same-pair re-dial resume, and 90s post-grace auto-recovery', () => {
+  let currentTime = 1000000;
+  const now = () => currentTime;
+
+  const u1 = makeProfile('u1', { partner_id: 'u2' });
+  const u2 = makeProfile('u2', { partner_id: 'u1' });
+  const h = createTestHarness({ profiles: [u1, u2], now });
+
+  // 1. Connect u1 and u2
+  const inv = h.voiceService.handle('u1', { type: 'call_invite', to: 'u2' });
+  currentTime += 1000;
+  h.voiceService.handle('u2', { type: 'call_accept', callId: inv.callId });
+  const origStartedAt = h.voiceService.activeCallOf('u1').startedAt;
+
+  // 2. Callee (u2, polite=true) triggers call_heal -> both receive call_connected (resumed: true, healed: true)
+  currentTime += 5000;
+  h.sentMessages.length = 0;
+  const healRes = h.voiceService.handle('u2', { type: 'call_heal', callId: inv.callId });
+  assert.equal(healRes.ok, true);
+  assert.equal(healRes.healed, true);
+
+  const u1Heal = h.getSentFor('u1').find((m) => m.type === 'call_connected');
+  const u2Heal = h.getSentFor('u2').find((m) => m.type === 'call_connected');
+  assert.ok(u1Heal && u1Heal.resumed && u1Heal.healed);
+  assert.ok(u2Heal && u2Heal.resumed && u2Heal.healed);
+  assert.equal(u1Heal.startedAt, origStartedAt);
+
+  // 3. Same-pair re-dial while connected heals instead of returning busy
+  currentTime += 3000;
+  h.sentMessages.length = 0;
+  const redialRes = h.voiceService.handle('u1', { type: 'call_invite', to: 'u2' });
+  assert.equal(redialRes.ok, true);
+  assert.equal(redialRes.resumed, true);
+  assert.equal(redialRes.healed, true);
+
+  // 4. Post-grace auto-recovery within 90s when disconnected peer reconnects
+  currentTime += 5000;
+  h.voiceService.onDisconnect('u2');
+  currentTime += 16000; // Exceeds 15s grace
+  h.voiceService.tick(currentTime);
+  assert.equal(h.voiceService.activeCallOf('u1'), null);
+
+  // 25 seconds later (< 90s), u2's mobile network comes back online -> auto-restores call!
+  currentTime += 25000;
+  h.sentMessages.length = 0;
+  h.voiceService.onReconnect('u2');
+  const restored = h.voiceService.activeCallOf('u1');
+  assert.ok(restored);
+  assert.equal(restored.state, 'connected');
+  assert.equal(restored.startedAt, origStartedAt);
+});
+

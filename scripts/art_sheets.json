@@ -5318,14 +5318,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_sweetheart_patissier_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_magical_star_witch_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_swan_ballet_prima_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_alice_wonder_teaparty_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_sweetheart_patissier_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_magical_star_witch_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_swan_ballet_prima_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_alice_wonder_teaparty_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_epic_sweetheart_patissier_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_magical_star_witch_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_swan_ballet_prima_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_alice_wonder_teaparty_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_sweetheart_patissier_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_magical_star_witch_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_swan_ballet_prima_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_alice_wonder_teaparty_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5337,10 +5377,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_sweetheart_patissier_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_magical_star_witch_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_swan_ballet_prima_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_alice_wonder_teaparty_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_epic_sweetheart_patissier_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_magical_star_witch_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_swan_ballet_prima_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_alice_wonder_teaparty_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5352,14 +5412,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_fairy_blossom_nympha_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_lollipop_angel_nurse_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_pink_bean_kigurumi_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_henesys_mushroom_hoodie_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_fairy_blossom_nympha_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_lollipop_angel_nurse_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_pink_bean_kigurumi_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_henesys_mushroom_hoodie_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_epic_fairy_blossom_nympha_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_lollipop_angel_nurse_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_pink_bean_kigurumi_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_henesys_mushroom_hoodie_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_fairy_blossom_nympha_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_lollipop_angel_nurse_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_pink_bean_kigurumi_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_henesys_mushroom_hoodie_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5371,10 +5471,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_fairy_blossom_nympha_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_lollipop_angel_nurse_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_pink_bean_kigurumi_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_henesys_mushroom_hoodie_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_epic_fairy_blossom_nympha_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_lollipop_angel_nurse_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_pink_bean_kigurumi_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_henesys_mushroom_hoodie_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5386,14 +5506,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_slime_pudding_raincoat_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_peach_milk_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cinnamon_bunny_cardigan_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_strawberry_picnic_gingham_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_slime_pudding_raincoat_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_peach_milk_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_cinnamon_bunny_cardigan_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_strawberry_picnic_gingham_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_rare_slime_pudding_raincoat_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_peach_milk_maid_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cinnamon_bunny_cardigan_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_strawberry_picnic_gingham_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_slime_pudding_raincoat_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_peach_milk_maid_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cinnamon_bunny_cardigan_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_strawberry_picnic_gingham_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5405,10 +5565,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_slime_pudding_raincoat_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_peach_milk_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cinnamon_bunny_cardigan_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_strawberry_picnic_gingham_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_rare_slime_pudding_raincoat_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_peach_milk_maid_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cinnamon_bunny_cardigan_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_strawberry_picnic_gingham_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5420,14 +5600,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_lavender_sleepy_pajama_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_honey_bee_pinafore_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_sleepywood_onsen_yukata_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_aquaroad_sailor_uniform_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_lavender_sleepy_pajama_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_honey_bee_pinafore_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_sleepywood_onsen_yukata_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_aquaroad_sailor_uniform_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_rare_lavender_sleepy_pajama_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_honey_bee_pinafore_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_sleepywood_onsen_yukata_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_aquaroad_sailor_uniform_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_lavender_sleepy_pajama_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_honey_bee_pinafore_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_sleepywood_onsen_yukata_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_aquaroad_sailor_uniform_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5439,10 +5659,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_lavender_sleepy_pajama_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_honey_bee_pinafore_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_sleepywood_onsen_yukata_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_aquaroad_sailor_uniform_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_rare_lavender_sleepy_pajama_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_honey_bee_pinafore_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_sleepywood_onsen_yukata_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_aquaroad_sailor_uniform_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5454,12 +5694,36 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "boots_sweetheart_patissier", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_magical_star_witch", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_swan_ballet_prima", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_alice_wonder_teaparty", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_fairy_blossom_nympha", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_lollipop_angel_nurse", "anchorY": 0.5, "faces": "right" }
+        {
+          "name": "boots_sweetheart_patissier",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_magical_star_witch",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_swan_ballet_prima",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_alice_wonder_teaparty",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_fairy_blossom_nympha",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_lollipop_angel_nurse",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
       ]
     },
     {
@@ -5471,12 +5735,36 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "boots_pink_bean_slippers", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_henesys_mushroom_sneakers", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_slime_pudding_wellies", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_peach_milk_maryjanes", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_cinnamon_bunny_loafers", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_strawberry_picnic_shoes", "anchorY": 0.5, "faces": "right" }
+        {
+          "name": "boots_pink_bean_slippers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_henesys_mushroom_sneakers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_slime_pudding_wellies",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_peach_milk_maryjanes",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_cinnamon_bunny_loafers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_strawberry_picnic_shoes",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
       ]
     },
     {
@@ -5488,10 +5776,26 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "boots_lavender_cloud_slippers", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_honey_bee_maryjanes", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_sleepywood_sakura_geta", "anchorY": 0.5, "faces": "right" },
-        { "name": "boots_aquaroad_sailor_shoes", "anchorY": 0.5, "faces": "right" }
+        {
+          "name": "boots_lavender_cloud_slippers",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_honey_bee_maryjanes",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_sleepywood_sakura_geta",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "boots_aquaroad_sailor_shoes",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
       ]
     },
     {
@@ -5503,14 +5807,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_sweetheart_patissier_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_magical_star_witch_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_swan_ballet_prima_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_alice_wonder_teaparty_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_sweetheart_patissier_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_magical_star_witch_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_swan_ballet_prima_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_alice_wonder_teaparty_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_epic_sweetheart_patissier_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_magical_star_witch_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_swan_ballet_prima_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_alice_wonder_teaparty_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_sweetheart_patissier_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_magical_star_witch_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_swan_ballet_prima_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_alice_wonder_teaparty_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5522,10 +5866,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_sweetheart_patissier_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_magical_star_witch_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_swan_ballet_prima_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_alice_wonder_teaparty_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_epic_sweetheart_patissier_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_magical_star_witch_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_swan_ballet_prima_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_alice_wonder_teaparty_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5537,14 +5901,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_fairy_blossom_nympha_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_lollipop_angel_nurse_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_pink_bean_kigurumi_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_henesys_mushroom_hoodie_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_fairy_blossom_nympha_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_lollipop_angel_nurse_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_pink_bean_kigurumi_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_henesys_mushroom_hoodie_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_epic_fairy_blossom_nympha_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_lollipop_angel_nurse_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_pink_bean_kigurumi_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_henesys_mushroom_hoodie_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_fairy_blossom_nympha_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_lollipop_angel_nurse_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_pink_bean_kigurumi_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_henesys_mushroom_hoodie_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5556,10 +5960,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_fairy_blossom_nympha_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_lollipop_angel_nurse_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_pink_bean_kigurumi_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_henesys_mushroom_hoodie_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_epic_fairy_blossom_nympha_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_lollipop_angel_nurse_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_pink_bean_kigurumi_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_henesys_mushroom_hoodie_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5571,14 +5995,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_slime_pudding_raincoat_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_peach_milk_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cinnamon_bunny_cardigan_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_strawberry_picnic_gingham_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_slime_pudding_raincoat_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_peach_milk_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_cinnamon_bunny_cardigan_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_strawberry_picnic_gingham_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_rare_slime_pudding_raincoat_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_peach_milk_maid_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cinnamon_bunny_cardigan_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_strawberry_picnic_gingham_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_slime_pudding_raincoat_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_peach_milk_maid_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cinnamon_bunny_cardigan_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_strawberry_picnic_gingham_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5590,10 +6054,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_slime_pudding_raincoat_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_peach_milk_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cinnamon_bunny_cardigan_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_strawberry_picnic_gingham_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_rare_slime_pudding_raincoat_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_peach_milk_maid_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cinnamon_bunny_cardigan_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_strawberry_picnic_gingham_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5605,14 +6089,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_lavender_sleepy_pajama_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_honey_bee_pinafore_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_sleepywood_onsen_yukata_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_aquaroad_sailor_uniform_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_lavender_sleepy_pajama_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_honey_bee_pinafore_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_sleepywood_onsen_yukata_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_aquaroad_sailor_uniform_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_rare_lavender_sleepy_pajama_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_honey_bee_pinafore_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_sleepywood_onsen_yukata_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_aquaroad_sailor_uniform_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_lavender_sleepy_pajama_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_honey_bee_pinafore_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_sleepywood_onsen_yukata_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_aquaroad_sailor_uniform_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5624,10 +6148,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_lavender_sleepy_pajama_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_honey_bee_pinafore_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_sleepywood_onsen_yukata_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_aquaroad_sailor_uniform_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_rare_lavender_sleepy_pajama_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_honey_bee_pinafore_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_sleepywood_onsen_yukata_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_aquaroad_sailor_uniform_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5639,14 +6183,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_aether_valkyrie_seraph_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_neon_pulsar_idol_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_quantum_chrono_nav_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_mecha_bunny_striker_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_aether_valkyrie_seraph_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_neon_pulsar_idol_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_quantum_chrono_nav_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_epic_mecha_bunny_striker_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_epic_aether_valkyrie_seraph_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_neon_pulsar_idol_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_quantum_chrono_nav_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_mecha_bunny_striker_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_aether_valkyrie_seraph_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_neon_pulsar_idol_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_quantum_chrono_nav_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_mecha_bunny_striker_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5658,10 +6242,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_aether_valkyrie_seraph_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_neon_pulsar_idol_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_quantum_chrono_nav_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_mecha_bunny_striker_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_epic_aether_valkyrie_seraph_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_neon_pulsar_idol_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_quantum_chrono_nav_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_mecha_bunny_striker_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5673,14 +6277,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_eclipse_void_enforcer_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_starfleet_nova_cadet_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cyber_android_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_zero_g_astronaut_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_epic_eclipse_void_enforcer_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_starfleet_nova_cadet_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_cyber_android_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_zero_g_astronaut_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_epic_eclipse_void_enforcer_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_starfleet_nova_cadet_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cyber_android_maid_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_zero_g_astronaut_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_epic_eclipse_void_enforcer_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_starfleet_nova_cadet_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cyber_android_maid_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_zero_g_astronaut_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5692,10 +6336,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_epic_eclipse_void_enforcer_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_starfleet_nova_cadet_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cyber_android_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_zero_g_astronaut_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_epic_eclipse_void_enforcer_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_starfleet_nova_cadet_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cyber_android_maid_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_zero_g_astronaut_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5707,14 +6371,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_plasma_angel_medic_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_synthwave_arcade_skater_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_biolum_xeno_botanist_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_omega_mecha_pilot_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_plasma_angel_medic_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_synthwave_arcade_skater_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_biolum_xeno_botanist_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_omega_mecha_pilot_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "dxb_rare_plasma_angel_medic_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_synthwave_arcade_skater_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_biolum_xeno_botanist_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_omega_mecha_pilot_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_plasma_angel_medic_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_synthwave_arcade_skater_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_biolum_xeno_botanist_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_omega_mecha_pilot_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5726,10 +6430,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_plasma_angel_medic_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_synthwave_arcade_skater_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_biolum_xeno_botanist_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_omega_mecha_pilot_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "dxb_rare_plasma_angel_medic_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_synthwave_arcade_skater_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_biolum_xeno_botanist_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_omega_mecha_pilot_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5741,13 +6465,43 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_holo_neko_streamer_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cryo_crystal_scientist_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_solar_prism_envoy_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        {
+          "name": "dxb_rare_holo_neko_streamer_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cryo_crystal_scientist_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_solar_prism_envoy_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
         null,
-        { "name": "dxb_rare_holo_neko_streamer_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_cryo_crystal_scientist_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "dxb_rare_solar_prism_envoy_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        {
+          "name": "dxb_rare_holo_neko_streamer_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cryo_crystal_scientist_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_solar_prism_envoy_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
         null
       ]
     },
@@ -5760,9 +6514,24 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "dxb_rare_holo_neko_streamer_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_cryo_crystal_scientist_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "dxb_rare_solar_prism_envoy_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        {
+          "name": "dxb_rare_holo_neko_streamer_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_cryo_crystal_scientist_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "dxb_rare_solar_prism_envoy_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
         null
       ]
     },
@@ -5775,14 +6544,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_aether_valkyrie_seraph_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_neon_pulsar_idol_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_quantum_chrono_nav_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_mecha_bunny_striker_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_aether_valkyrie_seraph_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_neon_pulsar_idol_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_quantum_chrono_nav_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_epic_mecha_bunny_striker_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_epic_aether_valkyrie_seraph_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_neon_pulsar_idol_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_quantum_chrono_nav_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_mecha_bunny_striker_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_aether_valkyrie_seraph_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_neon_pulsar_idol_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_quantum_chrono_nav_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_mecha_bunny_striker_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5794,10 +6603,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_aether_valkyrie_seraph_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_neon_pulsar_idol_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_quantum_chrono_nav_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_mecha_bunny_striker_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_epic_aether_valkyrie_seraph_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_neon_pulsar_idol_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_quantum_chrono_nav_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_mecha_bunny_striker_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5809,14 +6638,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_eclipse_void_enforcer_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_starfleet_nova_cadet_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cyber_android_maid_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_zero_g_astronaut_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_epic_eclipse_void_enforcer_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_starfleet_nova_cadet_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_cyber_android_maid_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_zero_g_astronaut_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_epic_eclipse_void_enforcer_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_starfleet_nova_cadet_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cyber_android_maid_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_zero_g_astronaut_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_epic_eclipse_void_enforcer_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_starfleet_nova_cadet_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cyber_android_maid_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_zero_g_astronaut_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5828,10 +6697,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_epic_eclipse_void_enforcer_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_starfleet_nova_cadet_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cyber_android_maid_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_zero_g_astronaut_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_epic_eclipse_void_enforcer_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_starfleet_nova_cadet_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cyber_android_maid_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_zero_g_astronaut_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5843,14 +6732,54 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_plasma_angel_medic_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_synthwave_arcade_skater_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_biolum_xeno_botanist_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_omega_mecha_pilot_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_plasma_angel_medic_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_synthwave_arcade_skater_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_biolum_xeno_botanist_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_omega_mecha_pilot_back", "anchorY": 0, "faces": "left", "hem": "short" }
+        {
+          "name": "bkk_rare_plasma_angel_medic_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_synthwave_arcade_skater_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_biolum_xeno_botanist_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_omega_mecha_pilot_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_plasma_angel_medic_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_synthwave_arcade_skater_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_biolum_xeno_botanist_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_omega_mecha_pilot_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5862,10 +6791,30 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_plasma_angel_medic_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_synthwave_arcade_skater_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_biolum_xeno_botanist_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_omega_mecha_pilot_side", "anchorY": 0, "faces": "right", "hem": "short" }
+        {
+          "name": "bkk_rare_plasma_angel_medic_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_synthwave_arcade_skater_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_biolum_xeno_botanist_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_omega_mecha_pilot_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        }
       ]
     },
     {
@@ -5877,13 +6826,43 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_holo_neko_streamer_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cryo_crystal_scientist_front", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_solar_prism_envoy_front", "anchorY": 0, "faces": "right", "hem": "short" },
+        {
+          "name": "bkk_rare_holo_neko_streamer_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cryo_crystal_scientist_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_solar_prism_envoy_front",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
         null,
-        { "name": "bkk_rare_holo_neko_streamer_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_cryo_crystal_scientist_back", "anchorY": 0, "faces": "left", "hem": "short" },
-        { "name": "bkk_rare_solar_prism_envoy_back", "anchorY": 0, "faces": "left", "hem": "short" },
+        {
+          "name": "bkk_rare_holo_neko_streamer_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cryo_crystal_scientist_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_solar_prism_envoy_back",
+          "anchorY": 0,
+          "faces": "left",
+          "hem": "short"
+        },
         null
       ]
     },
@@ -5896,9 +6875,24 @@
       "minIslandRatio": 0.02,
       "optional": true,
       "cells": [
-        { "name": "bkk_rare_holo_neko_streamer_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_cryo_crystal_scientist_side", "anchorY": 0, "faces": "right", "hem": "short" },
-        { "name": "bkk_rare_solar_prism_envoy_side", "anchorY": 0, "faces": "right", "hem": "short" },
+        {
+          "name": "bkk_rare_holo_neko_streamer_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_cryo_crystal_scientist_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
+        {
+          "name": "bkk_rare_solar_prism_envoy_side",
+          "anchorY": 0,
+          "faces": "right",
+          "hem": "short"
+        },
         null
       ]
     },
@@ -5911,12 +6905,36 @@
       "minIslandRatio": 0.002,
       "optional": true,
       "cells": [
-        { "name": "wings_nocturne_vampire_bat", "anchorY": 0.5, "faces": "right" },
-        { "name": "wings_chronos_clockwork_gears", "anchorY": 0.5, "faces": "right" },
-        { "name": "wings_abyssal_leviathan_fins", "anchorY": 0.5, "faces": "right" },
-        { "name": "wings_monarch_autumn_maple", "anchorY": 0.5, "faces": "right" },
-        { "name": "wings_cyber_matrix_holo", "anchorY": 0.5, "faces": "right" },
-        { "name": "wings_magma_drake_wyvern", "anchorY": 0.5, "faces": "right" }
+        {
+          "name": "wings_nocturne_vampire_bat",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_chronos_clockwork_gears",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_abyssal_leviathan_fins",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_monarch_autumn_maple",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_cyber_matrix_holo",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_magma_drake_wyvern",
+          "anchorY": 0.5,
+          "faces": "right"
+        }
       ]
     },
     {
@@ -5928,12 +6946,44 @@
       "minIslandRatio": 0.05,
       "optional": true,
       "cells": [
-        { "name": "wings_shadow_raven_crow", "anchorY": 0.5, "faces": "right", "minIslandRatio": 0.25 },
-        { "name": "wings_stained_glass_prism", "anchorY": 0.5, "faces": "right", "keepHoles": true, "minIslandRatio": 0.25 },
-        { "name": "wings_venom_alchemist_moth", "anchorY": 0.5, "faces": "right", "keepHoles": true, "minIslandRatio": 0.25 },
-        { "name": "gloves_nocturne_vampire_claws", "anchorY": 0.5, "faces": "right", "keepHoles": true },
-        { "name": "gloves_chronos_aether_gauntlets", "anchorY": 0.5, "faces": "right", "keepHoles": true },
-        { "name": "gloves_abyssal_tide_bracers", "anchorY": 0.5, "faces": "right", "keepHoles": true }
+        {
+          "name": "wings_shadow_raven_crow",
+          "anchorY": 0.5,
+          "faces": "right",
+          "minIslandRatio": 0.25
+        },
+        {
+          "name": "wings_stained_glass_prism",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true,
+          "minIslandRatio": 0.25
+        },
+        {
+          "name": "wings_venom_alchemist_moth",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true,
+          "minIslandRatio": 0.25
+        },
+        {
+          "name": "gloves_nocturne_vampire_claws",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "gloves_chronos_aether_gauntlets",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "gloves_abyssal_tide_bracers",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        }
       ]
     },
     {
@@ -5945,9 +6995,24 @@
       "minIslandRatio": 0.01,
       "optional": true,
       "cells": [
-        { "name": "gloves_monarch_maple_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true },
-        { "name": "gloves_cyber_matrix_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true },
-        { "name": "gloves_magma_drake_gauntlets", "anchorY": 0.5, "faces": "right", "keepHoles": true },
+        {
+          "name": "gloves_monarch_maple_gloves",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "gloves_cyber_matrix_gloves",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "gloves_magma_drake_gauntlets",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true
+        },
         null,
         null,
         null
@@ -5967,10 +7032,28 @@
         null,
         null,
         null,
-        { "name": "gloves_shadow_shinobi_wraps", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
-        { "name": "gloves_stained_glass_cuffs", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
+        {
+          "name": "gloves_shadow_shinobi_wraps",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true,
+          "mirrorX": true
+        },
+        {
+          "name": "gloves_stained_glass_cuffs",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true,
+          "mirrorX": true
+        },
         null,
-        { "name": "gloves_venom_alchemist_gloves", "anchorY": 0.5, "faces": "right", "keepHoles": true, "mirrorX": true },
+        {
+          "name": "gloves_venom_alchemist_gloves",
+          "anchorY": 0.5,
+          "faces": "right",
+          "keepHoles": true,
+          "mirrorX": true
+        },
         null
       ]
     },
@@ -5983,12 +7066,42 @@
       "minIslandRatio": 0.005,
       "optional": true,
       "cells": [
-        { "name": "boots_nocturne_vampire_sabaton", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_chronos_steampunk_greaves", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_abyssal_siren_greaves", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_monarch_maple_boots", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_cyber_matrix_kicks", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_magma_drake_stompers", "anchorY": 0.9, "faces": "right", "keepHoles": true }
+        {
+          "name": "boots_nocturne_vampire_sabaton",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_chronos_steampunk_greaves",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_abyssal_siren_greaves",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_monarch_maple_boots",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_cyber_matrix_kicks",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_magma_drake_stompers",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        }
       ]
     },
     {
@@ -6000,9 +7113,24 @@
       "minIslandRatio": 0.005,
       "optional": true,
       "cells": [
-        { "name": "boots_shadow_shinobi_tabi", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_stained_glass_sabaton", "anchorY": 0.9, "faces": "right", "keepHoles": true },
-        { "name": "boots_venom_alchemist_boots", "anchorY": 0.9, "faces": "right", "keepHoles": true },
+        {
+          "name": "boots_shadow_shinobi_tabi",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_stained_glass_sabaton",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "boots_venom_alchemist_boots",
+          "anchorY": 0.9,
+          "faces": "right",
+          "keepHoles": true
+        },
         null,
         null,
         null
@@ -6017,9 +7145,544 @@
       "minIslandRatio": 0.15,
       "optional": true,
       "cells": [
-        { "name": "hair_celestial_seraph_front", "anchorY": 0.5, "faces": "right" },
-        { "name": "hair_celestial_seraph_side", "anchorY": 0.5, "faces": "right" },
-        { "name": "hair_celestial_seraph_back", "anchorY": 0.5, "faces": "left" }
+        {
+          "name": "hair_celestial_seraph_front",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_seraph_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hair_celestial_seraph_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_sm2_girl_fb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_sm_seraphim_rose_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_cyber_archon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_starlight_ribbon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        null,
+        {
+          "name": "dxb_sm_seraphim_rose_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_cyber_archon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_starlight_ribbon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_sm2_girl_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "dxb_sm_seraphim_rose_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_cyber_archon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "dxb_sm_starlight_ribbon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_sm2_boy_fb.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_sm_seraphim_rose_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_cyber_archon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_starlight_ribbon_front",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        null,
+        {
+          "name": "bkk_sm_seraphim_rose_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_cyber_archon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_starlight_ribbon_back",
+          "anchorY": 0,
+          "faces": "left",
+          "keepHoles": true
+        },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_sm2_boy_side.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 4,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.02,
+      "optional": true,
+      "cells": [
+        {
+          "name": "bkk_sm_seraphim_rose_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_cyber_archon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        {
+          "name": "bkk_sm_starlight_ribbon_side",
+          "anchorY": 0,
+          "faces": "right",
+          "keepHoles": true
+        },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_2t_dubai_royal_theme.jpg",
+      "pack": "village",
+      "rows": 2,
+      "cols": 3,
+      "smartInkMatte": true,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wnd_burj_khalifa",
+          "anchorY": 0.92
+        },
+        {
+          "name": "mono_ground_palm_jumeirah",
+          "anchorY": 0.5,
+          "opts": {
+            "keepHoles": true
+          }
+        },
+        {
+          "name": "dec_palm_jumeirah_island",
+          "anchorY": 0.88
+        },
+        {
+          "name": "dec_burj_al_arab_sail",
+          "anchorY": 0.9
+        },
+        {
+          "name": "dec_museum_of_the_future",
+          "anchorY": 0.88
+        },
+        {
+          "name": "dec_dubai_dallah_majlis",
+          "anchorY": 0.88
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v4a_hat_axolotl_crown.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_axolotl_crown",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_axolotl_crown_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_axolotl_crown_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v4b_hat_shiba_melonpan.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 3,
+      "holeMinArea": 600,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_shiba_melonpan_beret",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_shiba_melonpan_beret_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_shiba_melonpan_beret_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v4c_hat_froggy_lilypad.jpg",
+      "pack": "chibi",
+      "rows": 1,
+      "cols": 3,
+      "holeMinArea": 800,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "hat_froggy_lilypad_crown",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_froggy_lilypad_crown_side",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "hat_froggy_lilypad_crown_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "src": "art_src/sheet_v4d_cute_wings_glasses_props.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 3,
+      "holeMinArea": 400,
+      "minIslandRatio": 0.005,
+      "optional": true,
+      "cells": [
+        {
+          "name": "wings_jellyfish_pastel_float",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "wings_arcade_ufo_claw",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "face_froggy_blush_glasses",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_parfait_spoon_wand",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "gloves_boba_milk_tea",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        null
+      ]
+    },
+    {
+      "src": "art_src/sheet_v4e_shiba_tail_taiyaki_bag.jpg",
+      "pack": "chibi",
+      "rows": 2,
+      "cols": 2,
+      "holeMinArea": 250,
+      "minIslandRatio": 0.01,
+      "optional": true,
+      "cells": [
+        {
+          "name": "back_shiba_curly_tail",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_shiba_curly_tail_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        },
+        {
+          "name": "back_taiyaki_backpack",
+          "anchorY": 0.5,
+          "faces": "right"
+        },
+        {
+          "name": "back_taiyaki_backpack_back",
+          "anchorY": 0.5,
+          "faces": "left"
+        }
+      ]
+    },
+    {
+      "id": "sheet_v3g_hats_vinyl_tarot",
+      "src": "art_src/sheet_v3g_hats_vinyl_tarot.jpg",
+      "outDir": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        "hat_vinyl_gramophone_beret",
+        "hat_vinyl_gramophone_beret_side",
+        "hat_vinyl_gramophone_beret_back",
+        "hat_tarot_sunmoon_crown",
+        "hat_tarot_sunmoon_crown_side",
+        "hat_tarot_sunmoon_crown_back"
+      ]
+    },
+    {
+      "id": "sheet_v3g_hats_origami_painter",
+      "src": "art_src/sheet_v3g_hats_origami_painter.jpg",
+      "outDir": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        "hat_origami_crane_crown",
+        "hat_origami_crane_crown_side",
+        "hat_origami_crane_crown_back",
+        "hat_painter_palette_beret",
+        "hat_painter_palette_beret_side",
+        "hat_painter_palette_beret_back"
+      ]
+    },
+    {
+      "id": "sheet_v3g_hats_octopus_polaroid",
+      "src": "art_src/sheet_v3g_hats_octopus_polaroid.jpg",
+      "outDir": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        "hat_octopus_diver_helmet",
+        "hat_octopus_diver_helmet_side",
+        "hat_octopus_diver_helmet_back",
+        "hat_polaroid_shutter_cap",
+        "hat_polaroid_shutter_cap_side",
+        "hat_polaroid_shutter_cap_back"
+      ]
+    },
+    {
+      "id": "sheet_v3g_hats_ramen_carousel",
+      "src": "art_src/sheet_v3g_hats_ramen_carousel.jpg",
+      "outDir": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        "hat_ramen_naruto_bowl",
+        "hat_ramen_naruto_bowl_side",
+        "hat_ramen_naruto_bowl_back",
+        "hat_carousel_tent_crown",
+        "hat_carousel_tent_crown_side",
+        "hat_carousel_tent_crown_back"
+      ]
+    },
+    {
+      "id": "sheet_v3g_back_auras_packs1",
+      "src": "art_src/sheet_v3g_back_auras_packs1.jpg",
+      "outDir": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        "wings_gramophone_melody_aura",
+        "wings_tarot_orrery_halo",
+        "wings_origami_ema_shrine_aura",
+        "back_atelier_paint_satchel",
+        "back_atelier_paint_satchel_back",
+        "back_astro_octopus_tank"
+      ]
+    },
+    {
+      "id": "sheet_v3g_backpacks2_treble",
+      "src": "art_src/sheet_v3g_backpacks2_treble.jpg",
+      "outDir": "chibi",
+      "cols": 4,
+      "rows": 2,
+      "cells": [
+        "back_astro_octopus_tank_back",
+        "back_retro_polaroid_pack",
+        "back_retro_polaroid_pack_back",
+        "back_ramen_naruto_box",
+        "back_ramen_naruto_box_back",
+        "back_carousel_musicbox_pack",
+        "back_carousel_musicbox_pack_back",
+        "face_treble_clef_glasses"
+      ]
+    },
+    {
+      "id": "sheet_v3g_glasses_baton",
+      "src": "art_src/sheet_v3g_glasses_baton.jpg",
+      "outDir": "chibi",
+      "cols": 4,
+      "rows": 2,
+      "cells": [
+        "face_astrolabe_monocle_glasses",
+        "face_origami_paper_glasses",
+        "face_paint_splatter_glasses",
+        "face_diving_bubble_goggles",
+        "face_viewfinder_frame_glasses",
+        "face_narutomaki_swirl_glasses",
+        "face_windup_key_glasses",
+        "gloves_conductor_baton_wand"
+      ]
+    },
+    {
+      "id": "sheet_v3g_props_gloves_pianoboot",
+      "src": "art_src/sheet_v3g_props_gloves_pianoboot.jpg",
+      "outDir": "chibi",
+      "cols": 4,
+      "rows": 2,
+      "cells": [
+        "gloves_tarot_card_fan",
+        "gloves_origami_fan_wand",
+        "gloves_giant_paintbrush",
+        "gloves_bubble_coral_mitts",
+        "gloves_polaroid_photo_hand",
+        "gloves_ramen_ladle_chopsticks",
+        "gloves_cotton_candy_wand",
+        "boots_piano_key_loafers"
+      ]
+    },
+    {
+      "id": "sheet_v3g_boots_7",
+      "src": "art_src/sheet_v3g_boots_7.jpg",
+      "outDir": "chibi",
+      "cols": 4,
+      "rows": 2,
+      "cells": [
+        "boots_zodiac_sundial_boots",
+        "boots_origami_mizuhiki_geta",
+        "boots_paint_tube_sneakers",
+        "boots_flipper_diver_boots",
+        "boots_filmstrip_sneakers",
+        "boots_yatai_lantern_boots",
+        "boots_carousel_pony_booties",
+        null
+      ]
+    },
+    {
+      "id": "sheet_v3h_cute_weapons_6",
+      "file": "art_src/sheet_v3h_cute_weapons_6.jpg",
+      "cols": 3,
+      "rows": 2,
+      "outDir": "chibi",
+      "cells": [
+        [
+          "gloves_plush_bunny_mallet",
+          0,
+          0
+        ],
+        [
+          "gloves_sakura_crescent_scythe",
+          1,
+          0
+        ],
+        [
+          "gloves_cupid_strawberry_bow",
+          2,
+          0
+        ],
+        [
+          "gloves_macaron_knight_lance",
+          0,
+          1
+        ],
+        [
+          "gloves_kitty_paw_katana",
+          1,
+          1
+        ],
+        [
+          "gloves_gachapon_bubble_blaster",
+          2,
+          1
+        ]
       ]
     }
   ]

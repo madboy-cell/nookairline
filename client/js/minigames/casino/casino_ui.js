@@ -72,8 +72,11 @@ const SEAT_PRESETS = Object.freeze([
 const CHIP_ASSETS = Object.freeze({
   100: '/assets/ui/casino_chip_100_purple.png',
   500: '/assets/ui/casino_chip_500_green.png',
-  1000: '/assets/ui/casino_chip_1000_gold.png',
-  5000: '/assets/ui/casino_chip_max_fire.png',
+  1000: '/assets/ui/casino_chip_500_blue.png',
+  5000: '/assets/ui/casino_chip_1000_gold.png',
+  10000: '/assets/ui/casino_chip_100_purple.png',
+  20000: '/assets/ui/casino_chip_max_fire.png',
+  50000: '/assets/ui/casino_chip_max_fire.png',
 });
 
 const colorOf = (n) => (n === 0 ? 'green' : RED_NUMS.has(n) ? 'red' : 'black');
@@ -157,7 +160,8 @@ export class CasinoUI {
     this.tableId = null;
     this.game = 'pokdeng'; // 'pokdeng' | 'roulette'
     this.state = null;
-    this.selectedChip = 100;
+    this.selectedChip = 500;
+    this.lastPokdengBet = 500;
     this.pendingBets = []; // for roulette: [{ type, n?, amount }]
     this.lastSpinBets = []; // for roulette rebet
     this.history = []; // last results
@@ -242,6 +246,11 @@ export class CasinoUI {
     this.table = table;
     this.tableId = table.id;
     this.game = table.options?.casinoGame || table.casinoGame || 'pokdeng';
+    if (this.game === 'pokdeng' && ![500, 1000, 5000, 10000, 50000].includes(this.selectedChip)) {
+      this.selectedChip = 500;
+    } else if (this.game === 'roulette' && ![100, 500, 1000, 5000].includes(this.selectedChip)) {
+      this.selectedChip = 100;
+    }
 
     // Preserve state if `casino_state` arrived right before `table_state`
     if (!this.state || (this.state.tableId && this.state.tableId !== table.id) || (prevTableId && prevTableId !== table.id)) {
@@ -355,6 +364,9 @@ export class CasinoUI {
     if (!msg || !msg.type) return false;
     if (msg.type === 'casino_state') {
       if (this.tableId && msg.tableId && msg.tableId !== this.tableId) return false;
+      if (this.root.hidden) {
+        this.open({ id: msg.tableId, options: { casinoGame: msg.game || 'pokdeng' } });
+      }
       this.onState(msg);
       return true;
     }
@@ -413,19 +425,26 @@ export class CasinoUI {
       this.strikes = [];
     }
 
-    if (msg.phase === 'betting' && this.game === 'pokdeng') {
-      this._clearCardAnimations();
+    if (this.game === 'pokdeng') {
       const mySeat = msg.seats?.find((s) => s.userId === this.myUserId);
-      const roundKey = `${this.tableId || msg.tableId}:${msg.round || 1}`;
-      if (mySeat && (!mySeat.bet || mySeat.bet <= 0) && this._autoBetRoundKey !== roundKey) {
-        const chipAmt = this.selectedChip || 100;
-        const availGold = typeof this.myGold === 'number' ? this.myGold : (mySeat.gold || 0);
-        const betAmt = availGold >= chipAmt ? chipAmt : (availGold >= 100 ? 100 : 0);
-        if (betAmt > 0 && this.net?.send) {
-          this._autoBetRoundKey = roundKey;
-          mySeat.bet = betAmt;
-          this.net.send({ type: 'casino_bet', tableId: this.tableId || msg.tableId, amount: betAmt });
+      if (msg.phase === 'betting') {
+        this._clearCardAnimations();
+        const roundKey = `${this.tableId || msg.tableId}:${msg.round || 1}`;
+        if (mySeat && (!mySeat.bet || mySeat.bet <= 0) && this._autoBetRoundKey !== roundKey) {
+          this._manualBetRoundKey = null;
+          const availGold = typeof this.myGold === 'number' ? this.myGold : (mySeat.gold || 0);
+          const remembered = Math.min(50000, Math.max(500, Number(this.lastPokdengBet) || 500));
+          const betAmt = availGold >= remembered
+            ? remembered
+            : (availGold >= 500 ? Math.floor(availGold) : (availGold >= 100 ? 100 : 0));
+          if (betAmt > 0 && this.net?.send) {
+            this._autoBetRoundKey = roundKey;
+            mySeat.bet = betAmt;
+            this.net.send({ type: 'casino_bet', tableId: this.tableId || msg.tableId, amount: betAmt });
+          }
         }
+      } else if (mySeat?.bet > 0) {
+        this.lastPokdengBet = mySeat.bet;
       }
     }
 
@@ -657,7 +676,7 @@ export class CasinoUI {
         const sign = st.settle.profit > 0 ? '+' : '';
         settleHtml = `
           <div class="casino-settle ${color}">
-            ${out.toUpperCase()} ${sign}${fmtNum(st.settle.profit)} 🪙${st.chest ? ' 🎁' : ''}
+            ${out.toUpperCase()} ${sign}${fmtNum(st.settle.profit)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />${st.chest ? ' 🎁' : ''}
           </div>`;
       }
 
@@ -768,7 +787,7 @@ export class CasinoUI {
                 <span class="rs-kicker">${mySeat?.settle?.outcome === 'win' ? '🎉 YOU WON!' : mySeat?.settle?.outcome === 'lose' ? '💀 DEALER WINS' : mySeat?.settle ? '🤝 PUSH ROUND' : '👀 ROUND RESULT'}</span>
                 <strong class="rs-main">
                   ${mySeat?.settle
-                    ? `${mySeat.settle.profit > 0 ? '+' : ''}${fmtNum(mySeat.settle.profit)} 🪙 (${esc(mySeat?.info?.label || 'Hand')})`
+                    ? `${mySeat.settle.profit > 0 ? '+' : ''}${fmtNum(mySeat.settle.profit)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" /> (${esc(mySeat?.info?.label || 'Hand')})`
                     : esc(dealerInfoBanner)}
                 </strong>
               </div>
@@ -820,8 +839,8 @@ export class CasinoUI {
             <span class="pokdeng-phase-prompt">
               ${isBettingPhase
                 ? (mySeat?.bet > 0
-                    ? `<b>BET: ${fmtNum(mySeat.bet)}</b> — Tap a chip to change bet, or tap <b>⚡ DEAL</b>!`
-                    : `⚠️ <b>BET THIS ROUND!</b> — Tap 100 / 500 / 1,000 / MAX below!`)
+                    ? `<b>BET: ${fmtNum(mySeat.bet)}</b> ${mySeat.bet > 500 ? `<button type="button" class="pokdeng-reset-bet-btn" data-act="pokdeng-reset-bet" title="Reset bet to 500">↺ Reset</button>` : ''} — Tap chips to add (+), or tap <b>⚡ DEAL</b>!`
+                    : `⚠️ <b>BET THIS ROUND!</b> — Tap 500 / 1,000 / 5,000 / 10,000 / MAX below!`)
                 : phase === 'deal'
                 ? `🃏 <b>DEALING CARDS...</b> Mochi is dealing from the crystal slipper shoe!`
                 : phase === 'action'
@@ -844,10 +863,10 @@ export class CasinoUI {
           </div>
 
           <div class="casino-chip-rack pokdeng-chip-rack">
-            ${[100, 500, 1000, 5000].map((amt) => `
-              <button type="button" class="casino-chip pokdeng-chip-pill chip-${amt} ${amt === 5000 ? 'chip-max' : ''} ${this.selectedChip === amt ? 'selected' : ''}" data-chip="${amt}" ${!isBettingPhase ? 'disabled' : ''}>
-                <img class="chip-art-ico" src="${CHIP_ASSETS[amt]}" alt="" />
-                <span class="chip-inner">${amt === 5000 ? 'MAX' : (amt === 1000 ? '1,000' : amt)}</span>
+            ${[500, 1000, 5000, 10000, 50000].map((amt) => `
+              <button type="button" class="casino-chip pokdeng-chip-pill chip-${amt} ${amt === 50000 ? 'chip-max' : ''} ${this.selectedChip === amt ? 'selected' : ''}" data-chip="${amt}" title="${amt === 50000 ? 'Max Bet (50,000 Gold)' : `Add +${fmtNum(amt)} Gold`}" ${!isBettingPhase ? 'disabled' : ''}>
+                <img class="chip-art-ico" src="${CHIP_ASSETS[amt] || CHIP_ASSETS[500]}" alt="" />
+                <span class="chip-inner">${amt === 50000 ? 'MAX' : fmtNum(amt)}</span>
               </button>
             `).join('')}
             <button type="button" class="casino-btn deal-now-btn pokdeng-deal-fast-btn" data-act="pokdeng-deal" title="Lock Bet & Deal Cards Immediately" ${!isBettingPhase ? 'disabled' : ''}>
@@ -1477,15 +1496,15 @@ export class CasinoUI {
       plaqueSubTxt = `#${winningNum} ${winCol.toUpperCase()} HIT!`;
     } else if (isResult && hasWinningNum) {
       plaqueTopHtml = `🎯 <b>#${winningNum} ${winCol.toUpperCase()}</b>`;
-      plaqueSubTxt = myLastSettle?.total > 0 ? `NO HIT (-${fmtNum(myLastSettle.total)} 🪙)` : 'ROUND COMPLETE';
+      plaqueSubTxt = myLastSettle?.total > 0 ? `NO HIT (-${fmtNum(myLastSettle.total)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />)` : 'ROUND COMPLETE';
     } else if (isSpinning) {
       plaqueTopHtml = `⚡ <b>SPINNING...</b>`;
-      plaqueSubTxt = myTotalBet > 0 ? `BET LOCKED: ${fmtNum(myTotalBet)} 🪙` : 'WATCHING SPIN';
+      plaqueSubTxt = myTotalBet > 0 ? `BET LOCKED: ${fmtNum(myTotalBet)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />` : 'WATCHING SPIN';
     } else if (myTotalBet > 0) {
-      plaqueTopHtml = `🪙 <b>BET: ${fmtNum(myTotalBet)}</b> <img src="/assets/ui/icon_gold.png" alt="" />`;
+      plaqueTopHtml = `<img src="/assets/ui/icon_gold.png" alt="" /> <b>BET: ${fmtNum(myTotalBet)}</b>`;
       plaqueSubTxt = 'TAP ⚡ SPIN WHEN READY!';
     } else {
-      plaqueTopHtml = `🪙 <b>BET THIS ROUND!</b>`;
+      plaqueTopHtml = `<img src="/assets/ui/icon_gold.png" alt="" /> <b>BET THIS ROUND!</b>`;
       plaqueSubTxt = 'TAP GRID CELLS BELOW';
     }
 
@@ -1496,14 +1515,14 @@ export class CasinoUI {
       const hasHit = hitReturn > 0 || (myLastSettle?.profit || 0) > 0;
       const outcomeCls = hasHit ? 'is-win' : (myLastSettle?.total > 0 ? 'is-lose' : 'is-watch');
       const outcomeTitle = myLastSettle?.profit > 0
-        ? `🎉 YOU WON +${fmtNum(myLastSettle.profit)} 🪙!`
+        ? `🎉 YOU WON +${fmtNum(myLastSettle.profit)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />!`
         : (hasHit
-            ? `✨ HIT PAYOUT: +${fmtNum(hitReturn)} 🪙!`
+            ? `✨ HIT PAYOUT: +${fmtNum(hitReturn)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />!`
             : (myLastSettle?.total > 0
-                ? `💀 NO HIT THIS SPIN (-${fmtNum(myLastSettle.total)} 🪙)`
+                ? `💀 NO HIT THIS SPIN (-${fmtNum(myLastSettle.total)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" />)`
                 : `🎯 WINNING NUMBER: #${winningNum} ${winCol.toUpperCase()}`));
       const outcomeSub = hasHit
-        ? (myLastSettle.bigHit ? `⚡ ${myLastSettle.bigHit.mult}× LIGHTNING MULTIPLIER HIT!` : `Total Payout: +${fmtNum(hitReturn || myLastSettle.profit)} 🪙 • Winning spots lit below!`)
+        ? (myLastSettle.bigHit ? `⚡ ${myLastSettle.bigHit.mult}× LIGHTNING MULTIPLIER HIT!` : `Total Payout: +${fmtNum(hitReturn || myLastSettle.profit)} <img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" /> • Winning spots lit below!`)
         : `Winning spots highlighted on the mat below!`;
 
       resultShowcaseHtml = `
@@ -1721,7 +1740,7 @@ export class CasinoUI {
               <!-- 3D Chip Stacks & Callout Pills on the Circular Felt -->
               <img class="roulette-felt-chips left" src="/assets/ui/casino_chip_stacks_felt.png" alt="" />
               <div class="roulette-felt-callouts">
-                <div class="felt-callout-pill gold">👑 GOLDEN CROWN (10x)</div>
+                <div class="felt-callout-pill gold">👑 0 (10x)</div>
                 <div class="felt-callout-pill red">🔴 RED (2x)</div>
               </div>
             </div>
@@ -1788,7 +1807,7 @@ export class CasinoUI {
             <span class="pokdeng-phase-prompt">
               ${isBetting
                 ? (myTotalBet > 0
-                    ? `🪙 <b>YOUR BET: ${fmtNum(myTotalBet)}</b> (${this.pendingBets.length} spot${this.pendingBets.length > 1 ? 's' : ''}) — Tap grid for more or tap <b>⚡ SPIN</b>!`
+                    ? `<img class="mini-coin-ico" src="/assets/ui/icon_gold.png" alt="" /> <b>YOUR BET: ${fmtNum(myTotalBet)}</b> (${this.pendingBets.length} spot${this.pendingBets.length > 1 ? 's' : ''}) — Tap grid for more or tap <b>⚡ SPIN</b>!`
                     : `⚠️ <b>PLAYER BET TIME!</b> Tap numbers or RED / BLACK on the felt above to bet!`)
                 : isSpinning
                 ? `🎡 <b>NO MORE BETS — WHEEL SPINNING!</b> Watch the ivory ball in the zoomed wheel!`
@@ -1939,13 +1958,37 @@ export class CasinoUI {
     const btn = el.closest('button');
     if (btn && btn.disabled) return;
 
-    // Chip selection
+    // Chip selection (accumulates in Pok-Deng up to 50,000 MAX)
     if (el.dataset.chip) {
-      this.selectedChip = Number(el.dataset.chip);
+      const rawChip = Number(el.dataset.chip);
+      this.selectedChip = rawChip;
       try { sfx.coin(true); } catch {}
       if (this.game === 'pokdeng') {
         if (!this.state || this.state.phase === 'betting') {
-          this.net.send({ type: 'casino_bet', tableId: this.tableId, amount: this.selectedChip });
+          const mySeat = this.state?.seats?.find((s) => s.userId === this.myUserId);
+          const roundKey = `${this.tableId || this.state?.tableId || 1}:${this.state?.round || 1}`;
+          const currentEscrowed = Number(mySeat?.bet) || 0;
+          const totalAvail = Math.max(0, (typeof this.myGold === 'number' ? this.myGold : (mySeat?.gold || 0)) + currentEscrowed);
+          const maxAllowed = Math.min(50000, Math.floor(totalAvail));
+
+          let targetBet;
+          if (rawChip >= 50000) {
+            targetBet = maxAllowed >= 100 ? maxAllowed : 50000;
+          } else if (this._manualBetRoundKey === roundKey || currentEscrowed > 500) {
+            targetBet = currentEscrowed + rawChip;
+          } else {
+            // First manual chip tap when starting from default 500: if user tapped 10,000, start at 10,000 so 2 taps = 20,000
+            targetBet = (currentEscrowed === 500 && rawChip === 500) ? 1000 : rawChip;
+          }
+
+          if (maxAllowed >= 100 && targetBet > maxAllowed) {
+            targetBet = maxAllowed;
+          }
+          targetBet = Math.min(50000, Math.max(100, Math.floor(targetBet)));
+          this._manualBetRoundKey = roundKey;
+          this.lastPokdengBet = targetBet;
+          if (mySeat) mySeat.bet = targetBet;
+          this.net.send({ type: 'casino_bet', tableId: this.tableId, amount: targetBet });
         }
       }
       this.render();
@@ -1977,10 +2020,26 @@ export class CasinoUI {
         this.onExit();
         break;
       }
+      case 'pokdeng-reset-bet': {
+        if (!this.state || this.state.phase === 'betting') {
+          this._manualBetRoundKey = null;
+          this.selectedChip = 500;
+          this.lastPokdengBet = 500;
+          const mySeat = this.state?.seats?.find((s) => s.userId === this.myUserId);
+          const currentEscrowed = Number(mySeat?.bet) || 0;
+          const totalAvail = Math.max(0, (typeof this.myGold === 'number' ? this.myGold : (mySeat?.gold || 0)) + currentEscrowed);
+          const resetAmt = totalAvail >= 500 ? 500 : (totalAvail >= 100 ? 100 : 500);
+          if (mySeat) mySeat.bet = resetAmt;
+          this.net.send({ type: 'casino_bet', tableId: this.tableId, amount: resetAmt });
+          this.render();
+        }
+        break;
+      }
       case 'pokdeng-deal': {
         if (!this.state || this.state.phase === 'betting') {
           const mySeat = this.state?.seats?.find((s) => s.userId === this.myUserId);
-          const amt = mySeat?.bet || this.selectedChip || 100;
+          const amt = mySeat?.bet || this.lastPokdengBet || this.selectedChip || 500;
+          this.lastPokdengBet = amt;
           this.net.send({ type: 'casino_bet', tableId: this.tableId, amount: amt, dealNow: true });
         }
         break;

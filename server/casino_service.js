@@ -719,7 +719,38 @@ export function createCasinoAdapter({
       }
     },
 
-    onJoin(t, userId) {
+    onJoin(t, userId, seatIdx = null) {
+      if (t.casino) {
+        const c = t.casino;
+        let seat = c.seats?.find((s) => s.userId === userId);
+        if (!seat) {
+          const idx = seatIdx ?? t.seats.findIndex((s) => s.userId === userId);
+          if (idx >= 0 && c.seats?.[idx]) {
+            seat = c.seats[idx];
+            const tSeat = t.seats[idx] || {};
+            const p = db.getProfile(userId);
+            seat.userId = userId;
+            seat.name = tSeat.name || p?.username || userId;
+            seat.isBot = false;
+            seat.gold = p ? (p.gold || 0) : 0;
+            if (c.game === 'pokdeng') {
+              seat.bet = 0;
+              seat.cheer = false;
+              seat.cards = null;
+              seat.info = null;
+              seat.action = null;
+            } else if (c.game === 'roulette') {
+              seat.bets = [];
+              seat.totalBet = 0;
+            }
+          }
+        }
+        const allHumans = getHumans(t);
+        if (allHumans.length) {
+          sendMsg(allHumans, buildCasinoState(t));
+          return;
+        }
+      }
       sendStateTo(t, userId);
     },
   };

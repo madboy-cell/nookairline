@@ -35,18 +35,36 @@ export function isUnderdog(m, seat) {
 
 const byRentDesc = (m) => (a, b) => rentFor(m, b) - rentFor(m, a) || investedValue(TILES[b], m.tiles[b].level) - investedValue(TILES[a], m.tiles[a].level) || a - b;
 
-/** A rival's skill can't weaken an indestructible Tier-4 monument. */
-const hostileTo = (mod) => mod.reverseTrap || (typeof mod.rentMult === 'number' && mod.rentMult < 1);
+/** A rival's skill can't weaken an indestructible Tier-4 monument with 0x rent, EXCEPT Phantom's reverseTrap Mirror! */
+const hostileTo = (mod) => !mod.reverseTrap && typeof mod.rentMult === 'number' && mod.rentMult < 1;
 
-function resolveTiles(m, seat, a) {
+/** In a Soul-Link Combo, the Pet avoids overwriting tiles the Owner just modified on this same cast. */
+const comboHas = (m, ctx, i) => !!(ctx?.isPetUlt && m._comboTiles instanceof Set && m._comboTiles.has(i));
+
+function preferUnmodifiedInCombo(m, ctx, list, count) {
+  if (!ctx?.isPetUlt || !(m._comboTiles instanceof Set) || !m._comboTiles.size || list.length <= 1) return list.slice(0, count);
+  const fresh = list.filter((i) => !m._comboTiles.has(i));
+  if (fresh.length >= count) return fresh.slice(0, count);
+  return [...fresh, ...list.filter((i) => m._comboTiles.has(i))].slice(0, count);
+}
+
+function resolveTiles(m, seat, a, ctx = null) {
   const me = m.players[seat];
   const count = a.count ?? 1;
   switch (a.target) {
-    case 'my_tiles': return ownedTiles(m, seat).sort(byRentDesc(m)).slice(0, count);
-    case 'my_best': { const b = bestTile(m, seat); return b == null ? [] : [b]; }
+    case 'my_tiles': {
+      const sorted = ownedTiles(m, seat).sort(byRentDesc(m));
+      return preferUnmodifiedInCombo(m, ctx, sorted, count);
+    }
+    case 'my_best': {
+      const sorted = ownedTiles(m, seat).sort(byRentDesc(m));
+      if (!sorted.length) return [];
+      return preferUnmodifiedInCombo(m, ctx, sorted, 1);
+    }
     case 'rival_best': {
       const all = rivalsOf(m, seat).flatMap((p) => ownedTiles(m, p.seat));
-      return all.filter((i) => !(m.tiles[i].level >= 4 && hostileTo(a.modifier || {}))).sort(byRentDesc(m)).slice(0, count);
+      const valid = all.filter((i) => !(m.tiles[i].level >= 4 && hostileTo(a.modifier || {}))).sort(byRentDesc(m));
+      return preferUnmodifiedInCombo(m, ctx, valid, count);
     }
     case 'around_caster': {
       const r = a.radius ?? 2;
@@ -64,15 +82,17 @@ function resolveTiles(m, seat, a) {
       const out = [];
       for (let d = 1; out.length < count && d < MONO.BOARD_N; d++) {
         const i = wrap(me.pos - d);
-        if (i !== 0) out.push(i);
+        if (i !== 0 && !comboHas(m, ctx, i)) out.push(i);
       }
       return out;
     }
     case 'ahead_of_rivals': {
       const targets = a.rival === 'richest_rival' ? [richestRival(m, seat)].filter(Boolean) : rivalsOf(m, seat).sort((x, y) => netWorth(m, y.seat) - netWorth(m, x.seat));
       const out = [];
+      const baseOff = a.offset ?? 4;
       for (const p of targets) {
-        const i = wrap(p.pos + (a.offset ?? 4));
+        let i = wrap(p.pos + baseOff);
+        if (comboHas(m, ctx, i)) i = wrap(p.pos + baseOff + (baseOff < 0 ? -1 : 1));
         if (i !== 0 && !out.includes(i)) out.push(i);
         if (out.length >= count) break;
       }
@@ -81,8 +101,21 @@ function resolveTiles(m, seat, a) {
     case 'before_my_best': {
       const out = [];
       for (const b of ownedTiles(m, seat).sort(byRentDesc(m))) {
-        const i = wrap(b - (a.offset ?? 2));
+        let i = wrap(b - (a.offset ?? 2));
+        if (comboHas(m, ctx, i)) i = wrap(b - ((a.offset ?? 2) + 1));
         if (i !== 0 && m.tiles[i].owner !== seat && !out.includes(i)) out.push(i);
+        if (out.length >= count) break;
+      }
+      return out;
+    }
+    case 'around_my_best': {
+      const out = [];
+      for (const b of ownedTiles(m, seat).sort(byRentDesc(m))) {
+        for (const d of [-1, 1, -2, 2]) {
+          const i = wrap(b + d);
+          if (i !== 0 && m.tiles[i].owner !== seat && !comboHas(m, ctx, i) && !out.includes(i)) out.push(i);
+          if (out.length >= count) break;
+        }
         if (out.length >= count) break;
       }
       return out;
@@ -95,6 +128,13 @@ function resolvePlayers(m, seat, target) {
   if (target === 'self') return [m.players[seat]];
   if (target === 'all_rivals') return rivalsOf(m, seat);
   if (target === 'richest_rival') { const r = richestRival(m, seat); return r ? [r] : []; }
+  if (target === 'around_caster_rivals') {
+    const me = m.players[seat];
+    const nearby = rivalsOf(m, seat).filter((p) => Math.abs(stepsBetween(p.pos, me.pos)) <= 4);
+    if (nearby.length) return nearby;
+    const r = richestRival(m, seat);
+    return r ? [r] : [];
+  }
   return [];
 }
 
@@ -110,7 +150,7 @@ export function runActions(ctx, actions = []) {
 
 /**
  * 🛡️ A Barrier Shield blocks a hostile Pet ult (Dopamine Patch §3). One shield makes the target immune to the
- * rest of that cast. Owner ults keep their existing behaviour (shields only block rent).
+ * rest of that cast. Owner ults keep their existing behaviour (shields only block rent, unless shattered by SHATTER_SHIELD).
  */
 function shieldBlocks(ctx, p) {
   if (!ctx.isPetUlt || !p || p.seat === ctx.seat) return false;
@@ -132,7 +172,26 @@ function runAction(ctx, a) {
       let n = 0;
       for (const p of resolvePlayers(m, seat, a.target)) {
         if (shieldBlocks(ctx, p)) { n++; continue; }
-        p.status = { ...a.status, id: ctx.skillId, owner: seat, fresh: p.seat === seat };
+        // 🔗 Smart Soul-Link Combo: if our Pet casts right after our Owner hexed this rival, merge compatible statuses
+        // (e.g. fixedRoll: 3 + moveDir: -1 = moonwalk 3 steps backwards, and never erase skipTurn)!
+        if (ctx.isPetUlt && p.status && p.status.owner === seat && p.seat !== seat) {
+          const prev = p.status;
+          const merged = {
+            ...prev,
+            ...a.status,
+            turnsLeft: Math.max(prev.turnsLeft || 1, a.status.turnsLeft || 1),
+            id: ctx.skillId,
+            owner: seat,
+            fresh: false,
+          };
+          if (prev.skipTurn || a.status.skipTurn) merged.skipTurn = true;
+          if (prev.moveDir !== undefined || a.status.moveDir !== undefined) merged.moveDir = a.status.moveDir ?? prev.moveDir;
+          if (prev.fixedRoll !== undefined || a.status.fixedRoll !== undefined) merged.fixedRoll = a.status.fixedRoll ?? prev.fixedRoll;
+          if (prev.maxRoll !== undefined || a.status.maxRoll !== undefined) merged.maxRoll = Math.min(prev.maxRoll ?? 6, a.status.maxRoll ?? 6);
+          p.status = merged;
+        } else {
+          p.status = { ...a.status, id: ctx.skillId, owner: seat, fresh: p.seat === seat };
+        }
         ops.ev({ t: 'status', seat: p.seat, by: seat, status: p.status });
         n++;
       }
@@ -143,33 +202,85 @@ function runAction(ctx, a) {
       const turnsLeft = ctx.isPetUlt && a.modifier?.turnsLeft
         ? Math.max(1, Math.round(a.modifier.turnsLeft * 0.67))
         : a.modifier?.turnsLeft;
-      for (const i of resolveTiles(m, seat, a)) {
+      for (const i of resolveTiles(m, seat, a, ctx)) {
         m.tiles[i].modifier = { ...a.modifier, ...(turnsLeft != null ? { turnsLeft } : {}), id: ctx.skillId, owner: seat };
+        if (m._comboTiles instanceof Set) m._comboTiles.add(i);
         ops.ev({ t: 'modifier', tile: i, by: seat, modifier: m.tiles[i].modifier });
         n++;
       }
       return n;
     }
+    case 'SHATTER_SHIELD': {
+      let n = 0;
+      const count = a.count ?? 1;
+      for (const p of resolvePlayers(m, seat, a.target || 'richest_rival')) {
+        if (p.shields > 0) {
+          const stripped = Math.min(p.shields, count);
+          p.shields -= stripped;
+          ops.ev({ t: 'shield_break', seat: p.seat, by: seat, byPet: !!ctx.isPetUlt, skillId: ctx.skillId, count: stripped });
+          n += stripped;
+        }
+      }
+      return n;
+    }
+    case 'STEAL_SHIELD': {
+      let n = 0;
+      const count = a.count ?? 1;
+      for (const p of resolvePlayers(m, seat, a.target || 'richest_rival')) {
+        if (p.shields > 0) {
+          const stolen = Math.min(p.shields, count);
+          p.shields -= stolen;
+          me.shields += stolen;
+          ops.ev({ t: 'shield_break', seat: p.seat, by: seat, byPet: !!ctx.isPetUlt, skillId: ctx.skillId, count: stolen, stolen: true });
+          ops.ev({ t: 'grant', seat, shields: stolen, stolenFrom: p.seat });
+          n += stolen;
+        }
+      }
+      if (!n && a.fallbackGrant) {
+        me.shields += 1;
+        ops.ev({ t: 'grant', seat, shields: 1 });
+        n = 1;
+      }
+      return n;
+    }
     case 'MOVE_PLAYERS': {
       let n = 0;
+      if (a.target === 'self') {
+        const steps = a.steps ?? 0;
+        if (steps > 0) {
+          if (ops.walkSelf) ops.walkSelf(seat, steps, 'dive');
+          else {
+            const path = [];
+            for (let s = 1; s <= steps; s++) path.push(wrap(me.pos + s));
+            me.pos = path[path.length - 1];
+            ops.ev({ t: 'move', seat, path, kind: 'dive', dir: 1 });
+          }
+          return 1;
+        }
+        return 0;
+      }
+      const bestOwned = a.pullTowardMyBest ? (bestTile(m, seat) ?? me.pos) : me.pos;
       for (const p of resolvePlayers(m, seat, a.target)) {
         if (p.bankrupt) continue;
         if (shieldBlocks(ctx, p)) { n++; continue; }
         let steps = a.steps ?? 0;
-        if (a.pullTowardCaster) {
-          const d = stepsBetween(p.pos, me.pos);
+        const pullN = a.pullTowardMyBest || a.pullTowardCaster;
+        if (pullN) {
+          const anchor = a.pullTowardMyBest ? bestOwned : me.pos;
+          const d = stepsBetween(p.pos, anchor);
           if (d === 0) continue;
-          steps = Math.sign(d) * Math.min(a.pullTowardCaster, Math.abs(d));
+          steps = Math.sign(d) * Math.min(pullN, Math.abs(d));
         }
         if (!steps) continue;
         const path = [];
         for (let s = 1; s <= Math.abs(steps); s++) path.push(wrap(p.pos + Math.sign(steps) * s));
-        ops.forcedLand(p.seat, path[path.length - 1], path, 'pull');
+        ops.forcedLand(p.seat, path[path.length - 1], path, a.steps > 0 ? 'parade' : 'pull');
         n++;
       }
       return n;
     }
     case 'MODIFY_PROPERTY': {
+      if (a.ownerOnly && ctx.isPetUlt) return 0;
       const r = richestRival(m, seat);
       if (!r) return 0;
       const i = bestTile(m, r.seat, (k) => m.tiles[k].level < 4 && m.tiles[k].level > 0) ?? bestTile(m, r.seat, (k) => m.tiles[k].level < 4);
@@ -179,6 +290,25 @@ function runAction(ctx, a) {
       t.level = Math.max(0, Math.min(MONO.MAX_BUILD_TIER, t.level + (a.level ?? -1)));
       ops.ev({ t: 'tier', tile: i, level: t.level, from: before, by: seat, smite: true });
       if (a.bounty) ops.pay(null, seat, cash(a.bounty), 'bounty');
+      return 1;
+    }
+    case 'MODIFY_OWN_PROPERTY': {
+      if (a.ownerOnly && ctx.isPetUlt) return 0;
+      const candidates = ownedTiles(m, seat).filter((k) => m.tiles[k].level < MONO.MAX_BUILD_TIER);
+      if (!candidates.length) return 0;
+      if (a.target === 'my_cheapest') {
+        candidates.sort((x, y) => m.tiles[x].level - m.tiles[y].level || investedValue(TILES[x], m.tiles[x].level) - investedValue(TILES[y], m.tiles[y].level));
+      } else {
+        candidates.sort(byRentDesc(m));
+      }
+      const [i] = preferUnmodifiedInCombo(m, ctx, candidates, 1);
+      if (i == null) return 0;
+      const t = m.tiles[i];
+      const before = t.level;
+      t.level = Math.min(MONO.MAX_BUILD_TIER, t.level + (a.level ?? 1));
+      if (t.level === before) return 0;
+      if (m._comboTiles instanceof Set) m._comboTiles.add(i);
+      ops.ev({ t: 'tier', tile: i, level: t.level, from: before, by: seat });
       return 1;
     }
     case 'TRANSFER_CASH': {
@@ -194,7 +324,7 @@ function runAction(ctx, a) {
       ops.pay(null, seat, cash(a.amount), 'skill');
       return 1;
     case 'SET_TILE_TIER': {
-      const [i] = resolveTiles(m, seat, a);
+      const [i] = resolveTiles(m, seat, a, ctx);
       if (i == null) return 0;
       const before = m.tiles[i].level;
       const next = a.step ? Math.min(a.tier, before + a.step) : a.tier;
@@ -208,7 +338,9 @@ function runAction(ctx, a) {
       let n = 0;
       for (let i = 0; i < MONO.BOARD_N; i++) {
         const mod = m.tiles[i].modifier;
-        if (tileSide(i) !== side || !mod || mod.owner === seat) continue;
+        if (!mod || mod.owner === seat) continue;
+        // Wipes rival traps on the caster's current board side AND cleanses hostile traps on all caster-owned properties
+        if (tileSide(i) !== side && m.tiles[i].owner !== seat) continue;
         m.tiles[i].modifier = null;
         ops.ev({ t: 'modifier', tile: i, by: seat, modifier: null });
         n++;
@@ -294,6 +426,7 @@ export function petSkill(p) {
 export function castUltimate(m, seat, ops, { scale = 1, skill: overrideSkill = null, autoChoice = false, isPetUlt = false } = {}) {
   const p = m.players[seat];
   const skill = overrideSkill || playerSkill(p);
+  if (!isPetUlt) m._comboTiles = new Set();
   const ctx = { m, seat, ops, scale, skillId: skill.id, autoChoice, isPetUlt };
   const mono = skill.monopoly || {};
   const base = mono.baseCash ? runActions(ctx, [{ action: 'GAIN_CASH', amount: mono.baseCash }]) : 0;

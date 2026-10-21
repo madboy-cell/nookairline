@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+.git/
+art_src/
+qa_artifacts/
+.backup_*/
+tests/
+scripts/
+server/data/*.backup*
+server/data/*.tmp
+*.md

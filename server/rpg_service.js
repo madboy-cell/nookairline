@@ -3,7 +3,7 @@
 import { ACCESSORIES, DICE_SKINS, PETS, LEGACY_PET_RARITY, normalizePetId } from '../shared/catalog_gear_pets.js';
 import { OUTFITS } from '../shared/costumes_catalog.js';
 import { HAIRSTYLES, HAIR_COLORS, HAIR_TIERS, HAIR_DYE_TIERS } from '../shared/hair_catalog.js';
-import { SLOTS } from '../shared/progression.js';
+import { SLOTS, recalcPlayerCP } from '../shared/progression.js';
 import { WONDERS, DECOR, MAX_WONDER_STARS, WONDER_DUPE_SHARDS } from '../shared/catalog_landmarks.js';
 import { utcDay } from '../shared/village_rules.js';
 import {
@@ -16,6 +16,18 @@ import {
   SUPER_MYTHIC, SUPER_MYTHIC_POOL, superMythicEnabled, rollBox1Rarities, GIFT_PULL,
 } from '../shared/rpg_rules.js';
 import { grantExp, refreshDerived } from './economy_service.js';
+import { computeUniversalStats, inspectItemAttune, attuneCostFor, STAT_KEYS } from '../shared/universal_stats.js';
+import { detectBuild, diffBuilds } from '../shared/dash_builds.js';
+import {
+  CHARMS,
+  computeCharmStats,
+  upsertCharmToProfile,
+  getCharmPlus,
+  findBestCharmForId,
+  consumeCharmInBag,
+  salvageCharmInBag,
+  toggleCharmLockInBag,
+} from '../shared/charm_catalog.js';
 
 const fail = (error, extra = {}) => ({ ok: false, error, ...extra });
 const pick = (arr, rng) => arr[Math.min(arr.length - 1, Math.floor(rng() * arr.length))];
@@ -90,6 +102,36 @@ export function migrateRpg(p) {
   p.gacha.gifts_pending = Array.isArray(p.gacha.gifts_pending) ? p.gacha.gifts_pending.slice(0, GIFT_PULL.MAX_PENDING) : [];
   p.badges = Array.isArray(p.badges) ? p.badges : [];
   p.bag_items = p.bag_items || {};
+  if (!Array.isArray(p.charms)) {
+    p.charms = (p.charms && typeof p.charms === 'object') ? Object.values(p.charms).filter((c) => c && c.id) : [];
+  }
+  p.charms.forEach((c, idx) => {
+    if (!c || typeof c !== 'object') return;
+    if (!c.uid) c.uid = `chm_mig_${idx}_${c.id || 'charm'}`;
+    const plus = getCharmPlus(c);
+    c.plus = plus;
+    c.level = plus + 1;
+    c.locked = Boolean(c.locked);
+  });
+  if (p.equipped?.charm?.id) {
+    const cDef = CHARMS[p.equipped.charm.id];
+    const ownedC = findBestCharmForId(p.charms, p.equipped.charm.uid || p.equipped.charm.id);
+    if (!cDef || !ownedC) {
+      p.equipped.charm = null;
+    } else {
+      const plus = getCharmPlus(ownedC);
+      p.equipped.charm = {
+        uid: ownedC.uid,
+        id: cDef.id,
+        tier: cDef.tier,
+        auraKind: cDef.auraKind,
+        grade: ownedC.grade || 'B',
+        plus,
+        level: plus + 1,
+        stats: { ...(ownedC.stats || {}) },
+      };
+    }
+  }
   p.star_essence = Math.max(0, p.star_essence | 0);
   p.pets = Array.isArray(p.pets) ? p.pets : [];
 
@@ -198,7 +240,81 @@ export function migrateRpg(p) {
     const own = p.pets.find((x) => x.uid === eq.uid) || p.pets.find((x) => x.id === normEqId) || p.pets[0];
     if (own) syncEquippedPet(p, own);
   }
+  p.glamour = { outfit: null, hat: null, face: null, gloves: null, boots: null, wings: null, ...(p.glamour || {}) };
+  for (const s of SLOTS) {
+    if (p.glamour[s] && !p.inventory?.[p.glamour[s]]) p.glamour[s] = null;
+  }
+  syncGlamourAndAttune(p);
+  p.dash_builds_found = Array.isArray(p.dash_builds_found) && p.dash_builds_found.length
+    ? Array.from(new Set(['balanced', ...p.dash_builds_found]))
+    : ['balanced'];
+  p.dash_build_tiers = (p.dash_build_tiers && typeof p.dash_build_tiers === 'object') ? p.dash_build_tiers : {};
+  const defaultPresets = [
+    { name: '⚡ Speed', equipped: null, glamour: null, build: null },
+    { name: '🪙 Farm', equipped: null, glamour: null, build: null },
+    { name: '🍀 Chaos', equipped: null, glamour: null, build: null },
+  ];
+  if (!Array.isArray(p.dash_presets) || p.dash_presets.length !== 3) {
+    p.dash_presets = defaultPresets;
+  } else {
+    p.dash_presets = p.dash_presets.map((pr, idx) => ({
+      name: String(pr?.name || defaultPresets[idx].name).slice(0, 18),
+      equipped: pr?.equipped || null,
+      glamour: pr?.glamour || null,
+      build: pr?.build || null,
+    }));
+  }
   return p;
+}
+
+export function syncGlamourAndAttune(p) {
+  if (!p?.equipped) return;
+  p.glamour = { outfit: null, hat: null, face: null, gloves: null, boots: null, wings: null, ...(p.glamour || {}) };
+  p.equipped.glamour = { ...p.glamour };
+  for (const s of SLOTS) {
+    const eqSlot = p.equipped[s];
+    if (!eqSlot?.id) continue;
+    const own = p.inventory?.[eqSlot.id];
+    if (own?.attune?.stat) eqSlot.attune = { stat: own.attune.stat, count: own.attune.count | 0 };
+    else delete eqSlot.attune;
+    if (p.glamour[s]) eqSlot.glamour = p.glamour[s];
+    else delete eqSlot.glamour;
+  }
+}
+
+export function checkBuildDiscovery(p, beforeBonus = null) {
+  if (!p) return null;
+  p.dash_builds_found = Array.isArray(p.dash_builds_found) ? p.dash_builds_found : ['balanced'];
+  p.dash_build_tiers = (p.dash_build_tiers && typeof p.dash_build_tiers === 'object') ? p.dash_build_tiers : {};
+  const afterBonus = computeUniversalStats(p).bonus;
+  const b = detectBuild(afterBonus);
+  let newlyFound = false;
+  let hybridBonusDiamonds = 0;
+  if (!p.dash_builds_found.includes(b.id)) {
+    p.dash_builds_found.push(b.id);
+    newlyFound = true;
+    if (b.kind === 'hybrid') {
+      hybridBonusDiamonds = 50;
+      p.diamonds = (p.diamonds || 0) + hybridBonusDiamonds;
+    }
+  }
+  let tierUp = false;
+  if (b.kind === 'main') {
+    const prevTier = p.dash_build_tiers[b.id] | 0;
+    if (b.tier > prevTier) {
+      if (prevTier > 0 || beforeBonus) tierUp = true;
+      p.dash_build_tiers[b.id] = b.tier;
+    }
+  }
+  const diff = beforeBonus ? diffBuilds(beforeBonus, afterBonus) : null;
+  return {
+    build: b,
+    newlyFound,
+    hybridBonusDiamonds,
+    tierUp: Boolean(tierUp || diff?.tierUp),
+    toast: diff?.toast || '',
+    diff,
+  };
 }
 
 const newPetUid = (p) => `pet${(p.pet_seq = (p.pet_seq | 0) + 1)}`;
@@ -568,6 +684,7 @@ export function blacksmithForge(p, { itemId, useBerries, useScroll }, now, rng =
   if ((it.dupes | 0) < dupes) return fail('not_enough_dupes', { need: dupes, have: it.dupes | 0 });
   if (p.berries < berries) return fail('not_enough_berries', { cost: berries });
   if ((p.bag_items?.[FORGE.SCROLL_ITEM] | 0) < scrolls) return fail('not_enough_scrolls');
+  const beforeBonus = computeUniversalStats(p).bonus;
   const onsenPct = p.buffs?.blacksmith && p.buffs.blacksmith.until > now ? p.buffs.blacksmith.pct | 0 : 0;
   const chance = forgeChance(from, { useBerries: !!useBerries, useScroll: !!scrolls, onsenPct, pityFails: it.pity });
   p.gold -= gold; p.berries -= berries; it.dupes = (it.dupes | 0) - dupes;
@@ -581,25 +698,172 @@ export function blacksmithForge(p, { itemId, useBerries, useScroll }, now, rng =
   } else {
     it.pity = Math.min(FORGE.PITY_FAILS_GUARANTEE, (it.pity | 0) + (scrolls ? FORGE.SCROLL_PITY_FAILS : 1));
   }
+  syncGlamourAndAttune(p);
   refreshDerived(p);
+  const buildUpdate = success ? checkBuildDiscovery(p, beforeBonus) : null;
   return {
     ok: true, itemId, success, newStar: it.refine, chance, pity: it.pity, pityPct: it.pity * FORGE.PITY_PER_FAIL,
-    spent: { gold, berries, dupes, scrolls }, onsenPct, sovereign,
+    spent: { gold, berries, dupes, scrolls }, onsenPct, sovereign, buildUpdate,
+  };
+}
+
+/**
+ * gear_attune { itemId, stat, useScroll? } — 🎯 Gear Attunement (GEAR_ATTUNEMENT_GLAMOUR.md §1).
+ * Unlocks at +5; redirects the item's secondary stat line to `stat` (1st attune is FREE).
+ */
+export function gearAttune(p, { itemId, stat, useScroll = false } = {}) {
+  migrateRpg(p);
+  const own = p.inventory?.[itemId];
+  if (!own || !itemDef(itemId)) return fail('not_owned');
+  const curAttune = own.attune?.stat || null;
+  const info = inspectItemAttune(itemId, own.refine | 0, curAttune);
+  if (!info.attunable) return fail(info.reason || 'not_attunable');
+  if (!info.unlocked) return fail('refine_too_low', { minRefine: 5, have: own.refine | 0 });
+  if (!stat || !STAT_KEYS.includes(stat) || !info.allowedStats.includes(stat)) return fail('invalid_stat');
+  if (stat === info.activeSecStat) return fail('same_stat');
+
+  const count = own.attune?.count | 0;
+  const cost = attuneCostFor(count);
+  const hasScroll = useScroll && (p.bag_items?.attune_scroll | 0) > 0;
+  const spent = { gold: 0, berries: 0, scroll: 0 };
+  if (hasScroll) {
+    p.bag_items.attune_scroll -= 1;
+    spent.scroll = 1;
+  } else if (!cost.free) {
+    if ((p.gold || 0) < cost.gold) return fail('not_enough_gold', { cost: cost.gold });
+    if ((p.berries || 0) < cost.berries) return fail('not_enough_berries', { cost: cost.berries });
+    p.gold -= cost.gold;
+    p.berries -= cost.berries;
+    spent.gold = cost.gold;
+    spent.berries = cost.berries;
+  }
+
+  const beforeBonus = computeUniversalStats(p).bonus;
+  own.attune = {
+    stat: stat === info.defaultSecStat ? null : stat,
+    count: count + 1,
+  };
+  syncGlamourAndAttune(p);
+  refreshDerived(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+  return {
+    ok: true,
+    itemId,
+    slot: info.slot,
+    stat,
+    attune: own.attune,
+    spent,
+    cp: p.cp,
+    buildUpdate,
   };
 }
 
 // ---------------------------------------------------------------------------------------------
-// Wardrobe (6 slots + dice + pet)
+// Wardrobe (6 slots + dice + pet) & 👗 Glamour + 🎒 Loadout Presets
 // ---------------------------------------------------------------------------------------------
-/** wardrobe_equip { slot, itemId|null, hide? } — slot 'pet' takes a pet uid or canonical petId; 'dice' equips a 3D Dice Skin. */
+export function charmEquip(p, { charmId, charmUid } = {}) {
+  migrateRpg(p);
+  const beforeBonus = computeUniversalStats(p).bonus;
+  const targetKey = charmUid || charmId;
+  if (!targetKey) {
+    p.equipped.charm = null;
+    if (p.village) refreshDerived(p);
+    else p.cp = recalcPlayerCP(p);
+    const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+    return { ok: true, slot: 'charm', itemId: null, charm: null, equipped: p.equipped, cp: p.cp, buildUpdate };
+  }
+  const owned = findBestCharmForId(p.charms || [], targetKey);
+  const cDef = owned ? CHARMS[owned.id] : CHARMS[targetKey];
+  if (!cDef || !owned) return fail('not_owned');
+  const plus = getCharmPlus(owned);
+  p.equipped.charm = {
+    uid: owned.uid,
+    id: cDef.id,
+    tier: cDef.tier,
+    auraKind: cDef.auraKind,
+    grade: owned.grade || 'B',
+    plus,
+    level: plus + 1,
+    stats: { ...(owned.stats || {}) },
+  };
+  if (p.village) refreshDerived(p);
+  else p.cp = recalcPlayerCP(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+  return { ok: true, slot: 'charm', itemId: cDef.id, charmUid: owned.uid, charm: p.equipped.charm, equipped: p.equipped, cp: p.cp, buildUpdate };
+}
+
+/**
+ * charm_consume { baseUid, materialUid, mode?: 'upgrade' | 'infuse' }
+ * Consumes a duplicate Charm (`materialUid`) into `baseUid` (`+0` -> `+5` MAX with full `+` level transfer & optional stat infusion).
+ */
+export function charmConsume(p, { baseUid, materialUid, mode = 'upgrade' } = {}) {
+  migrateRpg(p);
+  const beforeBonus = computeUniversalStats(p).bonus;
+  const res = consumeCharmInBag(p, { baseUid, materialUid, mode });
+  if (!res.ok) return fail(res.error || 'consume_failed');
+  if (p.village) refreshDerived(p);
+  else p.cp = recalcPlayerCP(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+  return {
+    ...res,
+    charms: p.charms,
+    equipped: p.equipped,
+    cp: p.cp,
+    buildUpdate,
+  };
+}
+
+/**
+ * charm_salvage { charmUid }
+ * Dismantles an unequipped, unlocked spare Charm into Starlight Shards (`🌟`) & Gold (`🪙`).
+ */
+export function charmSalvage(p, { charmUid } = {}) {
+  migrateRpg(p);
+  const res = salvageCharmInBag(p, { charmUid });
+  if (!res.ok) return fail(res.error || 'salvage_failed');
+  return {
+    ...res,
+    charms: p.charms,
+    currencies: p.currencies,
+    gold: p.currencies?.gold ?? p.gold,
+    shards: p.gacha_shards,
+  };
+}
+
+/**
+ * charm_lock { charmUid }
+ * Toggles lock protection (`🔒`) on a Charm roll in `p.charms`.
+ */
+export function charmLock(p, { charmUid } = {}) {
+  migrateRpg(p);
+  const res = toggleCharmLockInBag(p, { charmUid });
+  if (!res.ok) return fail(res.error || 'lock_failed');
+  return {
+    ...res,
+    charms: p.charms,
+  };
+}
+
+/** wardrobe_equip { slot, itemId|null, hide? } — slot 'pet' takes a pet uid or canonical petId; 'dice' equips a 3D Dice Skin; 'charm' equips a Starlight Aura Charm. */
 export function wardrobeEquip(p, { slot, itemId, hide }) {
+  migrateRpg(p);
+  if (slot === 'charm') {
+    return charmEquip(p, { charmId: itemId });
+  }
+  const beforeBonus = computeUniversalStats(p).bonus;
   if (slot === 'pet') {
-    if (itemId == null) { p.equipped.pet = null; refreshDerived(p); return { ok: true, slot, itemId: null, cp: p.cp }; }
+    if (itemId == null) {
+      p.equipped.pet = null;
+      refreshDerived(p);
+      const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+      return { ok: true, slot, itemId: null, cp: p.cp, buildUpdate };
+    }
     const pet = findOwnedPet(p, { petUid: itemId, petId: itemId });
     if (!pet) return fail('not_owned');
     syncEquippedPet(p, pet);
     refreshDerived(p);
-    return { ok: true, slot, itemId: pet.uid, petId: pet.id, cp: p.cp };
+    const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+    return { ok: true, slot, itemId: pet.uid, petId: pet.id, cp: p.cp, buildUpdate };
   }
   if (!SLOTS.includes(slot) && slot !== 'dice') return fail('bad_slot');
   const cur = p.equipped[slot];
@@ -611,15 +875,136 @@ export function wardrobeEquip(p, { slot, itemId, hide }) {
   if (itemId == null) {
     if (slot === 'outfit') return fail('outfit_required');
     p.equipped[slot] = null;
+    syncGlamourAndAttune(p);
     refreshDerived(p);
-    return { ok: true, slot, itemId: null, cp: p.cp };
+    const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+    return { ok: true, slot, itemId: null, cp: p.cp, buildUpdate };
   }
   const own = p.inventory[itemId];
   if (!own) return fail('not_owned');
   if (itemSlot(itemId) !== slot) return fail('wrong_slot');
-  p.equipped[slot] = { id: itemId, refine: own.refine | 0, ...(hide ? { hide: true } : {}) };
+  p.equipped[slot] = {
+    id: itemId,
+    refine: own.refine | 0,
+    ...(own.attune?.stat ? { attune: { stat: own.attune.stat, count: own.attune.count | 0 } } : {}),
+    ...(p.glamour?.[slot] ? { glamour: p.glamour[slot] } : {}),
+    ...(hide ? { hide: true } : {}),
+  };
+  syncGlamourAndAttune(p);
   refreshDerived(p);
-  return { ok: true, slot, itemId, hide: !!hide, cp: p.cp };
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+  return { ok: true, slot, itemId, hide: !!hide, cp: p.cp, buildUpdate };
+}
+
+/**
+ * wardrobe_glamour { slot, itemId|null } — 👗 Glamour look override (GEAR_ATTUNEMENT_GLAMOUR.md §2).
+ * Free, unlimited swaps among any owned item for that slot. Zero stat effect.
+ */
+export function wardrobeGlamour(p, { slot, itemId } = {}) {
+  migrateRpg(p);
+  if (!SLOTS.includes(slot)) return fail('bad_slot');
+  if (!itemId) {
+    p.glamour[slot] = null;
+    syncGlamourAndAttune(p);
+    return { ok: true, slot, itemId: null, glamour: { ...p.glamour } };
+  }
+  if (!p.inventory?.[itemId]) return fail('not_owned');
+  if (itemSlot(itemId) !== slot) return fail('wrong_slot');
+  p.glamour[slot] = itemId;
+  syncGlamourAndAttune(p);
+  return { ok: true, slot, itemId, glamour: { ...p.glamour } };
+}
+
+/**
+ * dash_preset_save { slotIdx, name? } — saves current equipped gear + pet + glamour into one of 3 Loadout Presets.
+ */
+export function dashPresetSave(p, { slotIdx, name } = {}) {
+  migrateRpg(p);
+  const idx = Number(slotIdx);
+  if (!Number.isInteger(idx) || idx < 0 || idx > 2) return fail('bad_preset_slot');
+  const eqSnap = {};
+  for (const s of [...SLOTS, 'dice']) {
+    if (p.equipped?.[s]?.id) eqSnap[s] = { id: p.equipped[s].id, hide: !!p.equipped[s].hide };
+  }
+  if (p.equipped?.pet?.id) {
+    eqSnap.pet = { uid: p.equipped.pet.uid || null, id: p.equipped.pet.id };
+  }
+  if (p.equipped?.charm?.id) {
+    eqSnap.charm = { id: p.equipped.charm.id, uid: p.equipped.charm.uid || null };
+  }
+  const b = detectBuild(computeUniversalStats(p).bonus);
+  const curName = name != null ? String(name).trim().slice(0, 18) : p.dash_presets[idx]?.name;
+  p.dash_presets[idx] = {
+    name: curName || ['⚡ Speed', '🪙 Farm', '🍀 Chaos'][idx],
+    equipped: eqSnap,
+    glamour: { ...(p.glamour || {}) },
+    build: { kind: b.kind, id: b.id, name: b.name, icon: b.icon, tier: b.tier },
+  };
+  return { ok: true, slotIdx: idx, preset: p.dash_presets[idx], presets: p.dash_presets };
+}
+
+/**
+ * dash_preset_equip { slotIdx } — one-tap swap to a saved Loadout Preset (stats + glamour together).
+ */
+export function dashPresetEquip(p, { slotIdx } = {}) {
+  migrateRpg(p);
+  const idx = Number(slotIdx);
+  if (!Number.isInteger(idx) || idx < 0 || idx > 2) return fail('bad_preset_slot');
+  const preset = p.dash_presets?.[idx];
+  if (!preset || !preset.equipped) return fail('preset_empty');
+  const beforeBonus = computeUniversalStats(p).bonus;
+  for (const s of [...SLOTS, 'dice']) {
+    const saved = preset.equipped[s];
+    if (!saved?.id) {
+      if (s !== 'outfit') p.equipped[s] = null;
+      continue;
+    }
+    const own = p.inventory?.[saved.id];
+    if (!own || itemSlot(saved.id) !== s) continue;
+    p.equipped[s] = {
+      id: saved.id,
+      refine: own.refine | 0,
+      ...(own.attune?.stat ? { attune: { stat: own.attune.stat, count: own.attune.count | 0 } } : {}),
+      ...(saved.hide ? { hide: true } : {}),
+    };
+  }
+  if (preset.equipped.pet) {
+    const pet = findOwnedPet(p, { petUid: preset.equipped.pet.uid, petId: preset.equipped.pet.id });
+    if (pet) syncEquippedPet(p, pet);
+  } else {
+    p.equipped.pet = null;
+  }
+  if (preset.equipped.charm?.id) {
+    const cDef = CHARMS[preset.equipped.charm.id];
+    const ownedC = findBestCharmForId(p.charms, preset.equipped.charm.uid || preset.equipped.charm.id);
+    if (cDef && ownedC) {
+      const plus = getCharmPlus(ownedC);
+      const gr = ownedC.grade || 'B';
+      p.equipped.charm = {
+        uid: ownedC.uid,
+        id: cDef.id,
+        tier: cDef.tier,
+        auraKind: cDef.auraKind,
+        grade: gr,
+        plus,
+        level: plus + 1,
+        stats: { ...(ownedC.stats || {}) },
+      };
+    }
+  }
+  if (preset.glamour && typeof preset.glamour === 'object') {
+    for (const s of SLOTS) {
+      const gId = preset.glamour[s];
+      p.glamour[s] = (gId && p.inventory?.[gId] && itemSlot(gId) === s) ? gId : null;
+    }
+  }
+  syncGlamourAndAttune(p);
+  refreshDerived(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
+  preset.build = buildUpdate?.build
+    ? { kind: buildUpdate.build.kind, id: buildUpdate.build.id, name: buildUpdate.build.name, icon: buildUpdate.build.icon, tier: buildUpdate.build.tier }
+    : preset.build;
+  return { ok: true, slotIdx: idx, preset, presets: p.dash_presets, cp: p.cp, buildUpdate };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -639,6 +1024,7 @@ export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
   if ((pet.essence || 0) < cost) {
     return fail('not_enough_essence', { need: cost, have: pet.essence || 0 });
   }
+  const beforeBonus = computeUniversalStats(p).bonus;
   pet.essence -= cost;
   pet.spent_essence = (pet.spent_essence || 0) + cost;
   pet.stars = stars + 1;
@@ -668,6 +1054,7 @@ export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
   syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
   return {
     ok: true,
     petUid: pet.uid,
@@ -683,6 +1070,7 @@ export function petEvolve(p, { petUid, petId } = {}, rng = Math.random) {
     bond_xp: pet.bond_xp,
     active_poses: pet.active_poses,
     cp: p.cp,
+    buildUpdate,
   };
 }
 
@@ -757,6 +1145,7 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
   const cost = rerollCost(lockCount);
   if (p.gold < cost.gold) return fail('not_enough_gold', { cost: cost.gold });
   if (p.berries < cost.berries) return fail('not_enough_berries', { cost: cost.berries });
+  const beforeBonus = computeUniversalStats(p).bonus;
   p.gold -= cost.gold;
   p.berries -= cost.berries;
 
@@ -790,6 +1179,7 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
   syncTraitsMirror(pet);
   resyncIfEquipped(p, pet);
   refreshDerived(p);
+  const buildUpdate = checkBuildDiscovery(p, beforeBonus);
 
   return {
     ok: true,
@@ -805,6 +1195,7 @@ export function petReroll(p, { petUid, petId, locks, confirmMythicWipe } = {}, n
     bond_lv: pet.bond_lv,
     bond_xp: pet.bond_xp,
     active_poses: pet.active_poses,
+    buildUpdate,
   };
 }
 

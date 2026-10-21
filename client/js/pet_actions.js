@@ -1,9 +1,10 @@
 // client/js/pet_actions.js — Action & Emote State Driver for Pet System V2 ("Soul-Bond Companions").
 // Coordinates 8-pose overrides (front, side, back, move, cast, happy, sleep, lifted) and bust emote bubbles.
 
-import { EMOTE_KEYS, PETS, normalizePetId, resolvePetEmoteKey } from '/shared/pet_catalog.js';
-import { unlockedEmotesForBond } from '/shared/pet_rules.js';
-import { OUTFITS } from '/shared/costumes_catalog.js';
+import { EMOTE_KEYS, PETS, normalizePetId, resolvePetEmoteKey } from '../../shared/pet_catalog.js';
+import { unlockedEmotesForBond } from '../../shared/pet_rules.js';
+import { OUTFITS } from '../../shared/costumes_catalog.js';
+import { resolveDirectionalPetPose } from './pet_rig.js';
 
 export const ACTION_DURATIONS = {
   cast: 1.05,
@@ -109,9 +110,10 @@ export class PetActionDriver {
    * @param {number} dt
    * @param {number} speed
    * @param {'front'|'side'|'back'} directionalView
+   * @param {{ vx?: number, vz?: number, turning?: boolean, walkPhase?: number }} [motionCtx]
    * @returns {{ pose: 'front'|'side'|'back'|'move'|'cast'|'happy'|'sleep'|'lifted', bounceY: number, rollZ: number, scalePulse: number }}
    */
-  update(dt, speed, directionalView = 'front') {
+  update(dt, speed, directionalView = 'front', motionCtx = {}) {
     let bounceY = 0;
     let rollZ = 0;
     let scalePulse = 1;
@@ -160,11 +162,20 @@ export class PetActionDriver {
       return { pose: 'sleep', bounceY: -0.04, rollZ: 0, scalePulse };
     }
 
-    // When moving briskly, use the dedicated `_move` action frame if loaded
-    if (speed > 0.45 && this.pet?.views?.move) {
-      return { pose: 'move', bounceY: 0, rollZ: 0, scalePulse: 1 };
-    }
+    const pose = resolveDirectionalPetPose({
+      vx: motionCtx.vx ?? this.pet?.follower?.vx ?? 0,
+      vz: motionCtx.vz ?? this.pet?.follower?.vz ?? 0,
+      speed,
+      directionalView,
+      turning: Boolean(motionCtx.turning ?? this.pet?.facing?.turning),
+      loco: this.pet?.loco || 'HOP_WADDLE',
+      walkPhase: motionCtx.walkPhase ?? this.pet?.walkPhase ?? ((this.pet?.t || 0) * 10),
+      currentPose: motionCtx.currentPose ?? this.pet?.shownView ?? 'front',
+      hasSide: Boolean(this.pet?.views?.side && !this.pet.views.side.fallback),
+      hasBack: Boolean(this.pet?.views?.back && !this.pet.views.back.fallback),
+      hasMove: Boolean(this.pet?.views?.move && !this.pet.views.move.fallback),
+    });
 
-    return { pose: directionalView, bounceY: 0, rollZ: 0, scalePulse: 1 };
+    return { pose, bounceY: 0, rollZ: 0, scalePulse: 1 };
   }
 }

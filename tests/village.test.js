@@ -5,6 +5,7 @@ import { CORE, WONDERS, DECOR, FISH, footprint, lerpLv, EXPANSION_TIERS, BLUEPRI
 import {
   validateLayout, computeComfort, comfortBonusPct, storageCapHrs, harvestPreview, instanceLayout, buildCellIndex,
   groundAt, clampToArea, spawnPoint, dockNear, landingCells, bagContents, HOUR_MS, utcDay,
+  isWalkablePos, nearestWalkablePos, cellToWorld,
 } from '../shared/village_rules.js';
 import * as eco from '../server/economy_service.js';
 import { createStarterProfile, seedProfiles, migrateProfile } from '../server/profile_factory.js';
@@ -19,8 +20,8 @@ test('catalog footprints match the locked Step 2 decision', () => {
   assert.deepEqual([CORE.shrine.w, CORE.shrine.h, CORE.nest.w, CORE.nest.h], [2, 2, 2, 2]);
   assert.deepEqual([CORE.dock.w, CORE.dock.h], [3, 2]);
   assert.deepEqual(footprint('dock', 90), { w: 2, h: 3 });
-  assert.equal(Object.keys(WONDERS).length, 11);
-  assert.equal(Object.keys(DECOR).length, 28);
+  assert.equal(Object.keys(WONDERS).length, 12);
+  assert.equal(Object.keys(DECOR).length, 38);
   assert.equal(Object.values(FISH).reduce((s, f) => s + f.rate, 0), 100);
   assert.deepEqual(EXPANSION_TIERS.map((t) => t.size), [18, 20, 24, 28, 32]);
   assert.deepEqual(BLUEPRINT_CARDS.slice(1), [5, 10, 15, 20, 25, 30, 35, 40, 50]);
@@ -226,11 +227,43 @@ test('migration repairs pre-Step-2 starter saves without losing progress', () =>
   };
   migrateProfile(old, 1000);
   const v = old.village;
+  assert.equal(v.grid_size, 18);
   assert.equal(v.levels.mint, 4); assert.equal(v.levels.shrine, 2); assert.equal(v.castle_lv, 3);
   assert.equal(v.tiles[0].t, 'road_cobble');
   assert.deepEqual(v.buildings.find((b) => b.type === 'shrine') && [v.buildings.find((b) => b.type === 'shrine').x], [6]);
   assert.ok(validateLayout(v, layoutOf(v)).ok);
-  assert.equal(Object.keys(bagContents(v)).length, 0);
+  assert.equal(Object.keys(bagContents(v)).length, 5);
+});
+
+test('migrateProfile shrinks grid_size 24 to 18 and returns out-of-bounds non-core items to bag', () => {
+  const custom = {
+    id: 'custom24', village: {
+      grid_size: 24, castle_lv: 1, comfort: 0, mood: 'sunny',
+      wonders: { wnd_ferris: { stars: 1 } },
+      decor: { dec_swing: 1 },
+      levels: { mint: 1, shrine: 1, patisserie: 1, nest: 1, dock: 1 },
+      buildings: [
+        { uid: 'castle', type: 'castle', x: 7, y: 1, rot: 0 },
+        { uid: 'mint', type: 'mint', x: 2, y: 3, rot: 0 },
+        { uid: 'patisserie', type: 'patisserie', x: 13, y: 3, rot: 0 },
+        { uid: 'shrine', type: 'shrine', x: 6, y: 7, rot: 0 },
+        { uid: 'nest', type: 'nest', x: 2, y: 10, rot: 0 },
+        { uid: 'dock', type: 'dock', x: 13, y: 10, rot: 0 },
+        { uid: 'dec_swing_1', type: 'dec_swing', x: 20, y: 20, rot: 0 },
+      ],
+      tiles: [{ x: 8, y: 5, t: 'road_cobble' }, { x: 22, y: 22, t: 'road_cobble' }],
+    },
+  };
+  migrateProfile(custom, 1000);
+  const v = custom.village;
+  assert.equal(v.grid_size, 18);
+  assert.equal(v.buildings.find((b) => b.type === 'castle').x, 7);
+  assert.equal(v.buildings.find((b) => b.type === 'mint').x, 2);
+  assert.equal(v.buildings.find((b) => b.type === 'dec_swing'), undefined);
+  const bag = bagContents(v);
+  assert.equal(bag.dec_swing, 1);
+  assert.equal(v.tiles.find((t) => t.x === 22), undefined);
+  assert.ok(validateLayout(v, layoutOf(v)).ok);
 });
 
 test('saveLayout applies a valid move and rejects an invalid one', () => {
@@ -245,3 +278,64 @@ test('saveLayout applies a valid move and rejects an invalid one', () => {
   assert.equal(eco.saveLayout(p, L).error, 'overlap');
   assert.equal(p.village.buildings.find((b) => b.type === 'nest').x, 1, 'rejected save leaves the village untouched');
 });
+
+test('fishing Sunken Chest target compass + Angler Exchange trades', () => {
+  const p = starter();
+  p.inventory.s1_naga_sovereign = { refine: 7, dupes: 0 };
+  assert.equal(eco.setFishTarget(p, 'not_owned').error, 'item_not_owned');
+  assert.equal(eco.setFishTarget(p, 's1_naga_sovereign').ok, true);
+
+  // Catching a Sunken Chest gives the duplicate to the pinned target item
+  const cRes = eco.awardCatch(p, 'chest', seq(0));
+  assert.equal(cRes.dupe, 's1_naga_sovereign');
+  assert.equal(cRes.targeted, true);
+  assert.equal(p.inventory.s1_naga_sovereign.dupes, 1);
+  assert.ok(cRes.weightKg >= 8.5);
+  assert.equal(p.fish_basket.chest, 1);
+
+  // Stock basket and trade in Angler's Exchange
+  for (let i = 0; i < 6; i++) eco.awardCatch(p, 'minnow');
+  for (let i = 0; i < 4; i++) eco.awardCatch(p, 'crab');
+  assert.equal(p.fish_basket.minnow, 6);
+  assert.equal(p.fish_basket.crab, 4);
+
+  const ex1 = eco.redeemAnglerExchange(p, 'chest_targeted');
+  assert.equal(ex1.ok, true);
+  assert.equal(ex1.granted.dupe, 's1_naga_sovereign');
+  assert.equal(p.inventory.s1_naga_sovereign.dupes, 2);
+  assert.equal(p.fish_basket.minnow, 0);
+  assert.equal(p.fish_basket.crab, 0);
+  assert.equal(eco.redeemAnglerExchange(p, 'chest_targeted').error, 'not_enough_fish');
+});
+
+test('walkability & unstuck: ejects player from building footprints and enclosed pockets (<6 tiles)', () => {
+  const p = starter();
+  // Give player 4 1x1 birdbath lamps to form a 1x1 enclosed pocket around cell (10, 10)
+  p.village.decor.dec_birdbath_lamp = 4;
+  p.village.buildings.push(
+    { uid: 'l_n', type: 'dec_birdbath_lamp', x: 10, y: 9, rot: 0 },
+    { uid: 'l_s', type: 'dec_birdbath_lamp', x: 10, y: 11, rot: 0 },
+    { uid: 'l_w', type: 'dec_birdbath_lamp', x: 9, y: 10, rot: 0 },
+    { uid: 'l_e', type: 'dec_birdbath_lamp', x: 11, y: 10, rot: 0 },
+  );
+  const L = instanceLayout([{ owner: p.id, village: p.village }]);
+  const isl = L.islands[0];
+  buildCellIndex(isl);
+
+  // 1. Inside the Castle footprint (7..10, 1..4) is unwalkable and snaps outside the Castle
+  const inCastle = cellToWorld(isl, 8, 2, 1, 1);
+  assert.equal(isWalkablePos(L, inCastle.x, inCastle.z), false);
+  const outCastle = nearestWalkablePos(L, inCastle.x, inCastle.z);
+  assert.equal(isWalkablePos(L, outCastle.x, outCastle.z), true);
+
+  // 2. Inside the 1x1 enclosed pocket at (10, 10) has compSize === 1 (<6), so isWalkablePos is false
+  // and nearestWalkablePos ejects the player outside the lantern ring into the open plaza
+  const pocket = cellToWorld(isl, 10, 10, 1, 1);
+  assert.equal(isl.index.compSize[10 * isl.S + 10], 1);
+  assert.equal(isWalkablePos(L, pocket.x, pocket.z), false);
+  const outPocket = nearestWalkablePos(L, pocket.x, pocket.z);
+  assert.equal(isWalkablePos(L, outPocket.x, outPocket.z), true);
+  assert.ok(Math.hypot(outPocket.x - pocket.x, outPocket.z - pocket.z) >= 1.2);
+});
+
+

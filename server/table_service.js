@@ -11,6 +11,8 @@ import { playerInfoFromProfile, podiumRewards, matchMods, PODIUM } from '../shar
 import { applyExp, expToNext } from '../shared/progression.js';
 import { grantPetActivityExp } from './rpg_service.js';
 import { createCasinoAdapter } from './casino_service.js';
+import { createMoonDefenseAdapter } from './moon_defense_service.js';
+import { createCloudDashAdapter } from './cloud_dash_service.js';
 
 export const TABLE_TYPES = new Set([
   'table_list', 'table_create', 'table_sit', 'table_leave', 'table_set_bot', 'table_ready', 'table_start', 'table_solo', 'table_rematch',
@@ -18,8 +20,11 @@ export const TABLE_TYPES = new Set([
   'mono_roll', 'mono_ult', 'mono_buy', 'mono_event_choice',
   'mono_pet_cast', 'mono_pet_arm', 'mono_pet_toggle_auto',
   'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave',
+  'mb_move', 'mb_dash', 'mb_ult', 'mb_buy_tome', 'mb_hire_merc', 'mb_stance', 'mb_bounty_bell', 'mb_toss_coins', 'mb_pick_blessing', 'mb_leave',
+  'mb_draft_card', 'mb_swap_pedestals', 'mb_sell_pedestal', 'mb_reroll_shop', 'mb_toggle_speed', 'mb_equip_charm',
+  'cd_report', 'cd_leave', 'cd_item',
 ]);
-export const isTableMessage = (type) => TABLE_TYPES.has(type);
+export const isTableMessage = (type) => TABLE_TYPES.has(type) || (typeof type === 'string' && type.startsWith('mb_'));
 
 export const MATCH_EXP = [180, 140, 120, 100];       // base 1.00× player EXP by rank
 const MAX_MULTIPLIER = 3.0;                          // safety cap on the uncapped podium multiplier
@@ -48,7 +53,7 @@ export function podiumMultiplier(profile, info, { patisseriePct = () => 0 } = {}
 export function createTableService({
   db, sendTo, onlineIds, pushProfile = () => {}, catalogs = {},
   rng = Math.random, now = () => Date.now(), log = console, tickMs = 200,
-  onBigHit = () => {}, onHandSettled = () => {}, onMatchFinished = () => {},
+  onBigHit = () => {}, onHandSettled = () => {}, onMatchFinished = () => {}, onMvpCharmDrop = () => {},
 } = {}) {
   const info = (userId) => {
     const p = db.getProfile(userId);
@@ -153,13 +158,42 @@ export function createTableService({
     onHandSettled,
   });
 
+  const moon_bunny = createMoonDefenseAdapter({
+    db,
+    send: (userIds, msg) => {
+      const ids = Array.isArray(userIds) ? userIds : [userIds];
+      for (const id of ids) sendTo(id, msg);
+    },
+    humans: (t) => t.seats.filter((s) => s.kind === 'human' && s.userId).map((s) => s.userId),
+    rng,
+    now,
+    pushProfile,
+    onMatchFinished,
+    onMvpCharmDrop,
+    catalogs,
+  });
+
+  const cloud_dash = createCloudDashAdapter({
+    db,
+    send: (userIds, msg) => {
+      const ids = Array.isArray(userIds) ? userIds : [userIds];
+      for (const id of ids) sendTo(id, msg);
+    },
+    humans: (t) => t.seats.filter((s) => s.kind === 'human' && s.userId).map((s) => s.userId),
+    rng,
+    now,
+    pushProfile,
+    onMatchFinished,
+    catalogs,
+  });
+
   const mgr = new TableManager({
     now,
     playerInfo: info,
     onMatchEnd: payout,
     onPetAuto,
     seedFn: () => (rng() * 2 ** 31) >>> 0,
-    games: { casino },
+    games: { casino, moon_bunny, cloud_dash },
   });
 
   function flush() {

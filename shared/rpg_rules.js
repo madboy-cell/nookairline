@@ -136,7 +136,7 @@ export const SUPER_MYTHIC = {
   SOFT_PITY_STEP: 0.06,      // +6 % per pull from #75
   HARD_PITY: 90,             // pull #90 is guaranteed
   PITY_KEY: 'sm_pity',
-  IDS: ['sm_eclipse_dragon', 'sm_aurora_empress'],
+  IDS: ['sm_eclipse_dragon', 'sm_aurora_empress', 'sm_seraphim_rose', 'sm_cyber_archon', 'sm_starlight_ribbon'],
   DUPE_SHARDS: 200,
 };
 

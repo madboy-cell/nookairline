@@ -4,6 +4,7 @@
 
 import { SEASON_SKILLS } from './season_skills.js';
 import { PET2, computePetPassives, minLevelForStars, computePetSoulLinkBonuses } from './pet_rules.js';
+import { CHARMS, computeCharmStats } from './charm_catalog.js';
 
 export const MONO = Object.freeze({
   BOARD_N: 24,
@@ -15,7 +16,17 @@ export const MONO = Object.freeze({
   UNDERDOG_GAP: 0.6,            // comeback boost: strictly last & net worth < 60% of leader
   UNDERDOG_SALARY_BONUS: 0.5,   // +50% salary when underdog condition met
   START_BOOST: 3,               // ⚡ 2d6 Double-Dice charges at match start
-  MAX_ROUNDS: 15,
+  MAX_ROUNDS: 20,               // 20-Round 3-Phase Escalation (R1–7 Early, R8–14 Mid-Game, R15–20 Overdrive)
+  MID_ROUND: 8,                 // ⚡ Phase 2 Mid-Game (R8–14): 1.25x Rent, 1.35x Ult Charge, 450 Salary
+  MID_RENT_MULT: 1.25,
+  MID_ULT_MULT: 1.35,
+  MID_SALARY: 450,
+  OVERDRIVE_ROUND: 15,          // 🔥 Phase 3 Starlight Overdrive (R15–20): 1.65x Rent, 2.0x Ult Charge
+  OVERDRIVE_RENT_MULT: 1.65,
+  OVERDRIVE_ULT_MULT: 2.0,
+  LAP_AUTO_UPGRADE_ROUND: 6,    // 🏰 Passing START from R6+ auto-upgrades cheapest owned property (+1 Tier)
+  KILL_BOUNTY_CASH: 450,        // 💀 Eliminating a rival awards +450 🪙, +50% ULT, and +1 free property Tier
+  KILL_BOUNTY_ULT: 50,
   TURN_MS: 12000,               // server turn watchdog (§21.E.2)
   RENT_MULT: [0.35, 0.80, 1.60, 3.00, 4.50],   // Tier 0 land → Tier 4 Mythic Sovereign Monument
   UPGRADE_MULT: [0, 0.50, 0.80, 1.20],         // cost to reach Tier 1 / 2 / 3 (Tier 4 = skills only)
@@ -28,8 +39,8 @@ export const MONO = Object.freeze({
   ULT_MAX: 100,
   ULT_START: 20,                // pass / land START
   ULT_AIRDROP: 40,
-  ULT_PER_TURN: 10,             // tunable: passive charge at the end of each own turn
-  ULT_ON_RENT_PAID: 15,         // tunable: "rage" charge when you pay rent
+  ULT_PER_TURN: 15,             // tunable: passive charge at the end of each own turn (up from 10)
+  ULT_ON_RENT_PAID: 20,         // tunable: "rage" charge when you pay rent (up from 15)
   PET_ULT_RATE: 0.75,           // 🐾 legacy default charge rate (superseded by bond scaling — see petMatchStats)
   PET_ULT_SCALE: 0.50,          // 🐾 legacy default potency (superseded by bond scaling — see petMatchStats)
   // 🐾 Soul-Link Combo (Dopamine Patch §2/§3): pets unlock at bond Lv1 and lerp to max bond level.
@@ -38,7 +49,7 @@ export const MONO = Object.freeze({
   PET_POT_MIN: 0.30,  PET_POT_MAX: 0.70,        // cast potency (cash scale)
   PET_START_MIN: 45, PET_START_MAX: 50,         // starting gauge % (Lv1 → max). Sim-tuned so a Lv1 pet combos on the 1st owner ult
   PET_BANK_MAX: 100,                            // overflow past 100% is banked and carried into the next fill
-  PET_MAX_CASTS: 2,                             // normal mode: max pet casts per match
+  PET_MAX_CASTS: null,                          // unlimited Soul-Link Pet Combos all match long!
   PET_HOLD_TURNS: 2,                            // Auto: solo-cast after being full for 2 own turns
   PET_COMBO_BONUS: 0.15,                        // combo = +15% potency
   PUBLIC_POT_SQUEEZE: 0.5,                      // public tables: p' = 0.5 + (p − 0.5) × 0.5
@@ -234,6 +245,10 @@ export function rentFor(state, i) {
   if (isHomeTurf(tile, owner?.affinity)) r *= 1 + MONO.HOME_TURF_RENT;
   r *= 1 + (owner?.mods?.rentPct || 0);
   if (t.modifier && typeof t.modifier.rentMult === 'number') r *= t.modifier.rentMult;
+  if (!state.chaos && typeof state.round === 'number') {
+    if (state.round >= MONO.OVERDRIVE_ROUND) r *= MONO.OVERDRIVE_RENT_MULT;
+    else if (state.round >= MONO.MID_ROUND) r *= MONO.MID_RENT_MULT;
+  }
   return Math.max(0, Math.round(r));
 }
 
@@ -262,17 +277,54 @@ export function bestTile(state, seat, filter = () => true) {
 
 // ---------------------------------------------------------------------------------- player stats
 /**
+ * Normalizes any item `stats` object strictly into the 4 Universal Stats (`fortune`, `swiftness`, `power`, `luck`, `all`).
+ * Any cute/fashion `charm` stat maps to `power` (when `power` is absent) or `fortune` (when `power` is already present)
+ * so 100% of items across all sets feed the 4 Universal Stats with zero lost stat points.
+ */
+export function normalizeItemStats(rawStats, rarity = 1) {
+  if (!rawStats) {
+    return rarity >= 3 ? { all: 25 } : rarity === 2 ? { all: 12 } : { all: 2 };
+  }
+  const out = {
+    fortune: rawStats.fortune || 0,
+    swiftness: rawStats.swiftness || 0,
+    power: rawStats.power || 0,
+    luck: rawStats.luck || 0,
+    all: rawStats.all || 0,
+  };
+  if (rawStats.charm) {
+    if (!out.power) out.power += rawStats.charm;
+    else if (!out.fortune) out.fortune += rawStats.charm;
+    else out.luck += rawStats.charm;
+  }
+  return out;
+}
+
+/**
  * Sum of the 4 universal stats from equipped gear (including optional 3D Dice Skin). Catalogs are injected so
  * this module never depends on modules that other teams are refactoring. Unknown items / missing stats count as 0.
  * `all` feeds all 4. Mythic outfits without explicit stats get +25 all (§21.D "+25% Primary Stats").
  */
-export function gearStats(equipped = {}, { outfits = {}, accessories = {}, diceSkins = {} } = {}) {
+export function gearStats(equippedOrProfile = {}, catalogs = {}) {
+  const equipped = (equippedOrProfile && equippedOrProfile.equipped && typeof equippedOrProfile.equipped === 'object')
+    ? equippedOrProfile.equipped
+    : (equippedOrProfile || {});
+  const outfits = catalogs.outfits || catalogs.OUTFITS || {};
+  const accessories = catalogs.accessories || catalogs.ACCESSORIES || {};
+  const diceSkins = catalogs.diceSkins || catalogs.DICE_SKINS || {};
   const out = { fortune: 0, swiftness: 0, power: 0, luck: 0 };
   for (const [slot, e] of Object.entries(equipped || {})) {
     if (!e?.id || slot === 'pet') continue;
+    if (slot === 'charm') {
+      if (CHARMS[e.id]) {
+        const cStats = computeCharmStats(e);
+        for (const s of Object.keys(out)) out[s] += cStats[s] || 0;
+      }
+      continue;
+    }
     const def = slot === 'outfit' ? outfits[e.id] : slot === 'dice' ? (diceSkins[e.id] || accessories[e.id]) : accessories[e.id];
     if (!def) continue;
-    const stats = def.stats || (def.rarity === 3 ? { all: 25 } : def.rarity === 2 ? { all: 12 } : { all: 2 });
+    const stats = normalizeItemStats(def.stats, def.rarity);
     const k = 1 + 0.05 * Math.max(0, Math.min(10, e.refine | 0));   // +5% per Star-Force level
     for (const s of Object.keys(out)) out[s] += ((stats[s] || 0) + (stats.all || 0)) * k;
   }
@@ -344,6 +396,7 @@ export function playerInfoFromProfile(p, { outfits = {}, accessories = {}, diceS
     name: p?.username || p?.id,
     lineage: p?.lineage || 'bkk',
     level: p?.level || 1,
+    appearance: p?.appearance || null,
     equipped: p?.equipped || null,
     outfit: outfitId,
     outfitRarity: def.rarity || 1,

@@ -323,10 +323,11 @@ export class MonopolyHud {
         <div class="mono-card-ava-wrap">
           <div class="mono-card-ava" style="background-image:${portraitBgCss(p.lineage, p)}"></div>
           ${pHas ? `<span class="mono-card-pet-pip" title="${pSk ? esc(`🐾 ${pSk.name}`) : '🐾 Pet'}">🐾</span>` : ''}
+          <div class="mono-card-banner" hidden></div>
           <div class="mono-card-status"></div>
         </div>
         <div class="mono-card-name">${esc(p.name)}${p.seat === yourSeat ? ' <i>(you)</i>' : ''}${p.isBot ? ' 🤖' : ''}</div>
-        <div class="mono-card-row">🪙 <b class="cash">${fmt(p.cash)}</b></div>
+        <div class="mono-card-row"><img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt=""> <b class="cash">${fmt(p.cash)}</b></div>
         <div class="mono-card-row">👑 <b class="nw">${fmt(p.cash)}</b></div>
         <div class="mono-card-ult" title="Owner Ultimate (${esc(sk.name)})"><span></span></div>
         <div class="mono-card-pet-ult" ${pHas ? '' : 'hidden'} title="${pSk ? esc(`🐾 Pet Soul-Link: ${pSk.name}`) : ''}"><span></span></div>
@@ -387,10 +388,45 @@ export class MonopolyHud {
       c.classList.toggle('bankrupt', !!s.bankrupt);
       c.classList.toggle('ult-ready', s.ult >= 100);
       const st = p?.status;
+      const isFrozen = !s.bankrupt && Boolean(st?.skipTurn);
+      const isReversed = !s.bankrupt && st?.moveDir === -1;
+      const isSlowed = !s.bankrupt && Number(st?.maxRoll) > 0;
+      const isFixed = !s.bankrupt && Number(st?.fixedRoll) > 0;
+      const isShielded = !s.bankrupt && Number(p?.shields) > 0;
+      c.classList.toggle('is-frozen', isFrozen);
+      c.classList.toggle('is-reversed', isReversed);
+      c.classList.toggle('is-slowed', isSlowed);
+      c.classList.toggle('is-fixed', isFixed);
+      c.classList.toggle('is-shielded', isShielded);
+      const banner = c.querySelector('.mono-card-banner');
+      if (banner) {
+        if (isFrozen) {
+          banner.textContent = '❄️ FROZEN';
+          banner.dataset.kind = 'frozen';
+          banner.hidden = false;
+        } else if (isReversed) {
+          banner.textContent = '⏪ REVERSE';
+          banner.dataset.kind = 'reverse';
+          banner.hidden = false;
+        } else if (isSlowed) {
+          banner.textContent = `🎲 MAX ${st.maxRoll}`;
+          banner.dataset.kind = 'slow';
+          banner.hidden = false;
+        } else if (isFixed) {
+          banner.textContent = `🌙 ROLL ${st.fixedRoll}`;
+          banner.dataset.kind = 'fixed';
+          banner.hidden = false;
+        } else {
+          banner.textContent = '';
+          banner.hidden = true;
+          delete banner.dataset.kind;
+        }
+      }
       const icons = [];
       if (st?.skipTurn) icons.push('❄️');
       if (st?.fixedRoll) icons.push('🌙');
       if (st?.moveDir === -1) icons.push('🕰️');
+      if (st?.maxRoll) icons.push(`🌌${st.maxRoll}`);
       if (st?.lapTax) icons.push('🎡');
       if (st?.discountPct) icons.push('🔥');
       if (p?.shields) icons.push(`🛡️${p.shields > 1 ? p.shields : ''}`);
@@ -411,11 +447,24 @@ export class MonopolyHud {
   }
 
   setRound(round, max, chaos = false) {
-    this.el.round.textContent = `${chaos ? '🎉 Chaos ' : ''}Round ${Math.min(round, max)} / ${max}`;
+    const r = Math.min(round, max);
+    const isOverdrive = !chaos && r >= MONO.OVERDRIVE_ROUND;
+    const isMid = !chaos && !isOverdrive && r >= MONO.MID_ROUND;
+    this.el.round.classList.toggle('is-chaos', !!chaos);
+    this.el.round.classList.toggle('is-overdrive', isOverdrive);
+    this.el.round.classList.toggle('is-mid', isMid);
+    const phaseTag = chaos
+      ? '🎉 CHAOS 2× · '
+      : isOverdrive
+        ? `🔥 OVERDRIVE ${MONO.OVERDRIVE_RENT_MULT ?? 1.65}× · `
+        : isMid
+          ? `⚡ ${MONO.MID_RENT_MULT ?? 1.25}× · `
+          : '';
+    this.el.round.textContent = `${phaseTag}Round ${r} / ${max}`;
   }
 
   // ------------------------------------------------------------------------- controls
-  setControls({ myTurn, canRoll, can2d6, boost, canUlt, ult, petUlt, petCostume, hasPet, petReady, canPetCast, canPetArm, petAuto, petArmed, petCastsLeft, busy, waitingName, deadline, fixedRoll }) {
+  setControls({ myTurn, canRoll, can2d6, boost, canUlt, ult, petUlt, petCostume, hasPet, petReady, canPetCast, canPetArm, petAuto, petArmed, petCastsLeft, busy, waitingName, deadline, fixedRoll, moveDir, maxRoll, skipTurn }) {
     const enabled = canRoll && !busy;
     this.el.roll.disabled = !enabled;
     this.el.roll.classList.toggle('pulse', enabled);
@@ -444,10 +493,31 @@ export class MonopolyHud {
     this.renderPetOrb();
     this.deadline = deadline || null;
     clearInterval(this.timer);
+    const hasHex = Boolean(myTurn && !busy && (skipTurn || moveDir === -1 || maxRoll || fixedRoll));
+    this.el.hint.classList.toggle('has-hex-alert', hasHex);
+    this.el.hint.dataset.hexKind = !hasHex
+      ? ''
+      : skipTurn
+        ? 'frozen'
+        : moveDir === -1
+          ? 'reverse'
+          : maxRoll
+            ? 'slow'
+            : 'fixed';
     const hint = () => {
       const comboReady = myTurn && canUlt && this.pet.ready && (this.pet.auto || this.pet.armed);
       let t = myTurn
-        ? (fixedRoll ? `🌙 Sleepwalk — you will move exactly ${fixedRoll}` : comboReady ? '🔗 Soul-Link Combo ready! Tap ULTIMATE or Roll 🎲' : 'Your turn! Roll the dice 🎲')
+        ? skipTurn
+          ? '❄️ FROZEN — Your turn will be skipped!'
+          : moveDir === -1
+            ? '⏪ REVERSED! Your next roll moves BACKWARD!'
+            : maxRoll
+              ? `🌌 SLOW-MO! Your dice are capped at 1–${maxRoll}!`
+              : fixedRoll
+                ? `🌙 SLEEPWALK — You will move exactly ${fixedRoll}!`
+                : comboReady
+                  ? '🔗 Soul-Link Combo ready! Tap ULTIMATE or Roll 🎲'
+                  : 'Your turn! Roll the dice 🎲'
         : waitingName ? `⏳ ${esc(waitingName)} is playing…` : '';
       if (busy) t = '';
       if (myTurn && this.deadline && !busy) { const s = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000)); t += ` <b class="mono-timer">${s}s</b>`; }
@@ -595,31 +665,32 @@ export class MonopolyHud {
     const realRent = (l, ownerSeat) => {
       try {
         const tiles = m.tiles.map((t, j) => (j === pd.tile ? { ...t, owner: ownerSeat, level: l } : t));
-        return rentFor({ tiles, players: m.players }, pd.tile);
+        return rentFor({ tiles, players: m.players, round: m.round, chaos: m.chaos }, pd.tile);
       } catch { return Math.round(tile.price * MONO.RENT_MULT[l]); }
     };
+    const goldIco = '<img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt="">';
     const rentRow = (lvl, ownerSeat = seat) => {
       if (!tile || tile.kind !== 'property') return '';
-      const rows = [0, 1, 2, 3].map((l) => `<span class="${l === lvl ? 'cur' : ''}">${TIER_NAME[l].replace(/^[^ ]+ /, '')}</span><b class="${l === lvl ? 'cur' : ''}">🪙 ${fmt(realRent(l, ownerSeat))}</b>`).join('');
+      const rows = [0, 1, 2, 3].map((l) => `<span class="${l === lvl ? 'cur' : ''}">${TIER_NAME[l].replace(/^[^ ]+ /, '')}</span><b class="${l === lvl ? 'cur' : ''}">${goldIco} ${fmt(realRent(l, ownerSeat))}</b>`).join('');
       return `<div class="mono-rents">${rows}</div>`;
     };
-    const head = tile ? `<div class="mono-tilecard" style="--zone:${zone?.color || '#9bb'}"><div class="mono-tilecard-strip">${zone ? `${THEMES[zone.theme]?.icon || ''} ${esc(zone.name)}${p.affinity && p.affinity === zone.theme ? ' • ⭐ HOME TURF +15%' : ''}` : esc(tile.name)}</div><div class="mono-tilecard-name">${tile.icon || ''} ${esc(tile.name)}</div>${tile.price ? `<div class="mono-tilecard-price">Base 🪙 ${fmt(tile.price)}</div>` : ''}</div>` : '';
+    const head = tile ? `<div class="mono-tilecard" style="--zone:${zone?.color || '#9bb'}"><div class="mono-tilecard-strip">${zone ? `${THEMES[zone.theme]?.icon || ''} ${esc(zone.name)}${p.affinity && p.affinity === zone.theme ? ' • ⭐ HOME TURF +15%' : ''}` : esc(tile.name)}</div><div class="mono-tilecard-name">${tile.icon || ''} ${esc(tile.name)}</div>${tile.price ? `<div class="mono-tilecard-price">Base ${goldIco} ${fmt(tile.price)}</div>` : ''}</div>` : '';
     switch (pd.kind) {
       case 'buy':
-        body = `${head}${rentRow(0)}<div class="mono-note">You have 🪙 ${fmt(p.cash)} → 🪙 ${fmt(p.cash - pd.cost)} after buying</div>`;
-        actions = btn('buy', `🏠 Buy for 🪙 ${fmt(pd.cost)}`) + btn('skip', 'Skip', 'plain');
+        body = `${head}${rentRow(0)}<div class="mono-note">You have ${goldIco} ${fmt(p.cash)} → ${goldIco} ${fmt(p.cash - pd.cost)} after buying</div>`;
+        actions = btn('buy', `🏠 Buy for ${goldIco} ${fmt(pd.cost)}`) + btn('skip', 'Skip', 'plain');
         break;
       case 'upgrade':
         body = `${head}<div class="mono-note big">Build ${TIER_NAME[pd.toLevel]}</div>${rentRow(pd.toLevel)}${pd.coupon ? '<div class="mono-note">🎟️ Free Upgrade Coupon will be used!</div>' : ''}`;
-        actions = btn('upgrade', pd.coupon ? '🎟️ Upgrade FREE' : `⬆️ Upgrade 🪙 ${fmt(pd.cost)}`) + btn('skip', 'Not now', 'plain');
+        actions = btn('upgrade', pd.coupon ? '🎟️ Upgrade FREE' : `⬆️ Upgrade ${goldIco} ${fmt(pd.cost)}`) + btn('skip', 'Not now', 'plain');
         break;
       case 'takeover': {
         const lvl = m.tiles[pd.tile]?.level ?? 0;
         const paid = pd.rentPaid > 0
-          ? `<div class="mono-note">✅ Rent paid: 🪙 ${fmt(pd.rentPaid)} to <b>${esc(m.players[pd.from]?.name)}</b></div>`
+          ? `<div class="mono-note">✅ Rent paid: ${goldIco} ${fmt(pd.rentPaid)} to <b>${esc(m.players[pd.from]?.name)}</b></div>`
           : `<div class="mono-note">✅ No rent owed this time</div>`;
         body = `${head}${paid}<div class="mono-note big">⚔️ Optional: Hostile Takeover</div><div class="mono-note">Pay 2× its invested value — ${esc(m.players[pd.from]?.name)} receives the cash. Rent you'd earn here:</div>${rentRow(lvl, seat)}`;
-        actions = btn('takeover', `⚔️ Seize for 🪙 ${fmt(pd.cost)}`, 'red', p.cash < pd.cost) + btn('skip', '👣 Keep walking', 'plain');
+        actions = btn('takeover', `⚔️ Seize for ${goldIco} ${fmt(pd.cost)}`, 'red', p.cash < pd.cost) + btn('skip', '👣 Keep walking', 'plain');
         break;
       }
       case 'vault':
@@ -656,6 +727,9 @@ export class MonopolyHud {
     const el = this.el.podium;
     const rank = result.ranking;
     const hl = highlights || result?.highlights || {};
+    const goldIco = '<img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt="">';
+    const berryIco = '<img class="inline-curr-ico" src="/assets/ui/icon_berry.png" alt="">';
+    const diaIco = '<img class="inline-curr-ico" src="/assets/ui/icon_diamond.png" alt="">';
     const pillar = (r, cls) => {
       if (!r) return '<div class="mono-pillar empty"></div>';
       const p = players[r.seat];
@@ -696,7 +770,7 @@ export class MonopolyHud {
         key: 'bigRent',
         emoji: '💸',
         label: 'Biggest Rent',
-        val: `🪙 ${fmt(hl.bigRent.amount)}`,
+        val: `${goldIco} ${fmt(hl.bigRent.amount)}`,
         sub: `${esc(payer)} → ${esc(owner)}`,
       });
     }
@@ -707,7 +781,7 @@ export class MonopolyHud {
         key: 'takeover',
         emoji: '⚔️',
         label: 'Boldest Takeover',
-        val: `🪙 ${fmt(hl.bigTakeover.cost)}`,
+        val: `${goldIco} ${fmt(hl.bigTakeover.cost)}`,
         sub: `${esc(seizer)} from ${esc(from)}`,
       });
     }
@@ -722,7 +796,7 @@ export class MonopolyHud {
           key: 'landlord',
           emoji: '🏰',
           label: 'Top Landlord',
-          val: `🪙 ${fmt(maxRent)}`,
+          val: `${goldIco} ${fmt(maxRent)}`,
           sub: esc(name),
         });
       }
@@ -774,8 +848,8 @@ export class MonopolyHud {
         <div class="mono-rewards-title">🏆 ${mine?.rank === 1 ? 'VICTORY' : 'MATCH'} REWARDS ${rw.chaos ? '<i>(🎉 Chaos Party • 0.5× 💎 • Free Cap)</i> ' : ''}${rw.tableScale ? `<i>(Table ${Number(rw.tableScale).toFixed(2)}×${rw.coupleBonus ? ' • 💞 Couple' : ''})</i>` : ''}${rw.preview ? ' <i>(preview)</i>' : ''}</div>
         <div class="mono-rewards-body">
           <div class="mono-rewards-list">
-            ${rw.diamonds ? `<div class="mono-reward-row">✨ <b>+${fmt(rw.diamonds)}</b> 💎 Diamonds ${diamondParts.length > 1 ? `<small>(${diamondParts.join(' ')})</small>` : ''}</div>` : ''}
-            <div class="mono-reward-row">🪙 <b>+${fmt(rw.gold)}</b> Gold &amp; 🍓 <b>+${fmt(rw.berries)}</b> Star-Berries${rw.multiplier ? ` <i>(${rw.multiplier}x Multiplier)</i>` : ''}</div>
+            ${rw.diamonds ? `<div class="mono-reward-row">✨ <b>+${fmt(rw.diamonds)}</b> ${diaIco} Diamonds ${diamondParts.length > 1 ? `<small>(${diamondParts.join(' ')})</small>` : ''}</div>` : ''}
+            <div class="mono-reward-row">${goldIco} <b>+${fmt(rw.gold)}</b> Gold &amp; ${berryIco} <b>+${fmt(rw.berries)}</b> Star-Berries${rw.multiplier ? ` <i>(${rw.multiplier}x Multiplier)</i>` : ''}</div>
             ${expVal ? `<div class="mono-reward-row mono-exp-row">⭐ <b>+${fmt(expVal)} EXP</b> <span class="mono-exp-bar"><span class="mono-exp-fill" style="width:${lvUp ? 100 : 78}%"></span></span>${lvUp ? ` <b class="mono-lvup-badge">🎉 LEVEL UP +${lvUp}!${rw.levelUpDiamonds ? ` (+${rw.levelUpDiamonds} 💎)` : ''}</b>` : ''}</div>` : ''}
             ${rw.ticketBonus ? `<div class="mono-reward-row">🎟️ <b>+${rw.ticketBonus} Standard Gacha Ticket</b> (Daily 1st Match!)</div>` : ''}
             ${rw.chest ? `<div class="mono-reward-row">🎁 Bonus Podium Chest: <b>${rw.chestReward === 'ticket_standard' ? '🎟️ Standard Gacha Ticket!' : '📦 Random Dupe Box!'}</b></div>` : ''}

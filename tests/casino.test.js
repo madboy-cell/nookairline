@@ -200,6 +200,13 @@ test('service flow: create casino table solo -> bet during betting -> advance cl
   assert.equal(replaceRes.ok, true);
   assert.equal(db.getProfile('nook').gold, initialGold - 1000, 'replaced bet escrows difference');
 
+  // Verify default chips (500, 1000, 5000, 10000) and MAX_BET = 50000
+  assert.deepEqual(CASINO.POKDENG.CHIPS, [500, 1000, 5000, 10000]);
+  assert.equal(CASINO.POKDENG.MAX_BET, 50000);
+  const maxBetRes = svc.handle('nook', { type: 'casino_bet', tableId: t.id, amount: 50000 });
+  assert.equal(maxBetRes.ok, true, '50,000 MAX bet accepted in Pok-Deng');
+  svc.handle('nook', { type: 'casino_bet', tableId: t.id, amount: 1000 });
+
   // Advance to deal phase
   advance(CASINO.POKDENG.PHASE_MS.betting);
   svc.tick();

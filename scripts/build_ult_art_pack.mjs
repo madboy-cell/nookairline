@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 // scripts/build_ult_art_pack.mjs
-// Composes the 13 Mythic Ultimate Spell Centerpiece sprites (mono_ult_*) + 3 missing Tile Modifier
-// sprites (mono_trap_midas, mono_trap_chips, mono_trap_ruins) from our hand-painted Tree of Savior /
-// MapleStory cutout layers into client/assets/monopoly/ and updates manifest_4a.json.
+// Slices the 3 Tree of Savior Sacred Magic Circle + Additive Glow VFX sheets:
+//   - client/assets/monopoly/raw/sheet_ult_monuments_a.png (3x3: 9 Mythic Ultimate monuments)
+//   - client/assets/monopoly/raw/sheet_ult_monuments_b.png (3x3: 4 Mythic + 2 Super Mythic + 3 Tile Traps)
+//   - client/assets/monopoly/raw/sheet_particle_atlas.png  (4x4: 16 Additive Glow particles -> particle_atlas.png & fx_*.png)
+// Extracts soft-feathered alpha from the #000000 background with RGB un-premultiplication so
+// luminous glows have zero dark cartoon outlines or black fringes, updates manifest_4a.json and
+// asset_manifest.json, and writes QA contact sheets.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,86 +16,210 @@ import { PNG } from 'pngjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = path.join(ROOT, 'client', 'assets');
 const MONO_DIR = path.join(ASSETS, 'monopoly');
+const UI_DIR = path.join(ASSETS, 'ui');
+const RAW_DIR = path.join(MONO_DIR, 'raw');
 const MANIFEST_4A = path.join(MONO_DIR, 'manifest_4a.json');
+const ASSET_MANIFEST = path.join(ASSETS, 'asset_manifest.json');
 
-const cache = new Map();
-function loadPng(relPath) {
-  if (cache.has(relPath)) return cache.get(relPath);
-  const full = path.join(ASSETS, relPath);
-  const png = PNG.sync.read(fs.readFileSync(full));
-  cache.set(relPath, png);
-  return png;
+const SHEET_A_NAMES = [
+  'mono_ult_naga',
+  'mono_ult_kitsune',
+  'mono_ult_eclipse',
+  'mono_ult_djinn',
+  'mono_ult_phoenix',
+  'mono_ult_roulette',
+  'mono_ult_siren',
+  'mono_ult_astral',
+  'mono_ult_clock',
+];
+
+const SHEET_B_NAMES = [
+  'mono_ult_glacial',
+  'mono_ult_pharaoh',
+  'mono_ult_phantom',
+  'mono_ult_zeus',
+  'mono_ult_sm_eclipse',
+  'mono_ult_sm_aurora',
+  'mono_ult_sm_seraphim',
+  'mono_ult_sm_cyber',
+  'mono_ult_sm_ribbon',
+];
+
+const SHEET_C_NAMES = [
+  'mono_trap_eclipse_sun',
+  'mono_trap_aurora_veil',
+  'mono_trap_rose_thorns',
+  'mono_trap_cyber_glitch',
+  'mono_trap_starlight_gift',
+  'mono_trap_lunar_lantern',
+  'mono_trap_supernova',
+  'mono_trap_foxfire',
+  'mono_trap_glacial_crest',
+];
+
+const PARTICLE_CELL_NAMES = [
+  'fx_snowflake',
+  'fx_feather',
+  'fx_petal',
+  'fx_star',
+  'fx_lightning',
+  'fx_flame',
+  'fx_bubble',
+  'fx_note',
+  'fx_chip',
+  'fx_moon',
+  'fx_heart',
+  'fx_leaf',
+  'fx_stardust',
+  'fx_rune',
+  'fx_shockwave',
+  'fx_magic_circle',
+];
+
+// Spells that intentionally contain a dark cosmic void core (Black Sun / Black Hole / Celestial Silhouette)
+const VOID_CORE_SPELLS = {
+  mono_ult_sm_eclipse:   { cx: 0.50, cy: 0.50, rx: 0.15, ry: 0.15 },
+  mono_ult_sm_aurora:    { cx: 0.50, cy: 0.58, rx: 0.09, ry: 0.25 },
+  mono_ult_astral:       { cx: 0.50, cy: 0.50, rx: 0.17, ry: 0.17 },
+  mono_trap_eclipse_sun: { cx: 0.48, cy: 0.46, rx: 0.21, ry: 0.18 },
+};
+
+function smoothstep(edge0, edge1, x) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }
 
-function createCanvas(w, h) {
-  return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) };
-}
+/**
+ * Extracts a cell (col, row) from a 3x3 monument sheet and converts the #000000 background
+ * into a soft-feathered alpha channel with color un-premultiplication.
+ */
+function extractMonumentCell(sheetPng, col, row, name) {
+  const cols = 3, rows = 3;
+  const x0 = Math.round((col * sheetPng.width) / cols);
+  const x1 = Math.round(((col + 1) * sheetPng.width) / cols);
+  const y0 = Math.round((row * sheetPng.height) / rows);
+  const y1 = Math.round(((row + 1) * sheetPng.height) / rows);
+  const cw = x1 - x0;
+  const ch = y1 - y0;
 
-/** Bilinear sample with optional tint [r,g,b], rotation, flipX, and alpha multiplier. */
-function drawLayer(dst, srcRel, {
-  cx = dst.width / 2,
-  cy = dst.height / 2,
-  scale = 1,
-  rotDeg = 0,
-  flipX = false,
-  tint = [1, 1, 1],
-  alpha = 1,
-} = {}) {
-  const src = typeof srcRel === 'string' ? loadPng(srcRel) : srcRel;
-  const rad = (rotDeg * Math.PI) / 180;
-  const cos = Math.cos(-rad), sin = Math.sin(-rad);
-  const hw = (src.width * scale) / 2;
-  const hh = (src.height * scale) / 2;
-  const rMax = Math.ceil(Math.hypot(hw, hh)) + 2;
-  const x0 = Math.max(0, Math.floor(cx - rMax));
-  const x1 = Math.min(dst.width - 1, Math.ceil(cx + rMax));
-  const y0 = Math.max(0, Math.floor(cy - rMax));
-  const y1 = Math.min(dst.height - 1, Math.ceil(cy + rMax));
+  const rgba = new Uint8ClampedArray(cw * ch * 4);
+  const lum = new Float32Array(cw * ch);
 
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      const dx = x - cx, dy = y - cy;
-      let lx = (dx * cos - dy * sin) / scale;
-      const ly = (dx * sin + dy * cos) / scale;
-      if (flipX) lx = -lx;
-      const sx = lx + src.width / 2;
-      const sy = ly + src.height / 2;
-      if (sx < 0 || sy < 0 || sx >= src.width - 1 || sy >= src.height - 1) continue;
-      const ix = Math.floor(sx), iy = Math.floor(sy);
-      const fx = sx - ix, fy = sy - iy;
-      const i00 = (iy * src.width + ix) * 4;
-      const i10 = i00 + 4;
-      const i01 = i00 + src.width * 4;
-      const i11 = i01 + 4;
-      const b = (k) =>
-        src.data[i00 + k] * (1 - fx) * (1 - fy) +
-        src.data[i10 + k] * fx * (1 - fy) +
-        src.data[i01 + k] * (1 - fx) * fy +
-        src.data[i11 + k] * fx * fy;
-      const sa = (b(3) / 255) * alpha;
-      if (sa <= 0.005) continue;
-      const sr = Math.min(255, b(0) * tint[0]);
-      const sg = Math.min(255, b(1) * tint[1]);
-      const sb = Math.min(255, b(2) * tint[2]);
-
-      const di = (y * dst.width + x) * 4;
-      const da = dst.data[di + 3] / 255;
-      const outA = sa + da * (1 - sa);
-      dst.data[di] = Math.round((sr * sa + dst.data[di] * da * (1 - sa)) / outA);
-      dst.data[di + 1] = Math.round((sg * sa + dst.data[di + 1] * da * (1 - sa)) / outA);
-      dst.data[di + 2] = Math.round((sb * sa + dst.data[di + 2] * da * (1 - sa)) / outA);
-      dst.data[di + 3] = Math.round(outA * 255);
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      const si = ((y0 + y) * sheetPng.width + (x0 + x)) * 4;
+      const di = (y * cw + x) * 4;
+      const r = sheetPng.data[si];
+      const g = sheetPng.data[si + 1];
+      const b = sheetPng.data[si + 2];
+      rgba[di] = r;
+      rgba[di + 1] = g;
+      rgba[di + 2] = b;
+      rgba[di + 3] = 255;
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const satBoost = (maxC - minC) * 0.25;
+      lum[y * cw + x] = maxC + satBoost;
     }
   }
+
+  // Pass 1: Flood-fill exterior dark background & soft outer halo from cell borders
+  const EXT_THRESH = 155;
+  const isExt = new Uint8Array(cw * ch);
+  const queue = new Int32Array(cw * ch);
+  let qHead = 0, qTail = 0;
+
+  const pushBorder = (x, y) => {
+    const idx = y * cw + x;
+    if (!isExt[idx] && lum[idx] < EXT_THRESH) {
+      isExt[idx] = 1;
+      queue[qTail++] = idx;
+    }
+  };
+  for (let x = 0; x < cw; x++) { pushBorder(x, 0); pushBorder(x, ch - 1); }
+  for (let y = 0; y < ch; y++) { pushBorder(0, y); pushBorder(cw - 1, y); }
+
+  while (qHead < qTail) {
+    const idx = queue[qHead++];
+    const x = idx % cw;
+    const y = (idx - x) / cw;
+    if (x > 0) { const n = idx - 1; if (!isExt[n] && lum[n] < EXT_THRESH) { isExt[n] = 1; queue[qTail++] = n; } }
+    if (x < cw - 1) { const n = idx + 1; if (!isExt[n] && lum[n] < EXT_THRESH) { isExt[n] = 1; queue[qTail++] = n; } }
+    if (y > 0) { const n = idx - cw; if (!isExt[n] && lum[n] < EXT_THRESH) { isExt[n] = 1; queue[qTail++] = n; } }
+    if (y < ch - 1) { const n = idx + cw; if (!isExt[n] && lum[n] < EXT_THRESH) { isExt[n] = 1; queue[qTail++] = n; } }
+  }
+
+  const voidCore = VOID_CORE_SPELLS[name] || null;
+
+  // Pass 2: Compute feathered alpha and fully un-premultiply RGB so outer glows have ZERO dark smoky fringe on bright grass
+  for (let y = 0; y < ch; y++) {
+    const edgeY = Math.min(y, ch - 1 - y);
+    for (let x = 0; x < cw; x++) {
+      const edgeX = Math.min(x, cw - 1 - x);
+      const borderFade = Math.min(1, Math.min(edgeX, edgeY) / 6);
+      const idx = y * cw + x;
+      const di = idx * 4;
+      const r = rgba[di], g = rgba[di + 1], b = rgba[di + 2];
+      const maxC = Math.max(r, g, b);
+      const v = lum[idx];
+
+      let inVoidCore = false;
+      if (voidCore) {
+        const dx = (x / cw - voidCore.cx) / voidCore.rx;
+        const dy = (y / ch - voidCore.cy) / voidCore.ry;
+        if (dx * dx + dy * dy <= 1.0) inVoidCore = true;
+      }
+
+      let a = 1.0;
+      if (inVoidCore) {
+        a = 0.95;
+      } else if (isExt[idx]) {
+        // Exterior background & outer glow halo: cut dark smoky tail below 26, smooth ramp up to 155
+        if (v <= 26) {
+          a = 0;
+        } else {
+          const t = smoothstep(26, EXT_THRESH, v);
+          a = Math.pow(t, 1.25);
+        }
+      } else {
+        // Interior enclosed region: make pitch-black gaps between magic circle rings cleanly transparent
+        if (v <= 22) {
+          a = 0;
+        } else if (v < 115) {
+          a = smoothstep(22, 115, v);
+        } else {
+          a = 1.0;
+        }
+      }
+
+      a *= borderFade;
+      if (a <= 0.015) {
+        rgba[di] = 0; rgba[di + 1] = 0; rgba[di + 2] = 0; rgba[di + 3] = 0;
+      } else {
+        // Full color un-premultiplication against #000000 black background so semi-transparent glow is 100% luminous
+        if (!inVoidCore && maxC > 0 && maxC < 230 && a < 0.96) {
+          const norm = 255 / maxC;
+          const blend = 1 - a * 0.65; // smoothly blend from full 255 normalization at low alpha to painted shading at high alpha
+          const mult = 1 + (norm - 1) * blend;
+          rgba[di] = Math.min(255, Math.round(r * mult));
+          rgba[di + 1] = Math.min(255, Math.round(g * mult));
+          rgba[di + 2] = Math.min(255, Math.round(b * mult));
+        }
+        rgba[di + 3] = Math.round(a * 255);
+      }
+    }
+  }
+
+  return trimAndSave({ width: cw, height: ch, data: rgba }, name, MONO_DIR, 'monopoly');
 }
 
-/** Trim transparent border with 8px padding and save to MONO_DIR. */
-function trimAndSave(canvas, name, extraMeta = {}) {
+/** Trim transparent border with 6px padding and save PNG. */
+function trimAndSave(canvas, name, outDir, relPrefix, extraMeta = {}) {
   const { width, height, data } = canvas;
   let minX = width, minY = height, maxX = 0, maxY = 0, nonZero = 0;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      if (data[(y * width + x) * 4 + 3] > 12) {
+      if (data[(y * width + x) * 4 + 3] > 16) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -100,6 +228,7 @@ function trimAndSave(canvas, name, extraMeta = {}) {
       }
     }
   }
+  if (maxX < minX) { minX = 0; minY = 0; maxX = width - 1; maxY = height - 1; }
   const pad = 6;
   minX = Math.max(0, minX - pad);
   minY = Math.max(0, minY - pad);
@@ -117,7 +246,7 @@ function trimAndSave(canvas, name, extraMeta = {}) {
       out.data[di + 3] = data[si + 3];
     }
   }
-  const file = path.join(MONO_DIR, `${name}.png`);
+  const file = path.join(outDir, `${name}.png`);
   fs.writeFileSync(file, PNG.sync.write(out));
   return {
     name,
@@ -125,7 +254,7 @@ function trimAndSave(canvas, name, extraMeta = {}) {
     height: h,
     data: out.data,
     meta: {
-      file: `monopoly/${name}.png`,
+      file: `${relPrefix}/${name}.png`,
       w,
       h,
       anchorX: 0.5,
@@ -136,202 +265,86 @@ function trimAndSave(canvas, name, extraMeta = {}) {
   };
 }
 
-function buildSprites() {
-  const W = 380, H = 400;
-  const results = [];
+/**
+ * Processes Sheet C (4x4 particle_atlas.png) and also slices individual client/assets/ui/fx_*.png sprites.
+ */
+function buildParticleAtlas() {
+  const rawPath = path.join(RAW_DIR, 'sheet_particle_atlas.png');
+  const src = PNG.sync.read(fs.readFileSync(rawPath));
+  const W = src.width, H = src.height;
+  const cols = 4, rows = 4;
+  const cellW = Math.floor(W / cols), cellH = Math.floor(H / rows);
 
-  // 1. mono_ult_naga (S1 Naga Sovereign: Emerald-Turquoise Tidal Wave + Naga Sovereign Crest)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 215, scale: 1.12, tint: [0.35, 1.08, 0.85], alpha: 0.92 });
-    drawLayer(c, 'monopoly/mono_trap_waterway.png', { cx: 190, cy: 280, scale: 1.22, tint: [0.82, 1.10, 1.05] });
-    drawLayer(c, 'ui/fx_shockwave.png', { cx: 190, cy: 195, scale: 1.10, rotDeg: 90, tint: [0.4, 1.12, 0.92] });
-    drawLayer(c, 'ui/icon_skill_bubble_shield.png', { cx: 190, cy: 180, scale: 0.78, tint: [0.85, 1.12, 1.02] });
-    drawLayer(c, 'ui/fx_bubble.png', { cx: 102, cy: 215, scale: 0.44 });
-    drawLayer(c, 'ui/fx_bubble.png', { cx: 278, cy: 205, scale: 0.48 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 85, scale: 0.46 });
-    results.push(trimAndSave(c, 'mono_ult_naga'));
+  const atlasOut = new PNG({ width: W, height: H });
+  const fxEntries = [];
+
+  for (let idx = 0; idx < 16; idx++) {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const name = PARTICLE_CELL_NAMES[idx];
+    const x0 = col * cellW;
+    const y0 = row * cellH;
+    const cellData = new Uint8ClampedArray(cellW * cellH * 4);
+
+    for (let y = 0; y < cellH; y++) {
+      const edgeY = Math.min(y, cellH - 1 - y);
+      for (let x = 0; x < cellW; x++) {
+        const edgeX = Math.min(x, cellW - 1 - x);
+        const borderFade = Math.min(1, Math.min(edgeX, edgeY) / 8);
+
+        const si = ((y0 + y) * W + (x0 + x)) * 4;
+        const r = src.data[si];
+        const g = src.data[si + 1];
+        const b = src.data[si + 2];
+        const maxC = Math.max(r, g, b);
+        const minC = Math.min(r, g, b);
+        const v = maxC + (maxC - minC) * 0.25;
+
+        let a = 0;
+        if (v > 10) {
+          const t = Math.min(1, (v - 10) / (108 - 10));
+          a = t * (2 - t) * borderFade;
+        }
+
+        const ci = (y * cellW + x) * 4;
+        if (a <= 0.01) {
+          cellData[ci] = 0; cellData[ci + 1] = 0; cellData[ci + 2] = 0; cellData[ci + 3] = 0;
+          atlasOut.data[si] = 0; atlasOut.data[si + 1] = 0; atlasOut.data[si + 2] = 0; atlasOut.data[si + 3] = 0;
+        } else {
+          const boost = 1 / Math.max(0.28, a);
+          const ro = Math.min(255, Math.round(r * boost));
+          const go = Math.min(255, Math.round(g * boost));
+          const bo = Math.min(255, Math.round(b * boost));
+          const ao = Math.round(a * 255);
+          cellData[ci] = ro; cellData[ci + 1] = go; cellData[ci + 2] = bo; cellData[ci + 3] = ao;
+          atlasOut.data[si] = ro; atlasOut.data[si + 1] = go; atlasOut.data[si + 2] = bo; atlasOut.data[si + 3] = ao;
+        }
+      }
+    }
+
+    const trimmed = trimAndSave(
+      { width: cellW, height: cellH, data: cellData },
+      name,
+      UI_DIR,
+      'ui',
+      { anchorX: 0.5, anchorY: 0.5 }
+    );
+    fxEntries.push(trimmed);
   }
 
-  // 2. mono_ult_kitsune (S2 Kitsune Inari: Vermilion Torii Shrine + Sakura Foxfire)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 210, scale: 1.12, tint: [1.1, 0.78, 0.88], alpha: 0.92 });
-    drawLayer(c, 'ui/fx_flame.png', { cx: 105, cy: 190, scale: 0.62, rotDeg: -22, tint: [1.1, 0.65, 0.85] });
-    drawLayer(c, 'ui/fx_flame.png', { cx: 275, cy: 190, scale: 0.62, rotDeg: 22, flipX: true, tint: [1.1, 0.65, 0.85] });
-    drawLayer(c, 'monopoly/mono_trap_torii.png', { cx: 190, cy: 215, scale: 1.02 });
-    drawLayer(c, 'ui/icon_skill_foxfire.png', { cx: 190, cy: 105, scale: 0.48 });
-    drawLayer(c, 'ui/fx_petal.png', { cx: 110, cy: 115, scale: 0.38, rotDeg: -30 });
-    drawLayer(c, 'ui/fx_petal.png', { cx: 270, cy: 120, scale: 0.38, rotDeg: 35, flipX: true });
-    results.push(trimAndSave(c, 'mono_ult_kitsune'));
-  }
-
-  // 3. mono_ult_eclipse (S2 Tsukuyomi Eclipse: Crimson-Violet Rune Halo + Golden Crescent Moon)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_rune.png', { cx: 190, cy: 210, scale: 1.18, tint: [0.95, 0.75, 1.15] });
-    drawLayer(c, 'ui/fx_shockwave.png', { cx: 190, cy: 210, scale: 1.02, tint: [0.65, 0.5, 1.1] });
-    drawLayer(c, 'ui/fx_moon.png', { cx: 190, cy: 190, scale: 0.98, tint: [1.08, 0.95, 1.05] });
-    drawLayer(c, 'ui/fx_stardust.png', { cx: 120, cy: 120, scale: 0.52 });
-    drawLayer(c, 'ui/fx_stardust.png', { cx: 265, cy: 265, scale: 0.52 });
-    results.push(trimAndSave(c, 'mono_ult_eclipse'));
-  }
-
-  // 4. mono_ult_djinn (S3 Sultan Djinn: Winged Cosmic Portal + Golden Palace Crown & Crescent)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 215, scale: 1.14, tint: [1.12, 0.92, 0.55] });
-    drawLayer(c, 'village/mono_tile_portal.png', { cx: 190, cy: 255, scale: 0.96 });
-    drawLayer(c, 'monopoly/mono_landmark_a.png', { cx: 190, cy: 175, scale: 0.72, tint: [1.12, 0.96, 0.78] });
-    drawLayer(c, 'ui/fx_moon.png', { cx: 190, cy: 78, scale: 0.46, rotDeg: 15 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 105, cy: 155, scale: 0.44 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 275, cy: 155, scale: 0.44 });
-    results.push(trimAndSave(c, 'mono_ult_djinn'));
-  }
-
-  // 5. mono_ult_phoenix (S3 Dune Phoenix: Outspread Golden Flame Wings + Blazing Solar Crest)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 235, scale: 1.08, tint: [1.15, 0.72, 0.35] });
-    drawLayer(c, 'monopoly/mono_trap_fire.png', { cx: 190, cy: 275, scale: 1.06 });
-    drawLayer(c, 'ui/fx_feather.png', { cx: 112, cy: 185, scale: 0.88, rotDeg: -38, flipX: true, tint: [1.15, 0.82, 0.45] });
-    drawLayer(c, 'ui/fx_feather.png', { cx: 268, cy: 185, scale: 0.88, rotDeg: 38, tint: [1.15, 0.82, 0.45] });
-    drawLayer(c, 'ui/fx_flame.png', { cx: 190, cy: 175, scale: 0.96 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 95, scale: 0.48 });
-    results.push(trimAndSave(c, 'mono_ult_phoenix'));
-  }
-
-  // 6. mono_ult_roulette (S4 Casino Royale: Golden Monte-Carlo Wheel Stage + Chips & Stars)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 225, scale: 1.12, tint: [1.15, 0.95, 0.45] });
-    drawLayer(c, 'village/mono_tile_festival.png', { cx: 190, cy: 225, scale: 0.96 });
-    drawLayer(c, 'ui/fx_chip.png', { cx: 102, cy: 165, scale: 0.50, rotDeg: -18 });
-    drawLayer(c, 'ui/fx_chip.png', { cx: 278, cy: 165, scale: 0.50, rotDeg: 18 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 95, scale: 0.50 });
-    results.push(trimAndSave(c, 'mono_ult_roulette'));
-  }
-
-  // 7. mono_ult_siren (S5 Atlantis Siren: Abyssal Whirlpool + Coral Spire & Siren Notes)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'monopoly/mono_trap_waterway.png', { cx: 190, cy: 285, scale: 1.18, tint: [0.75, 1.05, 1.15] });
-    drawLayer(c, 'ui/fx_shockwave.png', { cx: 190, cy: 215, scale: 1.06, tint: [0.45, 0.95, 1.1] });
-    drawLayer(c, 'monopoly/mono_trap_coral.png', { cx: 190, cy: 205, scale: 0.96 });
-    drawLayer(c, 'ui/fx_note.png', { cx: 108, cy: 135, scale: 0.46, rotDeg: -15 });
-    drawLayer(c, 'ui/fx_note.png', { cx: 274, cy: 130, scale: 0.46, rotDeg: 15 });
-    drawLayer(c, 'ui/fx_bubble.png', { cx: 190, cy: 95, scale: 0.42 });
-    results.push(trimAndSave(c, 'mono_ult_siren'));
-  }
-
-  // 8. mono_ult_astral (S6 Astral Sovereign: Cosmic Black Hole Rune + Golden Armillary Tower)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_rune.png', { cx: 190, cy: 215, scale: 1.22, tint: [0.88, 0.68, 1.15] });
-    drawLayer(c, 'ui/icon_skill_plasma_blast.png', { cx: 190, cy: 125, scale: 0.62, tint: [0.88, 0.68, 1.18] });
-    drawLayer(c, 'monopoly/mono_landmark_b.png', { cx: 190, cy: 215, scale: 0.92 });
-    drawLayer(c, 'ui/fx_stardust.png', { cx: 105, cy: 150, scale: 0.52 });
-    drawLayer(c, 'ui/fx_stardust.png', { cx: 275, cy: 150, scale: 0.52 });
-    results.push(trimAndSave(c, 'mono_ult_astral'));
-  }
-
-  // 9. mono_ult_clock (S7 Cinderella Midnight Clock: Astral Clock Dial + Glass Slipper Sanctuary)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 195, scale: 1.16, tint: [0.78, 0.95, 1.15] });
-    drawLayer(c, 'monopoly/mono_trap_slipper.png', { cx: 190, cy: 215, scale: 0.98 });
-    drawLayer(c, 'ui/fx_snowflake.png', { cx: 105, cy: 130, scale: 0.42 });
-    drawLayer(c, 'ui/fx_snowflake.png', { cx: 275, cy: 130, scale: 0.42 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 78, scale: 0.46 });
-    results.push(trimAndSave(c, 'mono_ult_clock'));
-  }
-
-  // 10. mono_ult_glacial (S8 Glacial Empress: Winged Ice Palace Crystal + Giant Snowflake Nova)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_shockwave.png', { cx: 190, cy: 215, scale: 1.14, tint: [0.7, 0.95, 1.15] });
-    drawLayer(c, 'ui/fx_snowflake.png', { cx: 190, cy: 145, scale: 0.92 });
-    drawLayer(c, 'village/mono_landmark_lv4.png', { cx: 190, cy: 235, scale: 0.95 });
-    drawLayer(c, 'ui/fx_snowflake.png', { cx: 102, cy: 185, scale: 0.42, rotDeg: -20 });
-    drawLayer(c, 'ui/fx_snowflake.png', { cx: 278, cy: 185, scale: 0.42, rotDeg: 20 });
-    results.push(trimAndSave(c, 'mono_ult_glacial'));
-  }
-
-  // 11. mono_ult_pharaoh (S9 Pharaoh & Sun God Ra: Winged Solar Halo + Golden Step Pyramid)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 185, scale: 1.16, tint: [1.15, 0.95, 0.45] });
-    drawLayer(c, 'ui/fx_feather.png', { cx: 102, cy: 165, scale: 0.82, rotDeg: -42, flipX: true, tint: [1.15, 0.92, 0.4] });
-    drawLayer(c, 'ui/fx_feather.png', { cx: 278, cy: 165, scale: 0.82, rotDeg: 42, tint: [1.15, 0.92, 0.4] });
-    drawLayer(c, 'monopoly/mono_pyramid_b.png', { cx: 190, cy: 235, scale: 0.98 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 82, scale: 0.52 });
-    results.push(trimAndSave(c, 'mono_ult_pharaoh'));
-  }
-
-  // 12. mono_ult_phantom (S10 Phantom Masque: Crimson-Gold Opera Rune + Gilded Masquerade Mirror)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_rune.png', { cx: 190, cy: 215, scale: 1.14, tint: [1.15, 0.45, 0.62] });
-    drawLayer(c, 'monopoly/mono_trap_mirror.png', { cx: 190, cy: 210, scale: 1.04 });
-    drawLayer(c, 'ui/fx_note.png', { cx: 105, cy: 145, scale: 0.46, rotDeg: -16, tint: [1.15, 0.6, 0.75] });
-    drawLayer(c, 'ui/fx_feather.png', { cx: 275, cy: 150, scale: 0.48, rotDeg: 24, tint: [1.15, 0.45, 0.55] });
-    results.push(trimAndSave(c, 'mono_ult_phantom'));
-  }
-
-  // 13. mono_ult_zeus (S11 Zeus Olympus: Olympus Lightning Spire + Colossal Golden Thunderbolt)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 225, scale: 1.12, tint: [1.15, 0.96, 0.45] });
-    drawLayer(c, 'ui/fx_shockwave.png', { cx: 190, cy: 215, scale: 1.08, tint: [1.15, 0.95, 0.45] });
-    drawLayer(c, 'monopoly/mono_trap_lightning_rod.png', { cx: 190, cy: 215, scale: 1.05 });
-    drawLayer(c, 'ui/fx_lightning.png', { cx: 125, cy: 125, scale: 0.65, rotDeg: -15 });
-    drawLayer(c, 'ui/fx_lightning.png', { cx: 255, cy: 125, scale: 0.65, rotDeg: 15, flipX: true });
-    results.push(trimAndSave(c, 'mono_ult_zeus'));
-  }
-
-  // 14. mono_trap_midas (Midas 24k Gold Tile Modifier)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_magic_circle.png', { cx: 190, cy: 255, scale: 0.92, tint: [1.15, 0.95, 0.42] });
-    drawLayer(c, 'ui/item_dupe_box.png', { cx: 190, cy: 225, scale: 0.78, tint: [1.12, 0.96, 0.68] });
-    drawLayer(c, 'ui/icon_gold.png', { cx: 122, cy: 265, scale: 0.45 });
-    drawLayer(c, 'ui/icon_gold.png', { cx: 258, cy: 265, scale: 0.45 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 118, scale: 0.46 });
-    results.push(trimAndSave(c, 'mono_trap_midas'));
-  }
-
-  // 15. mono_trap_chips (Casino Royale 2x Rent Chip Stack Tile Modifier)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'ui/fx_chip.png', { cx: 145, cy: 255, scale: 0.62, rotDeg: -12 });
-    drawLayer(c, 'ui/fx_chip.png', { cx: 235, cy: 255, scale: 0.62, rotDeg: 14, tint: [0.75, 0.95, 1.1] });
-    drawLayer(c, 'ui/fx_chip.png', { cx: 190, cy: 210, scale: 0.72 });
-    drawLayer(c, 'ui/fx_star.png', { cx: 190, cy: 125, scale: 0.45 });
-    results.push(trimAndSave(c, 'mono_trap_chips'));
-  }
-
-  // 16. mono_trap_ruins (Atlantis Siren 0x Rent Flooded Ruins Tile Modifier)
-  {
-    const c = createCanvas(W, H);
-    drawLayer(c, 'monopoly/mono_trap_waterway.png', { cx: 190, cy: 265, scale: 1.05, tint: [0.62, 0.85, 0.98] });
-    drawLayer(c, 'monopoly/mono_trap_coral.png', { cx: 190, cy: 215, scale: 0.78, tint: [0.68, 0.82, 0.95] });
-    drawLayer(c, 'ui/fx_bubble.png', { cx: 135, cy: 175, scale: 0.36 });
-    drawLayer(c, 'ui/fx_bubble.png', { cx: 245, cy: 165, scale: 0.40 });
-    results.push(trimAndSave(c, 'mono_trap_ruins'));
-  }
-
-  return results;
+  fs.writeFileSync(path.join(UI_DIR, 'particle_atlas.png'), PNG.sync.write(atlasOut));
+  return fxEntries;
 }
 
-function writeContactSheet(entries, file) {
-  const cell = 220, cols = 4, rows = Math.ceil(entries.length / cols);
+function writeContactSheet(entries, file, cols = 4) {
+  const cell = 240, rows = Math.ceil(entries.length / cols);
   const W = cols * cell, H = rows * cell;
   const out = new PNG({ width: W, height: H });
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = (y * W + x) * 4, chk = ((x >> 4) + (y >> 4)) & 1;
-      const v = chk ? 46 : 70;
-      out.data[i] = v; out.data[i + 1] = v + 6; out.data[i + 2] = v + 14; out.data[i + 3] = 255;
+      const v = chk ? 34 : 54;
+      out.data[i] = v; out.data[i + 1] = v + 4; out.data[i + 2] = v + 12; out.data[i + 3] = 255;
     }
   }
   entries.forEach((s, idx) => {
@@ -352,13 +365,41 @@ function writeContactSheet(entries, file) {
   fs.writeFileSync(file, PNG.sync.write(out));
 }
 
-const built = buildSprites();
-const m4a = JSON.parse(fs.readFileSync(MANIFEST_4A, 'utf8'));
-for (const item of built) {
-  m4a.sprites[item.name] = item.meta;
+function main() {
+  const sheetA = PNG.sync.read(fs.readFileSync(path.join(RAW_DIR, 'sheet_ult_entities_a.png')));
+  const sheetB = PNG.sync.read(fs.readFileSync(path.join(RAW_DIR, 'sheet_ult_entities_b.png')));
+  const sheetC = PNG.sync.read(fs.readFileSync(path.join(RAW_DIR, 'sheet_ult_traps_c.png')));
+
+  const builtMonuments = [];
+  SHEET_A_NAMES.forEach((name, idx) => {
+    builtMonuments.push(extractMonumentCell(sheetA, idx % 3, Math.floor(idx / 3), name));
+  });
+  SHEET_B_NAMES.forEach((name, idx) => {
+    builtMonuments.push(extractMonumentCell(sheetB, idx % 3, Math.floor(idx / 3), name));
+  });
+  SHEET_C_NAMES.forEach((name, idx) => {
+    builtMonuments.push(extractMonumentCell(sheetC, idx % 3, Math.floor(idx / 3), name));
+  });
+
+  const m4a = JSON.parse(fs.readFileSync(MANIFEST_4A, 'utf8'));
+  for (const item of builtMonuments) {
+    m4a.sprites[item.name] = item.meta;
+  }
+  m4a.generatedAt = new Date().toISOString();
+  fs.writeFileSync(MANIFEST_4A, JSON.stringify(m4a, null, 2) + '\n');
+
+  const fxEntries = buildParticleAtlas();
+  const assetManifest = JSON.parse(fs.readFileSync(ASSET_MANIFEST, 'utf8'));
+  for (const fx of fxEntries) {
+    assetManifest.sprites[fx.name] = fx.meta;
+  }
+  assetManifest.generatedAt = new Date().toISOString();
+  fs.writeFileSync(ASSET_MANIFEST, JSON.stringify(assetManifest, null, 2) + '\n');
+
+  writeContactSheet(builtMonuments, path.join(ROOT, 'qa_artifacts', 'ult_spells_contact.png'), 6);
+  writeContactSheet(fxEntries, path.join(ROOT, 'qa_artifacts', 'particle_atlas_contact.png'), 4);
+
+  console.log(`Sliced ${builtMonuments.length} Pure Spell Entities & Traps + ${fxEntries.length} Additive Particles!`);
 }
-m4a.generatedAt = new Date().toISOString();
-fs.writeFileSync(MANIFEST_4A, JSON.stringify(m4a, null, 2) + '\n');
-const contactPath = path.join(ROOT, 'qa_artifacts', 'ult_spells_contact.png');
-writeContactSheet(built, contactPath);
-console.log(`Built ${built.length} Ultimate & Trap sprites into client/assets/monopoly/ and updated manifest_4a.json`);
+
+main();

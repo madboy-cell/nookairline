@@ -2,4 +2,9 @@ node_modules/
 .DS_Store
 server/data/*.db*
 server/data/*.sqlite*
+server/data/*.backup*
+server/data/*.tmp
 qa_artifacts/
+art_src/
+.backup_*/
+NEORA_WORLD_V2_IMPLEMENTATION_PLAN.md

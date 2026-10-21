@@ -24,7 +24,7 @@ export const spritePack = Promise.all([
 }).catch(() => {});
 
 /** Upright billboard (anchored at its feet) or flat ground decal for a pack sprite; null if unavailable. */
-function packSprite(name, height, { flat = false } = {}) {
+function packSprite(name, height, { flat = false, additive = false, color = '#ffffff' } = {}) {
   const info = PACK.info[name];
   if (!info) return null;
   let tex = PACK.tex.get(name);
@@ -36,47 +36,124 @@ function packSprite(name, height, { flat = false } = {}) {
   }
   const w = height * (info.w / info.h);
   if (flat || info.flat) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, height).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, height).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({
+        map: tex,
+        color,
+        transparent: true,
+        depthWrite: false,
+        blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+      })
+    );
     m.position.y = 0.035;
-    m.renderOrder = 2;
+    m.renderOrder = additive ? 4 : 2;
     return m;
   }
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.04 }));
+  const sp = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tex,
+      color,
+      transparent: true,
+      alphaTest: additive ? 0.01 : 0.03,
+      depthWrite: !additive,
+      blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+    })
+  );
   sp.center.set(0.5, 0);
   sp.scale.set(w, height, 1);
   return sp;
 }
 
+/** Tree of Savior flat ground Sacred Magic Circle / Rune Seal with Additive Blending. */
+function groundRuneCircle(name, size, color = '#ffffff', { opacity = 0.9, y = 0.045 } = {}) {
+  const info = PACK.info[name];
+  let tex = null;
+  if (info) {
+    tex = PACK.tex.get(name);
+    if (!tex) {
+      tex = new THREE.TextureLoader().load(`/assets/${info.file}`);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      PACK.tex.set(name, tex);
+    }
+  }
+  const geo = tex ? new THREE.PlaneGeometry(size, size) : new THREE.RingGeometry(size * 0.28, size * 0.5, 32);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex || null,
+    color,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = y;
+  mesh.renderOrder = 4;
+  return mesh;
+}
+
 const BUILDING_SPRITE = { 1: ['mono_villa', 1.0], 2: ['mono_hotel', 1.35], 3: ['mono_landmark', 1.75], 4: ['mono_pyramid', 1.45] };
 const TRAP_SPRITE = {
-  ice_cube: ['mono_trap_ice_cube', 1.55], glacial: ['mono_ult_glacial', 1.45],
-  torii: ['mono_trap_torii', 1.55], mirror: ['mono_trap_mirror', 1.35],
-  slipper: ['mono_trap_slipper', 1.3], prison: ['mono_trap_slipper', 1.3], coral: ['mono_trap_coral', 1.15],
-  lightning_rod: ['mono_trap_lightning_rod', 1.8], waterway: ['mono_trap_waterway', 1.4, true], naga_wave: ['mono_trap_waterway', 1.4, true],
-  fire: ['mono_trap_fire', 1.5, true],
-  midas: ['mono_trap_midas', 1.25], chips: ['mono_trap_chips', 1.25], ruins: ['mono_trap_ruins', 1.35],
-  supernova: ['mono_ult_astral', 1.40],
+  ice_cube:       ['mono_trap_ice_cube', 1.55],
+  glacial:        ['mono_trap_glacial_crest', 1.45],
+  glacial_crest:  ['mono_trap_glacial_crest', 1.45],
+  torii:          ['mono_trap_torii', 1.55],
+  foxfire:        ['mono_trap_foxfire', 1.45],
+  mirror:         ['mono_trap_mirror', 1.40],
+  slipper:        ['mono_trap_slipper', 1.35],
+  prison:         ['mono_trap_slipper', 1.35],
+  coral:          ['mono_trap_coral', 1.25],
+  lightning_rod:  ['mono_trap_lightning_rod', 1.75],
+  waterway:       ['mono_trap_waterway', 1.4, true],
+  naga_wave:      ['mono_trap_waterway', 1.4, true],
+  fire:           ['mono_trap_fire', 1.5, true],
+  midas:          ['mono_trap_midas', 1.30],
+  chips:          ['mono_trap_chips', 1.30],
+  ruins:          ['mono_trap_ruins', 1.35],
+  supernova:      ['mono_trap_supernova', 1.45],
+  eclipse:        ['mono_trap_lunar_lantern', 1.45],
+  lunar_lantern:  ['mono_trap_lunar_lantern', 1.45],
+  eclipse_sun:     ['mono_trap_eclipse_sun', 1.45],
+  aurora_veil:     ['mono_trap_aurora_veil', 1.50],
+  rose_thorns:     ['mono_trap_rose_thorns', 1.40],
+  cyber_glitch:    ['mono_trap_cyber_glitch', 1.45],
+  starlight_gift:  ['mono_trap_starlight_gift', 1.40],
+  phoenix_feather: ['mono_trap_fire', 1.5, true],
+  whirlpool:       ['mono_trap_ruins', 1.35],
+  glass_slipper:   ['mono_trap_slipper', 1.35],
 };
 
 const ULT_SPECS = {
-  s1_naga_sovereign:    { sprite: 'mono_ult_naga',     p1: 'fx_bubble',    p2: 'fx_shockwave',    tint: [0.35, 0.95, 0.82], color: '#2ee6b8', center: false },
-  s2_kitsune_inari:     { sprite: 'mono_ult_kitsune',  p1: 'fx_petal',     p2: 'fx_flame',        tint: [1.0, 0.68, 0.82],  color: '#ff7aa8', center: false },
-  s2_tsukuyomi_eclipse: { sprite: 'mono_ult_eclipse',  p1: 'fx_moon',      p2: 'fx_rune',         tint: [0.78, 0.68, 1.0],  color: '#9b7bff', center: true  },
-  s3_sultan_djinn:      { sprite: 'mono_ult_djinn',    p1: 'fx_stardust',  p2: 'fx_magic_circle', tint: [1.0, 0.86, 0.42],  color: '#ffd24d', center: true  },
-  s3_dune_phoenix:      { sprite: 'mono_ult_phoenix',  p1: 'fx_flame',     p2: 'fx_feather',      tint: [1.0, 0.58, 0.22],  color: '#ff7a22', center: false },
-  s4_casino_royale:     { sprite: 'mono_ult_roulette', p1: 'fx_chip',      p2: 'fx_star',         tint: [1.0, 0.88, 0.35],  color: '#ffd34d', center: true  },
-  s5_atlantis_siren:    { sprite: 'mono_ult_siren',    p1: 'fx_bubble',    p2: 'fx_note',         tint: [0.35, 0.92, 0.98], color: '#47e5ff', center: false },
-  s6_astral_sovereign:  { sprite: 'mono_ult_astral',   p1: 'fx_rune',      p2: 'fx_stardust',     tint: [0.78, 0.48, 1.0],  color: '#a35cff', center: true  },
-  s7_cinderella_clock:  { sprite: 'mono_ult_clock',    p1: 'fx_magic_circle', p2: 'fx_snowflake', tint: [0.75, 0.90, 1.0],  color: '#9fd8ff', center: true  },
-  s8_glacial_elsa:      { sprite: 'mono_ult_glacial',  p1: 'fx_snowflake', p2: 'fx_shockwave',    tint: [0.65, 0.92, 1.0],  color: '#7fe3ff', center: false },
-  s9_pharaoh_ra:        { sprite: 'mono_ult_pharaoh',  p1: 'fx_magic_circle', p2: 'fx_moon',      tint: [1.0, 0.85, 0.25],  color: '#ffd34d', center: false, rowLaser: true },
-  s10_phantom_masque:   { sprite: 'mono_ult_phantom',  p1: 'fx_feather',   p2: 'fx_note',         tint: [0.95, 0.28, 0.42], color: '#ff4769', center: false },
-  s11_zeus_olympus:     { sprite: 'mono_ult_zeus',     p1: 'fx_lightning', p2: 'fx_shockwave',    tint: [1.0, 0.90, 0.35],  color: '#ffe35a', center: false, skyStrike: true },
-  // ✦ Super Mythic (Dopamine Patch §1A): bigger monument + a premium spectacle layer before the strike
-  sm_eclipse_dragon:    { sprite: 'mono_ult_sm_eclipse', p1: 'fx_flame',    p2: 'fx_stardust',  tint: [1.0, 0.78, 0.25],  color: '#ffb800', center: false, superVfx: 'eclipse_domain', size: 3.2 },
-  sm_aurora_empress:    { sprite: 'mono_ult_sm_aurora',  p1: 'fx_stardust', p2: 'fx_star',      tint: [0.62, 0.95, 1.0],  color: '#8ff0ff', center: false, superVfx: 'aurora_veil', size: 3.2 },
+  s1_naga_sovereign:    { sprite: 'mono_ult_naga',     tileProp: 'mono_trap_waterway',      choreo: 'surf_wave',           p1: 'fx_bubble',       p2: 'fx_shockwave',    tint: [0.35, 0.95, 0.82], color: '#2ee6b8', center: false },
+  s2_kitsune_inari:     { sprite: 'mono_ult_kitsune',  tileProp: 'mono_trap_foxfire',       choreo: 'portal_ambush',       p1: 'fx_petal',        p2: 'fx_flame',        tint: [1.0, 0.68, 0.82],  color: '#ff7aa8', center: false },
+  s2_tsukuyomi_eclipse: { sprite: 'mono_ult_eclipse',  tileProp: 'mono_trap_lunar_lantern', choreo: 'lunar_domain',        p1: 'fx_moon',         p2: 'fx_rune',         tint: [0.78, 0.68, 1.0],  color: '#9b7bff', center: true  },
+  s3_sultan_djinn:      { sprite: 'mono_ult_djinn',    tileProp: 'mono_trap_midas',         choreo: 'lamp_summon',         p1: 'fx_stardust',     p2: 'fx_magic_circle', tint: [1.0, 0.86, 0.42],  color: '#ffd24d', center: true  },
+  s3_dune_phoenix:      { sprite: 'mono_ult_phoenix',  tileProp: 'mono_trap_fire',          choreo: 'sky_dive',            p1: 'fx_flame',        p2: 'fx_feather',      tint: [1.0, 0.58, 0.22],  color: '#ff7a22', center: false },
+  s4_casino_royale:     { sprite: 'mono_ult_roulette', tileProp: 'mono_trap_chips',         choreo: 'spin_wheel',          p1: 'fx_chip',         p2: 'fx_star',         tint: [1.0, 0.88, 0.35],  color: '#ffd34d', center: true  },
+  s5_atlantis_siren:    { sprite: 'mono_ult_siren',    tileProp: 'mono_trap_coral',         choreo: 'trident_plunge',      p1: 'fx_bubble',       p2: 'fx_note',         tint: [0.35, 0.92, 0.98], color: '#47e5ff', center: false },
+  s6_astral_sovereign:  { sprite: 'mono_ult_astral',   tileProp: 'mono_trap_supernova',     choreo: 'gravity_singularity', p1: 'fx_rune',         p2: 'fx_stardust',     tint: [0.78, 0.48, 1.0],  color: '#a35cff', center: true  },
+  s7_cinderella_clock:  { sprite: 'mono_ult_clock',    tileProp: 'mono_trap_slipper',       choreo: 'clock_rewind',        p1: 'fx_magic_circle', p2: 'fx_snowflake',    tint: [0.75, 0.90, 1.0],  color: '#9fd8ff', center: true  },
+  s8_glacial_elsa:      { sprite: 'mono_ult_glacial',  tileProp: 'mono_trap_glacial_crest', choreo: 'domino_glacier',      p1: 'fx_snowflake',    p2: 'fx_shockwave',    tint: [0.65, 0.92, 1.0],  color: '#7fe3ff', center: false },
+  s9_pharaoh_ra:        { sprite: 'mono_ult_pharaoh',  tileProp: 'mono_pyramid_a',          choreo: 'orbital_laser',       p1: 'fx_magic_circle', p2: 'fx_moon',         tint: [1.0, 0.85, 0.25],  color: '#ffd34d', center: false, rowLaser: true },
+  s10_phantom_masque:   { sprite: 'mono_ult_phantom',  tileProp: 'mono_trap_mirror',        choreo: 'twin_mirrors',        p1: 'fx_feather',      p2: 'fx_note',         tint: [0.95, 0.28, 0.42], color: '#ff4769', center: false },
+  s11_zeus_olympus:     { sprite: 'mono_ult_zeus',     tileProp: 'mono_trap_lightning_rod', choreo: 'sky_artillery',       p1: 'fx_lightning',    p2: 'fx_shockwave',    tint: [1.0, 0.90, 0.35],  color: '#ffe35a', center: false, skyStrike: true },
+  // ✦ Super Mythic Sovereigns (5 Distinct Colossal Boss Cinematics)
+  sm_eclipse_dragon:    { sprite: 'mono_ult_sm_eclipse',  tileProp: 'mono_trap_eclipse_sun',    choreo: 'dragon_eclipse',   p1: 'fx_flame',     p2: 'fx_stardust',  tint: [1.0, 0.78, 0.25],  color: '#ffb800', center: true,  superVfx: 'eclipse_domain',     size: 3.45 },
+  sm_aurora_empress:    { sprite: 'mono_ult_sm_aurora',   tileProp: 'mono_trap_aurora_veil',    choreo: 'aurora_seraph',    p1: 'fx_stardust',  p2: 'fx_star',      tint: [0.62, 0.95, 1.0],  color: '#8ff0ff', center: true,  superVfx: 'aurora_veil',        size: 3.45 },
+  sm_seraphim_rose:     { sprite: 'mono_ult_sm_seraphim', tileProp: 'mono_trap_rose_thorns',    choreo: 'rose_cathedral',   p1: 'fx_petal',     p2: 'fx_heart',     tint: [1.0, 0.62, 0.82],  color: '#ff94c8', center: true,  superVfx: 'seraphim_sanctuary', size: 3.40 },
+  sm_cyber_archon:      { sprite: 'mono_ult_sm_cyber',    tileProp: 'mono_trap_cyber_glitch',   choreo: 'cyber_hack',       p1: 'fx_lightning', p2: 'fx_shockwave', tint: [0.22, 0.98, 1.0],  color: '#2ef7ff', center: true,  superVfx: 'quantum_overdrive',  size: 3.40 },
+  sm_starlight_ribbon:  { sprite: 'mono_ult_sm_ribbon',   tileProp: 'mono_trap_starlight_gift', choreo: 'ribbon_parade',    p1: 'fx_star',      p2: 'fx_heart',     tint: [1.0, 0.72, 0.92],  color: '#ffaee0', center: true,  superVfx: 'starlight_parade',   size: 3.40 },
 };
-const SUPER_BY_THEME = { eclipse_domain: 'sm_eclipse_dragon', aurora_veil: 'sm_aurora_empress' };
+const SUPER_BY_THEME = {
+  eclipse_domain: 'sm_eclipse_dragon',
+  aurora_veil: 'sm_aurora_empress',
+  seraphim_sanctuary: 'sm_seraphim_rose',
+  quantum_overdrive: 'sm_cyber_archon',
+  starlight_parade: 'sm_starlight_ribbon',
+};
 
 export const tokenModules = Promise.all([
   spritePack,
@@ -387,6 +464,80 @@ function buildingMesh(level, color, variant = 'a') {
   return g;
 }
 
+const _badgeTexCache = new Map();
+function statusPillSprite(text, { bg = 'rgba(20,30,48,0.92)', border = '#7fe3ff', color = '#ffffff', height = 0.4 } = {}) {
+  const key = `${text}|${bg}|${border}|${color}`;
+  let entry = _badgeTexCache.get(key);
+  if (!entry) {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 72;
+    const g = c.getContext('2d');
+    g.fillStyle = bg;
+    g.strokeStyle = border;
+    g.lineWidth = 5;
+    g.beginPath();
+    g.roundRect(8, 8, 240, 56, 28);
+    g.fill();
+    g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.14)';
+    g.beginPath();
+    g.roundRect(14, 12, 228, 22, 12);
+    g.fill();
+    g.font = '800 26px "Fredoka", "Nunito", system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.lineWidth = 5;
+    g.strokeStyle = 'rgba(18, 10, 6, 0.85)';
+    g.strokeText(text, 128, 37);
+    g.fillStyle = color;
+    g.fillText(text, 128, 37);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    entry = { tex, aspect: c.width / c.height };
+    _badgeTexCache.set(key, entry);
+  }
+  const sp = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: entry.tex,
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+    })
+  );
+  sp.scale.set(height * entry.aspect, height, 1);
+  sp.renderOrder = 14;
+  return sp;
+}
+
+function modifierBadgeSpec(mod) {
+  if (!mod) return null;
+  if (mod.rentZero) return { text: '❄️ 0× RENT', bg: 'rgba(14,52,86,0.92)', border: '#7fe3ff', color: '#e8fbff' };
+  if (mod.invertRent) return { text: '🎭 INVERT', bg: 'rgba(72,18,46,0.92)', border: '#ff5a8a', color: '#ffe6f0' };
+  if (mod.stepForward) return { text: `⛩️ +${mod.stepForward} TILE`, bg: 'rgba(92,24,20,0.92)', border: '#ff8a5c', color: '#fff0e6' };
+  if (mod.jailOnLand) return { text: '👠 PRISON', bg: 'rgba(28,54,92,0.92)', border: '#9fd8ff', color: '#eef8ff' };
+  if (mod.teleportToCheapest) return { text: '💠 WARP', bg: 'rgba(20,66,82,0.92)', border: '#47e5ff', color: '#e6fcff' };
+  if (mod.rentMul && mod.rentMul < 1) return { text: `🔥 ×${mod.rentMul}`, bg: 'rgba(88,28,12,0.92)', border: '#ff7a22', color: '#ffe8d6' };
+  if (mod.rentMul && mod.rentMul > 1) {
+    if (mod.ticketBonus) return { text: `🎁 ×${mod.rentMul} +🎟️`, bg: 'rgba(82,26,68,0.92)', border: '#ffaee0', color: '#fff0fa' };
+    if (mod.fxTheme === 'eclipse_sun') return { text: `☀️ ×${mod.rentMul}`, bg: 'rgba(76,46,8,0.92)', border: '#ffb800', color: '#fff5d6' };
+    if (mod.fxTheme === 'rose_thorns') return { text: `🌹 ×${mod.rentMul}`, bg: 'rgba(84,22,52,0.92)', border: '#ff94c8', color: '#fff0f7' };
+    if (mod.fxTheme === 'aurora_veil') return { text: `🌌 ×${mod.rentMul}`, bg: 'rgba(18,58,78,0.92)', border: '#8ff0ff', color: '#ebfcff' };
+    return { text: `⚡ ×${mod.rentMul}`, bg: 'rgba(68,48,12,0.92)', border: '#ffd34d', color: '#fff8dc' };
+  }
+  return null;
+}
+
+function attachModifierTag(g, mod) {
+  const spec = modifierBadgeSpec(mod);
+  if (!spec) return g;
+  const tag = statusPillSprite(spec.text, { ...spec, height: 0.36 });
+  tag.position.set(0, 1.48, 0);
+  g.add(tag);
+  g.userData.tag = tag;
+  return g;
+}
+
 function modifierProp(mod) {
   const g = new THREE.Group();
   const theme = mod.fxTheme || '';
@@ -396,7 +547,7 @@ function modifierProp(mod) {
     if (def[2]) g.userData.pulse = sp;
     else sp.position.z = 0.1;
     g.add(sp);
-    return g;
+    return attachModifierTag(g, mod);
   }
   const add = (mesh, y = 0) => { mesh.position.y += y; g.add(mesh); return mesh; };
   if (theme === 'ice_cube') {
@@ -437,7 +588,7 @@ function modifierProp(mod) {
     const ring = add(new THREE.Mesh(new THREE.RingGeometry(0.75, 0.92, 32), M('#c78bff', { emissive: '#7a3cff', emissiveIntensity: 0.8, transparent: true, opacity: 0.8 })), 0.05);
     ring.rotation.x = -Math.PI / 2; g.userData.pulse = ring;
   }
-  return g;
+  return attachModifierTag(g, mod);
 }
 
 /** Builds merged non-overlapping ground planes with world-space UVs (1 draw call per layer, zero Z-fighting). */
@@ -479,24 +630,13 @@ export const MONO_LANDSCAPE_THEMES = [
     groundMedal: 'mono_ground_brook_classic',
     curbColor: '#f3e5d0',
     cobbleSwatch: 'road_cobble',
-    northHero: ['bld_shrine', 1.98],
-    northTrees: ['env_tree_sakura_a', 'env_tree_sakura_b', 1.82],
-    northOuter: ['env_sunflower_clump', 0.92],
-    northInner: ['env_bush_hydrangea_blue', 0.86],
-    centerHero: ['wnd_fountain', 1.76],
-    wingTrees: ['env_tree_oak_a', 'env_tree_fruit_apple', 1.74],
-    westWing: ['dec_love_pavilion', 1.62],
-    eastWing: ['dec_boba_stand', 1.56],
-    westSub: ['dec_birdbath_lamp', 1.02],
-    eastSub: ['dec_flower_cart', 1.04],
-    plazaBush: ['env_bush_roses_pink', 0.80],
-    southBridge: ['dec_stone_arch_footbridge', 1.44],
-    southWestA: ['dec_cat_cushion', 1.02],
-    southWestB: ['dec_gramophone', 0.96],
-    southEastA: ['dec_wishing_well', 1.26],
-    southEastB: ['dec_koi_barrel_pond', 0.90],
-    southFrontW: ['dec_mushroom_ring', 0.78],
-    southFrontE: ['dec_owl_mailbox', 0.94],
+    northHero: ['bld_shrine', 3.04],
+    northTrees: ['env_tree_sakura_a', 'env_tree_sakura_b', 2.32],
+    centerHero: ['wnd_fountain', 2.42],
+    wingTrees: ['env_tree_oak_a', 'env_tree_fruit_apple', 2.16],
+    westWing: ['dec_love_pavilion', 2.34],
+    eastWing: ['dec_boba_stand', 2.22],
+    southBridge: ['dec_stone_arch_footbridge', 1.84],
   },
   {
     id: 'sakura',
@@ -512,24 +652,13 @@ export const MONO_LANDSCAPE_THEMES = [
     groundMedal: 'mono_ground_pond_sakura',
     curbColor: '#fce4e8',
     cobbleSwatch: 'road_sakura',
-    northHero: ['wnd_sakura_pagoda', 2.08],
-    northTrees: ['env_tree_sakura_a', 'env_tree_sakura_b', 1.84],
-    northOuter: ['env_bush_roses_pink', 0.86],
-    northInner: ['env_bush_daisies_white', 0.84],
-    centerHero: ['dec_bamboo_shishi_odoshi', 1.48],
-    wingTrees: ['env_tree_sakura_b', 'env_tree_golden_maple', 1.76],
-    westWing: ['wnd_onsen', 1.66],
-    eastWing: ['wnd_tea_pavilion', 1.66],
-    westSub: ['dec_couple_hammock', 1.18],
-    eastSub: ['dec_boba_stand', 1.32],
-    plazaBush: ['env_bush_roses_pink', 0.80],
-    southBridge: ['dec_sakura_drum_bridge', 1.38],
-    southWestA: ['dec_picnic', 1.06],
-    southWestB: ['dec_cat_bakery_sign', 0.94],
-    southEastA: ['dec_koi_barrel_pond', 0.96],
-    southEastB: ['dec_owl_mailbox', 0.94],
-    southFrontW: ['env_bush_roses_pink', 0.78],
-    southFrontE: ['dec_wooden_bench', 0.92],
+    northHero: ['wnd_sakura_pagoda', 3.36],
+    northTrees: ['env_tree_sakura_a', 'env_tree_sakura_b', 2.38],
+    centerHero: ['dec_bamboo_shishi_odoshi', 2.18],
+    wingTrees: ['env_tree_sakura_b', 'env_tree_golden_maple', 2.18],
+    westWing: ['wnd_onsen', 2.46],
+    eastWing: ['wnd_tea_pavilion', 2.46],
+    southBridge: ['dec_sakura_drum_bridge', 1.84],
   },
   {
     id: 'mirage',
@@ -545,24 +674,13 @@ export const MONO_LANDSCAPE_THEMES = [
     groundMedal: 'mono_ground_oasis_mirage',
     curbColor: '#f9dfb5',
     cobbleSwatch: 'road_cobble',
-    northHero: ['wnd_mirage_palace', 2.06],
-    northTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 1.84],
-    northOuter: ['env_sunflower_clump', 0.92],
-    northInner: ['env_bush_daisies_white', 0.84],
-    centerHero: ['dec_oasis_obelisk_fountain', 1.72],
-    wingTrees: ['env_tree_palm_oasis', 'env_tree_golden_maple', 1.76],
-    westWing: ['dec_sultan_bazaar_canopy', 1.62],
-    eastWing: ['wnd_sky_airship_dock', 1.68],
-    westSub: ['dec_gramophone', 1.00],
-    eastSub: ['dec_balloon_cart', 1.10],
-    plazaBush: ['env_sunflower_clump', 0.82],
-    southBridge: ['dec_stone_arch_footbridge', 1.44],
-    southWestA: ['dec_tent', 1.20],
-    southWestB: ['dec_honey_beehive', 0.90],
-    southEastA: ['dec_starlight_telescope', 1.04],
-    southEastB: ['dec_berry_wheelbarrow', 0.92],
-    southFrontW: ['dec_cat_cushion', 0.94],
-    southFrontE: ['dec_painter_easel', 0.96],
+    northHero: ['wnd_mirage_palace', 3.32],
+    northTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 2.36],
+    centerHero: ['dec_oasis_obelisk_fountain', 2.44],
+    wingTrees: ['env_tree_palm_oasis', 'env_tree_golden_maple', 2.18],
+    westWing: ['dec_sultan_bazaar_canopy', 2.36],
+    eastWing: ['wnd_sky_airship_dock', 2.46],
+    southBridge: ['dec_stone_arch_footbridge', 1.84],
   },
   {
     id: 'atlantis',
@@ -578,24 +696,13 @@ export const MONO_LANDSCAPE_THEMES = [
     groundMedal: 'mono_ground_lagoon_atlantis',
     curbColor: '#fff6e5',
     cobbleSwatch: 'road_cream',
-    northHero: ['wnd_atlantis_sanctuary', 2.04],
-    northTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 1.82],
-    northOuter: ['env_bush_hydrangea_blue', 0.88],
-    northInner: ['env_bush_roses_pink', 0.82],
-    centerHero: ['dec_siren_shell_fountain', 1.68],
-    wingTrees: ['env_tree_oak_b', 'env_tree_oak_a', 1.72],
-    westWing: ['bld_starlight_lighthouse', 1.72],
-    eastWing: ['dec_coral_crystal_arch', 1.56],
-    westSub: ['dec_birdbath_lamp', 1.02],
-    eastSub: ['dec_flower_cart', 1.04],
-    plazaBush: ['env_bush_hydrangea_blue', 0.82],
-    southBridge: ['bridge_rainbow_arch', 1.38],
-    southWestA: ['dec_koi_barrel_pond', 0.96],
-    southWestB: ['dec_painter_easel', 0.96],
-    southEastA: ['dec_wishing_well', 1.24],
-    southEastB: ['dec_cat_cushion', 0.94],
-    southFrontW: ['dec_mushroom_ring', 0.78],
-    southFrontE: ['dec_starlight_telescope', 0.98],
+    northHero: ['wnd_atlantis_sanctuary', 3.28],
+    northTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 2.34],
+    centerHero: ['dec_siren_shell_fountain', 2.42],
+    wingTrees: ['env_tree_palm_oasis', 'env_tree_oak_a', 2.16],
+    westWing: ['bld_starlight_lighthouse', 2.68],
+    eastWing: ['dec_coral_crystal_arch', 2.38],
+    southBridge: ['bridge_rainbow_arch', 1.84],
   },
   {
     id: 'aurora',
@@ -611,24 +718,35 @@ export const MONO_LANDSCAPE_THEMES = [
     groundMedal: 'mono_ground_rink_aurora',
     curbColor: '#eef5fc',
     cobbleSwatch: 'road_cream',
-    northHero: ['wnd_aurora_observatory', 2.04],
-    northTrees: ['env_tree_pine_snowy', 'env_tree_pine_snowy', 1.84],
-    northOuter: ['env_bush_hydrangea_blue', 0.88],
-    northInner: ['env_bush_daisies_white', 0.84],
-    centerHero: ['dec_aurora_crystal_gazebo', 1.72],
-    wingTrees: ['env_tree_pine_snowy', 'env_tree_pine_snowy', 1.76],
-    westWing: ['wnd_ferris', 1.74],
-    eastWing: ['wnd_sky_airship_dock', 1.68],
-    westSub: ['dec_starlight_telescope', 1.02],
-    eastSub: ['dec_boba_stand', 1.34],
-    plazaBush: ['env_bush_hydrangea_blue', 0.82],
-    southBridge: ['dec_stone_arch_footbridge', 1.44],
-    southWestA: ['dec_tent', 1.20],
-    southWestB: ['dec_gramophone', 0.96],
-    southEastA: ['dec_wishing_well', 1.26],
-    southEastB: ['dec_owl_mailbox', 0.94],
-    southFrontW: ['dec_mushroom_ring', 0.78],
-    southFrontE: ['dec_bench_ortho_front', 0.90],
+    northHero: ['wnd_aurora_observatory', 3.32],
+    northTrees: ['env_tree_pine_snowy', 'env_tree_pine_snowy', 2.38],
+    centerHero: ['dec_aurora_crystal_gazebo', 2.44],
+    wingTrees: ['env_tree_pine_snowy', 'env_tree_pine_snowy', 2.20],
+    westWing: ['wnd_ferris', 2.68],
+    eastWing: ['wnd_sky_airship_dock', 2.46],
+    southBridge: ['dec_stone_arch_footbridge', 1.84],
+  },
+  {
+    id: 'dubai',
+    key: 'dubai',
+    name: 'Dubai Royal Palm & Burj',
+    label: '🏙️ Dubai Royal Palm & Burj',
+    emoji: '🏙️',
+    subtitle: 'Burj Khalifa • Palm Jumeirah • Burj Al Arab & Future Museum',
+    accent: '#f59e0b',
+    sky: '#7ecbff',
+    groundSwatch: 'ground_vanilla',
+    groundTint: '#c2d168',
+    groundMedal: 'mono_ground_palm_jumeirah',
+    curbColor: '#f9dfb5',
+    cobbleSwatch: 'road_cobble',
+    northHero: ['wnd_burj_khalifa', 3.88],
+    northTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 2.36],
+    centerHero: ['dec_palm_jumeirah_island', 2.66],
+    wingTrees: ['env_tree_palm_oasis', 'env_tree_palm_oasis', 2.18],
+    westWing: ['dec_burj_al_arab_sail', 2.98],
+    eastWing: ['dec_museum_of_the_future', 2.58],
+    southBridge: ['dec_stone_arch_footbridge', 1.84],
   },
 ];
 
@@ -668,10 +786,10 @@ function buildCourtyardHardscape(g, theme = MONO_LANDSCAPE_THEMES[0]) {
       PACK.tex.set(theme.groundMedal, tex);
     }
     const medalMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(8.42, 7.42).rotateX(-Math.PI / 2),
+      new THREE.PlaneGeometry(10.55, 9.75).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.02, depthWrite: false }),
     );
-    medalMesh.position.set(0, -BOARD.H + 0.018, 0.76);
+    medalMesh.position.set(0, -BOARD.H + 0.018, 0.84);
     medalMesh.renderOrder = 2;
     medalMesh.matrixAutoUpdate = false;
     medalMesh.updateMatrix();
@@ -680,12 +798,12 @@ function buildCourtyardHardscape(g, theme = MONO_LANDSCAPE_THEMES[0]) {
   }
 
   const curbRects = [
-    [3.20, 3.20,  0.00,  0.00],
-    [1.68, 0.50,  0.00, -1.85],
-    [3.20, 1.90,  0.00, -3.05],
-    [1.68, 1.40,  0.00,  2.30],
-    [1.70, 2.00, -2.45,  0.00],
-    [1.70, 2.00,  2.45,  0.00],
+    [3.85, 3.85,  0.00,  0.10],
+    [1.95, 0.65,  0.00, -2.05],
+    [3.85, 2.20,  0.00, -3.35],
+    [1.95, 1.65,  0.00,  2.75],
+    [2.05, 2.35, -2.95,  0.10],
+    [2.05, 2.35,  2.95,  0.10],
   ];
   const curbMat = M(theme?.curbColor || '#f3e5d0', { roughness: 0.85 });
   const curbMesh = buildCourtyardPlaneMesh(curbRects, -BOARD.H + 0.012, curbMat);
@@ -693,12 +811,12 @@ function buildCourtyardHardscape(g, theme = MONO_LANDSCAPE_THEMES[0]) {
   g.add(curbMesh);
 
   const cobbleRects = [
-    [2.96, 2.96,  0.00,  0.00],
-    [1.44, 0.74,  0.00, -1.85],
-    [2.96, 1.66,  0.00, -3.05],
-    [1.44, 1.40,  0.00,  2.18],
-    [1.70, 1.76, -2.33,  0.00],
-    [1.70, 1.76,  2.33,  0.00],
+    [3.56, 3.56,  0.00,  0.10],
+    [1.68, 0.90,  0.00, -2.05],
+    [3.56, 1.92,  0.00, -3.35],
+    [1.68, 1.65,  0.00,  2.62],
+    [2.05, 2.08, -2.80,  0.10],
+    [2.05, 2.08,  2.80,  0.10],
   ];
   const cobbleMat = M('#e8d5b5', { roughness: 0.8 });
   loadTerrainTex(theme?.cobbleSwatch || 'road_cobble', (tex) => {
@@ -736,57 +854,30 @@ function centerDecorSprites(theme = MONO_LANDSCAPE_THEMES[0]) {
     g.add(sp);
   };
 
-  // 1C–1D. Stepping Stones & Symmetrical Meadow Flower Decals
   if (!hasGroundMedal) {
-    putFlat('decal_plaza_medallion_circle', 1.95, 0.00, -0.18, 0.022);
-    putFlat('decal_plaza_medallion_circle', 1.38, 0.00, -3.08, 0.021);
-  }
-  putFlat('decal_path_stepping_stones',   0.84, 0.00,  4.38, 0.021);
-  for (const s of [-1, 1]) {
-    putFlat('decal_grass_daisies_b', 0.80, s * 2.15, -3.65, 0.020);
-    putFlat('decal_grass_clover_a',  0.76, s * 3.45, -1.65, 0.020);
-    putFlat('decal_grass_daisies_b', 0.80, s * 2.95,  4.15, 0.020);
+    putFlat('decal_plaza_medallion_circle', 2.35, 0.00, -0.05, 0.022);
+    putFlat('decal_plaza_medallion_circle', 1.65, 0.00, -3.12, 0.021);
   }
 
-  // 2A. North Tier (z = -3.42 to -2.25) — Theme Hero Landmark & Symmetrical Flanking Trees
+  // 1. North Skyline Anchor — Towering Hero Landmark & Wide Flanking Canopy
   const [nHero, nHeroH] = theme.northHero;
-  put(PACK.info[nHero] ? nHero : (PACK.info.bld_shrine ? 'bld_shrine' : 'mono_dec_shrine'), nHeroH, 0.00, -3.42);
+  put(PACK.info[nHero] ? nHero : (PACK.info.bld_shrine ? 'bld_shrine' : 'mono_dec_shrine'), nHeroH, 0.00, -2.78);
   const [nTreeL, nTreeR, nTreeH] = theme.northTrees;
-  put(nTreeL, nTreeH, -2.76, -3.28);
-  put(nTreeR, nTreeH,  2.76, -3.28);
-  put(theme.northOuter[0], theme.northOuter[1], -3.45, -2.68);
-  put(theme.northOuter[0], theme.northOuter[1],  3.45, -2.68);
-  put(theme.northInner[0], theme.northInner[1], -1.68, -2.72);
-  put(theme.northInner[0], theme.northInner[1],  1.68, -2.72);
-  put('env_streetlamp_double', 1.32, -1.04, -2.28);
-  put('env_streetlamp_double', 1.32,  1.04, -2.28);
+  put(nTreeL, nTreeH, -3.38, -2.96);
+  put(nTreeR, nTreeH,  3.38, -2.96);
 
-  // 2B. Center Tier (z = -0.65 to +0.96) — Central Plaza Fountain/Wonder & West/East Feature Wings
+  // 2. Center Medallion & West/East Feature Wings (uncluttered, wide heroic spacing)
   const [cHero, cHeroH] = theme.centerHero;
-  put(PACK.info[cHero] ? cHero : (PACK.info.wnd_fountain ? 'wnd_fountain' : 'mono_dec_fountain'), cHeroH, 0.00, 0.16);
+  put(PACK.info[cHero] ? cHero : (PACK.info.wnd_fountain ? 'wnd_fountain' : 'mono_dec_fountain'), cHeroH, 0.00, 0.36);
   const [wTreeL, wTreeR, wTreeH] = theme.wingTrees;
-  put(wTreeL, wTreeH, -3.32, -0.42);
-  put(wTreeR, wTreeH,  3.32, -0.42);
-  put(theme.westWing[0], theme.westWing[1], -2.42,  0.04);
-  put(PACK.info[theme.eastWing[0]] ? theme.eastWing[0] : 'mono_dec_boba', theme.eastWing[1], 2.42, 0.04);
-  put(theme.westSub[0],  theme.westSub[1],  -2.32,  0.96);
-  put(theme.eastSub[0],  theme.eastSub[1],   2.32,  0.96);
-  put(theme.plazaBush[0], theme.plazaBush[1], -1.38, -0.68);
-  put(theme.plazaBush[0], theme.plazaBush[1],  1.38, -0.68);
-  put('env_streetlamp_iron', 1.28, -1.34, 0.82);
-  put('env_streetlamp_iron', 1.28,  1.34, 0.82);
+  put(wTreeL, wTreeH, -3.86, 1.65);
+  put(wTreeR, wTreeH,  3.86, 1.65);
+  put(theme.westWing[0], theme.westWing[1], -3.02, 0.28);
+  put(PACK.info[theme.eastWing[0]] ? theme.eastWing[0] : 'mono_dec_boba', theme.eastWing[1], 3.02, 0.28);
 
-  // 2C. South Waterfront Tier (z = +2.55 to +4.65) — Arched Brook Footbridge, Waterfront Vignettes & South Border
-  put(theme.southBridge[0], theme.southBridge[1],  0.00, 3.44);
-  put(theme.southWestA[0],  theme.southWestA[1],  -2.32, 2.66);
-  put(theme.southWestB[0],  theme.southWestB[1],  -3.40, 2.48);
-  put(theme.southEastA[0],  theme.southEastA[1],   2.32, 2.66);
-  put(theme.southEastB[0],  theme.southEastB[1],   3.40, 2.48);
-  put(theme.southFrontW[0], theme.southFrontW[1], -1.36, 3.84);
-  put(theme.southFrontE[0], theme.southFrontE[1],  1.36, 3.84);
-  for (const s of [-1, 1]) {
-    put('env_planter_ortho_horizontal', 0.86, s * 1.48, 4.62);
-    put('env_fence_ortho_horizontal',   0.82, s * 2.78, 4.62);
+  // 3. South Waterfront Footbridge (strictly on solid lagoon bridge crossing)
+  if (theme.southBridge) {
+    put(theme.southBridge[0], theme.southBridge[1], 0.00, 4.02);
   }
 
   // Outer START corner departure gate (Tile 0)
@@ -955,11 +1046,8 @@ export class MonopolyBoard {
     const keys = [
       theme.groundMedal,
       theme.northHero?.[0], theme.northTrees?.[0], theme.northTrees?.[1],
-      theme.northOuter?.[0], theme.northInner?.[0], theme.centerHero?.[0],
-      theme.wingTrees?.[0], theme.wingTrees?.[1], theme.westWing?.[0], theme.eastWing?.[0],
-      theme.westSub?.[0], theme.eastSub?.[0], theme.plazaBush?.[0], theme.southBridge?.[0],
-      theme.southWestA?.[0], theme.southWestB?.[0], theme.southEastA?.[0], theme.southEastB?.[0],
-      theme.southFrontW?.[0], theme.southFrontE?.[0],
+      theme.centerHero?.[0], theme.wingTrees?.[0], theme.wingTrees?.[1],
+      theme.westWing?.[0], theme.eastWing?.[0], theme.southBridge?.[0],
     ].filter(Boolean);
     if (!keys.length) return 1;
     let ready = 0;
@@ -1144,12 +1232,13 @@ export class MonopolyBoard {
     for (const tk of this.tokens) this.disposeToken(tk);
     this.tokens = players.map((p) => this.makeToken(p));
     this.layoutTokens(true);
+    this.syncTokenStatuses(players, { animate: false });
   }
 
   makeToken(p) {
     const color = SEAT_COLORS[p.seat % 4];
     const outfitId = p.outfit || p.equipped?.outfit?.id || 'newbie_outfit';
-    const tk = { seat: p.seat, x: 0, z: 0, vx: 0, vz: 0, moving: false, idleFor: 1, rig: null, pet: null, pawn: null, bankrupt: false, outfit: outfitId, walkFx: getWalkFx(outfitId) };
+    const tk = { seat: p.seat, x: 0, z: 0, vx: 0, vz: 0, moving: false, idleFor: 1, rig: null, pet: null, pawn: null, bankrupt: false, frozen: false, statusKey: '', statusGroup: null, outfit: outfitId, walkFx: getWalkFx(outfitId) };
     try {
       if (!ChibiRig) throw new Error('rig module not loaded');
       tk.rig = new ChibiRig({ lineage: p.lineage || 'bkk', appearance: p.appearance, name: p.name, sub: `P${p.seat + 1}`, wings: p.equipped?.wings?.id || null });
@@ -1176,6 +1265,9 @@ export class MonopolyBoard {
     ring.position.y = 0.03;
     this.scene.add(ring);
     tk.ring = ring;
+    const statusGroup = new THREE.Group();
+    this.scene.add(statusGroup);
+    tk.statusGroup = statusGroup;
     return tk;
   }
 
@@ -1184,6 +1276,11 @@ export class MonopolyBoard {
     if (tk.pawn) this.scene.remove(tk.pawn);
     tk.pet?.dispose?.(this.scene);
     this.scene.remove(tk.ring);
+    if (tk.statusGroup) {
+      this.scene.remove(tk.statusGroup);
+      disposeObj(tk.statusGroup);
+      tk.statusGroup = null;
+    }
   }
 
   seatSpot(seat, pos) {
@@ -1199,6 +1296,105 @@ export class MonopolyBoard {
     if (tk.rig) tk.rig.setPosition(x, z);
     if (tk.pawn) tk.pawn.position.set(x, 0, z);
     tk.ring.position.set(x, 0.03, z);
+    if (tk.statusGroup) tk.statusGroup.position.set(x, 0, z);
+  }
+
+  syncTokenStatuses(players = this.state?.players, { animate = true } = {}) {
+    if (!players) return;
+    for (const tk of this.tokens) {
+      this.syncTokenStatus(tk, players[tk.seat], { animate });
+    }
+  }
+
+  syncTokenStatus(tk, p, { animate = true } = {}) {
+    if (!tk?.statusGroup) return;
+    const st = p?.status || {};
+    const bankrupt = Boolean(p?.bankrupt || tk.bankrupt);
+    const frozen = !bankrupt && Boolean(st.skipTurn);
+    const reversed = !bankrupt && st.moveDir === -1;
+    const maxRoll = !bankrupt && Number(st.maxRoll) > 0 ? Number(st.maxRoll) : 0;
+    const fixedRoll = !bankrupt && Number(st.fixedRoll) > 0 ? Number(st.fixedRoll) : 0;
+    const shields = !bankrupt && Number(p?.shields) > 0 ? Number(p.shields) : 0;
+    const key = `${bankrupt ? 1 : 0}:${frozen ? 1 : 0}:${reversed ? 1 : 0}:${maxRoll}:${fixedRoll}:${shields}`;
+    const wasFrozen = tk.frozen;
+    tk.frozen = frozen;
+    if (tk.statusKey === key) return;
+    tk.statusKey = key;
+
+    const g = tk.statusGroup;
+    while (g.children.length) {
+      const c = g.children[0];
+      g.remove(c);
+      disposeObj(c);
+    }
+    g.userData = {};
+    if (bankrupt) return;
+
+    if (shields > 0) {
+      const sRing = groundRuneCircle('fx_magic_circle', 1.38, '#ffd859', { opacity: 0.88, y: 0.042 });
+      g.add(sRing);
+      g.userData.shieldRing = sRing;
+    }
+
+    if (frozen) {
+      const fRing = groundRuneCircle('fx_magic_circle', 1.48, '#7fe3ff', { opacity: 0.92, y: 0.048 });
+      g.add(fRing);
+      g.userData.hexRing = fRing;
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.92, 1.36, 0.92),
+        M('#bfefff', { transparent: true, opacity: 0.38, roughness: 0.08, emissive: '#3898c8', emissiveIntensity: 0.35, depthWrite: false })
+      );
+      box.position.y = 0.68;
+      box.renderOrder = 11;
+      g.add(box);
+      const iceSp = packSprite('mono_trap_ice_cube', 1.46);
+      if (iceSp) {
+        iceSp.material = iceSp.material.clone();
+        iceSp.material.opacity = 0.64;
+        iceSp.material.depthTest = false;
+        iceSp.material.depthWrite = false;
+        iceSp.position.set(0, 0.02, 0.22);
+        iceSp.renderOrder = 12;
+        g.add(iceSp);
+      }
+      const pill = statusPillSprite('❄️ FROZEN', { bg: 'rgba(12,56,92,0.95)', border: '#7fe3ff', color: '#ebfcff', height: 0.29 });
+      pill.position.set(0, 1.78, 0);
+      g.add(pill);
+      g.userData.pill = pill;
+      if (animate && !wasFrozen) {
+        this.fx.emit('fx_snowflake', tk.x, 0.8, tk.z, 14, { speed: 1.8, up: 1.6, size: 0.34, life: 0.75, gravity: 1.2, tint: [0.7, 0.95, 1.0] });
+        this.ripple(tk.x, tk.z, { color: '#7fe3ff', r0: 0.3, r1: 1.65, dur: 0.5 });
+      }
+    } else if (reversed) {
+      const hRing = groundRuneCircle('fx_magic_circle', 1.38, '#c875ff', { opacity: 0.86, y: 0.046 });
+      g.add(hRing);
+      g.userData.hexRing = hRing;
+      const pill = statusPillSprite('⏪ REVERSE', { bg: 'rgba(66,18,92,0.95)', border: '#d58cff', color: '#f8eaff', height: 0.28 });
+      pill.position.set(0, 1.76, 0);
+      g.add(pill);
+      g.userData.pill = pill;
+    } else if (maxRoll > 0) {
+      const hRing = groundRuneCircle('fx_magic_circle', 1.36, '#5ce6ff', { opacity: 0.84, y: 0.046 });
+      g.add(hRing);
+      g.userData.hexRing = hRing;
+      const pill = statusPillSprite(`🎲 MAX ${maxRoll}`, { bg: 'rgba(16,58,78,0.95)', border: '#66f0ff', color: '#e8fcff', height: 0.28 });
+      pill.position.set(0, 1.76, 0);
+      g.add(pill);
+      g.userData.pill = pill;
+    } else if (fixedRoll > 0) {
+      const hRing = groundRuneCircle('fx_magic_circle', 1.36, '#b48cff', { opacity: 0.84, y: 0.046 });
+      g.add(hRing);
+      g.userData.hexRing = hRing;
+      const pill = statusPillSprite(`🌙 ROLL ${fixedRoll}`, { bg: 'rgba(48,26,86,0.95)', border: '#c9a2ff', color: '#f3e8ff', height: 0.28 });
+      pill.position.set(0, 1.76, 0);
+      g.add(pill);
+      g.userData.pill = pill;
+    }
+
+    if (animate && g.children.length > 0) {
+      g.scale.setScalar(0.01);
+      this.tween(0.36, (k) => g.scale.setScalar(Math.max(0.01, ease.outBack(k))));
+    }
   }
 
   layoutTokens(snap = false) {
@@ -1253,6 +1449,7 @@ export class MonopolyBoard {
       const p = m.players[tk.seat];
       if (p?.bankrupt && !tk.bankrupt) this.markBankrupt(tk, { animate: false });
     }
+    this.syncTokenStatuses(m.players, { animate: false });
     this.layoutTokens(snap || first);
     if ((first || isNewMatchAfterFirst) && !m.ended && (m.round ?? 1) <= 1) {
       this.startIntroSwoop(m);
@@ -1577,7 +1774,7 @@ export class MonopolyBoard {
   }
 
   // ----------------------------------------------------------------------------- cutscenes
-  async rollDice(seat, dice) {
+  async rollDice(seat, dice, opts = {}) {
     sfx.dice();
     const tk = this.tokens[seat];
     const cx = tk ? tk.x : 0, cz = tk ? tk.z : 0;
@@ -1611,9 +1808,11 @@ export class MonopolyBoard {
     this.hitStop(45);
     this.sway(0.05);
     const doubles = n > 1 && dice.every((v) => v === dice[0]);
+    const rippleCol = opts.reversed ? '#c875ff' : opts.maxRoll ? '#5ce6ff' : (doubles || opts.fixedRoll) ? '#ffd34d' : '#ffffff';
+    const dustTint = opts.reversed ? [0.82, 0.48, 1.0] : opts.maxRoll ? [0.42, 0.92, 1.0] : undefined;
     shown.forEach((d) => {
-      this.ripple(d.position.x, d.position.z, { color: doubles ? '#ffd34d' : '#ffffff', r0: 0.3, r1: 1.1, dur: 0.35, y: 0.05, opacity: 0.6 });
-      this.fx.emit('fx_stardust', d.position.x, 0.1, d.position.z, 5, { speed: 1.2, up: 0.5, size: 0.24, life: 0.45, gravity: 1, ring: true });
+      this.ripple(d.position.x, d.position.z, { color: rippleCol, r0: 0.3, r1: 1.15, dur: 0.38, y: 0.05, opacity: 0.72 });
+      this.fx.emit('fx_stardust', d.position.x, 0.1, d.position.z, 6, { speed: 1.2, up: 0.55, size: 0.24, life: 0.48, gravity: 1, ring: true, tint: dustTint });
     });
     if (doubles) {
       sfx.sparkle();
@@ -1626,6 +1825,103 @@ export class MonopolyBoard {
     await this.wait(0.08);
     await this.tween(0.15, (k) => shown.forEach((d) => d.scale.setScalar(Math.max(0.01, 1 - ease.in(k)))));
     shown.forEach((d) => { d.visible = false; d.scale.setScalar(1); });
+  }
+
+  /** Frozen player skips their turn: camera focuses on them, ice shivers & shatters with frost shards. */
+  async playSkipTurn(seat) {
+    const tk = this.tokens[seat];
+    if (!tk) return;
+    this.followSeat = seat;
+    this.hitStop(45);
+    this.sway(0.11);
+    sfx.bad();
+    sfx.sparkle();
+    const x0 = tk.x;
+    const root = tk.rig?.ROOT || tk.pawn;
+    this.ripple(tk.x, tk.z, { color: '#7fe3ff', r0: 0.35, r1: 1.9, dur: 0.55 });
+    this.fx.emit('fx_snowflake', tk.x, 0.9, tk.z, 18, { speed: 2.4, up: 2.2, size: 0.38, life: 0.85, gravity: 2.4, tint: [0.72, 0.96, 1.0] });
+    this.fx.emit('fx_shockwave', tk.x, 0.6, tk.z, 5, { speed: 1.6, up: 0.6, size: 0.5, life: 0.5, tint: [0.65, 0.94, 1.0] });
+    await this.tween(0.45, (k) => {
+      const shiver = Math.sin(k * 48) * 0.07 * (1 - k);
+      if (root) root.position.x = x0 + shiver;
+      if (tk.statusGroup) {
+        tk.statusGroup.position.x = x0 + shiver;
+        tk.statusGroup.scale.setScalar(1 + 0.18 * Math.sin(k * Math.PI));
+      }
+    });
+    if (root) root.position.x = x0;
+    if (tk.statusGroup) { tk.statusGroup.position.x = x0; tk.statusGroup.scale.setScalar(1); }
+    const p = this.state?.players?.[seat];
+    if (p?.status) p.status.skipTurn = false;
+    this.syncTokenStatus(tk, p, { animate: false });
+  }
+
+  /** Shield blocks an incoming ult/rent or shatters: golden-cyan dome flash + shockwave ring. */
+  async playShieldEffect(seat, { broken = true } = {}) {
+    const tk = this.tokens[seat];
+    if (!tk) return;
+    this.followSeat = seat;
+    this.hitStop(40);
+    const col = broken ? '#66f0ff' : '#ffd859';
+    const tint = broken ? [0.6, 0.95, 1.0] : GOLD;
+    this.ripple(tk.x, tk.z, { color: col, r0: 0.4, r1: 2.0, dur: 0.55 });
+    this.pillar(tk.x, tk.z, { color: col, dur: 0.65, h: 4.4, r: 0.68 });
+    this.fx.emit('fx_shockwave', tk.x, 0.65, tk.z, 6, { speed: 1.8, up: 0.8, size: 0.55, life: 0.55, tint });
+    this.fx.emit('fx_star', tk.x, 0.9, tk.z, 12, { speed: 2.2, up: 2.0, size: 0.3, life: 0.65, gravity: 2.2, ring: true, tint });
+    sfx.sparkle();
+    await this.wait(0.32);
+  }
+
+  /** Phoenix Rebirth prevents bankruptcy: golden-crimson fire pillar + feather burst + triumphant hop. */
+  async playPhoenixRevive(seat) {
+    const tk = this.tokens[seat];
+    if (!tk) return;
+    this.followSeat = seat;
+    this.hitStop(55);
+    this.sway(0.14);
+    sfx.fanfare();
+    this.pillar(tk.x, tk.z, { color: '#ff7a22', dur: 0.95, h: 7.5, r: 0.85 });
+    this.ripple(tk.x, tk.z, { color: '#ffb800', r0: 0.35, r1: 2.5, dur: 0.7 });
+    this.fx.emit('fx_flame', tk.x, 0.4, tk.z, 18, { speed: 2.2, up: 3.4, size: 0.42, life: 0.85, gravity: 1.2, tint: [1.0, 0.62, 0.2] });
+    this.fx.emit('fx_feather', tk.x, 1.1, tk.z, 14, { speed: 2.0, up: 2.8, size: 0.38, life: 1.1, gravity: 0.8, tint: GOLD });
+    this.squash(tk, 0.24, 0.45);
+    tk.rig?.triggerCast?.(0.8);
+    await this.wait(0.55);
+  }
+
+  /** Tile trap triggers when a player lands on it: snappy tile press + themed particle burst. */
+  playTrapTrigger(seat, tileIdx, kind) {
+    const ti = tileIdx ?? (this.state?.players?.[seat]?.pos || 0);
+    const { x, z } = tileWorld(ti);
+    this.pressTile(ti, 0.09);
+    if (kind === 'prison') {
+      this.ripple(x, z, { color: '#9fd8ff', r0: 0.35, r1: 1.8, dur: 0.55 });
+      this.fx.emit('fx_snowflake', x, 0.6, z, 14, { speed: 1.8, up: 1.8, size: 0.34, life: 0.75, gravity: 1.4, tint: [0.75, 0.92, 1.0] });
+      sfx.bad();
+    } else if (kind === 'invert_rent') {
+      this.ripple(x, z, { color: '#ff5a8a', r0: 0.35, r1: 1.8, dur: 0.55 });
+      this.fx.emit('fx_petal', x, 0.6, z, 14, { speed: 2.0, up: 2.0, size: 0.34, life: 0.8, gravity: 1.2, tint: [1.0, 0.45, 0.68] });
+      sfx.sparkle();
+    } else if (kind === 'push_forward') {
+      this.ripple(x, z, { color: '#ff8a5c', r0: 0.35, r1: 1.75, dur: 0.5 });
+      this.fx.emit('fx_flame', x, 0.5, z, 12, { speed: 2.0, up: 2.2, size: 0.34, life: 0.7, gravity: 1.5, tint: [1.0, 0.65, 0.4] });
+      sfx.whoosh(0.35);
+    } else {
+      this.ripple(x, z, { color: '#47e5ff', r0: 0.35, r1: 1.8, dur: 0.55 });
+      this.fx.emit('fx_bubble', x, 0.5, z, 14, { speed: 1.8, up: 2.2, size: 0.34, life: 0.8, gravity: 0.8, tint: [0.4, 0.92, 1.0] });
+      sfx.whoosh(0.35);
+    }
+  }
+
+  /** Round phase escalation (mid-game 1.25× / overdrive 1.65×): board-center shockwave pulse. */
+  playPhaseShift(phase) {
+    const overdrive = phase === 'overdrive';
+    this.ripple(0, 0, { color: overdrive ? '#ff5a36' : '#ffd34d', r0: 0.8, r1: 7.4, dur: 0.85, opacity: 0.85 });
+    if (overdrive) {
+      this.ripple(0, 0, { color: '#ffd34d', r0: 0.5, r1: 5.6, dur: 0.75, delay: 0.12, opacity: 0.7 });
+      this.sway(0.12);
+    }
+    sfx.whoosh(0.38);
   }
 
   async moveToken(seat, path, kind) {
@@ -1750,8 +2046,9 @@ export class MonopolyBoard {
     const skillId = ultEv?.skillId || tk?.outfit || '';
     const spec = ULT_SPECS[skillId] || ULT_SPECS[SUPER_BY_THEME[ultEv?.superVfx || ultEv?.fxTheme]] || {
       sprite: vfx === 'pillar' ? 'mono_ult_zeus' : vfx === 'crystal' ? 'mono_ult_glacial' : vfx === 'wave' ? 'mono_ult_naga' : vfx === 'vortex' ? 'mono_ult_astral' : vfx === 'projectile' ? 'mono_ult_phoenix' : 'mono_ult_roulette',
-      p1: 'fx_magic_circle', p2: 'fx_stardust', tint: [1.0, 0.88, 0.42], color: '#ffd34d', center: false,
+      p1: 'fx_magic_circle', p2: 'fx_stardust', tint: [1.0, 0.88, 0.42], color: '#ffd34d', center: false, choreo: 'glacier_erupt',
     };
+    const choreo = spec.choreo || 'glacier_erupt';
     // speed rules (spec §2): bots = one ~1.2 s beat (cut-in + this), repeats of the same cinematic ≈ 60%
     const fast = !!ultEv?.fast, rep = !fast && !!ultEv?.repeat;
     const S = fast ? 0.7 : rep ? 0.6 : 1;
@@ -1763,8 +2060,24 @@ export class MonopolyBoard {
     this.scene.add(g);
     const glow = (color, o = {}) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, ...o });
 
+    // Discover target tiles & target rivals BEFORE Beat 2 so choreography can aim/travel toward them!
+    const hitTiles = new Set();
+    const hitSeats = new Set();
+    for (const ev of batchEvents) {
+      if ((ev.t === 'tier' || ev.t === 'modifier' || ev.t === 'steal') && ev.tile != null) hitTiles.add(ev.tile);
+      if (ev.t === 'swap') { if (ev.a != null) hitTiles.add(ev.a); if (ev.b != null) hitTiles.add(ev.b); }
+      if ((ev.t === 'status' || ev.t === 'move' || ev.t === 'shield_break') && ev.seat != null && ev.seat !== seat) hitSeats.add(ev.seat);
+      if (ev.t === 'cash' && ev.from != null && ev.from !== seat) hitSeats.add(ev.from);
+    }
+    const primarySeat = [...hitSeats][0];
+    const primaryRivalTk = primarySeat != null ? this.tokens[primarySeat] : null;
+    const primaryTileIdx = [...hitTiles][0];
+    const primaryTilePos = primaryTileIdx != null ? tileWorld(primaryTileIdx) : null;
+    const tx = primaryRivalTk?.x ?? primaryTilePos?.x ?? (spec.center ? 0 : x * 0.45);
+    const tz = primaryRivalTk?.z ?? primaryTilePos?.z ?? (spec.center ? 0 : z * 0.45);
+
     try {
-      // --- BEAT 1: Caster & Pet Wind-Up + Couple Synergy ---
+      // --- BEAT 1: Caster & Pet Wind-Up + Separate Dynamic Floor Magic Circles ---
       this.followSeat = seat;
       tk?.rig?.triggerCast?.(1.2);
       tk?.pet?.act?.('cast', 1.25);
@@ -1774,81 +2087,205 @@ export class MonopolyBoard {
         ptk.pet?.act?.('happy', 1.2);
         this.fx.emit('fx_heart', ptk.x, 1.1, ptk.z, 8, { speed: 1.4, up: 2.0, size: 0.36, life: 0.85 });
       }
-      const casterRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 1.35, 32), glow(spec.color, { opacity: 0.85 }));
-      casterRing.rotation.x = -Math.PI / 2;
-      casterRing.position.set(x, 0.04, z);
+      const casterRing = groundRuneCircle('fx_magic_circle', 2.45, spec.color, { opacity: 0.92, y: 0.045 });
+      casterRing.position.set(x, 0.045, z);
       g.add(casterRing);
-      this.fx.emit(spec.p2, x, 0.25, z, Math.round(12 * pScale), { speed: 1.6, up: 1.8, size: 0.42, life: 0.75, tint: spec.tint });
+      const casterInner = groundRuneCircle('fx_rune', 1.75, '#ffffff', { opacity: 0.78, y: 0.052 });
+      casterInner.position.set(x, 0.052, z);
+      g.add(casterInner);
+      this.fx.emit(spec.p2, x, 0.25, z, Math.round(14 * pScale), { speed: 1.6, up: 1.9, size: 0.44, life: 0.80, tint: spec.tint });
 
-      // --- BEAT 2: Signature Painted 2.5D Spell Monument ---
+      // --- BEAT 2: Unique 3D Kinetic Choreography per Skill Entity ---
       const baseY = 0.42;
-      const sx = spec.center ? 0 : x;
-      const sz = spec.center ? 0 : z;
-      const mx = spec.center ? 0 : sx * 0.82;
-      const mz = spec.center ? 0 : sz * 0.82;
-      const superPromise = (spec.superVfx && !fast) ? this.superVfx(spec, seat, S) : null;
-      const spellSp = packSprite(spec.sprite, spec.size || (spec.center ? 2.85 : 2.35));
+      const sx = x * (spec.center ? 0.64 : 0.80);
+      const sz = z * (spec.center ? 0.64 : 0.80);
+      const mx = sx;
+      const mz = sz;
+      const superPromise = (spec.superVfx && !fast) ? this.superVfx(spec, seat, S, batchEvents) : null;
+
+      const spellSize = spec.size || (spec.center ? 3.05 : 2.65);
+      const spellHalo = packSprite('fx_shockwave', spellSize * 1.05, { additive: true, color: spec.color });
+      if (spellHalo) {
+        spellHalo.center.set(0.5, 0.5);
+        spellHalo.position.set(mx, baseY + spellSize * 0.45, mz - 0.05);
+        spellHalo.renderOrder = 9;
+        spellHalo.userData.baseW = spellHalo.scale.x;
+        spellHalo.userData.baseH = spellHalo.scale.y;
+        spellHalo.scale.setScalar(0.01);
+        g.add(spellHalo);
+      }
+      const spellSp = packSprite(spec.sprite, spellSize);
       if (spellSp) {
+        if (choreo === 'spin_wheel' || choreo === 'clock_rewind' || choreo === 'gravity_singularity' || choreo === 'cyber_hack') {
+          spellSp.center.set(0.5, 0.5);
+        }
         spellSp.position.set(mx, baseY, mz);
-        spellSp.renderOrder = 6;
+        spellSp.renderOrder = 10;
         spellSp.userData.baseW = spellSp.scale.x;
         spellSp.userData.baseH = spellSp.scale.y;
         spellSp.scale.setScalar(0.01);
         g.add(spellSp);
       }
+      // Twin portal sprite for Sultan Djinn lamp_summon or Phantom twin_mirrors
+      let twinSp = null;
+      if (!fast && (choreo === 'lamp_summon' || choreo === 'twin_mirrors')) {
+        twinSp = packSprite(spec.sprite, spellSize * 0.82);
+        if (twinSp) {
+          twinSp.position.set(tx, baseY, tz);
+          twinSp.renderOrder = 10;
+          twinSp.userData.baseW = twinSp.scale.x;
+          twinSp.userData.baseH = twinSp.scale.y;
+          twinSp.scale.setScalar(0.01);
+          g.add(twinSp);
+        }
+      }
+
       const beams = [];
       if (spec.rowLaser) {
         const laser = this.createRowLaser(seat, x, z, glow);
         g.add(laser);
         beams.push(laser);
       }
-      if (spec.skyStrike || (vfx === 'pillar' && !spec.rowLaser && !spec.superVfx)) {
-        const sky = this.createSkyBeam(spec.color, sx, sz, glow);
+      if (spec.skyStrike || choreo === 'sky_artillery' || choreo === 'orbital_laser') {
+        const bx = (choreo === 'sky_artillery' && primaryRivalTk) ? tx : sx;
+        const bz = (choreo === 'sky_artillery' && primaryRivalTk) ? tz : sz;
+        const sky = this.createSkyBeam(spec.color, bx, bz, glow);
         g.add(sky);
         beams.push(sky);
       }
 
-      await this.tween(0.68 * S, (k) => {
-        const pop = ease.outBack(Math.min(1, k * 1.35));
-        casterRing.scale.setScalar(0.7 + k * 1.15);
-        casterRing.material.opacity = 0.85 * (1 - k * 0.65);
-        casterRing.rotation.z = k * 4.5;
+      const beat2Dur = (spec.superVfx ? 1.25 : 0.78) * S;
+      const choreoTween = this.tween(beat2Dur, (k) => {
+        const pop = ease.outBack(Math.min(1, k * 1.45));
+        casterRing.scale.setScalar(0.75 + k * 0.85);
+        casterRing.material.opacity = 0.92 * (1 - k * 0.55);
+        casterRing.rotation.z = k * 3.8;
+        casterInner.scale.setScalar(0.85 + k * 0.65);
+        casterInner.material.opacity = 0.78 * (1 - k * 0.60);
+        casterInner.rotation.z = -k * 5.2;
+
         if (spellSp) {
-          spellSp.scale.set(spellSp.userData.baseW * pop, spellSp.userData.baseH * pop, 1);
-          spellSp.position.y = baseY + Math.sin(k * Math.PI) * 0.28;
+          const bw = spellSp.userData.baseW, bh = spellSp.userData.baseH;
+          if (choreo === 'surf_wave') {
+            // Naga Sea-Serpent surfs along the caster's row with a cresting wave bob
+            const side = tileSide(this.state?.players?.[seat]?.pos ?? 0);
+            const rowTiles = TILES.filter((t) => tileSide(t.i) === side);
+            const p0 = rowTiles.length ? tileWorld(rowTiles[0].i) : { x: mx, z: mz };
+            const p1 = rowTiles.length ? tileWorld(rowTiles[Math.min(rowTiles.length - 1, 2)].i) : { x: tx, z: tz };
+            const u = ease.inOut(k);
+            spellSp.position.set(p0.x + (p1.x - p0.x) * u, baseY + Math.sin(k * Math.PI * 3) * 0.28, p0.z + (p1.z - p0.z) * u);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = Math.sin(k * Math.PI * 3) * 0.14;
+          } else if (choreo === 'sky_dive' || choreo === 'dragon_eclipse') {
+            // Phoenix / Eclipse Dragon swoops down from high sky arc into the camera frame
+            const u = ease.outQuint(Math.min(1, k * 1.35));
+            spellSp.position.set(
+              mx + (tx - mx) * 0.25 * u,
+              baseY + (1 - u) * 2.4 + Math.sin(k * Math.PI * 2) * 0.28,
+              mz + (tz - mz) * 0.25 * u
+            );
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = (1 - u) * -0.22;
+          } else if (choreo === 'sky_artillery' || choreo === 'trident_plunge') {
+            // Zeus Thunderbolt / Poseidon Trident plunges straight down from the heavens
+            const drop = ease.outQuint(Math.min(1, k * 1.6));
+            const px = (choreo === 'sky_artillery' && primaryRivalTk) ? tx : mx;
+            const pz = (choreo === 'sky_artillery' && primaryRivalTk) ? tz : mz;
+            spellSp.position.set(px, baseY + (1 - drop) * 3.6, pz);
+            spellSp.scale.set(bw * (0.75 + 0.25 * drop), bh * (1.35 - 0.35 * drop), 1);
+          } else if (choreo === 'spin_wheel') {
+            // Royal Roulette wheel spins rapidly and bounces like a casino wheel
+            spellSp.position.set(mx, baseY + spellSize * 0.45 + Math.sin(k * Math.PI) * 0.35, mz);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = k * Math.PI * 4.5;
+          } else if (choreo === 'clock_rewind') {
+            // Cinderella Clock ticks forward then rewinds counter-clockwise rapidly
+            spellSp.position.set(mx, baseY + spellSize * 0.48, mz);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            const angle = k < 0.35 ? (k / 0.35) * 0.6 : 0.6 - ((k - 0.35) / 0.65) * Math.PI * 3.2;
+            spellSp.material.rotation = angle;
+          } else if (choreo === 'lunar_domain') {
+            // Tsukuyomi Crescent Moon Scythe sweeps a wide horizontal arc toward target rival
+            const u = ease.outQuint(k);
+            spellSp.position.set(mx + (tx - mx) * 0.35 * u, baseY + 0.35 + Math.sin(k * Math.PI) * 0.35, mz + (tz - mz) * 0.35 * u);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = -0.45 + u * 0.9;
+          } else if (choreo === 'portal_ambush') {
+            // Kitsune Fox Spirit leaps forward in a high graceful Torii parabola
+            const u = ease.inOut(k);
+            spellSp.position.set(mx + (tx - mx) * 0.35 * u, baseY + Math.abs(Math.sin(k * Math.PI * 2)) * 0.65, mz + (tz - mz) * 0.35 * u);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+          } else if (choreo === 'gravity_singularity') {
+            // Astral Black Hole implodes inward then bursts outward
+            const pulse = k < 0.7 ? pop * (1 - 0.18 * Math.sin(k * 18)) : pop * (1 + (k - 0.7) * 1.2);
+            spellSp.position.set(mx, baseY + spellSize * 0.48, mz);
+            spellSp.scale.set(bw * pulse, bh * pulse, 1);
+            spellSp.material.rotation = -k * Math.PI * 2.4;
+          } else if (choreo === 'cyber_hack') {
+            // Cyber Archon Quantum Tesseract locks onto target with digital glitch jitter
+            const jitter = (k > 0.2 && k < 0.8) ? (Math.sin(k * 90) * 0.10) : 0;
+            spellSp.position.set(mx + jitter, baseY + spellSize * 0.48, mz);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = Math.sin(k * Math.PI * 4) * 0.22;
+          } else if (choreo === 'rose_cathedral' || choreo === 'aurora_seraph') {
+            // Seraphim Rose Cathedral / Aurora Seraph descends serenely from celestial light
+            const u = ease.outQuint(Math.min(1, k * 1.4));
+            spellSp.position.set(mx, baseY + (1 - u) * 1.6 + Math.sin(k * Math.PI * 2) * 0.15, mz);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+          } else if (choreo === 'ribbon_parade') {
+            // Starlight Ribbon Wand dances in a figure-8 arc across the board
+            spellSp.position.set(mx + Math.sin(k * Math.PI * 2) * 0.55, baseY + 0.35 + Math.sin(k * Math.PI * 4) * 0.22, mz + Math.cos(k * Math.PI * 2) * 0.35);
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.material.rotation = Math.sin(k * Math.PI * 2) * 0.22;
+          } else {
+            // domino_glacier / orbital_laser / lamp_summon / twin_mirrors
+            spellSp.scale.set(bw * pop, bh * pop, 1);
+            spellSp.position.y = baseY + Math.sin(k * Math.PI) * 0.28;
+          }
+          if (spellHalo) {
+            spellHalo.position.set(spellSp.position.x, spellSp.position.y + (spellSp.center.y < 0.2 ? spellSize * 0.45 : 0), spellSp.position.z - 0.05);
+            spellHalo.scale.set(spellHalo.userData.baseW * pop, spellHalo.userData.baseH * pop, 1);
+            spellHalo.material.rotation = k * 3.2;
+            spellHalo.material.opacity = 0.52 * Math.sin(k * Math.PI);
+          }
+        }
+        if (twinSp) {
+          twinSp.scale.set(twinSp.userData.baseW * pop, twinSp.userData.baseH * pop, 1);
+          twinSp.position.y = baseY + Math.sin(k * Math.PI) * 0.28;
         }
         for (const b of beams) {
           const pulse = Math.pow(Math.sin(k * Math.PI), 2);
-          b.material.opacity = 0.50 * pulse;
+          b.material.opacity = 0.48 * pulse;
           this.shake = 0.18 * (1 - k);
         }
       });
-      if (superPromise) await superPromise;
+      await Promise.all([choreoTween, superPromise].filter(Boolean));
 
+      const impX = spellSp ? spellSp.position.x : sx;
+      const impZ = spellSp ? spellSp.position.z : sz;
       if (!fast) { this.hitStop(40); this.sway(0.08); sfx.impact(); }
-      this.ripple(sx, sz, { color: spec.color, r0: 0.5, r1: spec.center ? 4.5 : 3, dur: 0.5 * S });
-      this.fx.emit(spec.p1, sx, 0.9, sz, Math.round(22 * pScale), { speed: 2.6, up: 2.5, size: 0.44, life: 0.85, gravity: 1.2, tint: spec.tint });
-      this.fx.emit(spec.p2, sx, 0.6, sz, Math.round(14 * pScale), { speed: 2.0, up: 1.9, size: 0.38, life: 0.80, gravity: 0.8, tint: spec.tint });
+      this.ripple(impX, impZ, { color: spec.color, r0: 0.5, r1: spec.center ? 4.5 : 3, dur: 0.5 * S });
+      this.fx.emit(spec.p1, impX, 0.9, impZ, Math.round(24 * pScale), { speed: 2.7, up: 2.6, size: 0.46, life: 0.85, gravity: 1.1, tint: spec.tint });
+      this.fx.emit(spec.p2, impX, 0.6, impZ, Math.round(16 * pScale), { speed: 2.1, up: 2.0, size: 0.40, life: 0.80, gravity: 0.8, tint: spec.tint });
 
-      // --- BEAT 3: Target Tile & Rival Impact Strikes ---
-      const hitTiles = new Set();
-      const hitSeats = new Set();
-      for (const ev of batchEvents) {
-        if ((ev.t === 'tier' || ev.t === 'modifier' || ev.t === 'steal') && ev.tile != null) hitTiles.add(ev.tile);
-        if (ev.t === 'swap') { if (ev.a != null) hitTiles.add(ev.a); if (ev.b != null) hitTiles.add(ev.b); }
-        if ((ev.t === 'status' || ev.t === 'move') && ev.seat != null && ev.seat !== seat) hitSeats.add(ev.seat);
-        if (ev.t === 'cash' && ev.from != null && ev.from !== seat) hitSeats.add(ev.from);
-      }
-
+      // --- BEAT 3: Target Tile & Rival Impact Strikes (Using Dedicated Tile Props!) ---
       const strikeSprites = [];
-      for (const ti of [...hitTiles].slice(0, 4)) {
+      const strikeSeals = [];
+      const tileSpriteKey = spec.tileProp || spec.sprite;
+      for (const ti of [...hitTiles].slice(0, 5)) {
         const tw = tileWorld(ti);
         this.pressTile(ti);
-        this.fx.emit(spec.p1, tw.x, 0.55, tw.z, Math.round(12 * pScale), { speed: 2.1, up: 2.2, size: 0.40, life: 0.75, tint: spec.tint });
-        this.fx.emit(spec.p2, tw.x, 0.35, tw.z, Math.round(8 * pScale), { speed: 1.6, up: 1.6, size: 0.36, life: 0.70, tint: spec.tint });
-        const st = fast ? null : packSprite(spec.sprite, 1.55);
+        this.fx.emit(spec.p1, tw.x, 0.55, tw.z, Math.round(12 * pScale), { speed: 2.1, up: 2.2, size: 0.42, life: 0.75, tint: spec.tint });
+        this.fx.emit(spec.p2, tw.x, 0.35, tw.z, Math.round(8 * pScale), { speed: 1.6, up: 1.6, size: 0.38, life: 0.70, tint: spec.tint });
+        if (!fast) {
+          const seal = groundRuneCircle('fx_rune', 1.85, spec.color, { opacity: 0.85, y: 0.048 });
+          seal.position.set(tw.x, 0.048, tw.z);
+          g.add(seal);
+          strikeSeals.push(seal);
+        }
+        const st = fast ? null : packSprite(tileSpriteKey, spec.tileProp ? 1.38 : 1.55);
         if (st) {
-          st.position.set(tw.x, 0.42, tw.z + 0.1);
+          st.position.set(tw.x, 0.36, tw.z + 0.1);
           st.renderOrder = 6;
           st.userData.baseW = st.scale.x;
           st.userData.baseH = st.scale.y;
@@ -1859,13 +2296,20 @@ export class MonopolyBoard {
       for (const rs of hitSeats) {
         const rtk = this.tokens[rs];
         if (!rtk) continue;
-        this.fx.emit(spec.p1, rtk.x, 0.85, rtk.z, Math.round(12 * pScale), { speed: 1.9, up: 2.0, size: 0.38, life: 0.75, tint: spec.tint });
+        this.fx.emit(spec.p1, rtk.x, 0.85, rtk.z, Math.round(12 * pScale), { speed: 1.9, up: 2.0, size: 0.40, life: 0.75, tint: spec.tint });
       }
 
-      if (strikeSprites.length || spellSp) {
-        await this.tween(0.36 * S, (k) => {
+      if (strikeSprites.length || spellSp || twinSp) {
+        await this.tween(0.38 * S, (k) => {
           const fade = 1 - k;
           if (spellSp?.material) spellSp.material.opacity = fade;
+          if (twinSp?.material) twinSp.material.opacity = fade;
+          if (spellHalo?.material) spellHalo.material.opacity = 0.45 * fade;
+          for (const seal of strikeSeals) {
+            seal.rotation.z = k * 3.0;
+            seal.scale.setScalar(0.75 + k * 0.45);
+            seal.material.opacity = 0.85 * fade;
+          }
           for (const st of strikeSprites) {
             const s = ease.outBack(Math.min(1, k * 1.8));
             st.scale.set(st.userData.baseW * s, st.userData.baseH * s, 1);
@@ -1914,8 +2358,8 @@ export class MonopolyBoard {
     }).then(() => { if ((this._dimK || 0) < 0.001) plane.visible = false; });
   }
 
-  /** ✦ Super Mythic spectacle layer — plays between the caster wind-up and the monument. */
-  async superVfx(spec, seat, S = 1) {
+  /** ✦ Super Mythic spectacle layer — each of the 5 Super Mythics has a 100% distinct domain choreography! */
+  async superVfx(spec, seat, S = 1, batchEvents = []) {
     const tk = this.tokens[seat];
     const x = tk?.x ?? 0, z = tk?.z ?? 0;
     const pos = this.state?.players?.[seat]?.pos ?? 0;
@@ -1925,7 +2369,7 @@ export class MonopolyBoard {
     this.scene.add(g);
     try {
       if (spec.superVfx === 'eclipse_domain') {
-        // the board dims, then a gold-black sun-ring sweeps the caster's whole side
+        // ☀️ ECLIPSE DRAGON: Total Solar Eclipse dims the board and a blazing black-sun corona sweeps the caster's row
         sfx.whoosh(0.6);
         await this.dimBoard(0.85, 0.35 * S);
         const side = tileSide(pos);
@@ -1939,10 +2383,9 @@ export class MonopolyBoard {
         const ringG = new THREE.Group();
         ringG.add(core, corona, halo);
         g.add(ringG);
-        this.pillar(x, z, { color: '#ffb800', dur: 1.2 * S, h: 9, r: 0.9 });
+        this.pillar(x, z, { color: '#ffb800', dur: 0.65 * S, h: 7, r: 0.38 });
         let lastIdx = -1;
-        const sweep = 1.0 * S;
-        await this.tween(sweep, (k) => {
+        await this.tween(0.95 * S, (k) => {
           const f = ease.inOut(k) * (pts.length - 1);
           const i0 = Math.floor(f), i1 = Math.min(pts.length - 1, i0 + 1), fr = f - i0;
           const px = pts[i0].x + (pts[i1].x - pts[i0].x) * fr, pz = pts[i0].z + (pts[i1].z - pts[i0].z) * fr;
@@ -1955,17 +2398,77 @@ export class MonopolyBoard {
             const ti = tiles[lastIdx];
             this.pressTile(ti, 0.1);
             this.fx.emit('fx_flame', px, 0.3, pz, Math.max(1, Math.round(6 * pScale)), { speed: 1.6, up: 2.2, size: 0.4, life: 0.7, gravity: 0.5, tint: [1, 0.72, 0.2] });
-            this.fx.emit('fx_stardust', px, 0.4, pz, Math.max(1, Math.round(4 * pScale)), { speed: 1.2, up: 1.4, size: 0.36, life: 0.8, gravity: 0.2, tint: [0.18, 0.1, 0.05] });
             sfx.diceTick(lastIdx);
           }
         });
-        this.hitStop(60);
-        this.sway(0.14);
-        sfx.shockwave();
+        this.hitStop(55); this.sway(0.14); sfx.shockwave();
         this.ripple(ringG.position.x, ringG.position.z, { color: '#ffb800', r0: 0.5, r1: 4, dur: 0.5 * S });
-        this.dimBoard(0, 0.6 * S);
+        this.dimBoard(0, 0.55 * S);
+      } else if (spec.superVfx === 'quantum_overdrive') {
+        // 💠 CYBER ARCHON: 4 Orbital Fin-Funnel Laser Beams lock onto target tiles & hack them with cyan/magenta reticles
+        sfx.whoosh(0.6);
+        await this.dimBoard(0.78, 0.3 * S);
+        const targets = [];
+        for (const ev of batchEvents) {
+          if ((ev.t === 'tier' || ev.t === 'modifier') && ev.tile != null) targets.push(tileWorld(ev.tile));
+          if (ev.t === 'shield_break' && ev.seat != null && this.tokens[ev.seat]) targets.push({ x: this.tokens[ev.seat].x, z: this.tokens[ev.seat].z });
+        }
+        if (!targets.length) targets.push({ x: 0, z: 0 });
+        const reticles = targets.slice(0, 4).map((pt, idx) => {
+          const r = groundRuneCircle('fx_shockwave', 1.9, idx % 2 ? '#ff38e0' : '#2ef7ff', { opacity: 0.9, y: 0.06 });
+          r.position.set(pt.x, 0.06, pt.z);
+          g.add(r);
+          this.pillar(pt.x, pt.z, { color: idx % 2 ? '#ff38e0' : '#2ef7ff', dur: 0.7 * S, h: 6.5, r: 0.28 });
+          return { r, pt };
+        });
+        await this.tween(0.85 * S, (k) => {
+          for (const { r, pt } of reticles) {
+            r.rotation.z = k * 8.0;
+            r.scale.setScalar(1.35 - 0.45 * k);
+            if (Math.random() < 0.35) {
+              this.fx.emit('fx_lightning', pt.x, 0.4, pt.z, 2, { speed: 1.8, up: 2.2, size: 0.38, life: 0.55, tint: [0.22, 0.96, 1.0] });
+            }
+          }
+        });
+        this.hitStop(50); this.sway(0.12); sfx.shockwave();
+        this.dimBoard(0, 0.5 * S);
+      } else if (spec.superVfx === 'seraphim_sanctuary') {
+        // 🌹 SERAPHIM ROSE: Golden Stained-Glass Cathedral Sanctuary Ring & Blooming Rose Vines around caster's flagship
+        await this.dimBoard(0.55, 0.28 * S);
+        const sanctRing = groundRuneCircle('fx_magic_circle', 3.6, '#ff6ea8', { opacity: 0.9, y: 0.05 });
+        sanctRing.position.set(x, 0.05, z);
+        g.add(sanctRing);
+        this.pillar(x, z, { color: '#ffd166', dur: 0.85 * S, h: 6.8, r: 0.52 });
+        await this.tween(0.95 * S, (k) => {
+          sanctRing.rotation.z = k * 3.2;
+          sanctRing.scale.setScalar(0.6 + 0.65 * ease.outBack(k));
+          sanctRing.material.opacity = 0.9 * Math.sin(k * Math.PI);
+          if (Math.random() < 0.45) {
+            const ang = Math.random() * Math.PI * 2;
+            this.fx.emit('fx_petal', x + Math.cos(ang) * 1.4, 1.6, z + Math.sin(ang) * 1.4, 2, { speed: 0.9, up: 1.2, size: 0.36, life: 0.9, tint: [1.0, 0.55, 0.78] });
+          }
+        });
+        this.hitStop(45); sfx.sparkle();
+        this.dimBoard(0, 0.5 * S);
+      } else if (spec.superVfx === 'starlight_parade') {
+        // 🎀 STARLIGHT RIBBON: Joyful Starlight Gift Parade hopping across tiles & dropping ribbon gift boxes
+        await this.dimBoard(0.48, 0.25 * S);
+        const hopTiles = [pos, (pos + 1) % N, (pos + 2) % N, (pos + 3) % N];
+        sfx.chaos('swap');
+        for (let idx = 0; idx < hopTiles.length; idx++) {
+          const ti = hopTiles[idx];
+          const tw = tileWorld(ti);
+          this.pressTile(ti, 0.09);
+          this.ripple(tw.x, tw.z, { color: idx % 2 ? '#ff85d8' : '#7ae7ff', r0: 0.3, r1: 1.6, dur: 0.45 });
+          this.fx.emit('fx_heart', tw.x, 0.9, tw.z, Math.max(2, Math.round(5 * pScale)), { speed: 1.3, up: 1.8, size: 0.36, life: 0.85, tint: [1.0, 0.62, 0.9] });
+          this.fx.emit('fx_star', tw.x, 1.1, tw.z, Math.max(2, Math.round(5 * pScale)), { speed: 1.5, up: 2.0, size: 0.38, life: 0.85, tint: [0.55, 0.92, 1.0] });
+          sfx.sparkle();
+          await this.tween(0.18 * S, () => {});
+        }
+        this.hitStop(40);
+        this.dimBoard(0, 0.45 * S);
       } else if (spec.superVfx === 'aurora_veil') {
-        // a softer dim so the aurora pops, then a curtain wave washes over own tiles within 3 steps
+        // 🌌 AURORA EMPRESS: Luminous Northern Lights Curtain Veil washing across own properties & freezing rivals in slow-mo
         await this.dimBoard(0.55, 0.3 * S);
         const owned = [];
         for (let d = -3; d <= 3; d++) {
@@ -1975,19 +2478,19 @@ export class MonopolyBoard {
         const tex = auroraTexture();
         const curtains = owned.map(({ i, d }, n) => {
           const { x: tx, z: tz } = tileWorld(i);
-          const m = new THREE.Mesh(new THREE.PlaneGeometry(BOARD.TILE * 0.95, 2.6).translate(0, 1.3, 0), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(BOARD.TILE * 0.95, 2.6).translate(0, 1.3, 0), new THREE.MeshBasicMaterial({ map: tex, color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
           m.position.set(tx, 0.02, tz);
           m.renderOrder = 7;
           g.add(m);
           return { m, i, delay: d * 0.14, n };
         });
         sfx.chaos('swap');
-        const dur = 1.3 * S;
+        const dur = 1.15 * S;
         const hit = new Set();
         await this.tween(dur, (k) => {
           const t = k * dur;
           for (const c of curtains) {
-            const u = Math.max(0, Math.min(1, (t - c.delay * S) / (0.8 * S)));
+            const u = Math.max(0, Math.min(1, (t - c.delay * S) / (0.75 * S)));
             c.m.material.opacity = 0.85 * Math.sin(u * Math.PI);
             c.m.scale.set(1, 0.2 + 0.8 * ease.outQuint(u), 1);
             c.m.lookAt(this.camera.position.x, c.m.position.y, this.camera.position.z);
@@ -1996,14 +2499,13 @@ export class MonopolyBoard {
               const { x: tx, z: tz } = tileWorld(c.i);
               this.pressTile(c.i, 0.07);
               this.ripple(tx, tz, { color: c.n % 2 ? '#c49bff' : '#7fffe0', r0: 0.3, r1: 1.4, dur: 0.5 });
-              this.fx.emit('fx_star', tx, 1.2, tz, Math.max(1, Math.round(6 * pScale)), { speed: 0.8, up: 1.4, size: 0.3, life: 1.0, gravity: 0.2, tint: c.n % 2 ? [0.8, 0.6, 1] : [0.5, 1, 0.9] });
+              this.fx.emit('fx_snowflake', tx, 1.2, tz, Math.max(1, Math.round(6 * pScale)), { speed: 0.8, up: 1.4, size: 0.32, life: 1.0, gravity: 0.2, tint: c.n % 2 ? [0.8, 0.6, 1] : [0.5, 1, 0.9] });
               sfx.sparkle();
             }
           }
         });
-        this.fx.emit('fx_stardust', x, 1.2, z, Math.max(1, Math.round(16 * pScale)), { speed: 1.2, up: 1.8, size: 0.3, life: 1.2, gravity: 0.2, tint: [0.75, 0.95, 1], stagger: 0.02 });
         this.hitStop(45);
-        this.dimBoard(0, 0.6 * S);
+        this.dimBoard(0, 0.55 * S);
       }
     } finally {
       this.scene.remove(g);
@@ -2497,20 +2999,31 @@ export class MonopolyBoard {
     for (const tk of this.tokens) {
       const moving = tk.moving;
       tk.idleFor = moving ? 0 : tk.idleFor + gdt;
+      const pos = players?.[tk.seat]?.pos;
+      let n = 1;
+      if (players && pos != null) { n = 0; for (let k = 0; k < players.length; k++) if (crowd[k] === pos) n++; }
+      const ud = tk.statusGroup?.userData;
+      const hasPill = Boolean(ud?.pill);
       if (tk.rig) {
         let arg;
         if (moving) { arg = tk._moveArg || (tk._moveArg = { vx: 0, vz: 0 }); arg.vx = tk.vx; arg.vz = tk.vz; }
         else arg = tk._idleArg || (tk._idleArg = { vx: 0, vz: 0, walkWeight: 0 });
-        tk.rig.update(gdt, arg, this.camera);
+        tk.rig.update(tk.frozen && !moving ? 0 : gdt, arg, this.camera);
         if (tk.rig.nameTag?.material) {
-          const pos = players?.[tk.seat]?.pos;
-          let n = 1;
-          if (players && pos != null) { n = 0; for (let k = 0; k < players.length; k++) if (crowd[k] === pos) n++; }
-          const showTag = n <= 1 || moving || tk.seat === this.followSeat;
+          const showTag = !hasPill && (n <= 1 || moving || tk.seat === this.followSeat);
           const curOp = tk.rig.nameTag.material.opacity ?? 1;
           const nextOp = curOp + ((showTag ? 1 : 0) - curOp) * Math.min(1, dt * 10);
           tk.rig.nameTag.material.opacity = nextOp;
           tk.rig.nameTag.visible = nextOp > 0.03;
+        }
+      }
+      if (ud) {
+        if (ud.shieldRing) ud.shieldRing.rotation.z += gdt * 1.1;
+        if (ud.hexRing) ud.hexRing.rotation.z -= gdt * 1.5;
+        if (ud.pill) {
+          const showPill = n <= 1 || moving || tk.seat === this.followSeat || tk.frozen;
+          ud.pill.visible = showPill;
+          ud.pill.position.y = (tk.frozen ? 1.78 : 1.76) + 0.05 * Math.sin(this.t * 3.4 + tk.seat);
         }
       }
       if (tk.pet) {
@@ -2526,7 +3039,8 @@ export class MonopolyBoard {
     for (const b of this.buildings.values()) if (b.userData.spin) b.userData.spin.rotation.y += gdt * 2;
     for (const p of this.props.values()) {
       if (p.userData.pulse) p.userData.pulse.material.opacity = 0.45 + 0.25 * Math.sin(this.t * 4);
-      if (p.userData.flicker) { const ch = p.children; for (let j = 0; j < ch.length; j++) ch[j].scale.setScalar(0.85 + 0.25 * Math.sin(this.t * 12 + j)); }
+      if (p.userData.flicker) { const ch = p.children; for (let j = 0; j < ch.length; j++) if (ch[j] !== p.userData.tag) ch[j].scale.setScalar(0.85 + 0.25 * Math.sin(this.t * 12 + j)); }
+      if (p.userData.tag) p.userData.tag.position.y = 1.48 + 0.06 * Math.sin(this.t * 3.2);
     }
     if (this.clouds) for (const s of this.clouds) { s.position.x += s.userData.speed * dt; if (s.position.x > W * 1.4) s.position.x = -W * 1.4; }
     // last-round heartbeat: 3 beats whenever the acting seat changes
@@ -2555,5 +3069,7 @@ export class MonopolyBoard {
     PACK.tex.clear();
     for (const t of _terrainTexCache.values()) t.dispose?.();
     _terrainTexCache.clear();
+    for (const e of _badgeTexCache.values()) e.tex?.dispose?.();
+    _badgeTexCache.clear();
   }
 }

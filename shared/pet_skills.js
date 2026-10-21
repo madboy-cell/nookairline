@@ -46,7 +46,7 @@ export const PET_SKILLS = {
       },
       cloud_dash: {
         glideHangBonusPct: [10, 15, 20],
-        jellyMagnetRadiusM: [0.5, 0.5, 0.75],
+        jellyMagnetRadiusM: [0.8, 1.0, 1.3],
       },
       casino: {
         winPose: 'happy',
@@ -128,7 +128,7 @@ export const PET_SKILLS = {
         healBunnyPct: [1, 2, 3],
       },
       cloud_dash: {
-        extraAirHops: [1, 1, 2],
+        extraAirHops: [1, 1, 1],
       },
       casino: {
         winPose: 'happy',
@@ -170,7 +170,7 @@ export const PET_SKILLS = {
         aoeRadiusM: [1.5, 1.5, 1.5],
       },
       cloud_dash: {
-        shieldCooldownSec: [20, 16, 12],
+        shieldCooldownSec: [30, 25, 20],
       },
       casino: {
         winPose: 'happy',

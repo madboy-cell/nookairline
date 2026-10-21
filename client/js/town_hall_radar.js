@@ -14,8 +14,6 @@ const LANDMARK_META = {
   owl_postbox: { icon: '🦉', cat: 'Gift & Mail', color: '#f472b6' },
   vip_table_1: { icon: '🪑', cat: '4-Seat Lounge', color: '#34d399' },
   vip_table_2: { icon: '🪑', cat: '4-Seat Lounge', color: '#34d399' },
-  vip_table_3: { icon: '🪑', cat: '4-Seat Lounge', color: '#34d399' },
-  vip_table_4: { icon: '🪑', cat: '4-Seat Lounge', color: '#34d399' },
 };
 
 export class TownHallRadar {
@@ -103,11 +101,15 @@ export class TownHallRadar {
     if (!this.world) return;
     const tx = Math.max(-17.2, Math.min(17.2, x));
     const tz = Math.max(-17.2, Math.min(17.2, z + 1.05));
-    if (this.world.input) this.world.input.tapTarget = null;
-    this.world.setLocalPosition?.(tx, tz);
-    this.world.local?.pet?.placeNear?.({ x: tx, z: tz, right: true });
+    if (typeof this.world.teleportLocal === 'function') {
+      this.world.teleportLocal(tx, tz, { right: true, back: true });
+    } else {
+      if (this.world.input) this.world.input.tapTarget = null;
+      this.world.setLocalPosition?.(tx, tz);
+      this.world.local?.pet?.placeNear?.({ x: tx, z: tz, right: true });
+      this.world.onLocalMove?.({ x: +tx.toFixed(3), z: +tz.toFixed(3), vx: 0, vz: 0, right: true, back: true, teleport: true }, true);
+    }
     this.world.fx?.emit?.('fx_stardust', tx, 0.1, tz, 8, { speed: 1.1, up: 0.85, size: 0.25, life: 0.55 });
-    this.world.onLocalMove?.({ x: +tx.toFixed(3), z: +tz.toFixed(3), vx: 0, vz: 0, right: true, back: true }, true);
     this.world.checkLandmarksTrigger?.(tx, tz);
   }
 
@@ -397,11 +399,10 @@ export class TownHallRadar {
           <span class="map-icon">${meta.icon || lm.icon}</span>
           <div class="map-meta">
             <span class="map-title">${lm.label}</span>
-            <span class="map-coords">${meta.cat} • (${lm.x}, ${lm.z})</span>
+            <span class="map-coords">${meta.cat} • ${d}m</span>
           </div>
-          <span class="map-dist">${d}m</span>
-          <div class="map-actions" style="display:flex;gap:4px;flex:0 0 auto;">
-            <button type="button" class="btn-gold small map-walk-btn" data-map-walk="${lm.id}" data-walk-x="${lm.x}" data-walk-z="${lm.z}">🚶 Walk</button>
+          <div class="map-actions">
+            <button type="button" class="btn-gold small map-walk-btn" data-map-walk="${lm.id}" data-walk-x="${lm.x}" data-walk-z="${lm.z}" title="Walk Here">🚶</button>
             <button type="button" class="btn-gold small emerald map-tp-btn" data-map-tp="${lm.id}" data-tp-x="${lm.x}" data-tp-z="${lm.z}">⚡ TP</button>
           </div>
         </div>
@@ -426,41 +427,39 @@ export class TownHallRadar {
             const isFriend = friends.has(r.id);
             const icon = isPartner ? '💞' : isFriend ? '💚' : '👤';
             const lvTag = r.data?.level ? `Lv.${r.data.level}` : '';
-            const titleTag = r.data?.title ? ` • ${r.data.title}` : '';
             const roleLabel = isPartner
               ? `Bound Partner${lvTag ? ` • ${lvTag}` : ''}`
               : isFriend
-                ? `Friend${lvTag ? ` • ${lvTag}` : ''}${titleTag}`
-                : `Citizen${lvTag ? ` • ${lvTag}` : ''}${titleTag}`;
+                ? `Friend${lvTag ? ` • ${lvTag}` : ''}`
+                : `Citizen${lvTag ? ` • ${lvTag}` : ''}`;
             return `
         <div class="town-map-row" data-walk-x="${rx}" data-walk-z="${rz}">
           <span class="map-icon">${icon}</span>
           <div class="map-meta">
             <span class="map-title">${r.data?.username || 'Player'}</span>
-            <span class="map-coords">${roleLabel}</span>
+            <span class="map-coords">${roleLabel} • ${d}m</span>
           </div>
-          <span class="map-dist">${d}m</span>
-          <div class="map-actions" style="display:flex;gap:4px;flex:0 0 auto;">
-            <button type="button" class="btn-gold small map-walk-btn" data-map-walk="${r.id}" data-walk-x="${rx}" data-walk-z="${rz}">🚶 Walk</button>
+          <div class="map-actions">
+            <button type="button" class="btn-gold small map-walk-btn" data-map-walk="${r.id}" data-walk-x="${rx}" data-walk-z="${rz}" title="Walk Here">🚶</button>
             <button type="button" class="btn-gold small emerald map-tp-btn" data-map-tp="${r.id}" data-tp-x="${rx}" data-tp-z="${rz}">⚡ TP</button>
           </div>
         </div>
       `;
           })
           .join('')
-      : '<div class="town-map-empty">✨ You are currently the only sovereign in this plaza instance</div>';
+      : '<div class="town-map-empty">✨ No other citizens nearby right now</div>';
 
     this.modalEl.innerHTML = `
       <section class="parchment town-map-card">
-        <div class="parchment-title">🧭 Royal Astrolabe &amp; Plaza Waypoints</div>
+        <div class="parchment-title">🧭 Plaza Waypoints</div>
         <button type="button" class="x-btn" data-act="close-town-map">✕</button>
         <div class="town-map-sections">
           <div class="town-map-sec-head" style="display:flex;justify-content:space-between;align-items:center;">
-            <span>🏛️ Town Hall Landmarks (${lms.length})</span>
-            <span style="font-size:11px;color:#059669;">🟢 ${liveOnlineCount} Online in Plaza</span>
+            <span>🏛️ Landmarks (${lms.length})</span>
+            <span style="font-size:11px;color:#059669;">🟢 ${liveOnlineCount} Online</span>
           </div>
           <div class="town-map-list">${lmRows}</div>
-          <div class="town-map-sec-head">👥 Other Citizens Nearby (${playerList.length})</div>
+          <div class="town-map-sec-head">👥 Citizens Nearby (${playerList.length})</div>
           <div class="town-map-list">${playerRows}</div>
         </div>
       </section>

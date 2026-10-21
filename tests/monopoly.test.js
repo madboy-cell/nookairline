@@ -280,20 +280,33 @@ test('Phoenix revive saves one bankruptcy', () => {
   assert.equal(m.players[0].cash, MONO.PHOENIX_REVIVE_CASH);
 });
 
-test('ultimate that bankrupts a rival = BANKRUPTCY STRIKE finisher, caster ranks 1st', () => {
+test('ultimate that bankrupts a rival: awards Knockout Bounty in early rounds, and triggers BANKRUPTCY STRIKE finisher in Overdrive (or last survivor)', () => {
   const m = newMatch(3, { 0: { outfit: 's6_astral_sovereign', outfitRarity: 3 } });
-  own(m, 0, 2, 3);
+  own(m, 0, 2, 1);
   Object.assign(m.players[0], { pos: 2, ult: 100 });
   Object.assign(m.players[1], { pos: 4, cash: 5 });
+  // Early round (Round 1) with 2 survivors left -> awards Knockout Bounty (+450 🪙, +50% ULT, +1 free Tier) & continues match!
   ultimate(m, 0);
-  assert.ok(m.ended);
-  assert.equal(m.result.reason, 'finisher');
-  assert.equal(m.result.winner, 0);
+  assert.equal(m.ended, false, 'match continues in early rounds when 2+ players survive');
+  assert.equal(m.players[0].kills, 1, 'recorded 1 knockout');
+  assert.equal(m.tiles[2].level, 2, 'Knockout Bounty auto-upgraded property +1 Tier');
+  assert.ok(m.players[0].ult >= MONO.KILL_BOUNTY_ULT, 'Knockout Bounty refunded +50% ULT');
+
+  // In Phase 3 Overdrive (Round 15+), an Ultimate knockout immediately finishes the match as BANKRUPTCY STRIKE
+  const m2 = newMatch(3, { 0: { outfit: 's6_astral_sovereign', outfitRarity: 3 } });
+  m2.round = MONO.OVERDRIVE_ROUND;
+  own(m2, 0, 2, 3);
+  Object.assign(m2.players[0], { pos: 2, ult: 100 });
+  Object.assign(m2.players[1], { pos: 4, cash: 5 });
+  ultimate(m2, 0);
+  assert.ok(m2.ended);
+  assert.equal(m2.result.reason, 'finisher');
+  assert.equal(m2.result.winner, 0);
 });
 
-test('15 rounds → ranked by 👑 net worth', () => {
+test('20 rounds → ranked by 👑 net worth', () => {
   const m = newMatch(2);
-  m.round = 15;
+  m.round = m.maxRounds;
   own(m, 1, 23, 3);
   rollExactly(m, 1); decide(m, 0, { choice: 'skip' });
   rollExactly(m, 2); if (m.pending) decide(m, 1, { choice: 'skip' });
@@ -425,7 +438,7 @@ test('Pet Costume Soul-Link: petUlt charges at bond-scaled speed and NEVER auto-
   rollExactly(m, 2);
   endTurnOf(m);
   assert.equal(p0.ult, MONO.ULT_PER_TURN);
-  assert.equal(p0.petUlt, MONO.ULT_PER_TURN * MONO.PET_RATE_MIN);
+  assert.equal(p0.petUlt, Math.round(MONO.ULT_PER_TURN * MONO.PET_RATE_MIN * 10) / 10);
 
   p0.petUlt = 100;
   drainEvents(m);
@@ -575,5 +588,142 @@ test('highlights: bigRent is recorded after a rent payment', () => {
   assert.equal(m.highlights.rentEarned[1], rent);
 });
 
+test('Counter-Play Triangle: Phantom mirrors Tier-4 Pyramids, Pharaoh purges traps across properties, Zeus shatters Shields', () => {
+  // 1. Phantom Masque can place a Gilded Mirror (reverseTrap) on a Tier-4 Golden Pyramid (whereas Elsa 0x freeze cannot)
+  const m1 = newMatch(2, {
+    0: { outfit: 's10_phantom_masque', outfitRarity: 3 },
+    1: { outfit: 's9_pharaoh_ra', outfitRarity: 3 },
+  });
+  own(m1, 1, 23, 4); // Seat 1 owns a Tier-4 Pyramid on tile 23
+  m1.players[0].ult = 100;
+  ultimate(m1, 0);
+  assert.equal(m1.tiles[23].modifier?.reverseTrap, true, 'Phantom reverseTrap lands on Tier-4 Pyramid');
 
+  // 2. Pharaoh Ra cleanses hostile traps off all owned properties even when standing on another side of the board
+  rollExactly(m1, 1);
+  endTurnOf(m1);
+  m1.players[1].pos = 6; // Seat 1 is on side 1, while tile 23 is on side 3
+  m1.players[1].ult = 100;
+  ultimate(m1, 1);
+  assert.equal(m1.tiles[23].modifier, null, 'Pharaoh Solar Laser cleanses hostile mirror trap off owned Pyramid');
+
+  // 3. Zeus Olympus shatters 1 rival Barrier Shield before striking
+  const m2 = newMatch(2, { 0: { outfit: 's11_zeus_olympus', outfitRarity: 3 } });
+  own(m2, 1, 22, 2);
+  m2.players[1].shields = 2;
+  m2.players[0].ult = 100;
+  ultimate(m2, 0);
+  assert.equal(m2.players[1].shields, 1, 'Zeus shattered 1 Barrier Shield');
+  assert.equal(m2.tiles[22].level, 1, 'Zeus also demolished tile 22 by 1 level');
+});
+
+test('Smart Soul-Link Combo: Pet spreads buffs to 2nd-best property and merges compatible hex statuses without erasing skipTurn', () => {
+  // 1. Smart Tile De-Confliction: Owner buffs #1 property (tile 23) -> Pet automatically buffs #2 property (tile 22)
+  const m1 = newMatch(2, {
+    0: {
+      outfit: 's6_astral_sovereign',
+      outfitRarity: 3,
+      pet: 'pet_nyx',
+      petBondLv: 5,
+      petCostume: 's11_zeus_olympus',
+      petCostumeRarity: 3,
+    },
+  });
+  own(m1, 0, 23, 2);
+  own(m1, 0, 22, 1);
+  m1.players[0].ult = 100;
+  m1.players[0].petUlt = 100;
+  const r1 = ultimate(m1, 0);
+  assert.equal(r1.combo, true);
+  assert.equal(m1.tiles[23].modifier?.fxTheme, 'supernova', 'Owner buffed #1 property (tile 23)');
+  assert.equal(m1.tiles[22].modifier?.fxTheme, 'lightning_rod', 'Pet automatically buffed #2 property (tile 22) instead of overwriting tile 23');
+
+  // 2. Smart Status Merging: Tsukuyomi (fixedRoll: 3) + Pet Cinderella (moveDir: -1) => forced 3-step backward moonwalk!
+  const m2 = newMatch(2, {
+    0: {
+      outfit: 's2_tsukuyomi_eclipse',
+      outfitRarity: 3,
+      pet: 'pet_ragdoll',
+      petBondLv: 5,
+      petCostume: 's7_cinderella_clock',
+      petCostumeRarity: 3,
+    },
+  });
+  m2.players[0].ult = 100;
+  m2.players[0].petUlt = 100;
+  ultimate(m2, 0);
+  assert.equal(m2.players[1].status?.fixedRoll, 3, 'kept Owner fixedRoll: 3');
+  assert.equal(m2.players[1].status?.moveDir, -1, 'merged Pet moveDir: -1');
+
+  // 3. Elsa (skipTurn: true) + Pet Cinderella (moveDir: -1) preserves skipTurn!
+  const m3 = newMatch(2, {
+    0: {
+      outfit: 's8_glacial_elsa',
+      outfitRarity: 3,
+      pet: 'pet_ragdoll',
+      petBondLv: 5,
+      petCostume: 's7_cinderella_clock',
+      petCostumeRarity: 3,
+    },
+  });
+  m3.players[0].ult = 100;
+  m3.players[0].petUlt = 100;
+  ultimate(m3, 0);
+  assert.equal(m3.players[1].status?.skipTurn, true, 'Owner skipTurn freeze is never erased by Pet combo');
+});
+
+test('18 Unique Costumes (13 Mythics + 5 Super Mythics): unique choreography, Moon Defense V2 combat, and Super Mythic mechanics', () => {
+  const entries = Object.values(SEASON_SKILLS);
+  assert.equal(entries.length, 18, 'Exactly 18 unique costume skills in registry');
+  const names = new Set(entries.map((s) => s.name));
+  const choreos = new Set(entries.map((s) => s.choreography));
+  const combatTypes = entries.filter((s) => s.combat && s.combat.classRole && s.combat.basicProjectile && s.combat.ultName && s.combat.ultDesc);
+  assert.equal(names.size, 18, 'Every costume has a 100% unique skill name');
+  assert.equal(choreos.size, 18, 'Every costume has a 100% unique 3D choreography tag');
+  assert.equal(combatTypes.length, 18, 'Every costume has a complete Moon Defense V2 combat block');
+
+  // 1. Cyber Archon: steals 1 rival Barrier Shield, upgrades own best property +1 Tier, and plants quantum_glitch trap
+  const mc = newMatch(2, { 0: { outfit: 'sm_cyber_archon', outfitRarity: 4 } });
+  own(mc, 0, 23, 1);
+  mc.players[1].shields = 2;
+  mc.players[0].ult = 100;
+  ultimate(mc, 0);
+  assert.equal(mc.players[1].shields, 1, 'Cyber Archon stole 1 shield from rival');
+  assert.equal(mc.players[0].shields, 1, 'Cyber Archon gained the stolen shield');
+  assert.equal(mc.tiles[23].level, 2, 'Cyber Archon upgraded own best property +1 Tier');
+
+  // 2. Seraphim Rose: upgrades own property +1 Tier, blesses my_best, and wraps rival_best in rose_thorns
+  const ms = newMatch(2, { 0: { outfit: 'sm_seraphim_rose', outfitRarity: 4 } });
+  own(ms, 0, 10, 2);
+  own(ms, 1, 15, 2);
+  ms.players[0].ult = 100;
+  ultimate(ms, 0);
+  assert.equal(ms.tiles[10].level, 3, 'Seraphim Rose upgraded own property to Tier 3');
+  assert.equal(ms.tiles[10].modifier?.fxTheme, 'rose_thorns', 'Seraphim Rose blessed my_best with Rose Sanctuary');
+  assert.equal(ms.tiles[15].modifier?.fxTheme, 'rose_thorns', 'Seraphim Rose wrapped rival_best in Briar Thorns');
+
+  // 3. Aurora Empress: caps rival dice roll to maxRoll: 2
+  const ma = newMatch(2, { 0: { outfit: 'sm_aurora_empress', outfitRarity: 4 } });
+  ma.players[0].ult = 100;
+  ultimate(ma, 0);
+  assert.equal(ma.players[1].status?.maxRoll, 2, 'Aurora Empress applied maxRoll: 2 Slow-Mo Veil to rival');
+
+  // 4. Starlight Ribbon: marches rivals +2 steps forward on silk ribbons and grants owner coupon when rival pays rent on starlight_gift tile
+  const mr = newMatch(2, { 0: { outfit: 'sm_starlight_ribbon', outfitRarity: 4 } });
+  own(mr, 0, 6, 2);
+  mr.players[1].pos = 4;
+  mr.players[0].ult = 100;
+  ultimate(mr, 0);
+  assert.equal(mr.tiles[6].modifier?.grantOwnerCoupon, true, 'Starlight Ribbon placed Starlight Gift Box on own property');
+  assert.equal(mr.players[1].pos, 6, 'Starlight Ribbon marched rival +2 steps forward onto tile 6');
+  assert.equal(mr.players[0].coupons, 1, 'Owner received +1 Upgrade Coupon when rival paid rent on Starlight Gift Box');
+
+  // 5. Dune Phoenix: dives caster +2 steps forward and plants phoenix_feather
+  const mp = newMatch(2, { 0: { outfit: 's3_dune_phoenix', outfitRarity: 3 } });
+  own(mp, 0, 8, 1);
+  mp.players[0].pos = 1;
+  mp.players[0].ult = 100;
+  ultimate(mp, 0);
+  assert.equal(mp.players[0].pos, 3, 'Dune Phoenix dove caster +2 steps forward');
+});
 

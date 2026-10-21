@@ -1,6 +1,6 @@
 // client/js/village_plaza.js — Step 2 village: Twin Sky-Islands renderer (ground skins, roads / canal /
 // footbridges, building & Wonder & decor sprites, harvest bubbles, Rainbow Heart Bridge + Love Pavilion)
-// and the CRK-style 24×24 → 32×32 Grid Editor (Drag / Paint modes, rotate, bag, undo, store-all, save).
+// and the CRK-style 18×18 → 32×32 Grid Editor (Drag / Paint modes, rotate, bag, undo, store-all, save).
 import * as THREE from 'three';
 import { loadSprite, spriteInfo } from './assets.js';
 import {
@@ -8,11 +8,13 @@ import {
 } from '/shared/catalog_landmarks.js';
 import {
   buildCellIndex, cellToWorld, worldToCell, validateLayout, computeComfort, comfortBonusPct, bagContents, cellsOf,
-  islandAt, islandOf,
+  islandAt, islandOf, landingCells,
 } from '/shared/village_rules.js';
 
 const Y = { GROUND: 0, WATER: 0.006, ROAD: 0.012, BRIDGE: 0.02, GRID: 0.03, GHOST: 0.035 };
-const SPRITE_WIDTH_PER_TILE = 0.82;
+const SPRITE_WIDTH_PER_TILE = 1.02;
+const DECOR_WIDTH_PER_TILE = 1.05;
+const MIN_BUILDING_SPRITE_WIDTH = 1.30;
 const MOOD_TINT = {
   sunny: [1, 1, 1], sakura: [1, 0.94, 0.97], sunset: [1, 0.84, 0.72], night: [0.56, 0.62, 0.9],
 };
@@ -478,10 +480,14 @@ export class VillagePlaza {
     if (!d) return;
     const f = footprint(b.type, b.rot);
     const c = cellToWorld(isl, b.x, b.y, f.w, f.h);
-    const scalePerTile = d.kind === 'decor' ? 0.92 : SPRITE_WIDTH_PER_TILE;
-    const width = Math.max(1.15, Math.max(f.w, f.h) * scalePerTile);
+    const scalePerTile = d.kind === 'decor' ? DECOR_WIDTH_PER_TILE : SPRITE_WIDTH_PER_TILE;
+    const width = Math.max(MIN_BUILDING_SPRITE_WIDTH, Math.max(f.w, f.h) * scalePerTile) * (d.spriteScale || 1);
+    const isInvalid = draft?.invalidUids?.has?.(b.uid);
+    const ghostState = draft
+      ? (isInvalid ? 'bad' : (draft.selected === b.uid ? (draft.valid ? 'ok' : 'bad') : null))
+      : null;
     const mesh = this.addSprite(group, d.sprite, c.x, c.z + f.h / 2 - 0.2, width, { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type }, {
-      mirror: ((b.rot / 90) | 0) % 2 === 1, ghost: draft && draft.selected === b.uid ? (draft.valid ? 'ok' : 'bad') : null,
+      mirror: ((b.rot / 90) | 0) % 2 === 1, ghost: ghostState,
     });
     mesh.userData.footprint = { x: c.x, z: c.z, w: f.w, h: f.h };
     // harvest bubble slot (own island producers + shrine)
@@ -582,15 +588,14 @@ export class VillagePlaza {
     for (let i = 0; i <= S; i++) { pts.push(ox + i, Y.GRID, oz, ox + i, Y.GRID, oz + S, ox, Y.GRID, oz + i, ox + S, Y.GRID, oz + i); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     group.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: gridOpacity })));
-    const sel = draft.selected && isl.village.buildings.find((b) => b.uid === draft.selected);
-    if (sel) {
-      const cells = cellsOf(sel);
-      const col = draft.valid ? 0x3ddc84 : 0xff4d4d;
+
+    const drawFootprintPad = (b, isOk) => {
+      const cells = cellsOf(b);
+      const col = isOk ? 0x3ddc84 : 0xff4d4d;
       const m = new THREE.Mesh(cellsGeometry(isl, cells, Y.GHOST), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.52, depthWrite: false }));
       group.add(m);
-      // Glowing footprint border outline (Mockup 01 & 02)
-      const f = footprint(sel.type, sel.rot);
-      const x0 = ox + sel.x, z0 = oz + sel.y, x1 = x0 + f.w, z1 = z0 + f.h, by = Y.GHOST + 0.008;
+      const f = footprint(b.type, b.rot);
+      const x0 = ox + b.x, z0 = oz + b.y, x1 = x0 + f.w, z1 = z0 + f.h, by = Y.GHOST + 0.008;
       const bPts = [
         x0, by, z0, x1, by, z0,
         x1, by, z0, x1, by, z1,
@@ -599,7 +604,21 @@ export class VillagePlaza {
       ];
       const bGeo = new THREE.BufferGeometry();
       bGeo.setAttribute('position', new THREE.Float32BufferAttribute(bPts, 3));
-      group.add(new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({ color: draft.valid ? 0xb8ff9e : 0xffb3a8, transparent: true, opacity: 0.95 })));
+      group.add(new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({ color: isOk ? 0xb8ff9e : 0xffb3a8, transparent: true, opacity: 0.95 })));
+    };
+
+    const drawn = new Set();
+    if (draft.invalidUids?.size) {
+      for (const b of isl.village.buildings) {
+        if (draft.invalidUids.has(b.uid)) {
+          drawFootprintPad(b, false);
+          drawn.add(b.uid);
+        }
+      }
+    }
+    const sel = draft.selected && isl.village.buildings.find((b) => b.uid === draft.selected);
+    if (sel && !drawn.has(sel.uid)) {
+      drawFootprintPad(sel, draft.valid);
     }
   }
 
@@ -763,9 +782,38 @@ export class GridEditor {
     $('ed-save').onclick = () => this.save();
     $('ed-exit').onclick = () => this.close(true);
     $('ed-mode').onclick = () => this.setMode(this.mode === 'drag' ? 'paint' : 'drag');
-    $('ed-confirm').onclick = () => { this.selected = null; this.refresh(); };
+    $('ed-confirm').onclick = () => {
+      const val = this.validation();
+      const inv = this.findInvalidBuildingUids();
+      if (!val.ok) {
+        const badUid = (this.selected && inv.has(this.selected)) ? this.selected : [...inv][0];
+        if (badUid) {
+          this.selected = badUid;
+          this.focusOnBuilding(badUid);
+          this.refresh();
+        }
+        this.ui.toast?.(`✕ Move or Put in Bag first: ${humanError(val.error)}`);
+        return;
+      }
+      this.selected = null;
+      this.refresh();
+    };
     $('ed-rotate').onclick = () => this.rotateSelected();
     $('ed-bag').onclick = () => this.bagSelected();
+    if ($('ed-status')) {
+      $('ed-status').style.pointerEvents = 'auto';
+      $('ed-status').style.cursor = 'pointer';
+      $('ed-status').onclick = () => {
+        const inv = [...this.findInvalidBuildingUids()];
+        if (inv.length) {
+          const idx = inv.indexOf(this.selected);
+          const nextUid = inv[(idx + 1) % inv.length];
+          this.selected = nextUid;
+          this.focusOnBuilding(nextUid);
+          this.refresh();
+        }
+      };
+    }
 
     // Filter bar & drawer collapse (Mockup 02)
     if ($('ed-filter-all')) {
@@ -838,8 +886,71 @@ export class GridEditor {
 
   get village() { return this.plaza.selfIsland.village; }
 
+  /** Automatically strip non-water/non-bridge road tiles underneath placed buildings so roads never block moving buildings. */
+  effectiveTiles() {
+    if (!this.draft) return [];
+    const bCells = new Set();
+    for (const b of this.draft.buildings) {
+      for (const [cx, cy] of cellsOf(b)) bCells.add(`${cx},${cy}`);
+    }
+    return this.draft.tiles.filter((t) => {
+      const td = TILES[t.t];
+      if (td && !td.water && !td.bridge && bCells.has(`${t.x},${t.y}`)) return false;
+      return true;
+    });
+  }
+
+  /** Identify all buildings currently in an invalid position (overlapping, out-of-bounds, on water, or Dock away from water). */
+  findInvalidBuildingUids() {
+    const bad = new Set();
+    if (!this.draft || !this.base) return bad;
+    const S = this.base.grid_size || 18;
+    const cellOwner = new Map();
+    const effTiles = this.effectiveTiles();
+    const waterOrBridgeCells = new Set(effTiles.map((t) => `${t.x},${t.y}`));
+    const waterCells = new Set(effTiles.filter((t) => TILES[t.t]?.water || TILES[t.t]?.bridge).map((t) => `${t.x},${t.y}`));
+    const landing = this.plaza?.layout?.bridge
+      ? new Set(landingCells(S, this.plaza.selfIsland?.side || 'left').map(([x, y]) => `${x},${y}`))
+      : null;
+
+    for (const b of this.draft.buildings) {
+      const d = placeable(b.type);
+      if (!d) { bad.add(b.uid); continue; }
+      const f = footprint(b.type, b.rot);
+      if (b.x < 0 || b.y < 0 || b.x + f.w > S || b.y + f.h > S) bad.add(b.uid);
+      for (const [cx, cy] of cellsOf(b)) {
+        const k = `${cx},${cy}`;
+        if (cellOwner.has(k)) {
+          bad.add(b.uid);
+          bad.add(cellOwner.get(k));
+        } else {
+          cellOwner.set(k, b.uid);
+        }
+        if (waterOrBridgeCells.has(k)) bad.add(b.uid);
+        if (landing && landing.has(k)) bad.add(b.uid);
+      }
+      if (d.needsWater) {
+        const touchesEdge = b.x === 0 || b.y === 0 || b.x + f.w === S || b.y + f.h === S;
+        let touchesWater = touchesEdge;
+        if (!touchesWater) {
+          for (const [cx, cy] of cellsOf(b)) {
+            if (waterCells.has(`${cx + 1},${cy}`) || waterCells.has(`${cx - 1},${cy}`)
+              || waterCells.has(`${cx},${cy + 1}`) || waterCells.has(`${cx},${cy - 1}`)) {
+              touchesWater = true; break;
+            }
+          }
+        }
+        if (!touchesWater) bad.add(b.uid);
+      }
+    }
+    return bad;
+  }
+
   /** Draft village = saved village with the draft's buildings / tiles / ground (for validation + comfort). */
-  draftVillage() { return { ...this.base, buildings: this.draft.buildings, tiles: this.draft.tiles, ground: this.draft.ground }; }
+  draftVillage() {
+    const tiles = this.effectiveTiles();
+    return { ...this.base, buildings: this.draft.buildings, tiles, ground: this.draft.ground };
+  }
 
   open({ quickUid = null, selectUid = null } = {}) {
     const v = this.village;
@@ -892,16 +1003,28 @@ export class GridEditor {
   pushUndo() { this.undo.push(JSON.stringify(this.draft)); if (this.undo.length > 60) this.undo.shift(); }
   popUndo() { const s = this.undo.pop(); if (s) { this.draft = JSON.parse(s); this.selected = null; this.refresh(); } }
 
-  validation() { return validateLayout(this.draftVillage(), this.draft); }
+  validation() {
+    const dv = this.draftVillage();
+    return validateLayout(dv, { ...this.draft, tiles: dv.tiles }, {
+      coupled: !!this.plaza?.layout?.bridge,
+      side: this.plaza?.selfIsland?.side || 'left',
+    });
+  }
 
   refresh() {
     if (!this.active) return;
     const $ = this.$;
     const isl = this.plaza.selfIsland;
     const val = this.validation();
+    const invalidUids = this.findInvalidBuildingUids();
     this.valid = val.ok;
+    if (!val.ok && !this.selected && invalidUids.size > 0) {
+      this.selected = [...invalidUids][0];
+    }
     const dv = { ...this.draftVillage(), buildings: this.draft.buildings.map((b) => ({ ...b })) };
-    this.plaza.setVillage(this.plaza.selfId, dv, { draft: { overlay: true, quickMove: this.quickMode, selected: this.selected, valid: val.ok } });
+    this.plaza.setVillage(this.plaza.selfId, dv, {
+      draft: { overlay: true, quickMove: this.quickMode, selected: this.selected, valid: val.ok, invalidUids },
+    });
 
     if (this.quickMode) {
       if ($('quick-move-ui')) $('quick-move-ui').hidden = !this.selected;
@@ -948,8 +1071,8 @@ export class GridEditor {
     const d = placeable(b.type);
     const f = footprint(b.type, b.rot);
     const c = cellToWorld(isl, b.x, b.y, f.w, f.h);
-    const scalePerTile = d?.kind === 'decor' ? 0.92 : SPRITE_WIDTH_PER_TILE;
-    const width = Math.max(1.15, Math.max(f.w, f.h) * scalePerTile);
+    const scalePerTile = d?.kind === 'decor' ? DECOR_WIDTH_PER_TILE : SPRITE_WIDTH_PER_TILE;
+    const width = Math.max(MIN_BUILDING_SPRITE_WIDTH, Math.max(f.w, f.h) * scalePerTile);
     const info = spriteInfo(d?.sprite);
     const aspect = info ? info.h / info.w : 1;
     const sprH = width * aspect;
@@ -960,10 +1083,12 @@ export class GridEditor {
 
     const clampX = (px, margin = 110) => Math.max(margin, Math.min(appRect.width - margin, px - appRect.left));
     const drawerH = this.quickMode ? 84 : (this.drawerCollapsed ? 96 : 256);
-    const topMinY = this.quickMode ? 76 : 138;
-    const clampY = (py) => Math.max(topMinY, Math.min(appRect.height - drawerH, py - appRect.top));
+    const topMinY = this.quickMode ? 88 : (this.valid ? 156 : 184);
+    const clampY = (py) => Math.max(topMinY, Math.min(appRect.height - drawerH - 12, py - appRect.top));
 
-    const labelTxt = this.valid ? `${f.w}×${f.h} Tiles` : `✕ Blocked (${f.w}×${f.h})`;
+    const invUids = this.findInvalidBuildingUids();
+    const thisValid = this.valid && !invUids.has(b.uid);
+    const labelTxt = thisValid ? `${f.w}×${f.h} Tiles` : `✕ Blocked (${f.w}×${f.h})`;
 
     if (this.quickMode) {
       const qmBar = $('qm-bar');
@@ -974,9 +1099,9 @@ export class GridEditor {
       }
       if (qmFoot) {
         qmFoot.textContent = labelTxt;
-        qmFoot.classList.toggle('bad', !this.valid);
+        qmFoot.classList.toggle('bad', !thisValid);
         qmFoot.style.left = `${clampX(footScreen.x, 54)}px`;
-        qmFoot.style.top = `${Math.max(90, Math.min(appRect.height - 80, footScreen.y - appRect.top))}px`;
+        qmFoot.style.top = `${Math.max(96, Math.min(appRect.height - 80, footScreen.y - appRect.top))}px`;
       }
       return;
     }
@@ -989,9 +1114,9 @@ export class GridEditor {
     }
     if (footEl && !footEl.hidden) {
       footEl.textContent = labelTxt;
-      footEl.classList.toggle('bad', !this.valid);
+      footEl.classList.toggle('bad', !thisValid);
       footEl.style.left = `${clampX(footScreen.x, 54)}px`;
-      footEl.style.top = `${Math.max(96, Math.min(appRect.height - drawerH + 14, footScreen.y - appRect.top))}px`;
+      footEl.style.top = `${Math.max(106, Math.min(appRect.height - drawerH + 14, footScreen.y - appRect.top))}px`;
     }
   }
 
@@ -1077,11 +1202,11 @@ export class GridEditor {
       let statusHtml = '';
       let ctaHtml = '';
       if (isPlacingThis) {
-        statusHtml = `<span class="ed-card-status placing">🟡 Placing Now...</span>`;
-        ctaHtml = `<span class="ed-card-cta">📍 Moving</span>`;
+        statusHtml = `<span class="ed-card-status placing">🟡 Selected${placed > 1 ? ` (${placedList.findIndex((b) => b.uid === this.selected) + 1}/${placed})` : ''}</span>`;
+        ctaHtml = `<span class="ed-card-cta">${placed > 1 ? '🔍 Next Copy' : (n > 0 ? `📦 +1 (${n})` : '📍 Moving')}</span>`;
       } else if (n > 0) {
-        statusHtml = `<span class="ed-card-status">📦 In Bag: x${n}</span>`;
-        ctaHtml = `<span class="ed-card-cta">📍 Drag</span>`;
+        statusHtml = `<span class="ed-card-status">📦 In Bag: x${n}${placed > 0 ? ` • ✓${placed}` : ''}</span>`;
+        ctaHtml = `<span class="ed-card-cta">📍 Place</span>`;
       } else if (placed > 0) {
         statusHtml = `<span class="ed-card-status placed">✓ Placed (${placed})</span>`;
         ctaHtml = `<span class="ed-card-cta locate">🔍 Select</span>`;
@@ -1100,12 +1225,20 @@ export class GridEditor {
       `;
 
       el.onclick = () => {
-        if (n > 0) {
+        if (isPlacingThis && placed > 1) {
+          if (this.mode !== 'drag') this.setMode('drag');
+          const idx = placedList.findIndex((b) => b.uid === this.selected);
+          const target = placedList[(idx + 1) % placedList.length];
+          this.selected = target.uid;
+          this.focusOnBuilding(target.uid);
+          this.refresh();
+        } else if (n > 0) {
           this.placeFromBag(key);
         } else if (placed > 0) {
-          // Select & pan camera to the placed building on the island!
+          // Select & pan camera to the placed building on the island (cycling through copies if multiple)!
           if (this.mode !== 'drag') this.setMode('drag');
-          const target = placedList[0];
+          const idx = placedList.findIndex((b) => b.uid === this.selected);
+          const target = placedList[(idx + 1) % placedList.length];
           this.selected = target.uid;
           this.focusOnBuilding(target.uid);
           this.refresh();
@@ -1131,15 +1264,26 @@ export class GridEditor {
     return worldToCell(isl, hit.x, hit.z);
   }
 
-  buildingAtCell(gx, gy) {
+  buildingsAtCell(gx, gy) {
+    const list = [];
     for (let i = this.draft.buildings.length - 1; i >= 0; i--) {
       const b = this.draft.buildings[i];
-      if (cellsOf(b).some(([x, y]) => x === gx && y === gy)) return b;
+      if (cellsOf(b).some(([x, y]) => x === gx && y === gy)) list.push(b);
     }
-    return null;
+    return list;
   }
 
-  /** Mobile thumb halo: if a building is already selected, allow grabbing within 1 tile of its footprint. */
+  buildingAtCell(gx, gy) {
+    const list = this.buildingsAtCell(gx, gy);
+    if (!list.length) return null;
+    if (list.length > 1 && this.selected) {
+      const idx = list.findIndex((b) => b.uid === this.selected);
+      if (idx >= 0) return list[(idx + 1) % list.length];
+    }
+    return list[0];
+  }
+
+  /** Mobile thumb halo: if a building is already selected, allow grabbing within 1 tile of its footprint on empty cells. */
   selectedNearCell(gx, gy) {
     if (!this.selected) return null;
     const b = this.draft.buildings.find((q) => q.uid === this.selected);
@@ -1194,7 +1338,8 @@ export class GridEditor {
     }
     this.pushUndo();
     this.draft.buildings.splice(i, 1);
-    this.selected = null;
+    const inv = this.findInvalidBuildingUids();
+    this.selected = inv.size > 0 ? [...inv][0] : null;
     this.refresh();
   }
 
@@ -1215,20 +1360,34 @@ export class GridEditor {
 
   // ------------------------------------------------------------------ pointer (called by WorldEngine)
   /** @returns true if the editor consumed the gesture (otherwise the world pans the camera). */
-  pointerDown(hit) {
+  pointerDown(hit, picked = null) {
     const cell = this.cellAt(hit);
     if (this.mode === 'paint') { this.strokeUndo = false; this.paintAt(cell); return !!cell; }
-    if (!cell) return false;
-    const b = this.selectedNearCell(cell.gx, cell.gy) || this.buildingAtCell(cell.gx, cell.gy);
+    const pickedBuilding = (picked?.kind === 'building' && picked.owner === this.plaza.selfId)
+      ? this.draft.buildings.find((q) => q.uid === picked.uid)
+      : null;
+    if (!cell && !pickedBuilding) return false;
+    // Priority: 1. Exact footprint cell hit -> 2. 2.5D upright sprite hit -> 3. 1-tile thumb halo on empty grass
+    const b = (cell && this.buildingAtCell(cell.gx, cell.gy))
+      || pickedBuilding
+      || (cell && this.selectedNearCell(cell.gx, cell.gy));
     if (!b) {
-      if (!this.quickMode && this.selected) { this.selected = null; this.refresh(); }
+      if (!this.quickMode && this.selected) {
+        const inv = this.findInvalidBuildingUids();
+        if (!inv.has(this.selected)) {
+          this.selected = inv.size > 0 ? [...inv][0] : null;
+          this.refresh();
+        }
+      }
       return false;
     }
     this.pushUndo();
     this.selected = b.uid;
     const f = footprint(b.type, b.rot);
-    const offX = Math.max(0, Math.min(f.w - 1, cell.gx - b.x));
-    const offY = Math.max(0, Math.min(f.h - 1, cell.gy - b.y));
+    const gx = cell ? cell.gx : b.x + (f.w >> 1);
+    const gy = cell ? cell.gy : b.y + (f.h >> 1);
+    const offX = Math.max(0, Math.min(f.w - 1, gx - b.x));
+    const offY = Math.max(0, Math.min(f.h - 1, gy - b.y));
     this.drag = { uid: b.uid, offX, offY, moved: false };
     this.refresh();
     return true;
@@ -1255,7 +1414,17 @@ export class GridEditor {
 
   async save() {
     const val = this.validation();
-    if (!val.ok) { this.ui.toast?.(`✕ ${humanError(val.error)}`); return; }
+    if (!val.ok) {
+      const inv = [...this.findInvalidBuildingUids()];
+      if (inv.length) {
+        this.selected = inv[0];
+        this.focusOnBuilding(inv[0]);
+        this.refresh();
+      }
+      this.ui.toast?.(`✕ ${humanError(val.error)}`);
+      return;
+    }
+    this.draft.tiles = this.effectiveTiles();
     if (this.$('ed-save')) this.$('ed-save').disabled = true;
     if (this.$('qm-place')) this.$('qm-place').disabled = true;
     const r = await this.ui.onSave({ buildings: this.draft.buildings, tiles: this.draft.tiles, ground: this.draft.ground });
@@ -1285,6 +1454,36 @@ export function humanError(e) {
     already_blessed_today: 'already blessed today 💧', already_tossed_today: 'already tossed a coin today', no_fountain: 'no Fountain here',
     slow_down: 'slow down a little', server_error: 'server hiccup, try again', not_at_dock: 'walk onto your Dock first',
     not_enough_berries: 'not enough Star-Berries', bad_layout: 'invalid layout',
+    level_too_low: 'reach Level 10 to dispatch Royal Owl gifts',
+    not_friend: 'recipient must be your bound partner or friend',
+    no_such_user: 'recipient player not found',
+    daily_limit: 'Royal Owl daily limit reached (3/3 parcels sent today)',
+    empty_parcel: 'attach at least one item in Slot 1 or Slot 2',
+    insufficient_berries: 'not enough Star-Berries for postage + gift',
+    insufficient_item: 'you do not have that item in your Bag',
+    insufficient_diamonds: 'not enough Diamonds 💎',
+    insufficient_shards: 'not enough Starlight Shards 🌟',
+    not_enough_diamonds: 'not enough Diamonds 💎',
+    not_enough_shards: 'not enough Starlight Shards 🌟',
+    not_enough_tickets: 'not enough Summon Tickets 🎟️',
+    item_equipped: 'unequip this item first before gifting it',
+    has_dupes: 'use Dupe Copy mode when gifting an item with duplicates',
+    no_dupes: 'no duplicate copies left to gift',
+    target_required: 'select a partner or friend first',
+    already_claimed: 'already claimed ✅',
+    not_eligible: 'enter valid Founder code (SKYPARTY-V1) to claim',
+    quests_incomplete: 'claim all 3 daily quests first to unlock the bonus stamp',
+    goal_not_reached: 'complete the quest objective first',
+    cannot_friend_self: 'you cannot send a friend request to yourself',
+    already_friends: 'you are already friends with this player',
+    request_already_sent: 'friend request already sent',
+    take_break_first: 'take a break in the Couple tab before removing your bound partner',
+    already_coupled: 'you are already bound in a Couple Sanctuary',
+    must_be_friends: 'add this player as a friend first before proposing a Couple bond',
+    target_already_coupled: 'that player is already bound with another partner',
+    not_coupled: 'you are not currently in a Couple bond',
+    no_such_request: 'that friend request is no longer active',
+    no_such_proposal: 'that couple proposal is no longer active',
   })[e] || e || 'something went wrong';
 }
 

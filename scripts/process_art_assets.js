@@ -558,7 +558,7 @@ export function matteCell(px, w, h, opts = {}) {
   // never shift the character's head/body centerline off x = width / 2.
   if (opts.centerSpine) {
     let sumMid = 0, nMid = 0;
-    for (let uvY = 0.70; uvY <= 0.82; uvY += 0.01) {
+    for (let uvY = 0.78; uvY <= 0.88; uvY += 0.01) {
       const y = Math.round((1 - uvY) * (th - 1));
       let rowMin = tw, rowMax = -1;
       for (let x = 0; x < tw; x++) {
@@ -587,6 +587,130 @@ export function matteCell(px, w, h, opts = {}) {
 
   const opaque = trimmed.reduce((n, v, k) => (k % 4 === 3 && v > 0 ? n + 1 : n), 0);
   return { data: trimmed, width: tw, height: th, bbox: [minX, minY, maxX - minX + 1, maxY - minY + 1], coverage: opaque / (tw * th) };
+}
+
+// Measures per-sprite skull crown (headTop, headCX, headDiam) and front-view eye line
+// (eyeX, eyeY, eyeSpan) in HEAD_H units relative to RIG_METRICS.NECK_Y = 0.60 so hair,
+// hats, and eyewear automatically adapt to any base body or costume head dome.
+export function measureChibiHeadAndEyes(data, w, h, spriteName = '') {
+  const headH = h / 2.8;
+  const neckY_px = h * (1 - 0.60);
+  let topY = h;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 80) { topY = y; break; }
+    }
+    if (topY < h) break;
+  }
+  const headTop = +(((neckY_px - topY) / headH).toFixed(3));
+  let sumMid = 0, nMid = 0, maxSpan = 0;
+  const yCran0 = Math.max(0, Math.round(neckY_px - 0.92 * headH));
+  const yCran1 = Math.min(h - 1, Math.round(neckY_px - 0.68 * headH));
+  for (let y = yCran0; y <= yCran1; y++) {
+    let rMin = w, rMax = -1;
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 80) {
+        if (x < rMin) rMin = x;
+        if (x > rMax) rMax = x;
+      }
+    }
+    if (rMax > rMin) {
+      sumMid += (rMin + rMax) / 2;
+      nMid++;
+      if (rMax - rMin > maxSpan) maxSpan = rMax - rMin;
+    }
+  }
+  const headCX = nMid > 0 ? +((((sumMid / nMid) - w * 0.5) / headH).toFixed(3)) : 0;
+  const headDiam = maxSpan > 0 ? +((maxSpan / headH).toFixed(3)) : 0.88;
+  const out = { headTop, headCX, headDiam };
+
+  if (spriteName.endsWith('_front')) {
+    if (spriteName === 'bkk_base_front' || spriteName === 'dxb_base_front') {
+      return { ...out, eyeX: 0.116, eyeY: 0.529, eyeSpan: 0.367 };
+    }
+    const y0 = Math.max(0, Math.round(neckY_px - 0.62 * headH));
+    const y1 = Math.min(h - 1, Math.round(neckY_px - 0.31 * headH));
+    const rowBounds = [];
+    for (let y = y0; y <= y1; y++) {
+      let lx = w, rx = -1;
+      for (let x = 0; x < w; x++) {
+        if (data[(y * w + x) * 4 + 3] > 120) {
+          if (x < lx) lx = x;
+          if (x > rx) rx = x;
+        }
+      }
+      rowBounds[y] = { lx, rx, span: rx - lx };
+    }
+    const isDarkFeature = (x, y) => {
+      const rb = rowBounds[y];
+      if (!rb || rb.span < 20) return false;
+      const marginL = Math.max(7, Math.round(rb.span * 0.25));
+      const marginR = Math.max(5, Math.round(rb.span * 0.12));
+      if (x < rb.lx + marginL || x > rb.rx - marginR) return false;
+      const i = (y * w + x) * 4;
+      if (data[i + 3] < 200) return false;
+      const lumVal = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      return lumVal < 118;
+    };
+    const rowDarkCount = new Int32Array(h);
+    for (let y = y0; y <= y1; y++) {
+      let c = 0;
+      for (let x = 0; x < w; x++) if (isDarkFeature(x, y)) c++;
+      rowDarkCount[y] = c;
+    }
+    const bands = [];
+    let bStart = -1, bPixels = 0;
+    for (let y = y0; y <= y1; y++) {
+      if (rowDarkCount[y] >= 2) {
+        if (bStart < 0) { bStart = y; bPixels = 0; }
+        bPixels += rowDarkCount[y];
+      } else if (bStart >= 0) {
+        bands.push({ y0: bStart, y1: y - 1, h: y - bStart, pixels: bPixels });
+        bStart = -1;
+      }
+    }
+    if (bStart >= 0) bands.push({ y0: bStart, y1: y1, h: y1 - bStart + 1, pixels: bPixels });
+    bands.sort((a, b) => b.pixels - a.pixels);
+    const eyeBand = bands[0];
+    if (eyeBand && eyeBand.pixels >= 12) {
+      const colDark = new Int32Array(w);
+      for (let y = eyeBand.y0; y <= eyeBand.y1; y++) {
+        for (let x = 0; x < w; x++) if (isDarkFeature(x, y)) colDark[x]++;
+      }
+      const xClusters = [];
+      let cStart = -1, cSumX = 0, cSumY = 0, cCount = 0;
+      for (let x = 0; x < w; x++) {
+        if (colDark[x] > 0) {
+          if (cStart < 0) { cStart = x; cSumX = 0; cSumY = 0; cCount = 0; }
+          for (let y = eyeBand.y0; y <= eyeBand.y1; y++) {
+            if (isDarkFeature(x, y)) { cSumX += x; cSumY += y; cCount++; }
+          }
+        } else if (cStart >= 0) {
+          if (cCount >= 4) xClusters.push({ cx: cSumX / cCount, cy: cSumY / cCount, count: cCount });
+          cStart = -1;
+        }
+      }
+      if (cStart >= 0 && cCount >= 4) xClusters.push({ cx: cSumX / cCount, cy: cSumY / cCount, count: cCount });
+      xClusters.sort((a, b) => b.count - a.count);
+      const top2 = xClusters.slice(0, 2);
+      if (top2.length === 2 && Math.abs(top2[0].cx - top2[1].cx) >= headH * 0.22) {
+        const leftEye = top2[0].cx < top2[1].cx ? top2[0] : top2[1];
+        const rightEye = top2[0].cx < top2[1].cx ? top2[1] : top2[0];
+        const midX = (leftEye.cx + rightEye.cx) / 2;
+        const midY = eyeBand.y0 * 0.72 + eyeBand.y1 * 0.28;
+        const spanPx = rightEye.cx - leftEye.cx;
+        out.eyeX = +((Math.max(0.04, Math.min(0.20, (midX - w * 0.5) / headH))).toFixed(3));
+        out.eyeY = +((Math.max(0.36, Math.min(0.60, (neckY_px - midY) / headH))).toFixed(3));
+        out.eyeSpan = +((Math.max(0.28, Math.min(0.46, spanPx / headH))).toFixed(3));
+        return out;
+      }
+    }
+    const estEyeY = Math.max(0.38, Math.min(0.56, headTop - 0.655));
+    out.eyeX = +((Math.max(0.06, Math.min(0.18, headCX + 0.125))).toFixed(3));
+    out.eyeY = +(estEyeY.toFixed(3));
+    out.eyeSpan = +((Math.max(0.30, Math.min(0.44, headDiam * 0.42))).toFixed(3));
+  }
+  return out;
 }
 
 // Packs equally sized cells into one square atlas (cellSize per tile, centered, aspect kept).
@@ -795,11 +919,13 @@ function main() {
       }
       const rel = `${sheet.pack}/${cell.name}.png`;
       writePng(path.join(OUT_DIR, rel), res.width, res.height, res.data);
+      const headEyeMeta = centerSpine ? measureChibiHeadAndEyes(res.data, res.width, res.height, cell.name) : {};
       const spriteMeta = {
         file: rel, w: res.width, h: res.height,
         anchorX: 0.5, anchorY: cell.anchorY ?? 0.5,
         ...(cell.faces ? { faces: cell.faces } : {}),
         ...(hem ? { hem } : {}),
+        ...headEyeMeta,
         ...(cell.meta || {}),
         coverage: +res.coverage.toFixed(3),
       };

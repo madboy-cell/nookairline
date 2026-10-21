@@ -147,9 +147,14 @@ function decidePending(m, seat, pd, diff) {
     case 'choice': {
       const ids = pd.options.map((o) => o.id);
       if (diff === 'easy') return ids[0];
-      const owns = ownedTiles(m, seat).length > 0;
-      if (diff === 'insane' && ids.includes('swap') && owns) return 'swap';
-      return owns && ids.includes('midas') ? 'midas' : ids.includes('carpet') ? 'carpet' : ids[0];
+      const mine = ownedTiles(m, seat);
+      if (mine.length && ids.includes('swap')) {
+        const r = richestRival(m, seat);
+        const myCheapest = [...mine].sort((a, b) => rentFor(m, a) - rentFor(m, b))[0];
+        const rivalBest = r ? ownedTiles(m, r.seat).filter((i) => m.tiles[i].level <= 3).sort((a, b) => rentFor(m, b) - rentFor(m, a))[0] : null;
+        if (rivalBest != null && rentFor(m, rivalBest) > rentFor(m, myCheapest) * 1.25) return 'swap';
+      }
+      return mine.length && ids.includes('midas') ? 'midas' : ids.includes('carpet') ? 'carpet' : ids[0];
     }
     default:
       return pd.canSkip ? 'skip' : pd.options.find((o) => !o.disabled)?.id;

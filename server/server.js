@@ -11,7 +11,7 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import { Database } from './db.js';
 import {
-  createStarterProfile, seedProfiles, verifyPassword, publicProfile, publicVillage, migrateProfile, upgradeSeedVillage, LINEAGES,
+  createStarterProfile, seedProfiles, hashPassword, verifyPassword, publicProfile, publicVillage, migrateProfile, upgradeSeedVillage, LINEAGES,
 } from './profile_factory.js';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { FISHING } from '../shared/catalog_landmarks.js';
@@ -32,12 +32,16 @@ import { TOWNHALL } from '../shared/phase5_rules.js';
 
 // Step 3 & Step 3.5 & Step 5 actions — routed through onAction like the village_* actions.
 const RPG_ACTIONS = new Set([
-  'wardrobe_equip', 'gacha_pull', 'gacha_set_featured', 'shard_exchange', 'blacksmith_forge', 'pet_feed', 'pet_reroll_trait', 'pet_breed_couple',
+  'wardrobe_equip', 'wardrobe_glamour', 'charm_equip', 'charm_consume', 'charm_salvage', 'charm_lock', 'gear_attune', 'dash_preset_save', 'dash_preset_equip',
+  'gacha_pull', 'gacha_set_featured', 'shard_exchange', 'blacksmith_forge', 'pet_feed', 'pet_reroll_trait', 'pet_breed_couple',
   'pet_evolve', 'pet_reroll', 'pet_lock_slot', 'pet_infuse', 'pet_release', 'pet_set_visual_tier', 'pet_rename', 'pet_interact', 'pet_claim_gift',
   'pet_online_tick', 'pet_equip_costume', 'pet_adopt', 'pet_set_poses',
   'hair_classic_buy', 'hair_gacha_pull', 'hair_dye_unlock', 'hair_equip',
   // Phase 5 actions
-  'hall_list', 'hall_worship', 'cheer_claim', 'owl_send_gift', 'owl_claim_mail', 'vip_card_buy', 'vip_card_use', 'passport_state', 'passport_claim', 'founder_claim',
+  'hall_list', 'hall_worship', 'cheer_claim', 'owl_send_gift', 'owl_claim_mail', 'vip_card_buy', 'vip_card_use', 'bag_item_use', 'passport_state', 'passport_claim', 'founder_claim',
+  // Social & Couple actions
+  'social_directory', 'friend_request_send', 'friend_request_accept', 'friend_request_decline', 'friend_remove',
+  'couple_propose', 'couple_accept', 'couple_decline', 'couple_break', 'couple_moment',
 ]);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,7 +61,7 @@ export const NET = {
   HEARTBEAT_MS: 25000,
   MAX_MISSED_PONGS: 2,
   AUTH_TIMEOUT_MS: 5000,
-  MAX_MSGS_PER_SEC: 30,
+  MAX_MSGS_PER_SEC: 90,
   MAX_SPEED: 4.5 * 1.15 * 1.6,                                  // base * road boost * tolerance
   ACTION_COOLDOWN_MS: 250,                                      // economy actions per socket
   DROP_COOLDOWN_MS: 800,
@@ -96,16 +100,41 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     p.cp = recalcPlayerCP(p);
     db.markProfile(p.id);
   }
+  // Reconcile two-way friendship symmetry and clean up non-existent friend IDs.
+  for (const p of db.profiles.values()) {
+    p.friends = Array.from(new Set(
+      (p.friends || [])
+        .map((fid) => String(fid || '').toLowerCase())
+        .filter((fid) => fid && fid !== p.id && db.getProfile(fid))
+    ));
+    for (const fid of p.friends) {
+      const fProf = db.getProfile(fid);
+      if (fProf && Array.isArray(fProf.friends) && !fProf.friends.includes(p.id)) {
+        fProf.friends.push(p.id);
+        db.markProfile(fProf.id);
+      }
+    }
+  }
 
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', 1);
   app.use(express.json({ limit: '32kb' }));
 
   // --- static -----------------------------------------------------------------
+  const noCacheStaticOpts = {
+    maxAge: 0,
+    etag: true,
+    setHeaders(res, filePath) {
+      if (/\.(html|js|css|json)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    },
+  };
   app.get('/vendor/three.module.js', (_req, res) =>
     res.sendFile(path.join(ROOT, 'node_modules', 'three', 'build', 'three.module.js')));
-  app.use('/shared', express.static(path.join(ROOT, 'shared'), { maxAge: 0 }));
-  app.use(express.static(path.join(ROOT, 'client'), { maxAge: 0, extensions: ['html'] }));
+  app.use('/shared', express.static(path.join(ROOT, 'shared'), noCacheStaticOpts));
+  app.use(express.static(path.join(ROOT, 'client'), { ...noCacheStaticOpts, extensions: ['html'] }));
 
   // --- auth ---------------------------------------------------------------------
   const loginAttempts = new Map(); // ip -> { n, reset }
@@ -166,6 +195,55 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     res.json({ profile: publicProfile(p, { self: true }) });
   });
 
+  app.post('/api/auth/logout', (req, res) => {
+    const h = req.headers.authorization || '';
+    const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+    if (token) db.deleteSession(token);
+    res.json({ ok: true });
+  });
+
+  app.post('/api/auth/bind-email', (req, res) => {
+    const p = authUser(req);
+    if (!p) return res.status(401).json({ error: 'Session expired' });
+    const rawEmail = String(req.body?.email || '').trim().toLowerCase();
+    const emailRe = /^[a-z0-9._%+-]+@(gmail\.com|googlemail\.com|[a-z0-9.-]+\.[a-z]{2,})$/i;
+    if (!rawEmail || rawEmail.length > 64 || !emailRe.test(rawEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid Gmail or email address.' });
+    }
+    for (const other of db.profiles.values()) {
+      if (other.id !== p.id && other.email && other.email.toLowerCase() === rawEmail) {
+        return res.status(409).json({ error: 'This Gmail is already bound to another account.' });
+      }
+    }
+    p.email = rawEmail;
+    p.email_bound_at = Date.now();
+    let granted = 0;
+    if (!p.email_reward_claimed) {
+      p.email_reward_claimed = true;
+      granted = 100;
+      p.diamonds = (p.diamonds || 0) + granted;
+    }
+    db.markProfile(p.id);
+    pushProfile(p);
+    res.json({ ok: true, email: p.email, granted, profile: publicProfile(p, { self: true }) });
+  });
+
+  app.post('/api/auth/change-password', (req, res) => {
+    const p = authUser(req);
+    if (!p) return res.status(401).json({ error: 'Session expired' });
+    const currentPassword = String(req.body?.currentPassword || '');
+    const newPassword = String(req.body?.newPassword || '');
+    if (!verifyPassword(currentPassword, p.salt, p.hash)) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+    if (newPassword.length < 4 || newPassword.length > 64) {
+      return res.status(400).json({ error: 'New password must be 4–64 characters.' });
+    }
+    Object.assign(p, hashPassword(newPassword));
+    db.markProfile(p.id);
+    res.json({ ok: true });
+  });
+
   // +50 💎 first launch in standalone (Section 13.A.1 / 17.B.3). Client-reported; capped once per account.
   app.post('/api/a2hs/claim', (req, res) => {
     const p = authUser(req);
@@ -178,7 +256,21 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     res.json({ granted: 50, profile: publicProfile(p, { self: true }) });
   });
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, players: sockets.size, uptime: process.uptime() }));
+  const sendHealth = (_req, res) => {
+    res.json({
+      ok: true,
+      version: '2.0.0',
+      uptimeSec: Math.round(process.uptime()),
+      uptime: process.uptime(),
+      onlinePlayers: sockets.size,
+      players: sockets.size,
+      activeTables: tables?.mgr?.tables?.size || 0,
+      db: typeof db.getStats === 'function' ? db.getStats() : { profiles: db.profiles.size },
+    });
+  };
+  app.get('/api/health', sendHealth);
+  app.get('/healthz', sendHealth);
+  app.get(['/bkk', '/dxb'], (_req, res) => res.sendFile(path.join(ROOT, 'client', 'index.html')));
 
   // Step 3 dress-up calibration (Section 22.F): ?dev=1&dressup=1 writes offset / scale back to the catalog.
   // Dev only: refused in production and from anything but localhost.
@@ -243,6 +335,21 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     }
   };
 
+  function onCoupleChanged(userA, userB) {
+    // Clear cached couple/village layouts for both users and transition active village instances
+    for (const id of [...layouts.keys()]) {
+      const owners = ownersOf(id);
+      if (owners.includes(userA) || owners.includes(userB)) layouts.delete(id);
+    }
+    for (const uid of [userA, userB]) {
+      if (!uid) continue;
+      const ws = sockets.get(uid);
+      if (ws && ws.readyState === 1 && ws.instanceId && !isOpen36Instance(ws.instanceId)) {
+        switchInstance(ws, 'home', { force: true });
+      }
+    }
+  }
+
   const dailyService = createDailyService({
     db,
     now: () => Date.now(),
@@ -251,6 +358,9 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     pushProfile,
     rng,
     listProfiles: () => [...db.profiles.values()],
+    isOnline: (id) => (sockets.has(id) && sockets.get(id)?.readyState === 1) || !!db.getProfile(id)?.is_bot,
+    getPresence: (id) => presence.get(id),
+    onCoupleChanged,
   });
 
   const voiceService = createVoiceCallService({
@@ -266,6 +376,23 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       if (exp) eco.grantExp(p, exp);
       db.markProfile(p.id);
       pushProfile(p);
+    },
+    onCallActivity: (callerId, calleeId, ev = {}) => {
+      const callerProf = db.getProfile(callerId);
+      const calleeProf = db.getProfile(calleeId);
+      if (!callerProf || !calleeProf) return;
+      if (callerProf.partner_id && callerProf.partner_id.toLowerCase() === calleeProf.id.toLowerCase()) {
+        if (ev.kind === 'connected') {
+          dailyService.bumpCoupleStat(callerProf, { callSessions: 1 });
+        } else if (ev.kind === 'reward') {
+          dailyService.bumpCoupleStat(callerProf, {
+            callMinutes: ev.minutes || 15,
+            callDiamonds: ev.diamonds || 0,
+          });
+        } else if (ev.kind === 'ended' && (ev.minutes || 0) > 0) {
+          dailyService.bumpCoupleStat(callerProf, { callMinutes: ev.minutes });
+        }
+      }
     },
   });
 
@@ -302,6 +429,20 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     onMatchFinished: (prof) => {
       dailyService.bumpQuest(prof, 'play');
       pushProfile(prof);
+    },
+    onMvpCharmDrop: ({ playerId, playerName, wave, charm }) => {
+      dailyService.emitCheer({
+        winnerId: playerId,
+        winnerName: playerName,
+        achievement: `dropped 🌈 [${charm.name}] (${charm.grade} Grade) on Wave ${wave} in Moon Sanctuary!`,
+      });
+      broadcastAll({
+        type: 'mvp_charm_broadcast',
+        playerId,
+        playerName,
+        wave,
+        charm,
+      });
     },
     catalogs: {
       outfits: OUTFITS, accessories: ACCESSORIES, diceSkins: DICE_SKINS,
@@ -342,7 +483,8 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
           if (s && !isWalkablePos(L, s.x, s.z, { canFly })) {
             const safe = nearestWalkablePos(L, s.x, s.z, { canFly });
             s.x = safe.x; s.z = safe.z; s.vx = 0; s.vz = 0;
-            send(sockets.get(memberId), { type: 'position_correct', x: s.x, z: s.z });
+            const memberWs = sockets.get(memberId);
+            send(memberWs, { type: 'position_correct', x: s.x, z: s.z, zoneSeq: memberWs?.zoneSeq });
             broadcast(id, { type: 'player_moved', id: memberId, x: s.x, z: s.z, vx: 0, vz: 0, right: s.right, back: s.back }, memberId);
           }
         }
@@ -355,29 +497,98 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     return { ...publicProfile(p), x: s.x, z: s.z, vx: s.vx, vz: s.vz, right: s.right, back: s.back };
   };
 
+  const MUSEUM_ID = 'nook_museum';
+  const isOpen36Instance = (id) => id === TOWNHALL.ID || id === MUSEUM_ID || String(id || '').startsWith('nook_museum:');
+
+  function partnerCompanionFor(userId, instanceId) {
+    const p = db.getProfile(userId);
+    if (!p || !isCouple(p)) return null;
+    const partner = db.getProfile(p.partner_id);
+    if (!partner || instanceId === TOWNHALL.ID) return null;
+    if (instanceId === MUSEUM_ID || String(instanceId || '').startsWith('nook_museum:')) {
+      const inPortal = String(instanceId || '').includes(':');
+      return {
+        ...publicProfile(partner),
+        x: inPortal ? 0.95 : 0.95,
+        z: inPortal ? 2.5 : 2.2,
+        vx: 0,
+        vz: 0,
+        right: false,
+        back: inPortal,
+        isCompanion: true,
+      };
+    }
+    const L = layoutFor(instanceId);
+    const br = L?.bridge;
+    const cx = br ? br.cx + 0.55 : 18;
+    const cz = br ? (br.z0 + br.z1) / 2 : 0;
+    return {
+      ...publicProfile(partner),
+      x: cx,
+      z: cz,
+      vx: 0,
+      vz: 0,
+      right: false,
+      back: false,
+      isCompanion: true,
+    };
+  }
+
   const snapshotFor = (ws) => {
     const s = presence.get(ws.userId);
+    const isMuseum = ws.instanceId === MUSEUM_ID || String(ws.instanceId || '').startsWith('nook_museum:');
+    const portalId = String(ws.instanceId || '').startsWith('nook_museum:') ? ws.instanceId.split(':')[1] : null;
     return {
       type: 'instance_snapshot',
       instanceId: ws.instanceId,
-      layout: ws.instanceId === TOWNHALL.ID ? { kind: 'townhall', size: 36 } : layoutWire(layoutFor(ws.instanceId)),
+      zoneSeq: ws.zoneSeq || 1,
+      layout: ws.instanceId === TOWNHALL.ID
+        ? { kind: 'townhall', size: 36 }
+        : isMuseum
+          ? { kind: 'museum', size: 36, portalId }
+          : layoutWire(layoutFor(ws.instanceId)),
       self: s ? { x: s.x, z: s.z } : undefined,
       players: [...(instances.get(ws.instanceId) || [])].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
+      partnerCompanion: partnerCompanionFor(ws.userId, ws.instanceId),
     };
   };
 
-  function switchInstance(ws, to) {
+  function switchInstance(ws, to, { force = false, spawn = null } = {}) {
     const p = db.getProfile(ws.userId);
     if (!p) return;
-    const targetId = (to === 'townhall') ? TOWNHALL.ID : instanceFor(p);
-    if (ws.instanceId === targetId) return;
+    let targetId;
+    let spawnOwnerId = p.id;
+    const toStr = String(to || 'home');
+    if (toStr === 'townhall') {
+      targetId = TOWNHALL.ID;
+    } else if (toStr === 'museum' || toStr === 'nook_museum') {
+      targetId = MUSEUM_ID;
+    } else if (toStr.startsWith('museum:') || toStr.startsWith('nook_museum:')) {
+      const pid = toStr.slice(toStr.indexOf(':') + 1).trim().toLowerCase();
+      targetId = pid ? `${MUSEUM_ID}:${pid}` : MUSEUM_ID;
+    } else if (toStr.startsWith('visit:') || toStr.startsWith('village:')) {
+      const visitUser = toStr.slice(toStr.indexOf(':') + 1).trim().toLowerCase();
+      const targetProf = db.getProfile(visitUser);
+      if (targetProf) {
+        targetId = instanceFor(targetProf);
+        spawnOwnerId = targetProf.id;
+      } else {
+        targetId = instanceFor(p);
+      }
+    } else {
+      targetId = instanceFor(p);
+    }
 
-    // Leave current instance
+    const hasCustomSpawn = Boolean(spawn && finite(spawn.x) && finite(spawn.z));
+    const sameInstance = ws.instanceId === targetId;
+    if (sameInstance && !force && !hasCustomSpawn && !(toStr.startsWith('visit:') && spawnOwnerId !== p.id)) return;
+
+    // Leave current instance if changing instanceId
     const oldId = ws.instanceId;
-    if (oldId) {
+    if (oldId && oldId !== targetId) {
       const members = instances.get(oldId);
       members?.delete(ws.userId);
-      if (members && !members.size && oldId !== TOWNHALL.ID) {
+      if (members && !members.size && !isOpen36Instance(oldId)) {
         instances.delete(oldId);
         layouts.delete(oldId);
       }
@@ -386,6 +597,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
     // Join target instance
     ws.instanceId = targetId;
+    ws.zoneSeq = (ws.zoneSeq || 0) + 1;
     if (!instances.has(targetId)) instances.set(targetId, new Set());
     instances.get(targetId).add(ws.userId);
 
@@ -395,16 +607,31 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     let selfPos;
     if (targetId === TOWNHALL.ID) {
       layoutPayload = { kind: 'townhall', size: 36 };
-      selfPos = { x: 0, z: 6 };
+      const sx = hasCustomSpawn ? Math.max(-17.2, Math.min(17.2, Number(spawn.x))) : 0;
+      const sz = hasCustomSpawn ? Math.max(-17.2, Math.min(17.2, Number(spawn.z))) : 6;
+      selfPos = { x: sx, z: sz };
       if (s) {
-        Object.assign(s, { x: 0, z: 6, vx: 0, vz: 0, t: now, instanceId: targetId });
+        Object.assign(s, { x: sx, z: sz, vx: 0, vz: 0, t: now, instanceId: targetId });
       } else {
-        presence.set(ws.userId, { x: 0, z: 6, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: targetId });
+        presence.set(ws.userId, { x: sx, z: sz, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: targetId });
+      }
+    } else if (targetId === MUSEUM_ID || String(targetId).startsWith('nook_museum:')) {
+      const portalId = String(targetId).startsWith('nook_museum:') ? targetId.split(':')[1] : null;
+      layoutPayload = { kind: 'museum', size: 36, portalId };
+      const defX = portalId ? -0.55 : -0.6;
+      const defZ = portalId ? 2.6 : 2.2;
+      const sx = hasCustomSpawn ? Math.max(-17.2, Math.min(17.2, Number(spawn.x))) : defX;
+      const sz = hasCustomSpawn ? Math.max(-17.2, Math.min(17.2, Number(spawn.z))) : defZ;
+      selfPos = { x: sx, z: sz };
+      if (s) {
+        Object.assign(s, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, t: now, instanceId: targetId });
+      } else {
+        presence.set(ws.userId, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, right: true, back: !!portalId, t: now, instanceId: targetId });
       }
     } else {
       const L = layoutFor(targetId);
       layoutPayload = layoutWire(L);
-      const sp = spawnPoint(L, p.id, p.lineage);
+      const sp = spawnPoint(L, spawnOwnerId, p.lineage);
       selfPos = { x: sp.x, z: sp.z };
       if (s) {
         Object.assign(s, { x: sp.x, z: sp.z, vx: 0, vz: 0, t: now, instanceId: targetId });
@@ -416,11 +643,33 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     send(ws, {
       type: 'instance_snapshot',
       instanceId: targetId,
+      zoneSeq: ws.zoneSeq,
+      visitingOwner: spawnOwnerId !== p.id ? spawnOwnerId : null,
       layout: layoutPayload,
       self: selfPos,
       players: [...instances.get(targetId)].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
+      partnerCompanion: partnerCompanionFor(ws.userId, targetId),
     });
-    broadcast(targetId, { type: 'player_joined', player: playerState(ws.userId) }, ws.userId);
+    if (sameInstance) {
+      broadcast(targetId, { type: 'player_moved', id: ws.userId, x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, right: s?.right ?? true, back: s?.back ?? false }, ws.userId);
+    } else {
+      broadcast(targetId, { type: 'player_joined', player: playerState(ws.userId) }, ws.userId);
+      // If a coupled partner enters the NookAirline Museum or steps into a Scenery Portal room,
+      // send a non-intrusive popup invite banner to their online partner so they can 1-tap Join Together!
+      if ((targetId === MUSEUM_ID || String(targetId).startsWith('nook_museum:')) && isCouple(p) && p.partner_id) {
+        const partnerWs = sockets.get(p.partner_id);
+        if (partnerWs && partnerWs.instanceId !== targetId) {
+          const portalId = String(targetId).startsWith('nook_museum:') ? String(targetId).split(':')[1] : null;
+          send(partnerWs, {
+            type: 'museum_partner_invite',
+            fromId: p.id,
+            fromName: p.username,
+            instanceId: targetId,
+            portalId,
+          });
+        }
+      }
+    }
   }
 
   function join(ws, p) {
@@ -431,6 +680,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     sockets.set(p.id, ws);
     ws.userId = p.id;
     ws.instanceId = instanceFor(p);
+    ws.zoneSeq = (ws.zoneSeq || 0) + 1;
     if (!instances.has(ws.instanceId)) instances.set(ws.instanceId, new Set());
     instances.get(ws.instanceId).add(p.id);
     const L = layoutFor(ws.instanceId);
@@ -448,7 +698,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     p.last_active_ts = now;
     db.markProfile(p.id);
     send(ws, {
-      type: 'auth_ok', profile: publicProfile(p, { self: true }), instanceId: ws.instanceId, self: presence.get(p.id),
+      type: 'auth_ok', profile: publicProfile(p, { self: true }), instanceId: ws.instanceId, zoneSeq: ws.zoneSeq, self: presence.get(p.id),
       layout: layoutWire(L), serverNow: now, coupled: isCouple(p), offline,
     });
     send(ws, snapshotFor(ws));
@@ -465,7 +715,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     tables.disconnect(ws.userId);
     const members = instances.get(ws.instanceId);
     members?.delete(ws.userId);
-    if (members && !members.size && ws.instanceId !== TOWNHALL.ID) { instances.delete(ws.instanceId); layouts.delete(ws.instanceId); }
+    if (members && !members.size && !isOpen36Instance(ws.instanceId)) { instances.delete(ws.instanceId); layouts.delete(ws.instanceId); }
     broadcast(ws.instanceId, { type: 'player_left', id: ws.userId });
     const p = db.getProfile(ws.userId);
     if (p) { p.last_active_ts = Date.now(); db.markProfile(p.id); }
@@ -474,11 +724,17 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
   function onMove(ws, m) {
     if (![m.x, m.z, m.vx, m.vz].every(finite)) return;
+    if (m.zoneSeq != null && ws.zoneSeq != null && Number(m.zoneSeq) !== Number(ws.zoneSeq)) return;
     const s = presence.get(ws.userId);
     if (!s) return;
+    const activeTable = typeof tables?.mgr?.tableOf === 'function' ? tables.mgr.tableOf(ws.userId) : null;
+    if (activeTable && activeTable.status === 'playing' && (activeTable.mode === 'moon_bunny' || activeTable.mode === 'cloud_dash')) {
+      return;
+    }
     const now = Date.now();
+    const isOpen36 = isOpen36Instance(ws.instanceId);
     let x, z;
-    if (ws.instanceId === TOWNHALL.ID) {
+    if (isOpen36) {
       x = Math.max(-18, Math.min(18, m.x));
       z = Math.max(-18, Math.min(18, m.z));
     } else {
@@ -487,45 +743,47 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       z = clamped.z;
     }
     // speed sanity: reject teleports beyond what max speed allows since the last accepted step
+    // (except explicit in-scene teleports inside open 36x36 plazas/museums/portals)
     const dt = Math.min(1, (now - s.t) / 1000);
     const allowed = NET.MAX_SPEED * dt + 1.2;
     const moved = Math.hypot(x - s.x, z - s.z);
     let corrected = x !== m.x || z !== m.z;
-    if (moved > allowed) {
+    const L = !isOpen36 ? layoutFor(ws.instanceId) : null;
+    const p = L ? db.getProfile(ws.userId) : null;
+    const canFly = !!p?.equipped?.wings?.id;
+    const prevStuck = L ? !isWalkablePos(L, s.x, s.z, { canFly, radius: 0.14 }) : false;
+    const allowInSceneTeleport = Boolean(m.teleport && isOpen36);
+    if (moved > allowed && !prevStuck && !allowInSceneTeleport) {
       const k = allowed / moved;
       x = s.x + (x - s.x) * k; z = s.z + (z - s.z) * k;
       corrected = true;
     }
-    if (corrected && ws.instanceId !== TOWNHALL.ID) {
-      const L = layoutFor(ws.instanceId);
-      const p = db.getProfile(ws.userId);
-      const canFly = !!p?.equipped?.wings?.id;
-      if (!isWalkablePos(L, x, z, { canFly })) {
-        ({ x, z } = nearestWalkablePos(L, x, z, { canFly }));
-      }
+    if (L && !isWalkablePos(L, x, z, { canFly, radius: 0.14 })) {
+      ({ x, z } = nearestWalkablePos(L, x, z, { canFly, radius: 0.20 }));
+      corrected = true;
     }
     const sp = Math.hypot(m.vx, m.vz), maxV = NET.MAX_SPEED;
     const vk = sp > maxV ? maxV / sp : 1;
     Object.assign(s, { x, z, vx: m.vx * vk, vz: m.vz * vk, right: !!m.right, back: !!m.back, t: now });
-    if (corrected) send(ws, { type: 'position_correct', x, z });
+    if (corrected) send(ws, { type: 'position_correct', x, z, zoneSeq: ws.zoneSeq });
     broadcast(ws.instanceId, { type: 'player_moved', id: ws.userId, x, z, vx: s.vx, vz: s.vz, right: s.right, back: s.back }, ws.userId);
   }
 
   // --- Step 2 actions -------------------------------------------------------------
   /** Reply to an action + push the fresh profile. `changed` = village layout changed (re-broadcast). */
   function reply(ws, p, action, m, result, { changed = false } = {}) {
-    send(ws, { type: 'action_result', action, reqId: m.reqId ?? null, serverNow: Date.now(), ...result });
     if (result.ok) {
       db.markProfile(p.id);
       pushProfile(p);
       if (changed) villageChanged(p.id);
     }
+    send(ws, { type: 'action_result', action, reqId: m.reqId ?? null, serverNow: Date.now(), ...result });
   }
 
   function onAction(ws, m) {
     const p = db.getProfile(ws.userId);
     const now = Date.now();
-    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state';
+    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state' || m.type === 'social_directory' || m.type === 'couple_moment';
     if (now - (ws.lastAction || 0) < NET.ACTION_COOLDOWN_MS && !noCooldown) {
       return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, ok: false, error: 'slow_down' });
     }
@@ -548,9 +806,18 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       case 'village_expand_cloud':
         return reply(ws, p, m.type, m, eco.expandTerritory(p), { changed: true });
       case 'village_bless_partner': {
-        const partner = db.getProfile(p.partner_id);
-        const r = eco.blessPartner(p, partner, now);
-        if (r.ok) { db.markProfile(partner.id); pushProfile(partner); send(sockets.get(partner.id), { type: 'blessed', by: p.id, until: r.blessedUntil }); }
+        const targetId = m.target ? String(m.target).trim().toLowerCase() : p.partner_id;
+        const target = targetId ? db.getProfile(targetId) : null;
+        const r = m.target ? eco.blessFriend(p, target, now) : eco.blessPartner(p, target, now);
+        if (r.ok && target) {
+          if (p.partner_id && p.partner_id.toLowerCase() === target.id.toLowerCase()) {
+            dailyService.bumpCoupleStat(p, { blessingsShared: 1 });
+          }
+          db.markProfile(target.id);
+          pushProfile(target);
+          villageChanged(target.id);
+          send(sockets.get(target.id), { type: 'blessed', by: p.id, until: r.blessedUntil });
+        }
         return reply(ws, p, m.type, m, r);
       }
       case 'village_wonder_action': {
@@ -564,6 +831,53 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       // --- Step 3: Wardrobe, Gacha, Forge & Pets -------------------------------------
       case 'wardrobe_equip': {
         const r = rpg.wardrobeEquip(p, { slot: String(m.slot), itemId: m.itemId === null ? null : m.itemId === undefined ? undefined : String(m.itemId), hide: m.hide });
+        reply(ws, p, m.type, m, r);
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
+      case 'wardrobe_glamour': {
+        const r = rpg.wardrobeGlamour(p, { slot: String(m.slot || ''), itemId: m.itemId == null ? null : String(m.itemId) });
+        reply(ws, p, m.type, m, r);
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
+      case 'charm_equip': {
+        const r = rpg.charmEquip(p, {
+          charmId: m.charmId == null ? null : String(m.charmId),
+          charmUid: m.charmUid == null ? null : String(m.charmUid),
+        });
+        reply(ws, p, m.type, m, r);
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
+      case 'charm_consume': {
+        const r = rpg.charmConsume(p, {
+          baseUid: m.baseUid == null ? null : String(m.baseUid),
+          materialUid: m.materialUid == null ? null : String(m.materialUid),
+          mode: m.mode == null ? 'upgrade' : String(m.mode),
+        });
+        reply(ws, p, m.type, m, r, { changed: !!r.ok });
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
+      case 'charm_salvage': {
+        const r = rpg.charmSalvage(p, {
+          charmUid: m.charmUid == null ? null : String(m.charmUid),
+        });
+        return reply(ws, p, m.type, m, r, { changed: !!r.ok });
+      }
+      case 'charm_lock': {
+        const r = rpg.charmLock(p, {
+          charmUid: m.charmUid == null ? null : String(m.charmUid),
+        });
+        return reply(ws, p, m.type, m, r, { changed: !!r.ok });
+      }
+      case 'dash_preset_save': {
+        const r = rpg.dashPresetSave(p, { slotIdx: m.slotIdx, name: m.name });
+        return reply(ws, p, m.type, m, r);
+      }
+      case 'dash_preset_equip': {
+        const r = rpg.dashPresetEquip(p, { slotIdx: m.slotIdx });
         reply(ws, p, m.type, m, r);
         if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
@@ -601,6 +915,12 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok && r.success) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
+      case 'gear_attune': {
+        const r = rpg.gearAttune(p, { itemId: String(m.itemId || ''), stat: String(m.stat || ''), useScroll: !!m.useScroll });
+        reply(ws, p, m.type, m, r);
+        if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
+        return null;
+      }
       case 'pet_feed':
         return reply(ws, p, m.type, m, rpg.petFeed(p, { petUid: m.petUid == null ? undefined : String(m.petUid), petId: m.petId == null ? undefined : String(m.petId), feedBond: Boolean(m.feedBond) }));
       case 'pet_reroll_trait':
@@ -608,6 +928,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       case 'pet_breed_couple': {
         const partner = db.getProfile(String(m.partnerId || p.partner_id || ''));
         const r = rpg.petBreedCouple(p, partner, { myPetUid: String(m.myPetUid), partnerPetUid: m.partnerPetUid == null ? null : String(m.partnerPetUid) }, rng);
+        if (r.ok) dailyService.bumpCoupleStat(p, { coopActivities: 1 });
         reply(ws, p, m.type, m, r);
         if (r.ok) send(sockets.get(partner.id), { type: 'couple_egg_hatched', by: p.id, hatched: r.hatched, trait: r.trait });
         return null;
@@ -748,7 +1069,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         if (r.ok) broadcast(ws.instanceId, { type: 'player_equipped', id: p.id, equipped: p.equipped, appearance: p.appearance, lineage: p.lineage, cp: p.cp }, p.id);
         return null;
       }
-      // --- Phase 5: Hall of Fame, Cheer, Owl Gifts, VIP, Passport, Founder ---------
+      // --- Phase 5: Hall of Fame, Cheer, Owl Gifts, VIP, Passport, Founder, Social & Couple ---
       case 'hall_list':
         return reply(ws, p, m.type, m, dailyService.hallList(p));
       case 'hall_worship':
@@ -763,12 +1084,34 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         return reply(ws, p, m.type, m, dailyService.vipCardBuy(p, m));
       case 'vip_card_use':
         return reply(ws, p, m.type, m, dailyService.vipCardUse(p, m));
+      case 'bag_item_use':
+        return reply(ws, p, m.type, m, dailyService.bagItemUse(p, m));
       case 'passport_state':
         return reply(ws, p, m.type, m, dailyService.passportState(p));
       case 'passport_claim':
         return reply(ws, p, m.type, m, dailyService.passportClaim(p, m));
       case 'founder_claim':
         return reply(ws, p, m.type, m, dailyService.founderClaim(p, m));
+      case 'social_directory':
+        return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, serverNow: Date.now(), ...dailyService.socialDirectory(p) });
+      case 'friend_request_send':
+        return reply(ws, p, m.type, m, dailyService.friendRequestSend(p, m));
+      case 'friend_request_accept':
+        return reply(ws, p, m.type, m, dailyService.friendRequestAccept(p, m));
+      case 'friend_request_decline':
+        return reply(ws, p, m.type, m, dailyService.friendRequestDecline(p, m));
+      case 'friend_remove':
+        return reply(ws, p, m.type, m, dailyService.friendRemove(p, m));
+      case 'couple_propose':
+        return reply(ws, p, m.type, m, dailyService.couplePropose(p, m));
+      case 'couple_accept':
+        return reply(ws, p, m.type, m, dailyService.coupleAccept(p, m));
+      case 'couple_decline':
+        return reply(ws, p, m.type, m, dailyService.coupleDecline(p, m));
+      case 'couple_break':
+        return reply(ws, p, m.type, m, dailyService.coupleBreak(p, m));
+      case 'couple_moment':
+        return reply(ws, p, m.type, m, dailyService.coupleMoment(p, m));
       default: return null;
     }
   }
@@ -780,12 +1123,17 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const now = Date.now();
     const isPetDrop = m.targetId === 'pet';
     if ((m.targetId !== ws.userId && !isPetDrop) || !finite(m.x) || !finite(m.z)) return;
+    const L = layoutFor(ws.instanceId);
     if (now - (ws.lastDrop || 0) < NET.DROP_COOLDOWN_MS) {
       const s = presence.get(ws.userId);
+      const canFly = !!p?.equipped?.wings?.id;
+      if (s && !isWalkablePos(L, s.x, s.z, { canFly })) {
+        const safe = nearestWalkablePos(L, s.x, s.z, { canFly });
+        s.x = safe.x; s.z = safe.z;
+      }
       return send(ws, { type: 'drop_result', ok: false, error: 'slow_down', x: s.x, z: s.z });
     }
     ws.lastDrop = now;
-    const L = layoutFor(ws.instanceId);
     let { x, z } = clampToArea(L, m.x, m.z);
     let prop = null, buff = { buff: null };
     if (typeof m.propId === 'string') {
@@ -820,9 +1168,24 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
 
   // --- Dock fishing: loot rolled at cast, revealed after the reel minigame -----------
   function onFishing(ws, m) {
-    if (ws.instanceId === TOWNHALL.ID) return;
+    if (ws.instanceId === TOWNHALL.ID && m.type === 'fishing_cast') return;
     const p = db.getProfile(ws.userId);
+    if (!p) return;
     const now = Date.now();
+    if (m.type === 'fishing_set_target') {
+      const res = eco.setFishTarget(p, m.itemId || null);
+      if (!res.ok) return send(ws, { type: 'fishing_error', error: res.error });
+      db.markProfile(p.id);
+      pushProfile(p);
+      return send(ws, { type: 'fishing_target_ok', targetItem: res.targetItem });
+    }
+    if (m.type === 'fishing_exchange') {
+      const res = eco.redeemAnglerExchange(p, m.offerId, rng, now);
+      if (!res.ok) return send(ws, { type: 'fishing_error', error: res.error, missing: res.missing });
+      db.markProfile(p.id);
+      pushProfile(p);
+      return send(ws, { type: 'fishing_exchange_ok', ...res });
+    }
     const L = layoutFor(ws.instanceId);
     const s = presence.get(ws.userId);
     if (m.type === 'fishing_cast') {
@@ -832,15 +1195,37 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       const bait = !!m.bait;
       if (bait && p.berries < FISHING.BAIT_COST_BERRIES) return send(ws, { type: 'fishing_error', error: 'not_enough_berries' });
       if (bait) { p.berries -= FISHING.BAIT_COST_BERRIES; db.markProfile(p.id); pushProfile(p); }
-      // co-op: partner / friend standing on the same dock (voice-call trigger arrives in Step 5)
-      const coop = [...(instances.get(ws.instanceId) || [])].some((id) => {
+      // co-op: partner / friend standing on the same dock OR active 1-on-1 voice call
+      const dockCoop = [...(instances.get(ws.instanceId) || [])].some((id) => {
         if (id === ws.userId) return false;
         const o = presence.get(id);
         return o && Math.hypot(o.x - s.x, o.z - s.z) <= FISHING.COOP_RADIUS && dockNear(L, o.x, o.z, FISHING.DOCK_REACH);
       });
+      const callCoop = !!(voiceService?.activeCalls?.has?.(ws.userId) || voiceService?.inCall?.(ws.userId));
+      const coop = dockCoop || callCoop;
+      let loot = eco.rollCatch({ bait, coop }, rng);
+      if (bait) {
+        p.fish_bait_pity = (p.fish_bait_pity | 0) + 1;
+        if (loot === 'chest') {
+          p.fish_bait_pity = 0;
+        } else if (p.fish_bait_pity >= (FISHING.BAIT_CHEST_PITY || 10)) {
+          loot = 'chest';
+          p.fish_bait_pity = 0;
+        }
+        db.markProfile(p.id);
+      }
       const biteMs = FISHING.BITE_MIN_MS + Math.floor(rng() * (FISHING.BITE_MAX_MS - FISHING.BITE_MIN_MS));
-      ws.cast = { id: crypto.randomBytes(6).toString('hex'), loot: eco.rollCatch({ bait, coop }, rng), bait, coop, biteAt: now + biteMs };
-      return send(ws, { type: 'fishing_cast_ok', castId: ws.cast.id, biteMs, bait, coop, table: eco.lootTable({ bait, coop }) });
+      ws.cast = { id: crypto.randomBytes(6).toString('hex'), loot, bait, coop, biteAt: now + biteMs };
+      return send(ws, {
+        type: 'fishing_cast_ok',
+        castId: ws.cast.id,
+        biteMs,
+        bait,
+        coop,
+        fishKeyHint: loot,
+        baitPity: p.fish_bait_pity | 0,
+        table: eco.lootTable({ bait, coop }),
+      });
     }
     // fishing_reel_complete
     const c = ws.cast;
@@ -849,12 +1234,15 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     if (now < minEnd) return send(ws, { type: 'fishing_error', error: 'too_fast' });
     ws.cast = null;
     if (now > c.biteAt + FISHING.CAST_TIMEOUT_MS || !m.success) {
-      return send(ws, { type: 'fishing_result', ok: false, escaped: true, key: c.loot });
+      return send(ws, { type: 'fishing_result', ok: false, escaped: true, key: c.loot, baitPity: p.fish_bait_pity | 0 });
     }
-    const out = eco.awardCatch(p, c.loot, rng);
+    const out = eco.awardCatch(p, c.loot, rng, { perfectHook: !!m.perfectHook });
+    if (c.coop && isCouple(p)) {
+      dailyService.bumpCoupleStat(p, { coopActivities: 1 });
+    }
     db.markProfile(p.id);
     pushProfile(p);
-    send(ws, { type: 'fishing_result', ok: true, coop: c.coop, bait: c.bait, ...out });
+    send(ws, { type: 'fishing_result', ok: true, coop: c.coop, bait: c.bait, baitPity: p.fish_bait_pity | 0, ...out });
     broadcast(ws.instanceId, { type: 'player_caught', id: ws.userId, key: c.loot }, ws.userId);
   }
 
@@ -897,29 +1285,65 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
               ensurePhase5(p);
               dailyService.onDailyLogin(p);
             }
-            if (ws.instanceId === TOWNHALL.ID) {
-              switchInstance(ws, 'home');
-            }
-            const L = layoutFor(ws.instanceId);
-            send(ws, { type: 'resume_ok', profile: publicProfile(p, { self: true }), self: presence.get(ws.userId), layout: layoutWire(L), serverNow: now });
+            const isTownHall = ws.instanceId === TOWNHALL.ID;
+            const isMuseum = ws.instanceId === MUSEUM_ID || String(ws.instanceId || '').startsWith('nook_museum:');
+            const portalId = isMuseum && String(ws.instanceId || '').startsWith('nook_museum:')
+              ? String(ws.instanceId).split(':')[1]
+              : null;
+            const L = (isTownHall || isMuseum) ? null : layoutFor(ws.instanceId);
+            send(ws, {
+              type: 'resume_ok',
+              profile: publicProfile(p, { self: true }),
+              self: presence.get(ws.userId),
+              zoneSeq: ws.zoneSeq || 1,
+              layout: isTownHall
+                ? { kind: 'townhall', size: 36 }
+                : isMuseum
+                  ? { kind: 'museum', size: 36, portalId }
+                  : layoutWire(L),
+              serverNow: now,
+            });
             send(ws, snapshotFor(ws));
             tables.connect(ws.userId);
             voiceService.onReconnect(ws.userId);
             break;
           }
           case 'instance_switch':
-            switchInstance(ws, m.to);
+            switchInstance(ws, m.to, { force: !!m.force, spawn: m.spawn || null });
             break;
+          case 'museum_invite_partner': {
+            const p = db.getProfile(ws.userId);
+            if (p && isCouple(p) && p.partner_id) {
+              const partnerWs = sockets.get(p.partner_id);
+              const portalId = m.portalId ? String(m.portalId).trim().toLowerCase() : (String(ws.instanceId || '').startsWith('nook_museum:') ? String(ws.instanceId).split(':')[1] : null);
+              if (partnerWs) {
+                send(partnerWs, {
+                  type: 'museum_partner_invite',
+                  fromId: p.id,
+                  fromName: p.username,
+                  instanceId: portalId ? `${MUSEUM_ID}:${portalId}` : MUSEUM_ID,
+                  portalId: portalId || null,
+                });
+                send(ws, { type: 'museum_invite_sent', ok: true, to: p.partner_id, portalId: portalId || null });
+              } else {
+                send(ws, { type: 'museum_invite_sent', ok: false, error: 'partner_offline' });
+              }
+            }
+            break;
+          }
           case 'call_invite':
           case 'call_accept':
           case 'call_decline':
           case 'call_hangup':
+          case 'call_heal':
           case 'call_signal':
             voiceService.handle(ws.userId, m);
             break;
           case 'chibi_pickup_drop': onPickupDrop(ws, m); break;
           case 'fishing_cast':
-          case 'fishing_reel_complete': onFishing(ws, m); break;
+          case 'fishing_reel_complete':
+          case 'fishing_set_target':
+          case 'fishing_exchange': onFishing(ws, m); break;
           default:
             if (tables.isTableMessage(m.type)) tables.handle(ws.userId, m);
             else if (m.type.startsWith('village_') || RPG_ACTIONS.has(m.type)) onAction(ws, m);

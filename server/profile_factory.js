@@ -2,6 +2,7 @@
 import crypto from 'node:crypto';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { normalizeVillage, validateLayout, syncBuildingLevels, computeComfort } from '../shared/village_rules.js';
+import { BASE_GRID, footprint, CORE } from '../shared/catalog_landmarks.js';
 import { OUTFITS } from '../shared/costumes_catalog.js';
 import { ACCESSORIES, PET_IDS } from '../shared/catalog_gear_pets.js';
 import { HAIRSTYLES, HAIR_COLORS } from '../shared/hair_catalog.js';
@@ -62,7 +63,25 @@ export function migrateProfile(p, now = Date.now()) {
     if (b.type === 'shrine' && b.x === 10 && b.y === 10) b.x = 9;
     if (b.type === 'dock' && b.x === 18 && b.y === 19) b.y = 13;
   }
+  v.grid_size = BASE_GRID;
+  if (Array.isArray(v.tiles)) {
+    v.tiles = v.tiles.filter((t) => t && t.x >= 0 && t.y >= 0 && t.x < BASE_GRID && t.y < BASE_GRID);
+  }
   let check = validateLayout(v, v);
+  if (!check.ok) {
+    // If any building is out-of-bounds for 18×18, remove non-core wonder/decor items back to the bag first
+    const isCore = (type) => type === 'castle' || Boolean(CORE[type]);
+    const prevCount = v.buildings.length;
+    v.buildings = v.buildings.filter((b) => {
+      const f = footprint(b.type, b.rot || 0);
+      const oob = !f || b.x < 0 || b.y < 0 || b.x + f.w > BASE_GRID || b.y + f.h > BASE_GRID;
+      if (oob && !isCore(b.type)) return false;
+      return true;
+    });
+    if (v.buildings.length < prevCount) {
+      check = validateLayout(v, v);
+    }
+  }
   if (!check.ok) {
     // last resort: keep levels / ownership, restore the starter positions
     const fresh = starterVillage(now);
@@ -75,14 +94,54 @@ export function migrateProfile(p, now = Date.now()) {
   for (const k of ['dec_heaven_winged_pillar', 'dec_heaven_cloud_arch', 'dec_heaven_divine_tree', 'dec_heaven_lotus_fountain', 'dec_heaven_seraph_harp']) {
     if (!v.decor[k]) v.decor[k] = 2;
   }
+  if ((p.username === 'nook' || p.username === 'neen') && !v.decor.dec_nookairline_museum) {
+    v.decor.dec_nookairline_museum = 2;
+  }
   syncBuildingLevels(v);
   v.comfort = computeComfort(v);
   p.village = v;
   p.fish_codex = p.fish_codex || {};
+  if (!p.fish_basket || typeof p.fish_basket !== 'object') {
+    p.fish_basket = {
+      minnow: p.fish_codex.minnow | 0,
+      crab: p.fish_codex.crab | 0,
+      koi: p.fish_codex.koi | 0,
+      chest: p.fish_codex.chest | 0,
+    };
+  }
+  p.fish_records = p.fish_records || {};
+  p.fish_bait_pity = p.fish_bait_pity | 0;
+  p.fish_target_item = p.fish_target_item || null;
   p.buffs = p.buffs || {};
   p.bless_day = p.bless_day ?? null;
   p.fountain_day = p.fountain_day ?? null;
   p.star_essence = p.star_essence | 0;
+  if (p.id === 'nook') {
+    if (!p.email || p.email === 'nook@gmail.com') {
+      p.email = 'sir.thanapat@gmail.com';
+      p.email_bound_at = p.email_bound_at || Date.parse('2026-10-12T18:02:37.759Z');
+      p.email_reward_claimed = true;
+    }
+    p.auth_uid = p.auth_uid || 'f1ce659f-b220-4d94-827e-e49d0d298089';
+    if (!p._v1DiamondsMigrated) {
+      p.diamonds = Math.max(p.diamonds || 0, 21710);
+      p._v1DiamondsMigrated = true;
+    }
+  } else if (p.id === 'neen') {
+    if (!p.email || p.email === 'neen@gmail.com') {
+      p.email = 'neen.bunyanuch@gmail.com';
+      p.email_bound_at = p.email_bound_at || Date.parse('2026-10-12T21:34:31.667Z');
+      p.email_reward_claimed = true;
+    }
+    p.auth_uid = p.auth_uid || '50b5e047-5b18-42dd-b518-090692af73bf';
+    if (!p._v1DiamondsMigrated) {
+      p.diamonds = Math.max(p.diamonds || 0, 22304);
+      p._v1DiamondsMigrated = true;
+    }
+  }
+  p.email = p.email || null;
+  p.email_bound_at = p.email_bound_at || null;
+  p.email_reward_claimed = !!p.email_reward_claimed;
   return p;
 }
 
@@ -144,6 +203,10 @@ function baseProfile(username, lineage, appearanceOpts = {}) {
     }],
     village: starterVillage(now),
     fish_codex: {},
+    fish_basket: {},
+    fish_records: {},
+    fish_bait_pity: 0,
+    fish_target_item: null,
     buffs: {},
     bless_day: null,
     fountain_day: null,
@@ -153,6 +216,9 @@ function baseProfile(username, lineage, appearanceOpts = {}) {
     ftue_step: 0,
     a2hs_claimed: false,
     founder: false,
+    email: null,
+    email_bound_at: null,
+    email_reward_claimed: false,
     created_at: now,
     last_active_ts: now,
   };
@@ -192,8 +258,9 @@ function seed(username, lineage, extra) {
 
 export function seedProfiles() {
   const nook = seed('nook', 'bkk', {
-    level: 28, exp: 0, gold: 24500, berries: 840, diamonds: 3250, shards: 420, star_essence: 45,
-    partner_id: 'neen', couple_streak: 42, friends: ['neen', 'mochi', 'leo'], ftue_step: 3, a2hs_claimed: true,
+    level: 28, exp: 0, gold: 24500, berries: 840, diamonds: 21710, shards: 420, star_essence: 45,
+    email: 'sir.thanapat@gmail.com', email_bound_at: Date.parse('2026-10-12T18:02:37.759Z'), email_reward_claimed: true, auth_uid: 'f1ce659f-b220-4d94-827e-e49d0d298089',
+    partner_id: 'neen', couple_since: '2026-10-05', couple_streak: 14, friends: ['neen', 'mochi', 'leo'], ftue_step: 3, a2hs_claimed: true,
     inventory: {
       newbie_outfit: { refine: 0, dupes: 0 }, s11_zeus_olympus: { refine: 10, dupes: 0 }, s8_glacial_elsa: { refine: 0, dupes: 0 },
       hat_glowing_bunny: { refine: 10, dupes: 0 }, face_rosegold_shades: { refine: 8, dupes: 0 }, gloves_vorax_cyan: { refine: 10, dupes: 0 },
@@ -235,8 +302,9 @@ export function seedProfiles() {
   });
 
   const neen = seed('neen', 'dxb', {
-    level: 28, exp: 0, gold: 22000, berries: 910, diamonds: 3500, shards: 400, star_essence: 60,
-    partner_id: 'nook', couple_streak: 42, friends: ['nook', 'mochi', 'leo'], ftue_step: 3, a2hs_claimed: true,
+    level: 28, exp: 0, gold: 22000, berries: 910, diamonds: 29128, shards: 400, star_essence: 60,
+    email: 'neen.bunyanuch@gmail.com', email_bound_at: Date.parse('2026-10-12T21:34:31.667Z'), email_reward_claimed: true, auth_uid: '50b5e047-5b18-42dd-b518-090692af73bf',
+    partner_id: 'nook', couple_since: '2026-10-05', couple_streak: 14, friends: ['nook', 'mochi', 'leo'], ftue_step: 3, a2hs_claimed: true,
     inventory: {
       newbie_outfit: { refine: 0, dupes: 0 }, s8_glacial_elsa: { refine: 10, dupes: 0 }, s2_kitsune_inari: { refine: 0, dupes: 0 },
       hat_glowing_bunny: { refine: 10, dupes: 0 }, hat_cat_headset: { refine: 0, dupes: 0 }, face_rosegold_shades: { refine: 8, dupes: 0 },

@@ -1,7 +1,7 @@
 # 🌙🏰 MOON DEFENSE V2 — *Tree of Savior (ToS) × X Hero Siege* Co-Op Hero Defense Spec
-**Status:** Locked Core Design Spec (Ready for Phase 6 Implementation & Future MMORPG Bridge)
+**Status:** Architecture & Town Hall Battle Stage Prepped (`town_hall_scene.js` + `season_skills.js` + `pet_skills.js` complete — Ready for Playable Module Wiring)
 **Target Screen:** `Screen 14` (`MODES.moon_bunny` in `shared/universal_room.js`)
-**Arena Map:** Reuses **100% of the Town Hall Plaza (`36m × 36m`)** in **🌙 Starlight Night / Sakura Moon** mode!
+**Arena Map:** Reuses **100% of the Live Town Hall Plaza (`36m × 36m`)** in **🌙 Starlight-Twilight / Dim Moonlit** mode (matching `neora_world_v2_export/assets/moon_defense_live_townhall_mockup.jpg` & `moon_defense_v2_mockup.jpg`)!
 
 ---
 
@@ -40,8 +40,8 @@ Why **Vertical `9:16` Top-to-Bottom (`North → South`)** is optimal:
 └─────────────────────────────────────────┘
 ```
 
-- **Lower-Center Shrine `(0, 0, +8m)` (`radius = 2.2m`)**:
-  - The **🐰 Moon Bunny (`1,000 Max HP`)** pounds **6 Star-Mochi Rice Cakes** inside a glowing *Tree of Savior*-style **Golden Magic Circle**.
+- **Lower-Center Shrine `(0, 0, +6.0m)` (`radius = 4.35m`)**:
+  - The **🐰 Moon Bunny (`1,000 Max HP`)** pounds **6 Star-Mochi Rice Cakes** inside the glowing *Tree of Savior*-style **Golden Magic Circle (`spawn_magic_circle`)** at `(0, 6.0)`.
 - **3 North-to-South Chokepoint Roads (`Left NW`, `Center Boss`, `Right NE`)**:
   - Open plaza terrain where Players and Hired Mercenary Bots walk freely between lanes to intercept waves, dodge Boss slams, and collect drops.
 
@@ -138,7 +138,6 @@ Instead of locking players into a permanent character class at account creation,
 4. **💝 Couple Coin Gifting & 🏆 Wave 6–10 Overtime Rush**:
    - **`[💝 Toss 100 🪙 to Partner]`** to help them complete a `✦ Super Mythic Mercenary Fusion`, plus an optional `60s` **Wave 6–10 Overtime Boss Rush** after Cake `6/6` that feeds the **🏆 Pedestal #3 (`#1 Arcade Defender`) Hall of Fame Statue**!
 
-
 ---
 
 ## 7. 🌍 Bridge to Future Expansion: How Moon Defense V2 Powers the 6-Biome Co-Op MMORPG
@@ -146,5 +145,51 @@ By building the `combat` block inside [`shared/season_skills.js`](file:///Users/
 1. **Same `combatClass` & Projectiles**: Your Chibi's `STRIKER / CONTROLLER / MYSTIC / ALCHEMIST` basic attacks, passives, and Ultimates work identically when walking into field maps to fight roaming monsters and World Bosses.
 2. **Same `affinity` Home-Turf Bonus**: Each costume already has `affinity: 'frost' | 'desert' | 'ocean' | 'spirit' | 'fortune' | 'celestial'` in [`shared/season_skills.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/shared/season_skills.js) — granting **`+20%` Elemental Damage & Drop Rate** when exploring that costume's matching Biome!
 3. **Same Couple & 4-Player Party Synergy**: A Couple wearing complementary classes (e.g. **⚡ Striker + 🌸 Mystic** or **❄️ Controller + 🎰 Alchemist**) naturally forms a balanced RPG duo in both **Moon Defense V2** and future **6-Biome Field Expeditions**.
+
+---
+
+## 8. 🛠️ Architectural Handoff for Next Agent (What Is Already Built & Ready to Wire)
+
+### A. Visual Mockup References
+Before writing any UI or wave-spawning code, inspect both canonical mockups:
+- **Live Town Hall In-Place Battle Mockup**: [`neora_world_v2_export/assets/moon_defense_live_townhall_mockup.jpg`](file:///Users/thanapat/Documents/neora-world-v3/neora_world_v2_export/assets/moon_defense_live_townhall_mockup.jpg)
+- **3-Lane Wave & HUD Mockup**: [`neora_world_v2_export/assets/moon_defense_v2_mockup.jpg`](file:///Users/thanapat/Documents/neora-world-v3/neora_world_v2_export/assets/moon_defense_v2_mockup.jpg)
+
+### B. Prepped Town Hall Battle Stage (`client/js/town_hall_scene.js` & `client/js/world_engine.js`)
+The **Town Hall 36×36m Celestial Sanctuary** ([`client/js/town_hall_scene.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js)) has already been upgraded to match `moon_defense_live_townhall_mockup.jpg`:
+1. **Dim Starlight-Twilight Atmosphere (Zero Extra Draw Calls)**:
+   - Entering Town Hall (`townHallScene.setActive(true)`) automatically swaps `scene.background` to [`getTownHallTwilightSkyTexture()`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L131-L162) (`#14193a → #232b5e → #3b376e`) and hides the daytime village clouds (`world.env.clouds`).
+   - [`buildHeavenFloorTexture(size)`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L696-L992) bakes a deep sapphire-indigo starlight sea (`#445ca4 → #18224c`) with 180 twinkling stars, twilight-lavender cloud banks, and moonlit pearl-lavender & burnished-gold marble courts into a single `2048×2048` floor texture.
+   - All halos (`makeGlowSprite`) and magic circles (`fountain_water` at `(0, 0)` and `spawn_magic_circle` at `(0, 6.0)`) use `THREE.AdditiveBlending` so warm golden light pops against the dim twilight floor.
+2. **Pre-Baked `\ | /` 3-Lane Siege Trident & Exported Waypoints**:
+   - [`TOWNHALL_SIEGE_GATES`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L636-L665) is exported directly from `client/js/town_hall_scene.js` with exact spawn coordinates and `waypoints`:
+     - **`nw_left`**: Spawns at `(-5.4, -7.2)` (framed by a `th_heaven_cloud_arch.png` portal arch) → marches down the diagonal causeway to `(0.0, 0.0)` → `(0.0, 6.0)`.
+     - **`n_center`**: Spawns at `(0.0, -8.2)` on the North Pantheon Causeway → marches straight down `(0.0, 0.0)` → `(0.0, 6.0)`.
+     - **`ne_right`**: Spawns at `(+5.4, -7.2)` (framed by a `th_heaven_cloud_arch.png` portal arch) → marches down the diagonal causeway to `(0.0, 0.0)` → `(0.0, 6.0)`.
+   - **Central Goddess Vakarine Rotunda**: `(0.0, 0.0)`, `r = 4.65m` (chokepoint intersection where all 3 lanes converge).
+   - **South Starlight Battle Rotunda (Moon Bunny Shrine)**: `(0.0, 6.0)`, `r = 4.35m` — inlaid with `th_medallion_starlight.png` + pulsing golden `fx_magic_circle.png` (`this.spawnMagicCircle`), flanked by the mockup's **Twin Double-Arm Glowing Streetlamps & Blue Hydrangea Planters** at `(-3.85, 4.35)` and `(+3.85, 4.35)` and the South Foreground Winged Arch at `(0.0, 10.4)`.
+3. **Exported Walkability & Siege Mode Toggle**:
+   - [`isTownHallWalkable(x, z, pad)`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L670-L680) and [`clampToTownHall(x, z)`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L682-L694) validate and clamp coordinates to [`TOWNHALL_COURTS`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L583-L611) and [`TOWNHALL_CORRIDORS`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L613-L633) (including the diagonal `\ | /` bridges).
+   - [`world_engine.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/world_engine.js#L554-L573) automatically enforces `townHallScene.isWalkable` / `clampWalkable` for non-flying players whenever `townHallScene.siegeMode === true`.
+   - Calling **`world.townHallScene.setSiegeMode(true)`** ([`town_hall_scene.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/client/js/town_hall_scene.js#L1868-L1893)):
+     - Reveals `world.townHallScene.siegeGroup` (`th_siege`) where the Moon Defense module should attach monster meshes, the Moon Bunny shrine sprite, red Boss telegraph rings, and mercenary bots.
+     - Hides social-only `vip_table_1..4` sprites, floating landmark plaques, and `#landmark-prompt` so the combat arena is 100% uncluttered.
+     - Calling `world.townHallScene.setSiegeMode(false)` cleanly restores all social Town Hall landmarks and prompts.
+
+### C. Prepped Combat Class & Pet Skill Data (`shared/season_skills.js` & `shared/pet_skills.js`)
+- **[`shared/season_skills.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/shared/season_skills.js)**: All **18 Unique Costumes** (13 Season Mythics + 5 Super Mythics) already define:
+  - `combatClass`: `'striker' | 'controller' | 'mystic' | 'alchemist'`
+  - `affinity`: `'ocean' | 'spirit' | 'desert' | 'fortune' | 'frost' | 'celestial'`
+  - `combat`: `{ classRole, basicProjectile, ultName, ultDesc }`
+- **[`shared/pet_skills.js`](file:///Users/thanapat/Documents/neora-world-v3/neora-world-v2/shared/pet_skills.js)**: All **4 Companion Pet Families** (`pet_ragdoll`, `pet_nyx_dragon`, `pet_kitsune`, `pet_sky_whale`) already define their `combat` block (`every3rdShot`, `comboUlt`, `element`).
+
+### D. Next Steps to Build the Playable Moon Defense V2 Module
+1. **Shared Deterministic Rules (`shared/moon_defense_rules.js`)**:
+   - Define the 5-Wave + Bonus Event spawn table using `TOWNHALL_SIEGE_GATES`, Tome upgrade curves (`Power`, `Swiftness`, `Multi-Shot`), Mercenary roll/auto-merge (`★1 → ★2 → ★3 → ✦ Super Mythic`), and `combatClass` damage/passive math reading from `SEASON_SKILLS` and `PET_SKILLS`.
+2. **Client Live Controller (`client/js/minigames/moon_defense_v2.js`)**:
+   - Instead of creating a separate Three.js canvas, run **in-place on the live Town Hall stage**: call `world.setTownHallMode(true)` + `world.townHallScene.setSiegeMode(true)` and mount wave entities inside `world.townHallScene.siegeGroup`.
+   - Keep `world.activeScene = null` so `world_engine.js` continues driving the player's 9-Bone Chibi rig, joystick/tap movement, Companion Pet, and `world.fx.emit(...)` particles at 60 FPS!
+3. **HUD Overlay (`#moon-defense-hud`)**:
+   - Mount the top wave/HP/stance bar (`[🐰 HP]`, `[🍡 Cake 1..6]`, `[🛡️ Patrol] / [⚔️ Follow Me!]`) and bottom thumb deck (`[📖 Tome]`, `[🎰 Hire Merc]`, `[🔔 Bounty Bell]`, `[💨 Dash]`, `[🐾 Pet]`, `[🌈 ULT!]`) matching `moon_defense_live_townhall_mockup.jpg`.
 
 

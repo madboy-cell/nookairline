@@ -291,3 +291,130 @@ test('Pet V2.5 Reconciliation: ★3Lv9 + 2/1 Locked save repairs to Lv20, 1/1 Lo
   assert.ok(boostedMs.potency > baseMs.potency);
   assert.ok(boostedMs.rate > baseMs.rate);
 });
+
+test('Pet Rig V3: Directional back/side/move locomotion & 7-bone skeletal kinematics', async () => {
+  const { resolveDirectionalPetPose, computePetBoneState, PET_RIG_VERTEX_SHADER } = await import('../client/js/pet_rig.js');
+  const { PetActionDriver } = await import('../client/js/pet_actions.js');
+
+  // 1. Walking or flying UP (vz < 0, away from camera) MUST always show 'back' (never overwritten by 'move')
+  for (const loco of ['HOP_WADDLE', 'FLY_FLUTTER', 'FLOAT_SPIRIT', 'SKY_SWIM']) {
+    const upPose = resolveDirectionalPetPose({
+      vx: 0.3,
+      vz: -3.2,
+      speed: Math.hypot(0.3, -3.2),
+      directionalView: 'back',
+      loco,
+      walkPhase: 1.2,
+    });
+    assert.equal(upPose, 'back', `${loco} moving up (-Z) must show 'back' view`);
+  }
+
+  // 2. Horizontal movement holds 'move' steadily (zero side <-> move texture strobing across walkPhase)
+  for (const phase of [0, Math.PI * 0.25, Math.PI * 0.5, Math.PI, Math.PI * 1.5]) {
+    const horizPose = resolveDirectionalPetPose({
+      vx: 3.0,
+      vz: 0,
+      speed: 3.0,
+      directionalView: 'front',
+      loco: 'FLY_FLUTTER',
+      walkPhase: phase,
+      currentPose: 'move',
+    });
+    assert.equal(horizPose, 'move', 'Active horizontal movement holds move pose steadily without strobing');
+  }
+
+  // 3. PetActionDriver respects 'back' view when moving up at high speed
+  const mockPet = {
+    petId: 'pet_nyx',
+    loco: 'FLY_FLUTTER',
+    t: 1.5,
+    walkPhase: 1.5,
+    shownView: 'back',
+    follower: { vx: 0, vz: -4.0 },
+    facing: { turning: false },
+    views: {
+      front: { fallback: false },
+      side: { fallback: false },
+      back: { fallback: false },
+      move: { fallback: false },
+      happy: { fallback: false },
+      cast: { fallback: false },
+      sleep: { fallback: false },
+    },
+  };
+  const driver = new PetActionDriver(mockPet);
+  const upState = driver.update(0.016, 4.0, 'back', { vx: 0, vz: -4.0, walkPhase: 1.5, currentPose: 'back' });
+  assert.equal(upState.pose, 'back', 'PetActionDriver must keep back pose when flying up');
+
+  // 4. 7-Bone skeletal solver produces active wing-beats for Nyx and scissor-steps for Ragdoll
+  const nyxFlight = computePetBoneState({
+    petId: 'pet_nyx',
+    loco: 'FLY_FLUTTER',
+    pose: 'back',
+    t: 0.12,
+    speed: 3.8,
+    vx: 0,
+    vz: -3.8,
+    walkWeight: 1,
+    walkPhase: 1.2,
+  });
+  assert.equal(nyxFlight.viewMode, 2, 'back viewMode = 2');
+  assert.equal(nyxFlight.locoMode, 1, 'FLY_FLUTTER locoMode = 1');
+  assert.ok(Math.abs(nyxFlight.wingFlap) > 0.01, 'Nyx wings actively flap in flight');
+  assert.ok(nyxFlight.tailAmp > 0.04, 'Nyx tail S-wave amplitude increases in flight');
+
+  const ragdollWalk = computePetBoneState({
+    petId: 'pet_ragdoll',
+    loco: 'HOP_WADDLE',
+    pose: 'move',
+    t: 0.25,
+    speed: 3.2,
+    vx: 3.2,
+    vz: 0,
+    walkWeight: 1,
+    walkPhase: 0.9,
+  });
+  assert.ok(Math.abs(ragdollWalk.legL) > 0.1 && Math.abs(ragdollWalk.legR) > 0.1, 'Ragdoll paws scissor-step');
+  assert.equal(Math.sign(ragdollWalk.legL), -Math.sign(ragdollWalk.legR), 'Left and right paws step in opposition');
+  assert.ok(ragdollWalk.footLiftL > 0 || ragdollWalk.footLiftR > 0, 'Advancing paw lifts off ground');
+  assert.ok(PET_RIG_VERTEX_SHADER.includes('uWingFlap') && PET_RIG_VERTEX_SHADER.includes('uFootLiftL'));
+
+  // 5. Frame-to-frame C^1 smoothness check at large elapsed time (t = 180s) while walkWeight ramps 0 -> 1
+  const dt = 1 / 60;
+  for (const [petId, loco] of [
+    ['pet_nyx', 'FLY_FLUTTER'],
+    ['pet_ragdoll', 'HOP_WADDLE'],
+    ['pet_kitsune', 'FLOAT_SPIRIT'],
+    ['pet_skywhale', 'SKY_SWIM'],
+  ]) {
+    let t = 180.0;
+    let w = 0;
+    let phase = 1.0;
+    let prev = null;
+    for (let f = 0; f < 60; f++) {
+      t += dt;
+      w = Math.min(1, w + dt * 3.5); // rapid acceleration ramp
+      phase += dt * (4.8 + w * 4.5);
+      const cur = computePetBoneState({
+        petId,
+        loco,
+        pose: 'move',
+        t,
+        speed: w * 3.5,
+        vx: w * 3.5,
+        vz: 0,
+        walkWeight: w,
+        walkPhase: phase,
+      });
+      if (prev) {
+        assert.ok(Math.abs(cur.bobY - prev.bobY) < 0.015, `${petId} bobY smooth delta`);
+        assert.ok(Math.abs(cur.wingFlap - prev.wingFlap) < 0.035, `${petId} wingFlap smooth delta (no t*dw/dt vibration)`);
+        assert.ok(Math.abs(cur.torso - prev.torso) < 0.025, `${petId} torso smooth delta`);
+        assert.ok(Math.abs(cur.legL - prev.legL) < 0.08, `${petId} legL smooth delta`);
+      }
+      prev = cur;
+    }
+  }
+});
+
+

@@ -199,6 +199,128 @@
         { "name": "th_garden_lantern_grove", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
         { "name": "th_garden_floral_carpet", "anchorY": 0.5, "meta": { "flat": true }, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
       ]
+    },
+    {
+      "src": "art_src/sheet_cloud_dash_style2.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.001,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "icon_cloud_dash", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_cloud_bank_a", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_cloud_bank_b", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_pad_rainbow", "anchorY": 0.5, "meta": { "flat": true }, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_arch_start", "anchorY": 0, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 80 } },
+        { "name": "cd_btn_dir_gold", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_ult_cradle_gold", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_stage_preview", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40, "minIslandRatio": 0.0005 } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_cloud_dash_mounts.jpg",
+      "pack": "monopoly",
+      "rows": 2,
+      "cols": 4,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.0005,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "cd_mount_saddle_royal", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40 } },
+        { "name": "cd_mount_reins_gold", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 80, "holeTolerance": 48, "holeMaxMean": 30, "holeMaxP95": 48, "coreMaxMean": 22, "coreMaxP95": 40, "glow": { "t": 64, "band": 24, "pools": true } } },
+        { "name": "cd_mount_ragdoll_cushion", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "cd_mount_nyx_harness", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 80 } },
+        { "name": "cd_mount_kitsune_palanquin", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0005 } },
+        { "name": "cd_mount_skywhale_surfboard", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0005 } },
+        { "name": "cd_fx_wind_ribbon", "anchorY": 0.5, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40, "minIslandRatio": 0.0002 } },
+        { "name": "cd_fx_landing_ring", "anchorY": 0.5, "meta": { "flat": true }, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_nook_museum_25d.jpg",
+      "pack": "monopoly",
+      "cols": 4,
+      "rows": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.0005,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "dec_nookairline_museum", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_golden_plane_monument", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_portal_frame_gold", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_easel_frame_royal", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0002 } },
+        { "name": "museum_firstclass_suite_seat", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_paris_eiffel_spire", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0002 } },
+        { "name": "museum_swiss_matterhorn_chalet", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_maldives_bungalow_pier", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_fuji_scenery_25d.jpg",
+      "pack": "monopoly",
+      "cols": 2,
+      "rows": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.0005,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "fuji_mountain_horizon", "anchorY": 0.85, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "fuji_torii_gate_red", "anchorY": 0.92, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "holeMinArea": 40 } },
+        { "name": "fuji_stone_lantern_toro", "anchorY": 0.92, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "fuji_kyoto_pagoda_hill", "anchorY": 0.92, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_museum_seasons_a.jpg",
+      "pack": "monopoly",
+      "cols": 4,
+      "rows": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.0002,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "museum_s4_montecarlo_balcony", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s4_casino_palace_horizon", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s5_atlantis_coral_lounge", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s5_atlantis_citadel_dome", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0002 } },
+        { "name": "museum_s6_starlight_sofa_set", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s7_fairytale_castle_lanterns", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true, "minIslandRatio": 0.0001 } },
+        { "name": "museum_s7_fairytale_rose_arch", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "smartInkMatte": true, "smartHoleMinArea": 25, "minPurePaperCore": 15, "minRuleBSw": 0.25 } },
+        { "name": "museum_s8_permafrost_ice_throne", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } }
+      ]
+    },
+    {
+      "src": "art_src/sheet_museum_seasons_b.jpg",
+      "pack": "monopoly",
+      "cols": 4,
+      "rows": 2,
+      "interior": false,
+      "closeRadius": 2,
+      "keepHoles": true,
+      "minIslandRatio": 0.0002,
+      "matteOpts": { "tol": 28, "soft": 18, "interior": false, "closeRadius": 2 },
+      "cells": [
+        { "name": "museum_s9_luxor_divan_lantern", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "smartInkMatte": true, "smartHoleMinArea": 25 } },
+        { "name": "museum_s9_luxor_pyramids_nile", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s10_venice_gondola_arch", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "smartInkMatte": true, "smartHoleMinArea": 18, "minPurePaperCore": 12, "minRuleBSw": 0.25 } },
+        { "name": "museum_s10_venice_velvet_booth", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s11_olympus_golden_chaise", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_s11_santorini_blue_dome", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": true } },
+        { "name": "museum_cats_purrst_tree_sofa", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "smartInkMatte": true, "smartHoleMinArea": 25, "minPurePaperCore": 15, "minRuleBSw": 0.25 } },
+        { "name": "museum_bkk_naga_river_barge", "anchorY": 0.9, "opts": { "interior": false, "closeRadius": 2, "keepHoles": false, "smartInkMatte": true, "smartHoleMinArea": 25 } }
+      ]
     }
   ]
 }

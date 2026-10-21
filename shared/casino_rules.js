@@ -10,10 +10,11 @@
 //     Both are tunable constants; tests/casino.test.js measures RTP by Monte-Carlo so tuning stays honest.
 
 export const CASINO = Object.freeze({
-  CHIPS: Object.freeze([100, 500, 1000, 5000]),
+  CHIPS: Object.freeze([500, 1000, 5000, 10000]),
   POKDENG: Object.freeze({
+    CHIPS: Object.freeze([500, 1000, 5000, 10000]),
     PHASE_MS: Object.freeze({ betting: 8000, deal: 2500, action: 8000, dealer: 4500 }),   // 23 s hand cycle
-    MAX_BET: 5000,
+    MAX_BET: 50000,
     COMMISSION: 0.05,          // 5% of PROFIT on a win (house edge; Cheer offsets it)
     CHEER_COST_PCT: 0.05,      // 🥂 Cheer costs 5% of the bet (min CHEER_MIN) …
     CHEER_MIN: 10,
@@ -117,7 +118,7 @@ export function comparePokDeng(player, dealer) {
 export const cheerCost = (bet) => Math.max(CASINO.POKDENG.CHEER_MIN, Math.round(bet * CASINO.POKDENG.CHEER_COST_PCT));
 
 export function validPokDengBet(bet) {
-  return Number.isInteger(bet) && bet >= CASINO.CHIPS[0] && bet <= CASINO.POKDENG.MAX_BET;
+  return Number.isInteger(bet) && bet >= 100 && bet <= CASINO.POKDENG.MAX_BET;
 }
 
 /**

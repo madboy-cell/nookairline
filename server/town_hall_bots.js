@@ -42,32 +42,29 @@ export const TOWNHALL_WAYPOINTS = Object.freeze({
   mono_mid:      { x: 5.4,   z: -3.8,  pause: [1.0, 2.0], lookBack: true,  lookRight: true,  poi: false, hub: false },
   monopoly_arch: { x: 9.4,   z: -4.2,  pause: [3.0, 5.8], lookBack: true,  lookRight: true,  poi: true,  hub: false },
 
-  // Mid-West Royal Owl Postbox & VIP Table #3
-  owl_postbox:   { x: -4.6,  z: 3.3,   pause: [2.8, 5.5], lookBack: true,  lookRight: false, poi: true,  hub: true },
-  vip_table_3:   { x: -9.4,  z: 2.8,   pause: [2.8, 5.5], lookBack: false, lookRight: true,  poi: true,  hub: false },
+  // Mid-West Royal Owl Postbox & Mid-East Star-Force Forge (symmetrical wings at z = 3.5)
+  owl_mid:       { x: -4.8,  z: 3.5,   pause: [1.5, 3.2], lookBack: false, lookRight: false, poi: true,  hub: true },
+  owl_postbox:   { x: -8.2,  z: 4.1,   pause: [2.8, 5.5], lookBack: true,  lookRight: false, poi: true,  hub: false },
+  forge_mid:     { x: 4.8,   z: 3.5,   pause: [1.5, 3.2], lookBack: false, lookRight: true,  poi: true,  hub: true },
+  forge:         { x: 8.2,   z: 4.1,   pause: [3.0, 5.8], lookBack: true,  lookRight: true,  poi: true,  hub: false },
 
-  // Mid-East Star-Force Forge
-  forge_mid:     { x: 4.8,   z: 3.6,   pause: [1.8, 3.8], lookBack: false, lookRight: true,  poi: true,  hub: true },
-  forge:         { x: 8.8,   z: 5.3,   pause: [3.0, 5.8], lookBack: true,  lookRight: true,  poi: true,  hub: false },
-
-  // Lower Garden VIP Tables #1, #2, #4
-  vip_table_1:   { x: -5.4,  z: 8.4,   pause: [2.8, 5.8], lookBack: false, lookRight: true,  poi: true,  hub: true },
-  vip_table_2:   { x: 5.4,   z: 8.4,   pause: [2.8, 5.8], lookBack: false, lookRight: false, poi: true,  hub: true },
-  vip_table_4:   { x: 9.6,   z: 10.0,  pause: [2.8, 5.5], lookBack: false, lookRight: false, poi: true,  hub: false },
+  // Lower Garden Symmetrical VIP Tables #1 & #2
+  vip_table_1:   { x: -5.4,  z: 8.8,   pause: [2.8, 5.8], lookBack: false, lookRight: true,  poi: true,  hub: true },
+  vip_table_2:   { x: 5.4,   z: 8.8,   pause: [2.8, 5.8], lookBack: false, lookRight: false, poi: true,  hub: true },
 });
 
 const EDGES = Object.freeze({
   fountain_s:      ['fountain_sw', 'fountain_se', 'plaza_mid_w', 'plaza_mid_e', 'spawn_c'],
-  fountain_sw:     ['fountain_s', 'plaza_mid_w', 'owl_postbox', 'fountain_pass_w'],
+  fountain_sw:     ['fountain_s', 'plaza_mid_w', 'owl_mid', 'fountain_pass_w'],
   fountain_se:     ['fountain_s', 'plaza_mid_e', 'forge_mid', 'fountain_pass_e'],
-  fountain_pass_w: ['fountain_sw', 'fountain_n', 'casino_mid', 'owl_postbox'],
+  fountain_pass_w: ['fountain_sw', 'fountain_n', 'casino_mid', 'owl_mid'],
   fountain_pass_e: ['fountain_se', 'fountain_n', 'mono_mid', 'forge_mid'],
   fountain_n:      ['fountain_pass_w', 'fountain_pass_e', 'north_mid', 'casino_mid', 'mono_mid'],
 
-  plaza_mid_w:     ['fountain_s', 'fountain_sw', 'spawn_c', 'spawn_w', 'owl_postbox'],
+  plaza_mid_w:     ['fountain_s', 'fountain_sw', 'spawn_c', 'spawn_w', 'owl_mid'],
   plaza_mid_e:     ['fountain_s', 'fountain_se', 'spawn_c', 'spawn_e', 'forge_mid'],
   spawn_c:         ['fountain_s', 'plaza_mid_w', 'plaza_mid_e', 'spawn_w', 'spawn_e', 'south_mid'],
-  spawn_w:         ['spawn_c', 'plaza_mid_w', 'owl_postbox', 'vip_table_1', 'south_mid'],
+  spawn_w:         ['spawn_c', 'plaza_mid_w', 'owl_mid', 'vip_table_1', 'south_mid'],
   spawn_e:         ['spawn_c', 'plaza_mid_e', 'forge_mid', 'vip_table_2', 'south_mid'],
   south_mid:       ['spawn_c', 'spawn_w', 'spawn_e', 'south_gate', 'vip_table_1', 'vip_table_2'],
   south_gate:      ['south_mid'],
@@ -84,15 +81,14 @@ const EDGES = Object.freeze({
   mono_mid:        ['fountain_pass_e', 'fountain_n', 'north_mid', 'monopoly_arch', 'statue_5'],
   monopoly_arch:   ['mono_mid'],
 
-  owl_postbox:     ['fountain_sw', 'plaza_mid_w', 'spawn_w', 'vip_table_3', 'vip_table_1'],
-  vip_table_3:     ['owl_postbox'],
+  owl_mid:         ['fountain_sw', 'plaza_mid_w', 'spawn_w', 'owl_postbox', 'vip_table_1'],
+  owl_postbox:     ['owl_mid'],
 
   forge_mid:       ['fountain_se', 'plaza_mid_e', 'spawn_e', 'forge', 'vip_table_2'],
   forge:           ['forge_mid'],
 
-  vip_table_1:     ['spawn_w', 'south_mid', 'owl_postbox'],
-  vip_table_2:     ['spawn_e', 'south_mid', 'forge_mid', 'vip_table_4'],
-  vip_table_4:     ['vip_table_2'],
+  vip_table_1:     ['spawn_w', 'south_mid', 'owl_mid'],
+  vip_table_2:     ['spawn_e', 'south_mid', 'forge_mid'],
 });
 
 const INITIAL_NODES = ['fountain_sw', 'plaza_mid_e', 'spawn_w', 'fountain_se'];

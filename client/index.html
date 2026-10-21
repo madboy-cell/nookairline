@@ -12,12 +12,14 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/assets/ui/app_icon_192.png" />
   <link rel="icon" href="/assets/ui/app_icon_192.png" />
-  <link rel="stylesheet" href="/css/style2_hud.css?v=mockup11" />
-  <link rel="stylesheet" href="/css/rpg_ui.css?v=mockup10" />
-  <link rel="stylesheet" href="/css/monopoly.css?v=mockup10" />
-  <link rel="stylesheet" href="/css/runway.css?v=mockup10" />
-  <link rel="stylesheet" href="/css/casino.css?v=mockup17" />
-  <link rel="stylesheet" href="/css/phase5.css" />
+  <link rel="stylesheet" href="/css/style2_hud.css?v=mst4" />
+  <link rel="stylesheet" href="/css/rpg_ui.css?v=wd6" />
+  <link rel="stylesheet" href="/css/monopoly.css?v=mst4" />
+
+
+  <link rel="stylesheet" href="/css/runway.css?v=mst4" />
+  <link rel="stylesheet" href="/css/casino.css?v=pd50k" />
+  <link rel="stylesheet" href="/css/phase5.css?v=nm1" />
   <script type="importmap">{ "imports": { "three": "/vendor/three.module.js" } }</script>
 </head>
 <body>
@@ -28,15 +30,22 @@
     <div id="hud" data-scene="BOOT">
       <header id="top-hud-bar">
         <div class="player-hud-stack">
-          <div class="player-card">
+          <div class="player-card" id="hud-player-card" role="button" tabindex="0" aria-label="Account &amp; Settings">
             <div class="avatar" id="hud-avatar"></div>
             <div class="player-meta">
-              <div class="player-name" id="hud-name">—</div>
+              <div class="player-name-row">
+                <div class="player-name" id="hud-name">—</div>
+                <span class="player-card-gear" id="hud-account-badge" title="Account &amp; Settings">⚙️</span>
+              </div>
               <div class="player-sub"><span id="hud-level">Lv. 1</span> • <span class="cp">⚔️ <span id="hud-cp">0</span></span></div>
               <div class="exp-bar"><div class="exp-fill" id="hud-exp"></div></div>
             </div>
           </div>
           <div id="hud-couple-pill" class="hud-couple-pill">💚 Sky Kingdom Online • <b>+15% Couple Yield</b></div>
+          <button type="button" id="hud-guide-pill" class="hud-guide-pill">
+            <span id="hud-guide-txt">✨ Next: Tap Harvest All for Gold &amp; Berries!</span>
+            <span class="hud-guide-cta" id="hud-guide-cta">Go ▸</span>
+          </button>
         </div>
         <div class="currencies">
           <div class="pill"><img src="/assets/ui/icon_gold.png" alt="" /><span id="hud-gold">0</span></div>
@@ -69,13 +78,21 @@
           <span class="ico" id="mood-ico">☀️</span>
           <span class="act-txt"><span id="mood-name">Sunny</span><small>Wonders &amp; Mood</small></span>
         </button>
+        <button id="act-museum" class="act act-museum" type="button">
+          <span class="ico"><img src="/assets/village/dec_nookairline_museum.png" alt="" /></span>
+          <span class="act-txt"><span>V1 Museum</span><small>Fuji &amp; Portals</small></span>
+        </button>
         <button id="act-bless" class="act" hidden><span class="ico">💧</span><span class="act-txt"><span>Bless +15%</span></span></button>
-        <button id="act-fountain" class="act" hidden><span class="ico">⛲</span><span class="act-txt"><span>Toss 100🪙</span></span></button>
+        <button id="act-fountain" class="act" hidden><span class="ico">⛲</span><span class="act-txt"><span>Toss 100 <img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt="" /></span></span></button>
         <button id="fish-open" class="act act-fish" hidden><span class="ico">🎣</span><span class="act-txt"><span>Fish!</span></span></button>
       </div>
 
       <!-- Town Hall quick actions (Screen 05 — Mockup 05) -->
       <div id="townhall-actions">
+        <button id="act-th-museum" class="act act-th-museum" type="button">
+          <span class="ico">✈️</span>
+          <span class="act-txt"><span>V1 Museum</span><small>2.5D Portals</small></span>
+        </button>
         <button id="act-th-table" class="act act-th-table" type="button">
           <span class="ico">🪑</span>
           <span class="act-txt"><span>Create Table</span><small>4-Seat Hub</small></span>
@@ -107,7 +124,7 @@
       <div id="editor-ui">
         <div class="ed-header">
           <div class="ed-title-box">
-            <div class="ed-title-main" id="ed-grid-title">🏰 Kingdom Grid Editor (24×24 Tiles)</div>
+            <div class="ed-title-main" id="ed-grid-title">🏰 Kingdom Grid Editor (18×18 Tiles)</div>
             <div class="ed-title-sub" id="ed-comfort">🌸 Comfort Score: 0 (+0% Yield)</div>
           </div>
           <div class="ed-top-btns">
@@ -161,24 +178,102 @@
         </div>
       </div>
 
-      <!-- Dock fishing (Screen 04) -->
-      <section id="fishing-panel" class="parchment fishing" hidden>
-        <div class="parchment-title">🎣 Starlight Dock Fishing</div>
-        <button id="fish-close" class="x-btn">✕</button>
-        <div id="fish-coop" class="coop-banner" hidden>🎣 Co-Op Fishing Buff Active: +35% Sunken Gear Chest Bite Rate!</div>
-        <div id="fish-status" class="fish-status"></div>
-        <div id="fish-gauge" class="fish-gauge" hidden>
-          <div class="gauge-track"><div id="fish-zone" class="gauge-zone"></div><div id="fish-icon" class="gauge-fish">🐟</div></div>
-          <div class="reel-track"><div id="fish-progress" class="reel-fill"></div></div>
-          <button id="fish-reel" class="btn-gold small reel-btn" disabled>🎣 HOLD TO REEL IN!</button>
+      <!-- Dock fishing (Screen 04 — Clean Cozy Mockup 04 UI + Angler Exchange) -->
+      <section id="fishing-panel" class="parchment fishing fish-m04-wrap" hidden>
+        <div id="fish-coop" class="coop-banner fish-m04-coop-banner" hidden>
+          🎣 Co-Op Buff: +35% Sunken Chest Rate!
         </div>
-        <div id="fish-result" class="fish-result" hidden></div>
-        <div class="fish-buttons">
-          <button id="fish-cast" class="btn-gold small">🎣 Free Cast</button>
-          <button id="fish-bait" class="btn-gold small berry">✨ Bait Cast <small>5 🍓</small></button>
+
+        <!-- Main Ornate Gold-Filigree Parchment Card -->
+        <div class="fish-m04-card">
+          <div class="parchment-title fish-m04-title">🎣 Starlight Dock</div>
+          <button id="fish-close" class="x-btn fish-m04-close" aria-label="Close Fishing">✕</button>
+
+          <!-- 3 Clean Short Tabs -->
+          <div class="fish-m04-tabs" role="tablist">
+            <button type="button" class="fish-m04-tab active" data-fish-tab="pier">🎣 Fish</button>
+            <button type="button" class="fish-m04-tab" data-fish-tab="exchange">
+              🎁 Exchange <span id="fish-exchange-badge" class="fish-tab-badge">0</span>
+            </button>
+            <button type="button" class="fish-m04-tab" data-fish-tab="codex">📖 Log</button>
+          </div>
+
+          <!-- TAB 1: PIER FISHING -->
+          <div id="fish-view-pier" class="fish-m04-view">
+            <!-- Arched Royal Gold Tension Gauge -->
+            <div id="fish-gauge" class="fish-gauge fish-m04-gauge">
+              <div class="fish-arc-shell">
+                <span class="arc-cap left"></span>
+                <span class="arc-cap right"></span>
+                <div id="fish-arc-track" class="gauge-track fish-arc-track">
+                  <div class="fish-water-ripples">
+                    <span class="ripple r1"></span>
+                    <span class="ripple r2"></span>
+                  </div>
+                  <div id="fish-zone" class="gauge-zone fish-arc-zone">
+                    <span class="zone-arrow top">▼</span>
+                    <span class="zone-arrow bot">▲</span>
+                  </div>
+                  <div id="fish-icon" class="gauge-fish fish-arc-sprite">
+                    <img id="fish-icon-img" src="/assets/village/fish_koi.png" alt="Fish">
+                  </div>
+                  <div id="fish-bobber" class="fish-arc-bobber" hidden>🎣</div>
+                </div>
+              </div>
+              <div class="reel-track fish-m04-reel-bar">
+                <div id="fish-progress" class="reel-fill"></div>
+              </div>
+            </div>
+
+            <div id="fish-status" class="fish-status fish-m04-status">Tap Cast to fish ✨</div>
+
+            <div id="fish-result" class="fish-result fish-m04-result" hidden></div>
+
+            <!-- Visual Icon Basket Strip (Zero wall-of-text!) -->
+            <div class="fish-m04-summary">
+              <div id="fish-haul-line" class="summary-icon-row"></div>
+            </div>
+
+            <!-- Hidden legacy buttons preserved for unit test / script compatibility -->
+            <div class="fish-buttons" hidden>
+              <button type="button" id="fish-cast" class="btn-gold small">Free Cast</button>
+              <button type="button" id="fish-bait" class="btn-gold small berry">Bait Cast</button>
+            </div>
+          </div>
+
+          <!-- TAB 2: SUNKEN CHEST & ANGLER'S EXCHANGE -->
+          <div id="fish-view-exchange" class="fish-m04-view" hidden>
+            <div id="fish-exchange-content" class="fish-exchange-wrap"></div>
+          </div>
+
+          <!-- TAB 3: ILLUSTRATED FISH & CHEST LOG -->
+          <div id="fish-view-codex" class="fish-m04-view" hidden>
+            <div id="fish-codex-detail" class="fish-codex-grid"></div>
+          </div>
+
+          <!-- Compact Codex Footer Strip (kept for #fish-codex) -->
+          <div id="fish-codex" class="fish-codex fish-m04-codex-strip" hidden></div>
         </div>
-        <div class="codex-title">📖 Fish &amp; Chest Log</div>
-        <div id="fish-codex" class="fish-codex"></div>
+
+        <!-- Mockup 04 Bottom 3-Button Action Bar -->
+        <div class="fish-m04-bottom-bar">
+          <button type="button" id="fish-bait-slot" class="fish-m04-wood-btn">
+            <img src="/assets/ui/icon_berry.png" alt="" class="wood-ico">
+            <span class="wood-lbl" id="fish-bait-slot-lbl">🍓 Bait (5)</span>
+            <span class="wood-mode-chip" id="fish-bait-mode-chip">ON</span>
+          </button>
+
+          <button type="button" id="fish-reel" class="btn-gold reel-btn fish-m04-main-cta">
+            <span class="cta-rod-ico">🎣</span>
+            <span id="fish-reel-label" class="cta-main-txt">CAST LINE</span>
+          </button>
+
+          <button type="button" id="fish-log-btn" class="fish-m04-wood-btn">
+            <img src="/assets/village/fish_chest.png" alt="" class="wood-ico">
+            <span class="wood-lbl">Exchange</span>
+            <span class="wood-mode-chip gold" id="fish-log-btn-chip">🎁 SHOP</span>
+          </button>
+        </div>
       </section>
 
       <!-- Generic parchment modal (building info, upgrades, cloud territory, welcome back) -->
@@ -275,6 +370,8 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="/js/main.js?v=mockup17"></script>
+  <script type="module" src="/js/main.js?v=nm17"></script>
 </body>
 </html>
+
+

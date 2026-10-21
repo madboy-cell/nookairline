@@ -339,6 +339,19 @@ test('vip buy each card + telelink both sides + asGift/use', () => {
   assert.equal(useRes.ok, true);
   assert.equal(player.vip.call_until, prevUntil + 24 * 3600_000);
   assert.equal(player.bag_items.vip_call_day_pass, undefined);
+
+  // 6. bagItemUse for random_dupe_box and mythic_selector_box
+  player.bag_items.random_dupe_box = 1;
+  player.bag_items.mythic_selector_box = 1;
+  const dupeRes = service.bagItemUse(player, { key: 'random_dupe_box' });
+  assert.equal(dupeRes.ok, true);
+  assert.equal(player.bag_items.random_dupe_box, undefined);
+  assert.ok(dupeRes.grantedItemId);
+
+  const mythicRes = service.bagItemUse(player, { key: 'mythic_selector_box' });
+  assert.equal(mythicRes.ok, true);
+  assert.equal(player.bag_items.mythic_selector_box, undefined);
+  assert.ok(player.inventory[mythicRes.grantedItemId]);
 });
 
 test('passport quests + bonus + 7th stamp parcel', () => {
@@ -570,4 +583,142 @@ test('town hall bots: 4 bot accounts with distinct random costumes + autonomous 
     ctrl.close();
   }
 });
+
+test('social & couple hub: friend requests, remove friend, couple propose/accept, and Take a Break with streak memory', () => {
+  let currentTime = 1760659200000;
+  const now = () => currentTime;
+  const notifications = [];
+  const coupleChanges = [];
+
+  const nook = makeProfile('nook', {
+    username: 'nook',
+    partner_id: 'neen',
+    couple_streak: 14,
+    friends: ['neen', 'mochi'],
+  });
+  const neen = makeProfile('neen', {
+    username: 'neen',
+    partner_id: 'nook',
+    couple_streak: 14,
+    friends: ['nook'],
+  });
+  const mochi = makeProfile('mochi', {
+    username: 'mochi',
+    friends: ['nook'],
+  });
+  const leo = makeProfile('leo', {
+    username: 'leo',
+    friends: [],
+  });
+  const ariaBot = makeProfile('aria', {
+    username: 'Aria',
+    is_bot: true,
+    friends: [],
+  });
+
+  const db = createMockDb([nook, neen, mochi, leo, ariaBot]);
+  const service = createDailyService({
+    db,
+    now,
+    sendTo: (to, msg) => notifications.push({ to, msg }),
+    isOnline: (id) => id === 'nook' || id === 'neen' || id === 'aria',
+    getPresence: (id) => (id === 'nook' || id === 'neen' ? { instanceId: 'couple:neen|nook' } : null),
+    onCoupleChanged: (a, b) => coupleChanges.push([a, b]),
+  });
+
+  // 1. Social directory reflects live partner, friends, and discoverable citizens
+  const dir1 = service.socialDirectory(nook);
+  assert.equal(dir1.ok, true);
+  assert.equal(dir1.partner.id, 'neen');
+  assert.equal(dir1.partner.online, true);
+  assert.equal(dir1.friends.length, 2);
+  assert.ok(dir1.discoverPlayers.some((d) => d.id === 'leo'));
+  assert.ok(dir1.discoverPlayers.some((d) => d.id === 'aria'));
+
+  // 2. Player-to-player Friend Request (nook -> leo) and Accept (leo accepts nook)
+  const req1 = service.friendRequestSend(nook, { to: 'leo' });
+  assert.equal(req1.ok, true);
+  assert.equal(req1.status, 'pending');
+  assert.equal(nook.friend_requests_out.length, 1);
+  assert.equal(leo.friend_requests_in.length, 1);
+
+  const acc1 = service.friendRequestAccept(leo, { from: 'nook' });
+  assert.equal(acc1.ok, true);
+  assert.ok(nook.friends.includes('leo'));
+  assert.ok(leo.friends.includes('nook'));
+  assert.equal(nook.friend_requests_out.length, 0);
+  assert.equal(leo.friend_requests_in.length, 0);
+
+  // 3. Citizen Bot Friend Request auto-accepts immediately
+  const botReq = service.friendRequestSend(nook, { to: 'aria' });
+  assert.equal(botReq.ok, true);
+  assert.equal(botReq.status, 'accepted');
+  assert.ok(nook.friends.includes('aria'));
+  assert.ok(ariaBot.friends.includes('nook'));
+
+  // 4. Remove Friend unlinks both sides (cannot remove bound partner while coupled)
+  const badRem = service.friendRemove(nook, { friendId: 'neen' });
+  assert.equal(badRem.ok, false);
+  assert.equal(badRem.error, 'take_break_first');
+
+  const remLeo = service.friendRemove(nook, { friendId: 'leo' });
+  assert.equal(remLeo.ok, true);
+  assert.ok(!nook.friends.includes('leo'));
+  assert.ok(!leo.friends.includes('nook'));
+
+  // 5. Couple "Take a Break" unbinds both players, keeps them as friends, and saves streak memory
+  const initialStreak = nook.couple_streak;
+  assert.ok(initialStreak >= 14);
+  const brk = service.coupleBreak(nook);
+  assert.equal(brk.ok, true);
+  assert.equal(brk.oldPartnerId, 'neen');
+  assert.equal(brk.savedStreak, initialStreak);
+  assert.equal(nook.partner_id, null);
+  assert.equal(neen.partner_id, null);
+  assert.equal(nook.couple_streak, 0);
+  assert.equal(neen.couple_streak, 0);
+  assert.equal(nook.past_couple_streaks.neen, initialStreak);
+  assert.equal(neen.past_couple_streaks.nook, initialStreak);
+  assert.ok(nook.friends.includes('neen'));
+  assert.ok(neen.friends.includes('nook'));
+  assert.equal(coupleChanges.length, 1);
+
+  // 6. Proposing to a new friend (mochi) starts a Pending Proposal; accepting starts at Day 1
+  const propMochi = service.couplePropose(nook, { to: 'mochi' });
+  assert.equal(propMochi.ok, true);
+  assert.equal(propMochi.status, 'pending');
+  assert.equal(mochi.couple_requests_in.length, 1);
+
+  // Decline proposal from nook
+  const decMochi = service.coupleDecline(mochi, { from: 'nook' });
+  assert.equal(decMochi.ok, true);
+  assert.equal(mochi.couple_requests_in.length, 0);
+  assert.equal(nook.couple_requests_out, null);
+
+  // 7. Re-coupling with previous partner (neen) restores saved streak (14 days) AND Love Chronicle stats!
+  const propNeen = service.couplePropose(nook, { to: 'neen' });
+  assert.equal(propNeen.ok, true);
+  const accNeen = service.coupleAccept(neen, { from: 'nook' });
+  assert.equal(accNeen.ok, true);
+  assert.equal(nook.partner_id, 'neen');
+  assert.equal(neen.partner_id, 'nook');
+  assert.equal(nook.couple_streak, initialStreak);
+  assert.equal(neen.couple_streak, initialStreak);
+  assert.equal(coupleChanges.length, 2);
+
+  // 8. Love Chronicle stats accumulate on both partners and survive Taking a Break
+  const prevMoments = nook.couple_stats.momentsCaptured;
+  const momRes = service.coupleMoment(nook, { kind: 'polaroid' });
+  assert.equal(momRes.ok, true);
+  assert.equal(nook.couple_stats.momentsCaptured, prevMoments + 1);
+  assert.equal(neen.couple_stats.momentsCaptured, prevMoments + 1);
+
+  const prevBless = nook.couple_stats.blessingsShared;
+  service.bumpCoupleStat(nook, { blessingsShared: 1, callMinutes: 25, callSessions: 1, coopActivities: 2 });
+  assert.equal(nook.couple_stats.blessingsShared, prevBless + 1);
+  assert.equal(neen.couple_stats.blessingsShared, prevBless + 1);
+  assert.ok(nook.couple_stats.callMinutes >= 25);
+  assert.equal(nook.couple_stats.callMinutes, neen.couple_stats.callMinutes);
+});
+
 

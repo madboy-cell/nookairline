@@ -18,13 +18,28 @@ import { THEMES } from '/shared/monopoly_rules.js';
 import { HAIRSTYLES, HAIR_COLORS, HAIR_TIERS, HAIR_DYE_TIERS, hairSpriteName } from '/shared/hair_catalog.js';
 import { SLOTS, slotCP } from '/shared/progression.js';
 import { WONDERS, DECOR, CORE, CORE_LANDMARKS, BLUEPRINT_CARDS } from '/shared/catalog_landmarks.js';
+import {
+  CHARMS,
+  CHARM_TIERS,
+  CHARM_GRADES,
+  CHARM_MAX_PLUS,
+  CHARM_STAT_KEYS,
+  GRADE_RANK,
+  computeCharmStats,
+  getCharmPlus,
+  getCharmStatSum,
+  findBestCharmForId,
+  computeCharmSalvageValue,
+} from '/shared/charm_catalog.js';
 
 import {
-  fmtNum, escapeHtml, SLOT_LABELS, BAG_ITEM_CATALOG, SHARD_OFFER_VISUALS, resolveShardOfferMeta,
-  resolveItemVisual, shortenGearName, renderIconThumb, renderOutfitThumbLayers, renderStatGrid, renderPaperDollHeroStage, renderPaperDollDomLayers,
-  getPaperDollStageState, renderStarForceArc,
+  fmtNum, escapeHtml, SLOT_LABELS, SLOT_ROLE_GUIDE, BAG_ITEM_CATALOG, SHARD_OFFER_VISUALS, resolveShardOfferMeta,
+  resolveItemVisual, shortenGearName, renderIconThumb, renderOutfitThumbLayers, computePlayerStats, renderStatGrid, renderPaperDollHeroStage, renderPaperDollDomLayers,
+  getPaperDollStageState, renderStarForceArc, renderItemStatPills, formatStatsSummary, getItemEffectiveStats, STAT_PILL_META,
   mountLivePaperDollStage, stopWardrobePreview, cyclePaperDollView, togglePaperDollWalk,
-} from './ui_components.js';
+} from './ui_components.js?v=wd6';
+
+
 import {
   normalizePetsList, formatPetStarProgressV2, renderPetSanctuary, bindPetSanctuaryClick,
 } from './pet_sanctuary_ui.js';
@@ -32,24 +47,45 @@ import {
   PET_CATALOG_V2, resolvePetSpriteKey, resolvePetUiScale,
 } from '/shared/pet_catalog.js';
 import { spriteInfo } from './assets.js';
+import { computeUniversalStats, inspectItemAttune, attuneCostFor, ATTUNE_MIN_REFINE } from '/shared/universal_stats.js';
+import { detectBuild, diffBuilds } from '/shared/dash_builds.js';
+
+const GOLD_ICO_HTML = '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="Gold">';
+
+function formatGoldIcons(escapedHtml) {
+  return String(escapedHtml || '').replace(/🪙/g, GOLD_ICO_HTML);
+}
 
 function formatPetStarProgress(pet) {
   return formatPetStarProgressV2(pet);
 }
 
-function renderCostumeSkillCard(costumeId, rarityOverride = null) {
+function isItemForgeReady(profile, itemId) {
+  if (!profile || !itemId || !itemDef(itemId)) return false;
+  const it = profile.inventory?.[itemId];
+  if (!it) return false;
+  const from = it.refine | 0;
+  if (from >= MAX_REFINE) return false;
+  const target = from + 1;
+  return (it.dupes | 0) >= Math.max(1, FORGE.DUPES[target]) && (profile.gold | 0) >= FORGE.GOLD[target];
+}
+
+function renderCostumeSkillCard(costumeId, rarityOverride = null, expanded = false) {
   if (!costumeId || !OUTFITS[costumeId]) return '';
   const def = OUTFITS[costumeId];
   const sk = skillFor(costumeId, rarityOverride || def.rarity || 1);
   if (!sk) return '';
   const turfName = sk.homeTheme && THEMES[sk.homeTheme] ? THEMES[sk.homeTheme].name : null;
   return `
-    <div class="rpg-costume-skill-banner">
+    <div class="rpg-costume-skill-banner s2-ult-skill-box ${expanded ? 'is-expanded' : 'is-compact'}" data-toggle-ult-info="1" role="button" tabindex="0" title="Tap to view Ultimate Skill details">
       <div class="rpg-costume-skill-head">
-        <span>${escapeHtml(sk.icon || '⚡')} Ultimate Skill: ${escapeHtml(sk.name)}</span>
-        ${turfName ? `<span class="rpg-costume-skill-turf">🏠 Turf: ${escapeHtml(turfName)} (+15%)</span>` : ''}
+        <span class="s2-ult-head-title">${escapeHtml(sk.icon || '⚡')} Ultimate: <b>${escapeHtml(sk.name)}</b></span>
+        <span class="s2-ult-head-right">
+          ${turfName ? `<span class="rpg-costume-skill-turf">🏠 ${escapeHtml(turfName)} +15%</span>` : ''}
+          <span class="s2-ult-expand-chip">${expanded ? 'Hide ▴' : 'Info ▾'}</span>
+        </span>
       </div>
-      <div class="rpg-costume-skill-desc">${escapeHtml(sk.desc || '')}</div>
+      ${expanded ? `<div class="rpg-costume-skill-desc">${formatGoldIcons(escapeHtml(sk.desc || ''))}</div>` : ''}
     </div>
   `;
 }
@@ -446,6 +482,9 @@ export class RpgUI {
     // View state
     this.selectedWTab = 'fashion'; // 'fashion' | 'accessories' | 'hair' | 'pets' | 'bag'
     this.selectedSlot = 'outfit';
+    this.wardrobeMode = 'stats'; // 'stats' | 'glamour'
+    this.forgeMode = 'upgrade'; // 'upgrade' | 'attune'
+    this.selectedAttuneStat = null;
     this.selectedHairSection = 'closet'; // 'closet' | 'classic' | 'gacha' | 'dyes'
     this.selectedGTab = 'box1'; // 'box1' | 'box2' | 'shop'
     this.selectedBanner = DEFAULT_BANNER; // 'season' | 'relics' | 'pets'
@@ -457,6 +496,8 @@ export class RpgUI {
     this.selectedTraitSlot = 0;
     this.selectedPicks = {}; // offerId -> pickId
     this.closetDrawerOpen = false;
+    this.selectedClosetItem = null;
+    this.ultInfoExpanded = false;
     this.poolDrawerOpen = false;
     this.forgeDrawerOpen = false;
     this.selectedGiftRibbon = 'pink';
@@ -467,6 +508,8 @@ export class RpgUI {
     this.lastForgeResult = null;
     this.lastPetResult = null;
     this.lastHairPullResult = null;
+    this.lastBuildUpdate = null;
+    this.forgeAnimState = null;
 
     this.lastUserActivityAt = Date.now();
     if (typeof window !== 'undefined') {
@@ -479,6 +522,67 @@ export class RpgUI {
     this.el = null;
     this.initDom();
   }
+
+  playForgeSfx(kind = 'tap') {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this._forgeAudioCtx) this._forgeAudioCtx = new AudioCtx();
+      const ctx = this._forgeAudioCtx;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const now = ctx.currentTime;
+
+      const tone = (freq, dur, delay = 0, type = 'triangle', vol = 0.12, endFreq = null) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now + delay);
+        if (endFreq) {
+          osc.frequency.exponentialRampToValueAtTime(endFreq, now + delay + dur);
+        }
+        gain.gain.setValueAtTime(0.001, now + delay);
+        gain.gain.linearRampToValueAtTime(vol, now + delay + Math.min(0.02, dur * 0.25));
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + delay + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + delay);
+        osc.stop(now + delay + dur + 0.02);
+      };
+
+      if (kind === 'tap') {
+        tone(680, 0.055, 0, 'triangle', 0.07, 940);
+      } else if (kind === 'forge_win') {
+        // Anvil impact + metallic bell + ascending star fanfare
+        tone(135, 0.14, 0, 'sine', 0.18, 65);
+        tone(1046.5, 0.28, 0.01, 'triangle', 0.14, 1080);
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+        notes.forEach((f, i) => tone(f, 0.22, 0.08 + i * 0.065, 'triangle', 0.12));
+      } else if (kind === 'sovereign') {
+        tone(120, 0.2, 0, 'sine', 0.22, 55);
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98, 2093.0];
+        notes.forEach((f, i) => {
+          tone(f, 0.34, 0.06 + i * 0.06, 'triangle', 0.14);
+          tone(f * 1.5, 0.24, 0.08 + i * 0.06, 'sine', 0.07);
+        });
+      } else if (kind === 'forge_pity') {
+        // Metallic anvil clink + warm golden shield hum
+        tone(150, 0.12, 0, 'sine', 0.15, 80);
+        tone(880, 0.14, 0, 'triangle', 0.1, 660);
+        tone(440, 0.24, 0.08, 'sine', 0.11, 554.37);
+      } else if (kind === 'attune_win') {
+        // Alchemical crystal transmutation swirl
+        const notes = [587.33, 739.99, 880.0, 1174.66, 1479.98, 1760.0];
+        notes.forEach((f, i) => {
+          tone(f, 0.26, i * 0.055, 'sine', 0.12);
+          tone(f * 0.5, 0.2, i * 0.055, 'triangle', 0.06);
+        });
+      }
+    } catch {
+      // Ignore audio errors on restricted autoplay contexts
+    }
+  }
+
 
   _startOnlinePetTick() {
     if (this._onlineTickTimer) clearInterval(this._onlineTickTimer);
@@ -648,6 +752,30 @@ export class RpgUI {
     this.bindEvents();
   }
 
+  get forgeSelected() {
+    return this.selectedForgeItem;
+  }
+
+  set forgeSelected(v) {
+    this.selectedForgeItem = v;
+  }
+
+  resolveDefaultForgeItem(p = this.profile) {
+    const inv = p?.inventory || {};
+    const eq = p?.equipped || {};
+    const eqOutfitId = typeof eq.outfit === 'object' ? eq.outfit?.id : eq.outfit;
+    if (eqOutfitId && inv[eqOutfitId]) return eqOutfitId;
+    for (const s of SLOTS) {
+      const id = typeof eq[s] === 'object' ? eq[s]?.id : eq[s];
+      if (id && inv[id]) return id;
+    }
+    const firstEq = Object.values(eq)
+      .map((e) => (typeof e === 'object' ? e?.id : e))
+      .find((id) => id && inv[id]);
+    if (firstEq) return firstEq;
+    return Object.keys(inv)[0] || null;
+  }
+
   open(view = 'wardrobe', opts = {}) {
     this.initDom();
     if (!this.el) return;
@@ -660,7 +788,21 @@ export class RpgUI {
 
     if (view === 'wardrobe') {
       this.closetDrawerOpen = Boolean(opts.openCloset || opts.tab === 'accessories' || opts.slot);
-      if (opts.tab) this.selectedWTab = opts.tab === 'accessories' ? 'fashion' : opts.tab;
+      if (opts.tab) {
+        if (opts.tab === 'hair') {
+          this.selectedWTab = 'fashion';
+          this.wardrobeMode = 'hair';
+        } else {
+          this.selectedWTab = opts.tab === 'accessories' ? 'fashion' : opts.tab;
+        }
+      }
+      if (opts.bagSub) {
+        this.selectedBagSub = opts.bagSub;
+      } else if (opts.giftTo || opts.scrollToGift) {
+        this.selectedBagSub = 'gift';
+      } else if (!this.selectedBagSub) {
+        this.selectedBagSub = 'vip';
+      }
       if (opts.slot) this.selectedSlot = opts.slot;
       else if (this.selectedWTab === 'fashion' && !this.selectedSlot) this.selectedSlot = 'outfit';
     } else if (view === 'gacha') {
@@ -678,7 +820,11 @@ export class RpgUI {
       }
     } else if (view === 'forge') {
       this.forgeDrawerOpen = false;
-      if (opts.itemId) this.selectedForgeItem = opts.itemId;
+      if (opts.itemId) {
+        this.selectedForgeItem = opts.itemId;
+      } else {
+        this.selectedForgeItem = this.resolveDefaultForgeItem(this.profile);
+      }
     } else if (view === 'pets') {
       if (opts.petUid) this.selectedPetUid = opts.petUid;
     }
@@ -697,6 +843,28 @@ export class RpgUI {
     this.el.hidden = false;
     this.render();
     this._startPoseCycleTimer();
+    if (view === 'wardrobe' && this.selectedWTab === 'bag' && (opts?.giftTo || opts?.scrollToGift)) {
+      this.scrollToOwlGiftCard();
+    }
+  }
+
+  scrollToOwlGiftCard() {
+    if (!this.el) return;
+    if (this.selectedBagSub !== 'gift') {
+      this.selectedBagSub = 'gift';
+      this.render();
+    }
+    setTimeout(() => {
+      if (typeof window !== 'undefined') window.scrollTo?.(0, 0);
+      const bodyEl = this.el?.querySelector('#rpg-body');
+      const card = this.el?.querySelector('.s2-owl-gift-card');
+      if (bodyEl) bodyEl.scrollTop = 0;
+      if (card) {
+        card.classList.remove('s2-owl-pulse');
+        void card.offsetWidth;
+        card.classList.add('s2-owl-pulse');
+      }
+    }, 40);
   }
 
   close() {
@@ -721,6 +889,7 @@ export class RpgUI {
     if (typeof window === 'undefined') return;
     this._poseCycleTimer = setInterval(() => {
       if (!this.isOpen || (this.currentView !== 'pets' && this.currentView !== 'wardrobe')) return;
+      if (this.currentView === 'pets' && this.petStageDirView && this.petStageDirView !== 'front') return;
       const pet = this.resolveActivePet();
       if (!pet) return;
       const rawStars = Math.max(1, Math.min(3, Number(pet.stars ?? PETS[pet.id]?.rarity) || 1));
@@ -819,6 +988,55 @@ export class RpgUI {
         } else if (type === 'pet_adopt') {
           this.handlePetAdoptReply(res);
         }
+        if (res.equipped && this.profile) {
+          this.profile.equipped = res.equipped;
+        }
+        if (Array.isArray(res.charms) && this.profile) {
+          this.profile.charms = res.charms;
+        }
+        if (res.currencies && this.profile) {
+          this.profile.currencies = res.currencies;
+        }
+        if (typeof res.gold === 'number' && this.profile) {
+          this.profile.gold = res.gold;
+        }
+        if (typeof res.shards === 'number' && this.profile) {
+          this.profile.shards = res.shards;
+          this.profile.gacha_shards = res.shards;
+        }
+        if (res.cp !== undefined && this.profile) {
+          this.profile.cp = res.cp;
+        }
+        if (res.glamour && this.profile) {
+          this.profile.glamour = res.glamour;
+        }
+        if (res.attune && res.itemId && this.profile?.inventory?.[res.itemId]) {
+          this.profile.inventory[res.itemId].attune = res.attune;
+        }
+        if (res.attune && res.slot && this.profile?.equipped?.[res.slot]?.id === res.itemId) {
+          this.profile.equipped[res.slot].attune = res.attune;
+        }
+        if (res.buildUpdate) {
+          const after = res.buildUpdate.after || res.buildUpdate.build || res.buildUpdate.diff?.after || {};
+          const isHybrid = Boolean(res.buildUpdate.hybridDiscovered || res.buildUpdate.diff?.hybridDiscovered || (res.buildUpdate.newlyFound && after.kind === 'hybrid'));
+          const isTierUp = Boolean(res.buildUpdate.tierUp || res.buildUpdate.diff?.tierUp);
+          const toastText = res.buildUpdate.toast || res.buildUpdate.diff?.toast || '';
+          this.lastBuildUpdate = {
+            ...res.buildUpdate,
+            after,
+            hybridDiscovered: isHybrid,
+            tierUp: isTierUp,
+            toast: toastText,
+            at: Date.now(),
+          };
+          if (this.lastBuildUpdate.hybridDiscovered) {
+            this.toast(`🔍✨ SECRET HYBRID DISCOVERED: ${this.lastBuildUpdate.after.icon} ${this.lastBuildUpdate.after.name}! (+50 💎)`);
+          } else if (this.lastBuildUpdate.tierUp) {
+            this.toast(`🎉 BUILD TIER UP! ${this.lastBuildUpdate.after.icon} ${this.lastBuildUpdate.after.name} Tier ${this.lastBuildUpdate.after.tier} Unlocked!`);
+          } else if (this.lastBuildUpdate.toast) {
+            this.toast(this.lastBuildUpdate.toast);
+          }
+        }
         if (onSuccess) {
           onSuccess(res);
         }
@@ -870,6 +1088,11 @@ export class RpgUI {
     }
 
     this.el.addEventListener('click', (e) => {
+      if (e.target.closest('[data-dismiss-build-banner]')) {
+        this.lastBuildUpdate = null;
+        this.render();
+        return;
+      }
       if (e.target.closest('#rpg-close') || e.target.classList.contains('rpg-backdrop')) {
         this.close();
         return;
@@ -908,26 +1131,76 @@ export class RpgUI {
         return;
       }
 
+      const VIP_BAG_KEY_MAP = {
+        call_day_pass: 'vip_call_day_pass',
+        vip_communicator: 'vip_communicator',
+        telelink_box: 'vip_telelink_box',
+        black_vip: 'vip_black',
+      };
+      const VIP_TITLE_MAP = {
+        call_day_pass: 'Sky Call Day-Pass',
+        vip_communicator: 'VIP Communicator',
+        telelink_box: 'Tele-Link Couple Box',
+        black_vip: 'Sovereign Black VIP',
+      };
+
       // VIP Card Buy
       const vipBuyBtn = e.target.closest('[data-act="vip-buy"]');
       if (vipBuyBtn) {
         const card = vipBuyBtn.dataset.vipCard;
         const payload = { card };
         if (card === 'telelink_box') {
-          payload.target = this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
+          payload.target = this.giftToRecipient || this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
         }
         this.executeAction('vip_card_buy', payload, () => {
-          this.toast(`💳 Purchased VIP Card: ${card}!`);
+          this.toast(`💳 Activated ${VIP_TITLE_MAP[card] || card}!`);
         });
         return;
       }
 
-      // VIP Card Gift (buy asGift)
+      // Bag Sub-Navigation Pills (vip | gift | passport)
+      const bagSubBtn = e.target.closest('[data-bag-sub]');
+      if (bagSubBtn) {
+        this.selectedBagSub = bagSubBtn.dataset.bagSub || 'vip';
+        this.render();
+        const bodyEl = this.el?.querySelector('#rpg-body');
+        if (bodyEl) bodyEl.scrollTop = 0;
+        return;
+      }
+
+      // Clear Owl Gift Slot 1 or Slot 2
+      const clearSlotBtn = e.target.closest('[data-clear-owl-slot]');
+      if (clearSlotBtn) {
+        const slotIdx = clearSlotBtn.dataset.clearOwlSlot;
+        if (slotIdx === '1') this.owlSlot1Val = '';
+        else if (slotIdx === '2') this.owlSlot2Val = '';
+        this.render();
+        return;
+      }
+
+      // VIP Card Gift (attach existing bag copy or buy asGift + switch to Owl Gift & Inbox sub-tab)
       const vipGiftBtn = e.target.closest('[data-act="vip-gift"]');
       if (vipGiftBtn) {
         const card = vipGiftBtn.dataset.vipCard;
-        this.executeAction('vip_card_buy', { card, asGift: true }, () => {
-          this.toast(`🎁 Purchased VIP Card as Gift to Bag: ${card}!`);
+        const bagKey = VIP_BAG_KEY_MAP[card] || card;
+        const cardTitle = VIP_TITLE_MAP[card] || BAG_ITEM_CATALOG[bagKey]?.name || card;
+        const alreadyInBag = (this.profile?.bag_items?.[bagKey] | 0) > 0;
+        if (alreadyInBag) {
+          this.owlSlot2Val = `bag:${bagKey}`;
+          this.owlSlot1Val = '';
+          this.selectedBagSub = 'gift';
+          this.render();
+          this.scrollToOwlGiftCard();
+          this.toast(`🎁 Attached ${cardTitle} from your Bag to Gift Slot 2! Tap Dispatch below 🦉`);
+          return;
+        }
+        this.executeAction('vip_card_buy', { card, asGift: true }, (r) => {
+          const resolvedBagKey = r?.bagKey || bagKey;
+          this.owlSlot2Val = `bag:${resolvedBagKey}`;
+          this.owlSlot1Val = '';
+          this.selectedBagSub = 'gift';
+          this.scrollToOwlGiftCard();
+          this.toast(`🎁 Purchased ${cardTitle} & attached to Gift Slot 2! Tap Dispatch below 🦉`);
         });
         return;
       }
@@ -937,12 +1210,60 @@ export class RpgUI {
       if (vipUseBtn) {
         const card = vipUseBtn.dataset.vipCard;
         const payload = { card };
-        if (card === 'telelink_box') {
-          payload.target = this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
+        if (card === 'telelink_box' || card === 'vip_telelink_box') {
+          payload.target = this.giftToRecipient || this.profile?.partner_id || this.profile?.friends?.[0] || 'neen';
         }
+        const cardTitle = VIP_TITLE_MAP[card] || BAG_ITEM_CATALOG[card]?.name || card;
         this.executeAction('vip_card_use', payload, () => {
-          this.toast(`✨ Activated VIP Card: ${card}!`);
+          this.toast(`✨ Activated ${cardTitle}!`);
         });
+        return;
+      }
+
+      // Bag Item Attach to Owl Gift Slot 2
+      const bagGiftBtn = e.target.closest('[data-act="bag-gift"]');
+      if (bagGiftBtn) {
+        const bagKey = bagGiftBtn.dataset.bagKey;
+        const itemName = BAG_ITEM_CATALOG[bagKey]?.name || bagKey;
+        this.owlSlot2Val = `bag:${bagKey}`;
+        this.owlSlot1Val = '';
+        this.selectedBagSub = 'gift';
+        this.render();
+        this.scrollToOwlGiftCard();
+        this.toast(`🎁 Attached ${itemName} to Gift Slot 2! Tap Dispatch below 🦉`);
+        return;
+      }
+
+      // Bag Item Open (Chests / Selector Boxes)
+      const bagOpenBtn = e.target.closest('[data-act="bag-open"]');
+      if (bagOpenBtn) {
+        const bagKey = bagOpenBtn.dataset.bagKey;
+        this.executeAction('bag_item_use', { key: bagKey }, (r) => {
+          const gName = r?.grantedName || r?.grantedItemId || 'Reward';
+          const suffix = r?.grant?.kind === 'shards'
+            ? `+${r.grant.shards} 🌟 Shards`
+            : r?.grant?.kind === 'new'
+              ? '✨ NEW UNLOCK!'
+              : '+1 Forge Dupe!';
+          this.toast(`📦 Unboxed ${gName}! (${suffix})`);
+        });
+        return;
+      }
+
+      // Bag Quick Navigation (Summon Tickets)
+      const bagGotoBtn = e.target.closest('[data-bag-goto]');
+      if (bagGotoBtn) {
+        const dest = bagGotoBtn.dataset.bagGoto;
+        if (dest === 'gacha-box1') this.open('gacha', { tab: 'box1' });
+        else if (dest === 'gacha-box2') this.open('gacha', { tab: 'box2' });
+        return;
+      }
+
+      // Jump to Owl Gift Wrapper
+      if (e.target.closest('[data-act="jump-gift"]')) {
+        this.selectedBagSub = 'gift';
+        this.render();
+        this.scrollToOwlGiftCard();
         return;
       }
 
@@ -989,7 +1310,9 @@ export class RpgUI {
         if (note) payload.note = note;
 
         this.executeAction('owl_send_gift', payload, (r) => {
-          this.toast(`🦉 Royal Owl dispatched your gift! Postage: ${r.postage || 50} 🍓`);
+          this.owlSlot1Val = '';
+          this.owlSlot2Val = undefined;
+          this.toast(`🦉 Royal Owl dispatched your gift to ${to}! (${r.sentToday || 1}/3 today • -${r.postage || 50} 🍓)`);
         });
         return;
       }
@@ -1048,15 +1371,53 @@ export class RpgUI {
       const wtabBtn = e.target.closest('[data-wtab]');
       if (wtabBtn) {
         const rawTab = wtabBtn.dataset.wtab;
+        const shouldScrollGift = Boolean(wtabBtn.dataset.scrollGift);
+        this.currentView = 'wardrobe';
         if (rawTab === 'accessories') {
           this.selectedWTab = 'fashion';
+          if (this.wardrobeMode === 'hair') this.wardrobeMode = 'stats';
           if (this.selectedSlot === 'outfit') this.selectedSlot = 'hat';
           this.closetDrawerOpen = true;
+        } else if (rawTab === 'hair') {
+          this.selectedWTab = 'fashion';
+          this.wardrobeMode = 'hair';
         } else {
           this.selectedWTab = rawTab;
-          if (rawTab === 'fashion') this.closetDrawerOpen = false;
+          if (rawTab === 'fashion') {
+            this.closetDrawerOpen = false;
+            if (this.wardrobeMode === 'hair') this.wardrobeMode = 'stats';
+          }
+          if (rawTab === 'bag') {
+            this.selectedBagSub = shouldScrollGift ? 'gift' : (this.selectedBagSub || 'vip');
+          }
         }
         this.render();
+        if (rawTab === 'bag' && shouldScrollGift) {
+          this.scrollToOwlGiftCard();
+        }
+        return;
+      }
+
+      // Ultimate Skill & Full Stats Drawer Toggle (Main Wardrobe Screen)
+      if (e.target.closest('[data-toggle-ult-info]')) {
+        const wasOpen = Boolean(this.ultInfoExpanded || this.selectedStatInfo);
+        this.ultInfoExpanded = !wasOpen;
+        if (wasOpen) this.selectedStatInfo = null;
+        this.render();
+        return;
+      }
+
+      // Universal 4-Stat Mode Bridge Inspector (Tap to expand, tap again to collapse)
+      const statInfoCell = e.target.closest('[data-stat-info]');
+      if (statInfoCell) {
+        const tappedStat = statInfoCell.dataset.statInfo;
+        this.selectedStatInfo = this.selectedStatInfo === tappedStat ? null : tappedStat;
+        const panel = this.el?.querySelector('.s2-stat-panel');
+        if (panel && this.profile) {
+          panel.outerHTML = renderStatGrid(this.profile, this.selectedStatInfo);
+        } else {
+          this.render();
+        }
         return;
       }
 
@@ -1064,9 +1425,20 @@ export class RpgUI {
       const slotCard = e.target.closest('[data-slot]');
       if (slotCard && !e.target.closest('[data-hide]') && !e.target.closest('[data-goforge]')) {
         const slot = slotCard.dataset.slot;
+        if (this.selectedSlot !== slot) {
+          this.selectedClosetItem = null;
+        }
         this.selectedSlot = slot;
         this.selectedWTab = 'fashion';
         this.closetDrawerOpen = true;
+        this.render();
+        return;
+      }
+
+      // Closet Tile Tap-to-Inspect Selection
+      const closetTile = e.target.closest('[data-closet-item]');
+      if (closetTile && closetTile.dataset.closetItem && !e.target.closest('[data-equip]') && !e.target.closest('[data-goforge]') && !e.target.closest('[data-glamour-clear]') && !e.target.closest('[data-gift-gear]')) {
+        this.selectedClosetItem = closetTile.dataset.closetItem;
         this.render();
         return;
       }
@@ -1091,11 +1463,93 @@ export class RpgUI {
         return;
       }
 
-      // Wardrobe Equip Item in Grid
+      // Wardrobe Gift Gear Item via Royal Owl (auto-populates Owl Gift Slot 1)
+      const giftGearBtn = e.target.closest('[data-gift-gear]');
+      if (giftGearBtn) {
+        e.stopPropagation();
+        const itemId = giftGearBtn.dataset.giftGear;
+        const invItem = this.profile?.inventory?.[itemId];
+        if (!invItem) return;
+        const def = itemDef(itemId) || { name: itemId };
+        const dupes = invItem.dupes | 0;
+        const refine = invItem.refine | 0;
+        const slot = itemSlot(itemId) || this.selectedSlot;
+        const eq = this.profile?.equipped || {};
+        const isEquipped = Object.values(eq).some((s) => (typeof s === 'object' ? s?.id : s) === itemId);
+
+        if (dupes >= 1) {
+          this.owlSlot1Val = `gear:dupe:${itemId}`;
+          this.selectedWTab = 'bag';
+          this.selectedBagSub = 'gift';
+          this.render();
+          this.scrollToOwlGiftCard();
+          this.toast(`🦉 Attached ${def.name} (1x Dupe Copy) to Gift Slot 1! Tap Dispatch below.`);
+          return;
+        }
+
+        if (isEquipped) {
+          if (slot === 'outfit' || slot === 'dice') {
+            this.toast(`⚠️ Equip a different ${SLOT_LABELS[slot] || slot} first (or pull a dupe) before gifting ${def.name}!`);
+            return;
+          }
+          this.executeAction('wardrobe_equip', { slot, itemId: null }, () => {
+            this.owlSlot1Val = `gear:transfer:${itemId}`;
+            this.selectedWTab = 'bag';
+            this.selectedBagSub = 'gift';
+            this.render();
+            this.scrollToOwlGiftCard();
+            this.toast(`🦉 Unequipped & attached ${refine > 0 ? `+${refine} ` : ''}${def.name} to Gift Slot 1!`);
+          });
+          return;
+        }
+
+        this.owlSlot1Val = `gear:transfer:${itemId}`;
+        this.selectedWTab = 'bag';
+        this.selectedBagSub = 'gift';
+        this.render();
+        this.scrollToOwlGiftCard();
+        this.toast(`🦉 Attached ${refine > 0 ? `+${refine} ` : ''}${def.name} to Gift Slot 1! Tap Dispatch below.`);
+        return;
+      }
+
+      // Wardrobe Mode Toggle (Stats vs Glamour)
+      const wardrobeModeBtn = e.target.closest('[data-wardrobe-mode]');
+      if (wardrobeModeBtn) {
+        this.wardrobeMode = wardrobeModeBtn.dataset.wardrobeMode;
+        this.selectedClosetItem = null;
+        this.render();
+        return;
+      }
+
+      // Wardrobe Glamour Set
+      const glamourSetBtn = e.target.closest('[data-glamour-set]');
+      if (glamourSetBtn) {
+        const itemId = glamourSetBtn.dataset.glamourSet;
+        const slot = this.selectedSlot;
+        this.selectedClosetItem = itemId;
+        this.executeAction('wardrobe_glamour', { slot, itemId }, () => {
+          this.toast('👗 Costume Look applied! (0 Gold • Stats & ULT unchanged)');
+        });
+        return;
+      }
+
+      // Wardrobe Glamour Clear
+      const glamourClearBtn = e.target.closest('[data-glamour-clear]');
+      if (glamourClearBtn) {
+        e.stopPropagation();
+        const slot = glamourClearBtn.dataset.glamourClear;
+        this.executeAction('wardrobe_glamour', { slot, itemId: null }, () => {
+          this.toast('👗 Costume Look reset to Stat Gear!');
+        });
+        return;
+      }
+
+      // Wardrobe Equip Item
       const equipBtn = e.target.closest('[data-equip]');
       if (equipBtn) {
         const itemId = equipBtn.dataset.equip;
         const slot = itemSlot(itemId) || this.selectedSlot;
+        this.selectedClosetItem = itemId;
         this.executeAction('wardrobe_equip', { slot, itemId }, () => {
           this.toast(`✨ Equipped ${itemDef(itemId)?.name || itemId}!`);
         });
@@ -1120,6 +1574,128 @@ export class RpgUI {
           const p = (this.profile.pets || []).find((x) => x.uid === uid);
           this.toast(`🐾 Equipped ${PETS[p?.id]?.name || 'pet'}!`);
         });
+        return;
+      }
+
+      // Starlight Aura Charm Equip / Unequip (supports charmId or specific charmUid roll)
+      const charmEquipBtn = e.target.closest('[data-charm-equip]');
+      if (charmEquipBtn) {
+        const rawCharmId = charmEquipBtn.dataset.charmEquip || '';
+        const rawCharmUid = charmEquipBtn.dataset.charmUid || '';
+        const charmId = rawCharmId ? rawCharmId : null;
+        const charmUid = rawCharmUid ? rawCharmUid : null;
+        this.charmPreviewId = null;
+        this.executeAction('charm_equip', { charmId, charmUid }, (r) => {
+          const eqC = r?.charm || (charmId ? CHARMS[charmId] : null);
+          const cDef = eqC ? (CHARMS[eqC.id] || eqC) : null;
+          const plus = eqC ? getCharmPlus(eqC) : 0;
+          this.toast(
+            cDef
+              ? `🎐✨ Equipped ${cDef.name}${plus > 0 ? ` +${plus}` : ''} (${eqC?.grade || 'B'}-Grade) 3D Aura & Cheat Passive!`
+              : '🎐 Unequipped Starlight Charm Aura.'
+          );
+        });
+        return;
+      }
+
+      // Starlight Aura Charm Bag & Inspect / Fuse Drawer Toggle
+      const charmInspectBtn = e.target.closest('[data-charm-inspect]');
+      if (charmInspectBtn) {
+        const cid = charmInspectBtn.dataset.charmInspect || '';
+        if (!cid || this.charmInspectId === cid) {
+          this.charmInspectId = null;
+          this.charmBaseUid = null;
+        } else {
+          this.charmInspectId = cid;
+          this.charmPreviewId = cid;
+          const copies = (this.profile?.charms || []).filter((c) => c && c.id === cid);
+          const eqUid = this.profile?.equipped?.charm?.uid;
+          const eqCopy = eqUid && copies.find((c) => c.uid === eqUid);
+          const bestCopy = eqCopy || findBestCharmForId(copies, cid) || copies[0];
+          this.charmBaseUid = bestCopy?.uid || null;
+        }
+        this.render();
+        return;
+      }
+
+      // Select which rolled Charm copy (`uid`) is the Base (`A`) to keep & upgrade
+      const charmSelectBaseBtn = e.target.closest('[data-charm-select-base]');
+      if (charmSelectBaseBtn) {
+        const uid = charmSelectBaseBtn.dataset.charmSelectBase || '';
+        if (uid) {
+          this.charmBaseUid = uid;
+          this.render();
+        }
+        return;
+      }
+
+      // Consume duplicate Charm (`B`) into Base Charm (`A`) -> +1..+5 Awakening or Stat Infusion
+      const charmConsumeBtn = e.target.closest('[data-charm-consume]');
+      if (charmConsumeBtn) {
+        const materialUid = charmConsumeBtn.dataset.charmConsume || '';
+        const baseUid = charmConsumeBtn.dataset.charmBase || this.charmBaseUid || '';
+        const mode = charmConsumeBtn.dataset.charmMode || 'upgrade';
+        if (!baseUid || !materialUid) return;
+        this.executeAction('charm_consume', { baseUid, materialUid, mode }, (r) => {
+          const cDef = CHARMS[r?.charmId] || {};
+          const newPlus = r?.newPlus ?? getCharmPlus(r?.base);
+          const prevPlus = r?.prevPlus ?? 0;
+          if (r?.infusedStats && newPlus > prevPlus) {
+            this.toast(`🔥🧬 Awakened ${cDef.name || 'Charm'} +${prevPlus} ➔ +${newPlus} (+${newPlus * 15}% Stats) & Infused Higher Roll!`);
+          } else if (r?.infusedStats) {
+            this.toast(`🧬✨ Infused Higher Grade/Stat Roll into ${cDef.name || 'Charm'} +${newPlus}!`);
+          } else {
+            this.toast(`🔥✨ Consumed Duplicate! ${cDef.name || 'Charm'} Awakened +${prevPlus} ➔ +${newPlus} (+${newPlus * 15}% All Stats)!`);
+          }
+          this.charmBaseUid = r?.base?.uid || baseUid;
+        });
+        return;
+      }
+
+      // Lock / Unlock a Charm Roll in Charm Bag
+      const charmLockBtn = e.target.closest('[data-charm-lock]');
+      if (charmLockBtn) {
+        const charmUid = charmLockBtn.dataset.charmLock || '';
+        if (!charmUid) return;
+        this.executeAction('charm_lock', { charmUid }, (r) => {
+          this.toast(r?.locked ? '🔒 Locked Charm roll (Protected from Consume & Salvage).' : '🔓 Unlocked Charm roll.');
+        });
+        return;
+      }
+
+      // Salvage spare Charm Roll into Starlight Shards & Gold
+      const charmSalvageBtn = e.target.closest('[data-charm-salvage]');
+      if (charmSalvageBtn) {
+        const charmUid = charmSalvageBtn.dataset.charmSalvage || '';
+        if (!charmUid) return;
+        this.executeAction('charm_salvage', { charmUid }, (r) => {
+          this.toast(`♻️ Salvaged ${r?.charmName || 'Charm'} for +${r?.shardsGain || 0} 🌟 Starlight Shards & +${fmtNum(r?.goldGain || 0)} Gold!`);
+          if (this.charmBaseUid === charmUid) {
+            const rem = (this.profile?.charms || []).filter((c) => c && c.id === this.charmInspectId);
+            this.charmBaseUid = rem[0]?.uid || null;
+          }
+        });
+        return;
+      }
+
+      // Starlight Aura Charm Live 3D Preview
+      const charmPrevBtn = e.target.closest('[data-charm-preview]');
+      if (charmPrevBtn) {
+        const cid = charmPrevBtn.dataset.charmPreview || '';
+        this.charmPreviewId = cid || null;
+        this.render();
+        return;
+      }
+
+      // Starlight Aura Charm Tier Filter
+      const charmTierBtn = e.target.closest('[data-charm-tier]');
+      if (charmTierBtn) {
+        this.selectedCharmTier = charmTierBtn.dataset.charmTier || 'all';
+        if (this.selectedCharmTier !== 'all' && this.selectedCharmTier !== 'bag') {
+          const firstInTier = Object.values(CHARMS).find((c) => String(c.tier) === String(this.selectedCharmTier));
+          if (firstInTier) this.charmPreviewId = firstInTier.id;
+        }
+        this.render();
         return;
       }
 
@@ -1234,6 +1810,8 @@ export class RpgUI {
       if (forgeItemBtn) {
         this.selectedForgeItem = forgeItemBtn.dataset.forgeItem;
         this.lastForgeResult = null;
+        this.forgeAnimState = null;
+        this.playForgeSfx('tap');
         this.render();
         return;
       }
@@ -1242,6 +1820,8 @@ export class RpgUI {
       if (e.target.id === 'forge-berries' || e.target.closest('#forge-berries')) {
         const cb = e.target.id === 'forge-berries' ? e.target : e.target.closest('#forge-berries');
         this.forgeBerries = cb.checked;
+        this.forgeAnimState = null;
+        this.playForgeSfx('tap');
         this.render();
         return;
       }
@@ -1250,7 +1830,77 @@ export class RpgUI {
       if (e.target.id === 'forge-scroll' || e.target.closest('#forge-scroll')) {
         const cb = e.target.id === 'forge-scroll' ? e.target : e.target.closest('#forge-scroll');
         this.forgeScroll = cb.checked;
+        this.forgeAnimState = null;
+        this.playForgeSfx('tap');
         this.render();
+        return;
+      }
+
+      // Forge Mode Toggle
+      const forgeModeBtn = e.target.closest('[data-forge-mode]');
+      if (forgeModeBtn) {
+        this.forgeMode = forgeModeBtn.dataset.forgeMode;
+        this.forgeAnimState = null;
+        this.playForgeSfx('tap');
+        this.render();
+        return;
+      }
+
+      // Attune Stat Selection
+      const attuneStatBtn = e.target.closest('[data-attune-stat]');
+      if (attuneStatBtn) {
+        this.selectedAttuneStat = attuneStatBtn.dataset.attuneStat;
+        this.forgeAnimState = null;
+        this.playForgeSfx('tap');
+        this.render();
+        return;
+      }
+
+      // Attune Action
+      const attuneGoBtn = e.target.closest('#attune-go') || e.target.closest('[data-act="trigger-attune-go"]');
+      if (attuneGoBtn) {
+        if (!this.selectedForgeItem) {
+          this.toast('Please select an item to attune!');
+          return;
+        }
+        const curIt = this.profile.inventory?.[this.selectedForgeItem];
+        const curRef = curIt ? (curIt.refine | 0) : 0;
+        const curAttInfo = inspectItemAttune(this.selectedForgeItem, curRef, curIt?.attune?.stat);
+        if (!curAttInfo.attunable) {
+          this.toast('This item cannot be attuned.');
+          return;
+        }
+        if (!curAttInfo.unlocked) {
+          this.toast(`Upgrade item to +${ATTUNE_MIN_REFINE} in Star-Force first!`);
+          return;
+        }
+        const chosenStat = (this.selectedAttuneStat && curAttInfo.allowedStats.includes(this.selectedAttuneStat))
+          ? this.selectedAttuneStat
+          : (curAttInfo.allowedStats.find((s) => s !== curAttInfo.activeSecStat) || curAttInfo.allowedStats[0]);
+        if (!chosenStat || chosenStat === curAttInfo.activeSecStat) {
+          this.toast('Please select a different target stat!');
+          return;
+        }
+        const attCount = curIt?.attune?.count ?? curIt?.attune_count ?? 0;
+        const attCost = attuneCostFor(attCount);
+        const ownedScrolls = (this.profile.bag_items?.scroll_stat_attune | 0) || (this.profile.bag_items?.attune_scroll | 0);
+        const useScroll = Boolean(ownedScrolls >= 1 && !attCost.free);
+
+        this.executeAction('gear_attune', {
+          itemId: this.selectedForgeItem,
+          stat: chosenStat,
+          useScroll,
+        }, () => {
+          this.forgeAnimState = {
+            kind: 'attune_win',
+            stat: chosenStat,
+            val: curAttInfo.secVal,
+            itemId: this.selectedForgeItem,
+            at: Date.now(),
+          };
+          this.playForgeSfx('attune_win');
+          this.toast(`🎯 Attuned secondary stat to ${chosenStat.toUpperCase()} +${curAttInfo.secVal}!`);
+        });
         return;
       }
 
@@ -1271,6 +1921,16 @@ export class RpgUI {
           useScroll: canUseScroll,
         }, (r) => {
           this.lastForgeResult = r;
+          const animKind = r.success ? (r.sovereign ? 'sovereign' : 'forge_win') : 'forge_pity';
+          this.forgeAnimState = {
+            kind: animKind,
+            star: r.newStar,
+            pity: r.pity,
+            pityPct: r.pityPct,
+            itemId: this.selectedForgeItem,
+            at: Date.now(),
+          };
+          this.playForgeSfx(animKind);
           if (r.success) {
             this.toast(r.sovereign ? '★10 SOVEREIGN UNLOCKED!' : `🎉 FORGE SUCCESS! +${r.newStar}`);
           } else {
@@ -1279,6 +1939,7 @@ export class RpgUI {
         });
         return;
       }
+
 
       // Pet Sanctuary V2 Handlers (Evolve, Lock, Reroll, Infuse, Release, Visual Tier, Rename, Pat, Gift)
       if (bindPetSanctuaryClick(this, e)) {
@@ -1340,7 +2001,7 @@ export class RpgUI {
         return;
       }
 
-      // Live Paper-Doll Stage Controls (Rotate View / Toggle Walk)
+      // Live Paper-Doll Stage Controls (Rotate View / Toggle Walk / Open Photobooth)
       if (e.target.closest('[data-pd-turn]')) {
         cyclePaperDollView();
         this.render();
@@ -1349,6 +2010,10 @@ export class RpgUI {
       if (e.target.closest('[data-pd-walk]')) {
         togglePaperDollWalk();
         this.render();
+        return;
+      }
+      if (e.target.closest('[data-pd-photo]')) {
+        window.__neora?.voiceClient?.openPhotobooth?.();
         return;
       }
 
@@ -1506,8 +2171,10 @@ export class RpgUI {
 
     const prevBodyEl = this.el.querySelector('#rpg-body');
     const prevPoolEl = this.el.querySelector('#gacha-pool-grid');
+    const prevClosetEl = this.el.querySelector('.s2-closet-grid-v2');
     const prevBodyScroll = prevBodyEl ? prevBodyEl.scrollTop : 0;
     const prevPoolScroll = prevPoolEl ? prevPoolEl.scrollTop : 0;
+    const prevClosetScroll = prevClosetEl ? prevClosetEl.scrollTop : 0;
 
     const gold = p.gold || 0;
     const berries = p.berries || 0;
@@ -1525,6 +2192,25 @@ export class RpgUI {
     else if (view === 'gacha') bodyHtml = this.renderGacha(p);
     else if (view === 'forge') bodyHtml = this.renderForge(p);
     else if (view === 'pets') bodyHtml = this.renderPets(p);
+
+    let buildBannerHtml = '';
+    if (this.lastBuildUpdate && (Date.now() - this.lastBuildUpdate.at < 5000)) {
+      const bu = this.lastBuildUpdate;
+      const rawText = bu.hybridDiscovered
+        ? `🔍✨ SECRET HYBRID DISCOVERED: ${escapeHtml(bu.after?.icon || '')} ${escapeHtml(bu.after?.name || '')}! (+50 💎)`
+        : (bu.tierUp
+          ? `🎉 BUILD TIER UP! ${escapeHtml(bu.after?.icon || '')} ${escapeHtml(bu.after?.name || '')} Tier ${bu.after?.tier} Unlocked!`
+          : (bu.toast ? escapeHtml(bu.toast) : ''));
+      const bText = formatGoldIcons(rawText);
+      if (bText) {
+        buildBannerHtml = `
+          <div class="rpg-build-toast-banner">
+            <span class="rpg-build-toast-text">${bText}</span>
+            <button type="button" class="s2-banner-dismiss-btn" data-dismiss-build-banner="1" title="Dismiss">✕</button>
+          </div>
+        `;
+      }
+    }
 
     this.el.innerHTML = `
       <div class="rpg-backdrop"></div>
@@ -1559,7 +2245,7 @@ export class RpgUI {
             <button id="rpg-close" class="rpg-x-btn" aria-label="Close">✕</button>
           </div>
 
-          <nav class="rpg-top-bar">
+          <nav class="rpg-top-bar rpg-top-tabs" aria-hidden="true">
             <button class="rpg-view-tab ${view === 'wardrobe' ? 'active' : ''}" data-view="wardrobe">
               <span class="ico">👗</span><span>Wardrobe</span>
             </button>
@@ -1576,6 +2262,7 @@ export class RpgUI {
         </header>
 
         <div id="rpg-body" class="rpg-body">
+          ${buildBannerHtml}
           ${bodyHtml}
         </div>
       </div>
@@ -1594,16 +2281,50 @@ export class RpgUI {
       const nextPoolEl = this.el.querySelector('#gacha-pool-grid');
       if (nextPoolEl) nextPoolEl.scrollTop = prevPoolScroll;
     }
+    if (prevClosetScroll > 0) {
+      const nextClosetEl = this.el.querySelector('.s2-closet-grid-v2');
+      if (nextClosetEl) nextClosetEl.scrollTop = prevClosetScroll;
+    }
 
-    if (view === 'wardrobe' && (this.selectedWTab === 'fashion' || this.selectedWTab === 'accessories' || this.selectedWTab === 'hair')) {
-      mountLivePaperDollStage(this.el, p);
+    if (view === 'wardrobe' && (this.selectedWTab === 'fashion' || this.selectedWTab === 'accessories' || this.selectedWTab === 'hair' || this.selectedWTab === 'charms')) {
+      let stageProfile = p;
+      if (this.selectedWTab === 'charms' && this.charmPreviewId && CHARMS[this.charmPreviewId]) {
+        const prevDef = CHARMS[this.charmPreviewId];
+        stageProfile = {
+          ...p,
+          equipped: {
+            ...(p.equipped || {}),
+            charm: { id: prevDef.id, tier: prevDef.tier, grade: 'SS', level: 1 },
+          },
+        };
+      }
+      mountLivePaperDollStage(this.el, stageProfile);
     } else {
       stopWardrobePreview();
+    }
+
+    if (view === 'wardrobe' && this.selectedWTab === 'bag') {
+      const bindSafeScroll = (id, subTab) => {
+        const el = this.el?.querySelector(`#${id}`);
+        if (!el) return;
+        el.scrollIntoView = () => {
+          if (this.selectedBagSub !== subTab) {
+            this.selectedBagSub = subTab;
+            this.render();
+          }
+          if (typeof window !== 'undefined') window.scrollTo?.(0, 0);
+          const body = this.el?.querySelector('#rpg-body');
+          if (body) body.scrollTop = 0;
+        };
+      };
+      bindSafeScroll('passport-card', 'passport');
+      bindSafeScroll('owl-gift-card', 'gift');
+      bindSafeScroll('owl-inbox', 'gift');
     }
   }
 
   // ---------------------------------------------------------------------------------------------
-  // VIEW 1: WARDROBE (Screens 07 & 08 + Step 3.5 Fluffé's Hair Studio)
+  // VIEW 1: WARDROBE (Screens 07 & 08 + Step 3.5 Fluffé's Hair Studio + Starlight Aura Charms)
   // ---------------------------------------------------------------------------------------------
   renderWardrobe(p) {
     const wtab = this.selectedWTab || 'fashion';
@@ -1613,62 +2334,262 @@ export class RpgUI {
 
     const tabsHtml = `
       <div class="rpg-sub-tabs s2-folder-tabs">
-        <button class="rpg-sub-tab ${wtab === 'fashion' || wtab === 'accessories' ? 'active' : ''}" data-wtab="fashion">👗 Fashion</button>
-        <button class="rpg-sub-tab ${wtab === 'hair' ? 'active' : ''}" data-wtab="hair">💇‍♀️ Hair</button>
+        <button class="rpg-sub-tab ${wtab === 'fashion' || wtab === 'accessories' || wtab === 'hair' ? 'active' : ''}" data-wtab="fashion">👗 Fashion</button>
         <button class="rpg-sub-tab ${wtab === 'pets' ? 'active' : ''}" data-wtab="pets">🐾 Pets</button>
+        <button class="rpg-sub-tab ${wtab === 'charms' ? 'active' : ''}" data-wtab="charms">🎐 Charms</button>
         <button class="rpg-sub-tab ${wtab === 'bag' ? 'active' : ''}" data-wtab="bag">🎒 Bag &amp; VIP</button>
       </div>
     `;
 
-    if (wtab === 'hair') {
-      return this.renderHairStudio(p, tabsHtml);
+    if (wtab === 'charms') {
+      return this.renderCharmsReliquary(p, tabsHtml);
     }
 
-    if (wtab === 'fashion' || wtab === 'accessories') {
+    if (wtab === 'fashion' || wtab === 'accessories' || wtab === 'hair') {
+      const effectiveMode = wtab === 'hair' ? 'hair' : (this.wardrobeMode || 'stats');
       const curSlot = this.selectedSlot;
-      const ownedEntries = Object.entries(inv).filter(([id]) => itemSlot(id) === curSlot);
+
+      if (effectiveMode === 'hair') {
+        const headerAndSubtabsHtml = renderPaperDollHeroStage(p, curSlot, this.petPreviewPose, 'hair')
+          .replace('s2-gold-ribbon-banner', 's2-gold-ribbon-banner s2-title-ribbon');
+        return `
+          ${tabsHtml}
+          <div class="s2-avatar-parchment-card s2-wardrobe-unified-card">
+            ${headerAndSubtabsHtml}
+            <div class="s2-inline-hair-studio-wrap">
+              ${this.renderHairStudio(p, '')}
+            </div>
+          </div>
+        `;
+      }
+      const eqSlotId = equipped[curSlot]?.id || null;
+      const curGlamourId = p.glamour?.[curSlot] || equipped[curSlot]?.glamour || null;
+      const rawOwnedEntries = Object.entries(inv).filter(([id]) => itemSlot(id) === curSlot);
+      // Sort: Equipped first -> Rarity (Super Mythic -> Mythic -> Epic -> Rare) -> Refine -> Name
+      const ownedEntries = [...rawOwnedEntries].sort(([idA, dataA], [idB, dataB]) => {
+        const eqA = idA === eqSlotId ? 1 : 0;
+        const eqB = idB === eqSlotId ? 1 : 0;
+        if (eqA !== eqB) return eqB - eqA;
+        const defA = itemDef(idA) || {};
+        const defB = itemDef(idB) || {};
+        const rA = defA.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(idA) ? 4 : (Number(defA.rarity) || 1);
+        const rB = defB.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(idB) ? 4 : (Number(defB.rarity) || 1);
+        if (rA !== rB) return rB - rA;
+        const refA = dataA?.refine | 0;
+        const refB = dataB?.refine | 0;
+        if (refA !== refB) return refB - refA;
+        return String(defA.name || idA).localeCompare(String(defB.name || idB));
+      });
       const isUnequippable = curSlot !== 'outfit';
 
-      // Slot filter pills for quick switching inside Closet Drawer (incl. 3D Dice Skins)
-      const slotPillsHtml = [...SLOTS, 'dice'].map((s) => `
-        <button class="s2-slot-pill ${curSlot === s ? 'active' : ''}" data-slot="${s}">
-          ${SLOT_LABELS[s]}
-        </button>
-      `).join('');
+      // Slot filter pills for quick switching inside Inline Closet (incl. 3D Dice Skins)
+      const slotPillsHtml = [...SLOTS, 'dice'].map((s) => {
+        const cnt = Object.keys(inv).filter((id) => itemSlot(id) === s).length;
+        return `
+          <button class="s2-slot-pill ${curSlot === s ? 'active' : ''}" data-slot="${s}">
+            ${SLOT_LABELS[s]}${curSlot === s ? ` (${cnt})` : ''}
+          </button>
+        `;
+      }).join('');
+
+      // Active Slot Dual Summary: ⚔️ Stat Gear vs 👗 Visual Glamour
+      const eqDef = eqSlotId ? itemDef(eqSlotId) : null;
+      const eqRefine = equipped[curSlot]?.refine | 0;
+      const eqIsSuper = eqDef?.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(eqSlotId);
+      const eqRarityNum = eqIsSuper ? 3 : (Number(eqDef?.rarity) || 1);
+      const eqCpVal = eqSlotId ? Math.round(slotCP(curSlot, eqSlotId, eqRefine)) : 0;
+      const hasActiveGlamour = Boolean(curGlamourId && curGlamourId !== eqSlotId && curSlot !== 'dice');
+      const glamDef = hasActiveGlamour ? itemDef(curGlamourId) : null;
+      const glamIsSuper = glamDef?.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(curGlamourId);
+      const glamRarityNum = glamIsSuper ? 3 : (Number(glamDef?.rarity) || 1);
+
+      const dualLoadoutBarHtml = curSlot !== 'dice' ? `
+        <div class="s2-active-loadout-dual">
+          <div class="s2-loadout-half is-stat-gear" data-closet-item="${eqSlotId || ''}">
+            <div class="s2-loadout-half-tag">⚔️ STAT GEAR <small>(Power &amp; ULT)</small></div>
+            <div class="s2-loadout-half-body">
+              ${eqSlotId ? `
+                <div class="s2-loadout-mini-thumb">
+                  ${renderIconThumb(eqSlotId, { lineage, appearance: p.appearance, size: 38, refine: eqRefine, stars: eqIsSuper ? SM_TIER : eqRarityNum })}
+                </div>
+                <div class="s2-loadout-half-txt">
+                  <b>${escapeHtml(shortenGearName(eqDef?.name || eqSlotId))}</b>
+                  <span>+${eqCpVal} CP${eqRefine > 0 ? ` • +${eqRefine}` : ''}</span>
+                </div>
+              ` : `
+                <div class="s2-loadout-half-txt is-empty">
+                  <b>(Empty Slot)</b>
+                  <span>Tap an item below to equip</span>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <div class="s2-loadout-half is-glamour-look ${hasActiveGlamour ? 'is-overridden' : ''}" ${hasActiveGlamour ? `data-closet-item="${curGlamourId}"` : ''}>
+            <div class="s2-loadout-half-tag">
+              <span>👗 VISUAL LOOK <small>(Glamour)</small></span>
+              ${hasActiveGlamour ? `<button type="button" class="s2-loadout-clear-btn" data-glamour-clear="${curSlot}" title="Remove Glamour &amp; show Stat Gear">✕ Reset</button>` : ''}
+            </div>
+            <div class="s2-loadout-half-body">
+              ${hasActiveGlamour ? `
+                <div class="s2-loadout-mini-thumb">
+                  ${renderIconThumb(curGlamourId, { lineage, appearance: p.appearance, size: 38, stars: glamIsSuper ? SM_TIER : glamRarityNum })}
+                </div>
+                <div class="s2-loadout-half-txt">
+                  <b>${escapeHtml(shortenGearName(glamDef?.name || curGlamourId))}</b>
+                  <span class="is-glam-active">✨ Custom Look Active</span>
+                </div>
+              ` : `
+                <div class="s2-loadout-half-txt is-same">
+                  <b>Same as Stat Gear</b>
+                  <span>Tap <b>👗 Wear Look</b> below to change</span>
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      ` : '';
+
+      // Resolve which item is currently inspected in the Spotlight Card
+      const defaultSlotItemId = this.wardrobeMode === 'glamour' ? (curGlamourId || eqSlotId) : eqSlotId;
+      const validSelected = this.selectedClosetItem && ownedEntries.some(([id]) => id === this.selectedClosetItem);
+      const selId = validSelected
+        ? this.selectedClosetItem
+        : (defaultSlotItemId && ownedEntries.some(([id]) => id === defaultSlotItemId) ? defaultSlotItemId : (ownedEntries[0]?.[0] || null));
+
+      const roleGuide = SLOT_ROLE_GUIDE[curSlot];
+      let inspectorHtml = '';
+      if (selId && inv[selId]) {
+        const selData = inv[selId];
+        const selDef = itemDef(selId) || {};
+        const selName = selDef.name || selId;
+        const selIsSuper = selDef.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(selId);
+        const selRarityNum = selIsSuper ? 3 : (Number(selDef.rarity) || 1);
+        const selRefine = selData.refine | 0;
+        const selDupes = selData.dupes | 0;
+        const isSelEquipped = eqSlotId === selId;
+        const isSelGlamour = curGlamourId === selId;
+        const selCp = Math.round(slotCP(curSlot, selId, selRefine));
+        const eqCp = eqSlotId ? Math.round(slotCP(curSlot, eqSlotId, equipped[curSlot]?.refine | 0)) : 0;
+        const cpDelta = !isSelEquipped ? (selCp - eqCp) : 0;
+        const selSk = curSlot === 'outfit' ? skillFor(selId, selRarityNum) : null;
+        const selTurf = selSk?.homeTheme && THEMES[selSk.homeTheme] ? THEMES[selSk.homeTheme].name : null;
+        const selStatPills = renderItemStatPills(selId, selRefine, { compact: true });
+        const canForgeSel = isItemForgeReady(p, selId);
+
+        let buildPreviewHtml = '';
+        if (selId !== eqSlotId && curSlot !== 'dice') {
+          const simEquipped = {
+            ...equipped,
+            [curSlot]: {
+              ...(equipped[curSlot] || {}),
+              id: selId,
+              refine: selRefine,
+              ...(selData.attune ? { attune: { ...selData.attune } } : {}),
+            },
+          };
+          const simProfile = { ...p, equipped: simEquipped };
+          const diff = diffBuilds(computeUniversalStats(p).bonus, computeUniversalStats(simProfile).bonus);
+          if (diff?.toast) {
+            buildPreviewHtml = `<div class="s2-insp-build-preview">☁️ ${formatGoldIcons(escapeHtml(diff.toast))}</div>`;
+          }
+        }
+
+        // Direct 1-Tap Stat Equip AND Glamour Look buttons side-by-side (zero mode switching!)
+        const statActionBtn = isSelEquipped
+          ? (isUnequippable
+              ? `<button type="button" class="s2-insp-btn unequip" data-unequip="${curSlot}">⚔️ Unequip</button>`
+              : `<span class="s2-insp-equipped-badge">⚔️ Stat Equipped</span>`)
+          : `<button type="button" class="s2-insp-btn equip" data-equip="${selId}">⚔️ Equip Stats</button>`;
+
+        let glamourActionBtn = '';
+        if (curSlot !== 'dice') {
+          if (isSelGlamour) {
+            glamourActionBtn = `<button type="button" class="s2-insp-btn glamour-clear" data-glamour-clear="${curSlot}">👗 Clear Look</button>`;
+          } else if (isSelEquipped && !curGlamourId) {
+            glamourActionBtn = `<span class="s2-insp-glamour-badge">👗 Active Look</span>`;
+          } else if (isSelEquipped && curGlamourId) {
+            glamourActionBtn = `<button type="button" class="s2-insp-btn glamour" data-glamour-clear="${curSlot}">👗 Use Stat Look</button>`;
+          } else {
+            glamourActionBtn = `<button type="button" class="s2-insp-btn glamour" data-glamour-set="${selId}">👗 Wear Look</button>`;
+          }
+        }
+
+        inspectorHtml = `
+          <div class="s2-closet-inspector s2-rarity-${selIsSuper ? SM_TIER : selRarityNum}">
+            <div class="s2-insp-top">
+              <div class="s2-insp-thumb">
+                ${renderIconThumb(selId, { lineage, appearance: p.appearance, size: 52, refine: selRefine, stars: selIsSuper ? SM_TIER : selRarityNum, badgeText: selDupes > 0 ? `x${selDupes}` : null })}
+              </div>
+              <div class="s2-insp-info">
+                <div class="s2-insp-title-row">
+                  <span class="s2-insp-name">${escapeHtml(selName)}</span>
+                </div>
+                <div class="s2-insp-meta-row">
+                  <span class="rpg-stars">${selIsSuper ? '✦ SUPER' : '★'.repeat(selRarityNum)}</span>
+                  <span class="s2-insp-cp">+${selCp} CP</span>
+                  ${cpDelta !== 0 ? `<span class="s2-insp-delta ${cpDelta > 0 ? 'pos' : 'neg'}">(${cpDelta > 0 ? `+${cpDelta}` : cpDelta})</span>` : ''}
+                </div>
+                ${selStatPills}
+                ${buildPreviewHtml}
+              </div>
+              <div class="s2-insp-actions">
+                ${this.wardrobeMode === 'glamour' ? `${glamourActionBtn}${statActionBtn}` : `${statActionBtn}${glamourActionBtn}`}
+                <div class="s2-insp-sub-actions">
+                  <button type="button" class="s2-insp-btn forge" data-goforge="${selId}" title="[🔨 Blacksmith +10]">
+                    🔨 ${selRefine >= 10 ? 'MAX' : `+${selRefine + 1}`}${canForgeSel ? '<span class="rpg-red-dot"></span>' : ''}
+                  </button>
+                  <button type="button" class="s2-insp-btn gift" data-gift-gear="${selId}" title="${selDupes >= 1 ? `Gift 1x Dupe Copy of ${selName} via Royal Owl (Keeps yours safe!)` : `Gift ${selName} (+${selRefine} preserved) via Royal Owl`}">
+                    🦉 Gift
+                  </button>
+                </div>
+              </div>
+            </div>
+            ${selSk ? `
+              <div class="s2-insp-skill-strip">
+                <div class="s2-insp-skill-head">
+                  <span>${escapeHtml(selSk.icon || '⚡')} <b>${escapeHtml(selSk.name)}</b></span>
+                  ${selTurf ? `<span class="s2-insp-turf-pill">🏠 ${escapeHtml(selTurf)} +15%</span>` : ''}
+                </div>
+                <div class="s2-insp-skill-desc">${formatGoldIcons(escapeHtml(selSk.desc || ''))}</div>
+              </div>
+            ` : (roleGuide ? `
+              <div class="s2-insp-skill-strip is-gear-role">
+                <span>${roleGuide.icon} <b>${escapeHtml(roleGuide.badge)}:</b> Boosts Power, Swiftness, Fortune &amp; Luck in all 3 modes.</span>
+              </div>
+            ` : '')}
+          </div>
+        `;
+      }
 
       const itemsGridHtml = ownedEntries.length ? ownedEntries.map(([id, itemData]) => {
         const def = itemDef(id);
         const name = def?.name || id;
-        const rarity = def?.rarity || 1;
+        const isSuper = def?.rarity === 'super_mythic' || SUPER_MYTHIC_POOL?.includes?.(id);
+        const rarityNum = isSuper ? 3 : (Number(def?.rarity) || 1);
         const refine = itemData.refine | 0;
         const dupes = itemData.dupes | 0;
-        const isCurEquipped = equipped[curSlot]?.id === id;
+        const isCurEquipped = eqSlotId === id;
+        const isCurGlamour = curGlamourId === id || (isCurEquipped && !curGlamourId && curSlot !== 'dice');
+        const isCustomGlamour = curGlamourId === id && curGlamourId !== eqSlotId;
+        const isSelected = selId === id;
         const cpVal = Math.round(slotCP(curSlot, id, refine));
-        const outfitSk = curSlot === 'outfit' ? skillFor(id, rarity) : null;
-        const skillPillHtml = outfitSk ? `
-          <div class="rpg-closet-skill-pill">
-            ${escapeHtml(outfitSk.icon || '⚡')} <b>${escapeHtml(outfitSk.name)}:</b> ${escapeHtml(outfitSk.desc || '')}
-          </div>
-        ` : '';
 
         return `
-          <div class="rpg-item-card s2-closet-card rpg-rarity-${rarity} ${isCurEquipped ? 'equipped' : ''}" data-equip="${id}">
-            ${renderIconThumb(id, { lineage, appearance: p.appearance, size: 58, refine, stars: rarity, badgeText: dupes > 0 ? `x${dupes}` : null })}
-            <div class="s2-closet-meta">
-              <div class="rpg-item-name">${escapeHtml(name)}</div>
-              <div class="s2-closet-sub">
-                <span class="rpg-stars">${'★'.repeat(rarity)}</span>
-                <span class="s2-cp-mini">+${cpVal} CP</span>
-              </div>
-              ${skillPillHtml}
-              <div class="s2-closet-actions">
-                ${isCurEquipped
-                  ? '<span class="rpg-equipped-badge">✓ EQUIPPED</span>'
-                  : '<button class="rpg-equip-btn">Equip</button>'}
-                <button class="rpg-goforge-btn" data-goforge="${id}" title="[🔨 Blacksmith +10]">🔨${forgeReady(p) ? '<span class="rpg-red-dot"></span>' : ''}</button>
-              </div>
+          <button type="button"
+                  class="rpg-item-card s2-closet-tile rpg-rarity-${isSuper ? SM_TIER : rarityNum} ${isCurEquipped ? 'equipped' : ''} ${isCustomGlamour ? 'is-glamour-tile' : ''} ${isSelected ? 'is-selected' : ''}"
+                  data-closet-item="${id}">
+            ${isCurEquipped ? '<span class="s2-tile-eq-tag s2-tile-pill-tag" title="Equipped for Stats">⚔️ STAT</span>' : ''}
+            ${isCustomGlamour ? '<span class="s2-tile-glamour-tag s2-tile-pill-tag" title="Active Glamour Look">👗 LOOK</span>' : (isCurGlamour ? '<span class="s2-tile-glamour-tag" title="Current Visual Look">👗</span>' : '')}
+            <div class="s2-tile-thumb-wrap">
+              ${renderIconThumb(id, { lineage, appearance: p.appearance, size: 50, refine, stars: isSuper ? SM_TIER : rarityNum, badgeText: dupes > 0 ? `x${dupes}` : null })}
             </div>
-          </div>
+            <div class="s2-tile-name">${escapeHtml(shortenGearName(name))}</div>
+            <div class="s2-tile-meta">
+              <span class="rpg-stars">${isSuper ? '✦' : '★'.repeat(rarityNum)}</span>
+              <span class="s2-cp-mini">+${cpVal}</span>
+            </div>
+          </button>
         `;
       }).join('') : `
         <div class="s2-empty-notice">
@@ -1676,45 +2597,50 @@ export class RpgUI {
         </div>
       `;
 
+      const stageHtml = renderPaperDollHeroStage(p, curSlot, this.petPreviewPose, this.wardrobeMode)
+        .replace('s2-gold-ribbon-banner', 's2-gold-ribbon-banner s2-title-ribbon');
+
+      const st = computePlayerStats(p);
+      const pts = {
+        fortune: Math.round(st.raw.fortune || 0),
+        swiftness: Math.round(st.raw.swiftness || 0),
+        power: Math.round(st.raw.power || 0),
+        luck: Math.round(st.raw.luck || 0),
+      };
+      const dashBuild = detectBuild(st.bonus);
+      const tierRoman = ['', 'I', 'II', 'III', 'IV'][dashBuild.tier] || '';
+      const showFullStats = Boolean(this.ultInfoExpanded || this.selectedStatInfo);
+
       return `
         ${tabsHtml}
-        <div class="s2-avatar-parchment-card">
-          ${renderPaperDollHeroStage(p, curSlot, this.petPreviewPose)}
-          ${renderCostumeSkillCard(equipped.outfit?.id)}
-          ${renderStatGrid(p)}
+        <div class="s2-avatar-parchment-card s2-wardrobe-unified-card">
+          ${stageHtml}
 
-          <div class="s2-wardrobe-candy-row">
-            <button type="button" class="s2-candy-btn s2-candy-pink" data-wtab="bag">
-              <span>🎁 Send Gift</span>
-            </button>
-            <button type="button" class="s2-candy-btn s2-candy-gold" data-wtab="hair">
-              <span>💇‍♀️ Hair Studio</span>
-            </button>
-            <button type="button" class="s2-candy-btn s2-candy-blue" data-toggle-closet-drawer="1">
-              <span>🗂️ ${this.closetDrawerOpen ? 'Hide Closet' : `Closet (${ownedEntries.length})`}</span>
-            </button>
-            <button type="button" class="s2-candy-btn s2-candy-amber" data-view="forge" title="[🔨 Blacksmith +10]">
-              <span>🔨 Forge +10</span>${forgeReady(p) ? '<span class="rpg-red-dot"></span>' : ''}
+          <div class="s2-compact-stats-bar" data-toggle-ult-info="1" title="Tap to expand full Stats, Ultimate &amp; Dash Build details">
+            <div class="s2-compact-stats-pills">
+              <span title="Fortune Points">🍀 <b>${pts.fortune}</b></span>
+              <span title="Swiftness Points">⚡ <b>${pts.swiftness}</b></span>
+              <span title="Power Points">🔥 <b>${pts.power}</b></span>
+              <span title="Luck Points">✨ <b>${pts.luck}</b></span>
+              <span class="s2-compact-build-pill">☁️ ${escapeHtml(dashBuild.name)}${tierRoman ? ` ${tierRoman}` : ''}</span>
+            </div>
+            <button type="button" class="s2-compact-stats-toggle" data-toggle-ult-info="1">
+              ${showFullStats ? 'Hide Stats ▴' : 'Stats &amp; ULT ▾'}
             </button>
           </div>
-        </div>
 
-        <div class="s2-closet-drawer ${this.closetDrawerOpen ? 'is-open' : ''}">
-          <div class="s2-drawer-backdrop" data-closet-close="1"></div>
-          <div class="rpg-card rpg-inventory-panel s2-sheet-card">
-            <div class="rpg-inventory-head">
-              <span class="rpg-card-title">👗 Closet: ${SLOT_LABELS[curSlot]} (${ownedEntries.length})</span>
-              <div class="s2-drawer-head-actions">
-                ${isUnequippable ? `
-                  <button class="rpg-unequip-btn btn-gold small" data-unequip="${curSlot}" style="width:auto;padding:4px 10px;margin:0;" ${equipped[curSlot]?.id ? '' : 'disabled'}>
-                    Unequip ${SLOT_LABELS[curSlot]}
-                  </button>
-                ` : ''}
-                <button type="button" class="s2-drawer-close-btn" data-closet-close="1" title="Close Closet Drawer">✕</button>
-              </div>
+          ${showFullStats ? `
+            <div class="s2-expanded-stats-drawer">
+              ${renderCostumeSkillCard(equipped.outfit?.id, null, true)}
+              ${renderStatGrid(p, this.selectedStatInfo)}
             </div>
+          ` : ''}
+
+          <div class="s2-inline-closet-panel">
             <div class="s2-slot-pills-bar">${slotPillsHtml}</div>
-            <div class="rpg-items-grid">
+            ${dualLoadoutBarHtml}
+            ${inspectorHtml}
+            <div class="rpg-items-grid s2-closet-grid-v2">
               ${itemsGridHtml}
             </div>
           </div>
@@ -1730,13 +2656,15 @@ export class RpgUI {
     }
 
     if (wtab === 'bag') {
+      const bagSub = this.selectedBagSub || 'vip';
       const bag = p.bag_items || {};
       const ticketKey = HAIR_TIERS.royal.price?.ticket || 'ticket_royal_hair';
-      const pinnedKeys = new Set([BOX1.TICKET, BOX2.TICKET, ticketKey, SHARD_OFFERS.vip_communicator?.bag].filter(Boolean));
+      const vipBagSet = new Set(['vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black']);
+      const chestBagSet = new Set(['random_dupe_box', 'dupe_box', 'mythic_selector_box']);
       const allKeys = [...new Set([...Object.keys(BAG_ITEM_CATALOG), ...Object.keys(bag)])];
       const entries = allKeys
         .map((k) => [k, bag[k] | 0])
-        .filter(([k, cnt]) => cnt > 0 || pinnedKeys.has(k));
+        .filter(([k, cnt]) => cnt > 0 && !vipBagSet.has(k));
 
       // VIP Cards (Mockup 08 & 25: 4 ornate calling card passes)
       const vip = p.vip || {};
@@ -1748,6 +2676,7 @@ export class RpgUI {
           desc: '24h Unlimited 1-on-1 Calls',
           price: 300,
           ownedCount: bag['vip_call_day_pass'] | 0,
+          permOwned: false,
           activeBadge: vip.call_until > Date.now() ? `Active (${Math.max(1, Math.round((vip.call_until - Date.now()) / 3600000))}h)` : null,
           colorClass: 's2-vip-blue',
           icon: '/assets/ui/item_ticket_standard.png',
@@ -1759,6 +2688,7 @@ export class RpgUI {
           desc: 'Permanent Free Calls',
           price: 2500,
           ownedCount: bag['vip_communicator'] | 0,
+          permOwned: Boolean(vip.communicator),
           activeBadge: vip.communicator ? 'Owned ✅' : null,
           colorClass: 's2-vip-purple',
           icon: '/assets/ui/item_vip_communicator.png',
@@ -1770,6 +2700,7 @@ export class RpgUI {
           desc: 'Unlocks Both Partners Forever!',
           price: 4500,
           ownedCount: bag['vip_telelink_box'] | 0,
+          permOwned: false,
           activeBadge: (vip.telelinks || []).length ? `Active (${vip.telelinks.length})` : null,
           colorClass: 's2-vip-gold',
           icon: '/assets/ui/vip_card_telelink.png',
@@ -1781,6 +2712,7 @@ export class RpgUI {
           desc: 'All Friends Free + +30💎/15m',
           price: 9900,
           ownedCount: bag['vip_black'] | 0,
+          permOwned: Boolean(vip.black),
           activeBadge: vip.black ? 'Black VIP 👑' : null,
           colorClass: 's2-vip-crimson',
           icon: '/assets/ui/vip_card_black_sovereign.png',
@@ -1794,6 +2726,7 @@ export class RpgUI {
               <div class="s2-vip-card-tag">${escapeHtml(vc.tag)}</div>
               <div class="s2-vip-card-art">
                 <img src="${vc.icon}" alt="${escapeHtml(vc.title)}" />
+                ${vc.ownedCount > 0 ? `<span class="s2-vip-bag-pill" title="In your Bag">🎒 x${vc.ownedCount}</span>` : ''}
               </div>
               <div class="s2-vip-card-title">${escapeHtml(vc.title)}</div>
               <div class="s2-vip-card-desc">${escapeHtml(vc.desc)}</div>
@@ -1802,9 +2735,9 @@ export class RpgUI {
                 <span>${vc.price.toLocaleString()}</span>
               </div>
               <div class="s2-vip-card-actions">
-                <button type="button" class="btn-gold small" data-act="vip-buy" data-vip-card="${vc.key}">🛒 Buy</button>
+                <button type="button" class="btn-gold small" data-act="vip-buy" data-vip-card="${vc.key}" ${vc.permOwned ? 'disabled' : ''}>${vc.permOwned ? '✅ Owned' : '🛒 Buy'}</button>
                 <button type="button" class="btn-gold small outline" data-act="vip-gift" data-vip-card="${vc.key}">🎁 Gift</button>
-                ${vc.ownedCount > 0 ? `<button type="button" class="btn-gold small active" data-act="vip-use" data-vip-card="${vc.key}">✨ Use (x${vc.ownedCount})</button>` : ''}
+                ${vc.ownedCount > 0 ? `<button type="button" class="btn-gold small active s2-vip-use-btn" data-act="vip-use" data-vip-card="${vc.key}">✨ Activate (x${vc.ownedCount})</button>` : ''}
               </div>
               ${vc.activeBadge ? `<span class="s2-vip-badge active">${vc.activeBadge}</span>` : ''}
             </div>
@@ -1812,8 +2745,8 @@ export class RpgUI {
         </div>
       `;
 
-      // Bag items shelf (Mockup 08: compact recessed shelf of square painted item tiles)
-      const bagItemsHtml = entries.map(([key, count]) => {
+      // Bag items shelf (only owned non-VIP items, zero 0-count clutter)
+      const bagItemsHtml = entries.length ? entries.map(([key, count]) => {
         const meta = BAG_ITEM_CATALOG[key] || {
           name: key.replace(/_/g, ' '),
           desc: 'Special Royal Bag Item',
@@ -1821,20 +2754,40 @@ export class RpgUI {
           rarity: 2,
         };
         const isHairTicket = key === ticketKey;
+        const isChest = chestBagSet.has(key);
+        const isScroll = key === 'scroll_forge_boost' || key === 'protection_scroll';
+        const actionBtns = [];
+
+        if (isChest) {
+          actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn" data-act="bag-open" data-bag-key="${key}" title="Unbox Chest">📦 Open</button>`);
+        } else if (isHairTicket) {
+          actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn" data-wtab="hair" title="Open Fluffé's Hair Studio">💇 Studio</button>`);
+        } else if (key === 'ticket_standard') {
+          actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn" data-bag-goto="gacha-box1" title="Summon in Box 1 Gacha">🎰 Summon</button>`);
+        } else if (key === 'ticket_gold') {
+          actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn" data-bag-goto="gacha-box2" title="Summon in Box 2 Architect Gacha">🏰 Summon</button>`);
+        } else if (isScroll) {
+          actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn" data-view="forge" title="Open Blacksmith Forge">🔨 Forge</button>`);
+        }
+
+        actionBtns.push(`<button type="button" class="rpg-equip-btn rpg-bag-studio-btn rpg-bag-gift-btn" data-act="bag-gift" data-bag-key="${key}" title="Attach to Owl Gift Slot 2">🎁 Gift</button>`);
+
         return `
           <div class="rpg-bag-item rpg-rarity-${meta.rarity || 2}" title="${escapeHtml(meta.desc || meta.name)}">
             <div class="rpg-bag-thumb-wrap">
               ${renderIconThumb(key, { lineage, size: 46, stars: meta.rarity || 2 })}
-              <div class="rpg-bag-count">${count > 0 ? `x${count}` : '0'}</div>
+              <div class="rpg-bag-count">x${count}</div>
             </div>
             <div class="rpg-bag-meta">
               <div class="rpg-bag-title">${escapeHtml(meta.name)}</div>
               <div class="rpg-bag-desc">${escapeHtml(meta.desc)}</div>
             </div>
-            ${isHairTicket ? `<button class="rpg-equip-btn rpg-bag-studio-btn" data-wtab="hair" title="Open Fluffé's Hair Studio">💇 Studio</button>` : ''}
+            <div class="rpg-bag-actions">${actionBtns.join('')}</div>
           </div>
         `;
-      }).join('');
+      }).join('') : `
+        <div class="s2-bag-empty">No extra tickets or scrolls right now — earn more from Daily Passport or Gacha! ✨</div>
+      `;
 
       // Daily Passport Card + 7-Stamp Starlight Track (Mockup 08 & 25)
       const pass = p.passport || {};
@@ -1842,6 +2795,11 @@ export class RpgUI {
       const passClaimed = pass.claimed || {};
       const curStamps = pass.stamps || 0;
       const allQuestsDone = !!(passClaimed.play && passClaimed.harvest && passClaimed.pet);
+      const readyQuestsCount =
+        (!passClaimed.play && (passProg.play || 0) >= 1 ? 1 : 0) +
+        (!passClaimed.harvest && (passProg.harvest || 0) >= 1 ? 1 : 0) +
+        (!passClaimed.pet && (passProg.pet || 0) >= 3 ? 1 : 0) +
+        (!passClaimed.bonus && allQuestsDone ? 1 : 0);
 
       const stampSlotsHtml = [1, 2, 3, 4, 5, 6, 7].map((dayIdx) => {
         const filled = curStamps >= dayIdx;
@@ -1859,7 +2817,7 @@ export class RpgUI {
           <div class="rpg-card-title">📜 Daily Starlight Passport &amp; Couple Streak</div>
           <div class="passport-summary-bar">
             <span class="passport-streak">💖 Couple Streak: <b>${p.couple_streak || 0} Days</b> <small>(+15% Yield)</small></span>
-            <span class="passport-stamps">📜 Stamps: <b>${curStamps}/7</b> <small>(7/7 = Free Summon Ticket 🎟️!)</small></span>
+            <span class="passport-stamps">📜 Stamps: <b>${curStamps}/7</b> <small>(7/7 = Free Ticket 🎟️)</small></span>
           </div>
           <div class="passport-stamp-track" aria-label="7-Day Starlight Stamp Track">
             <div class="passport-stamp-row">
@@ -2002,7 +2960,11 @@ export class RpgUI {
           badgeKind: 'gold',
         },
       ];
-      const giftableBagKeys = ['streak_freeze', 'vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black'];
+      const giftableBagKeys = [
+        'vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black',
+        'streak_freeze', 'ticket_standard', 'ticket_gold', 'ticket_royal_hair',
+        'scroll_forge_boost', 'protection_scroll', 'random_dupe_box', 'dupe_box', 'mythic_selector_box',
+      ];
       for (const k of giftableBagKeys) {
         if ((bag[k] | 0) > 0) {
           const meta = BAG_ITEM_CATALOG[k] || { name: k.replace(/_/g, ' '), url: '/assets/ui/vip_card_telelink.png' };
@@ -2010,16 +2972,22 @@ export class RpgUI {
             value: `bag:${k}`,
             label: `${meta.name} (x${bag[k]})`,
             iconUrl: meta.url || '/assets/ui/vip_card_telelink.png',
-            badgeText: '💎 Instant VIP & Bag Gift Parcel!',
+            badgeText: '💎 Ready to Gift from Your Bag!',
             badgeKind: 'green',
           });
         }
       }
 
       if (this.owlSlot1Val === undefined) {
-        this.owlSlot1Val = slot1Catalog[0]?.value || '';
+        this.owlSlot1Val = '';
       }
-      if (this.owlSlot2Val === undefined) {
+      if (this.owlSlot1Val && !slot1Catalog.some((x) => x.value === this.owlSlot1Val)) {
+        this.owlSlot1Val = '';
+      }
+      if (
+        this.owlSlot2Val === undefined ||
+        (this.owlSlot2Val.startsWith('bag:') && !slot2Catalog.some((x) => x.value === this.owlSlot2Val))
+      ) {
         const preferredBag = slot2Catalog.find((x) => x.value.startsWith('bag:'));
         this.owlSlot2Val = preferredBag ? preferredBag.value : 'berries:200';
       }
@@ -2030,8 +2998,8 @@ export class RpgUI {
         slot: null,
         iconUrl: '/assets/ui/item_gift_box.png',
         filter: 'none',
-        badgeText: '✓ +Refine Upgrade Level Preserved!',
-        badgeKind: 'green',
+        badgeText: 'Slot 1: Optional Gear Dupe or Village Decor',
+        badgeKind: 'gold',
       };
       const activeSlot1ThumbHtml = (activeSlot1.slot === 'outfit' && activeSlot1.itemId)
         ? renderOutfitThumbLayers(activeSlot1.itemId, { lineage, appearance: p.appearance })
@@ -2040,7 +3008,7 @@ export class RpgUI {
       const activeSlot2 = slot2Catalog.find((x) => x.value === this.owlSlot2Val) || {
         value: '',
         iconUrl: '/assets/ui/icon_berry.png',
-        badgeText: '🍓 Attach Star-Berries or VIP Pass!',
+        badgeText: 'Slot 2: Optional VIP Pass, Ticket or Berries',
         badgeKind: 'gold',
       };
 
@@ -2048,33 +3016,37 @@ export class RpgUI {
       const partnerId = p.partner_id;
       const partnerName = p.partner_name || (partnerId ? `Partner (${partnerId})` : null);
       const friendsList = p.friends || [];
-      const selectedRecipient = this.giftToRecipient || partnerId || friendsList[0] || '';
+      const validRecipients = [partnerId, ...friendsList].filter(Boolean);
+      const selectedRecipient = (this.giftToRecipient && validRecipients.includes(this.giftToRecipient))
+        ? this.giftToRecipient
+        : (partnerId || friendsList[0] || '');
       const isRecipientPartner = Boolean(partnerId && selectedRecipient === partnerId);
       const defaultPostage = isRecipientPartner ? 25 : 50;
       const curRibbon = this.selectedGiftRibbon || 'pink';
       const curNoteText = this.owlNoteText !== undefined ? this.owlNoteText : 'Happy Anniversary my love! ✨';
+      const todayUtc = new Date().toISOString().slice(0, 10);
+      const sentToday = p.owl_sent?.day === todayUtc ? (p.owl_sent?.count | 0) : 0;
 
-      // Upgraded Owl Gift Wrapper (Mockup 08 1:1: Carved Wood-Parchment Slot Bars, Custom Pill Select, Note Box & Centered Gold Button)
+      // Streamlined Mobile-Optimized 2-Slot Owl Gift Wrapper
       const owlWrapperHtml = `
-        <div class="rpg-card s2-owl-gift-card">
+        <div class="rpg-card s2-owl-gift-card" id="owl-gift-card">
           <img class="s2-owl-mascot" src="/assets/ui/npc_royal_owl.png" alt="Royal Messenger Owl" />
           <div class="s2-owl-head">
             <img src="/assets/ui/item_gift_box.png" alt="" class="s2-owl-gift-ico" />
-            <span>WRAP &amp; SEND GIFT TO PARTNER / FRIEND</span>
+            <span>WRAP &amp; SEND GIFT (${sentToday}/3 Today)</span>
           </div>
           <div class="s2-owl-sub">
             <label for="owl-to" class="s2-owl-to-lbl">To:</label>
             <div class="s2-owl-to-pill">
               <select id="owl-to" class="rpg-select s2-owl-to-select">
-                ${partnerId ? `<option value="${partnerId}" ${selectedRecipient === partnerId ? 'selected' : ''}>💕 ${escapeHtml(partnerName)} (Bound Partner) • 💌 Free Love-Note!</option>` : ''}
-                ${friendsList.map((f) => `<option value="${f}" ${selectedRecipient === f ? 'selected' : ''}>👤 Friend: ${escapeHtml(f)}</option>`).join('')}
+                ${partnerId ? `<option value="${partnerId}" ${selectedRecipient === partnerId ? 'selected' : ''}>💕 ${escapeHtml(partnerName)} (Partner • 50% Off Stamp)</option>` : ''}
+                ${friendsList.filter((f) => f !== partnerId).map((f) => `<option value="${f}" ${selectedRecipient === f ? 'selected' : ''}>👤 Friend: ${escapeHtml(f)}</option>`).join('')}
                 ${!partnerId && !friendsList.length ? '<option value="" disabled selected>No partner or friends available</option>' : ''}
               </select>
               <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
             </div>
           </div>
 
-          <div class="s2-owl-slots-heading">2 Gift Attachment Slots:</div>
           <div class="s2-owl-slots">
             <div class="s2-owl-slot-bar">
               <div class="s2-owl-slot-num">1</div>
@@ -2082,15 +3054,17 @@ export class RpgUI {
                 ${activeSlot1ThumbHtml}
               </div>
               <div class="s2-owl-slot-body">
-                <div class="s2-owl-slot-select-wrap">
-                  <select id="owl-slot1" class="rpg-select s2-owl-slot-select" aria-label="Slot 1 (Gear or Decor)">
-                    <option value="" ${!activeSlot1.value ? 'selected' : ''}>— Empty Slot 1 (Select Unequipped Gear or Decor) —</option>
-                    ${slot1Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot1.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
-                  </select>
-                  <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                <div class="s2-owl-slot-select-row">
+                  <div class="s2-owl-slot-select-wrap">
+                    <select id="owl-slot1" class="rpg-select s2-owl-slot-select" aria-label="Slot 1 (Gear or Decor)">
+                      <option value="" ${!activeSlot1.value ? 'selected' : ''}>— Optional: Gear Dupe or Decor —</option>
+                      ${slot1Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot1.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
+                    </select>
+                    <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                  </div>
+                  ${activeSlot1.value ? '<button type="button" class="s2-owl-slot-clear" data-clear-owl-slot="1" title="Clear Slot 1">✕</button>' : ''}
                 </div>
                 <div class="s2-owl-slot-subrow">
-                  <span class="s2-owl-slot-tag">[Slot 1: Gear / Decor]</span>
                   <span class="s2-owl-slot-badge is-${activeSlot1.badgeKind}">${escapeHtml(activeSlot1.badgeText)}</span>
                 </div>
               </div>
@@ -2102,15 +3076,17 @@ export class RpgUI {
                 <img src="${activeSlot2.iconUrl}" alt="" />
               </div>
               <div class="s2-owl-slot-body">
-                <div class="s2-owl-slot-select-wrap">
-                  <select id="owl-slot2" class="rpg-select s2-owl-slot-select" aria-label="Slot 2 (Bag Item or Star-Berries)">
-                    <option value="" ${!activeSlot2.value ? 'selected' : ''}>— Empty Slot 2 (Select Star-Berries or VIP Item) —</option>
-                    ${slot2Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot2.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
-                  </select>
-                  <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                <div class="s2-owl-slot-select-row">
+                  <div class="s2-owl-slot-select-wrap">
+                    <select id="owl-slot2" class="rpg-select s2-owl-slot-select" aria-label="Slot 2 (Bag Item or Star-Berries)">
+                      <option value="" ${!activeSlot2.value ? 'selected' : ''}>— Optional: VIP Pass, Ticket or Berries —</option>
+                      ${slot2Catalog.map((opt) => `<option value="${opt.value}" ${activeSlot2.value === opt.value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
+                    </select>
+                    <span class="s2-owl-select-caret" aria-hidden="true">▾</span>
+                  </div>
+                  ${activeSlot2.value ? '<button type="button" class="s2-owl-slot-clear" data-clear-owl-slot="2" title="Clear Slot 2">✕</button>' : ''}
                 </div>
                 <div class="s2-owl-slot-subrow">
-                  <span class="s2-owl-slot-tag">[Slot 2: Bag / Berries ≤200]</span>
                   <span class="s2-owl-slot-badge is-${activeSlot2.badgeKind}">${escapeHtml(activeSlot2.badgeText)}</span>
                 </div>
               </div>
@@ -2126,21 +3102,21 @@ export class RpgUI {
               <div class="s2-owl-ribbon-group">
                 <span class="s2-owl-meta-lbl">Ribbon:</span>
                 <div class="s2-owl-ribbon-pills">
-                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'pink' ? 'active' : ''}" data-ribbon="pink">🎀 Sakura Pink</button>
-                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'gold' ? 'active' : ''}" data-ribbon="gold">👑 Royal Gold</button>
-                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'sky' ? 'active' : ''}" data-ribbon="sky">🌌 Sky Blue</button>
-                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'mint' ? 'active' : ''}" data-ribbon="mint">🍃 Mint Green</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'pink' ? 'active' : ''}" data-ribbon="pink">🎀 Sakura</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'gold' ? 'active' : ''}" data-ribbon="gold">👑 Gold</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'sky' ? 'active' : ''}" data-ribbon="sky">🌌 Sky</button>
+                  <button type="button" class="s2-ribbon-pill ${curRibbon === 'mint' ? 'active' : ''}" data-ribbon="mint">🍃 Mint</button>
                 </div>
               </div>
               <div class="s2-owl-postage-preview">
-                <span class="s2-owl-stamp-txt">🏷️ 1x Owl Stamp (<img src="/assets/ui/icon_berry.png" alt="🍓" class="s2-inline-berry-ico" /> <b id="owl-postage-amount">${defaultPostage}</b> Berries — <small id="owl-postage-hint">${isRecipientPartner ? '50% Couple Discount!' : 'Standard Owl Delivery'}</small>)</span>
+                <span class="s2-owl-stamp-txt">🏷️ Stamp: <img src="/assets/ui/icon_berry.png" alt="🍓" class="s2-inline-berry-ico" /> <b id="owl-postage-amount">${defaultPostage}</b> Berries (<small id="owl-postage-hint">${isRecipientPartner ? '50% Couple Discount!' : 'Standard Owl Delivery'}</small>)</span>
               </div>
             </div>
           </div>
 
           <div class="s2-owl-footer-row">
-            <button type="button" class="btn-gold s2-owl-dispatch-btn" data-act="owl-send">
-              📮 Dispatch Royal Owl Gift Now!
+            <button type="button" class="btn-gold s2-owl-dispatch-btn" data-act="owl-send" ${sentToday >= 3 ? 'disabled' : ''}>
+              ${sentToday >= 3 ? '📮 Daily Owl Limit Reached (3/3 Sent Today)' : '📮 Dispatch Royal Owl Gift Now!'}
             </button>
           </div>
         </div>
@@ -2148,11 +3124,12 @@ export class RpgUI {
 
       // Mailbox / Owl Inbox (Mockup 08 & 25: cream-parchment letter cards with UNBOX & CLAIM)
       const mailbox = p.mailbox || [];
+      const unclaimedMailCount = mailbox.filter((m) => !m.claimed).length;
       const owlInboxHtml = `
-        <div class="rpg-card s2-owl-inbox-card" id="owl-inbox">
+        <div class="rpg-card s2-owl-inbox-card ${unclaimedMailCount > 0 ? 'has-unclaimed' : ''}" id="owl-inbox">
           <div class="rpg-card-title s2-inbox-card-title">
             <img src="/assets/ui/th_owl_postbox.png" alt="" class="s2-inbox-title-ico" />
-            <span>Royal Owl Inbox (${mailbox.length})</span>
+            <span>Royal Owl Inbox (${unclaimedMailCount > 0 ? `${unclaimedMailCount} Unclaimed!` : mailbox.length})</span>
           </div>
           <div class="owl-inbox-list">
             ${mailbox.length ? mailbox.map((m) => `
@@ -2168,7 +3145,7 @@ export class RpgUI {
                   </div>
                   ${m.note ? `<div class="mail-note">“${escapeHtml(m.note)}”</div>` : ''}
                   <div class="mail-items">
-                    ${(m.items || []).map((it) => `<span class="mail-item-chip">${it.kind === 'berries' ? `🍓 ${it.amount} Berries` : (it.kind === 'diamonds' ? `💎 ${it.amount} Diamonds` : (it.kind === 'gear' ? `⚔️ ${escapeHtml(itemDef(it.itemId)?.name || it.itemId)}${it.refine ? ` +${it.refine}` : ''}` : (it.kind === 'decor' ? `🏡 ${escapeHtml(DECOR[it.decId]?.name || it.decId)}` : `📦 ${escapeHtml(it.key || it.kind)}`)))}</span>`).join(' ')}
+                    ${(m.items || []).map((it) => `<span class="mail-item-chip">${it.kind === 'berries' ? `🍓 ${it.amount} Berries` : (it.kind === 'diamonds' ? `💎 ${it.amount} Diamonds` : (it.kind === 'gear' ? `⚔️ ${escapeHtml(itemDef(it.itemId)?.name || it.itemId)}${it.refine ? ` +${it.refine}` : ''}` : (it.kind === 'decor' ? `🏡 ${escapeHtml(DECOR[it.decId]?.name || it.decId)}` : `📦 ${escapeHtml(BAG_ITEM_CATALOG[it.key]?.name || it.key || it.kind)}`)))}</span>`).join(' ')}
                   </div>
                 </div>
                 <div class="mail-action">
@@ -2251,28 +3228,422 @@ export class RpgUI {
       return `
         ${tabsHtml}
         <div class="s2-avatar-parchment-card s2-bag-parchment-card">
-          <div class="s2-gold-ribbon-banner">
-            <span>🎒 ROYAL BAG, TICKETS &amp; PARTNER GIFTING</span>
-            <button type="button" class="btn-gold small founder-banner-btn" data-act="open-founder">🏛️ Founder Unbox</button>
+          <div class="s2-bag-subnav" role="tablist" aria-label="Bag &amp; VIP Sub-Navigation">
+            <button type="button" class="s2-bag-sub-btn ${bagSub === 'vip' ? 'active' : ''}" data-bag-sub="vip">
+              <span>🎒 Bag</span>
+              ${entries.length > 0 ? `<span class="s2-subnav-count">${entries.length}</span>` : ''}
+            </button>
+            <button type="button" class="s2-bag-sub-btn ${bagSub === 'gift' ? 'active' : ''}" data-bag-sub="gift">
+              <span>🦉 Gift</span>
+              ${unclaimedMailCount > 0 ? `<span class="s2-subnav-badge is-alert">${unclaimedMailCount}</span>` : `<span class="s2-subnav-count">${sentToday}/3</span>`}
+            </button>
+            <button type="button" class="s2-bag-sub-btn ${bagSub === 'passport' ? 'active' : ''}" data-bag-sub="passport">
+              <span>📜 Pass</span>
+              ${readyQuestsCount > 0 ? `<span class="s2-subnav-badge is-alert">${readyQuestsCount}</span>` : `<span class="s2-subnav-count">${curStamps}/7</span>`}
+            </button>
+            <button type="button" class="s2-bag-sub-btn is-founder" data-act="open-founder" title="Founder Heritage Unbox">
+              <span>🏛️${p.founder_claimed ? '✓' : ' Founder'}</span>
+            </button>
           </div>
-          ${vipCardsHtml}
 
-          <div class="rpg-card s2-bag-grid-card">
-            <div class="rpg-card-title">🗂️ Bag Inventory, Scrolls &amp; Tokens</div>
-            <div class="rpg-bag-list">
-              ${bagItemsHtml}
+          <div class="s2-bag-sec ${bagSub === 'vip' ? 'is-active' : ''}" data-bag-sec="vip">
+            ${vipCardsHtml}
+            <div class="rpg-card s2-bag-grid-card">
+              <div class="rpg-card-title">🗂️ Bag Inventory, Scrolls &amp; Tokens (${entries.length})</div>
+              <div class="rpg-bag-list">
+                ${bagItemsHtml}
+              </div>
             </div>
           </div>
 
-          ${passportCardHtml}
-          ${owlWrapperHtml}
-          ${owlInboxHtml}
+          <div class="s2-bag-sec ${bagSub === 'gift' ? 'is-active' : ''}" data-bag-sec="gift">
+            ${unclaimedMailCount > 0 ? `${owlInboxHtml}${owlWrapperHtml}` : `${owlWrapperHtml}${owlInboxHtml}`}
+          </div>
+
+          <div class="s2-bag-sec ${bagSub === 'passport' ? 'is-active' : ''}" data-bag-sec="passport">
+            ${passportCardHtml}
+          </div>
+
           ${founderModalHtml}
         </div>
       `;
     }
 
     return tabsHtml;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // STARLIGHT AURA CHARMS RELIQUARY & CHARM BAG (+0 -> +5 DUPLICATE CONSUME & STAT INFUSION)
+  // ---------------------------------------------------------------------------------------------
+  renderCharmsReliquary(p, tabsHtml) {
+    const lineage = p.lineage === 'dxb' ? 'dxb' : 'bkk';
+    const eq = p.equipped || {};
+    const eqCharm = eq.charm || null;
+    const eqCharmId = typeof eqCharm === 'string' ? eqCharm : (eqCharm?.id || null);
+    const eqCharmUid = typeof eqCharm === 'object' ? (eqCharm?.uid || null) : null;
+    const ownedList = (Array.isArray(p.charms) ? p.charms : []).filter((c) => c && c.id && CHARMS[c.id]);
+
+    // Group all owned Charm rolls by charmId so players can inspect duplicates & fuse +1..+5
+    const copiesById = new Map();
+    const ownedById = new Map();
+    let totalDupes = 0;
+    for (const c of ownedList) {
+      if (!copiesById.has(c.id)) copiesById.set(c.id, []);
+      copiesById.get(c.id).push(c);
+    }
+    for (const [cid, arr] of copiesById.entries()) {
+      arr.sort((a, b) => {
+        if (a.uid && a.uid === eqCharmUid) return -1;
+        if (b.uid && b.uid === eqCharmUid) return 1;
+        const pDiff = getCharmPlus(b) - getCharmPlus(a);
+        if (pDiff !== 0) return pDiff;
+        const gDiff = (GRADE_RANK[b.grade] || 0) - (GRADE_RANK[a.grade] || 0);
+        if (gDiff !== 0) return gDiff;
+        return getCharmStatSum(b) - getCharmStatSum(a);
+      });
+      ownedById.set(cid, arr[0]);
+      if (arr.length > 1) totalDupes += arr.length - 1;
+    }
+
+    const tierFilter = this.selectedCharmTier || 'all';
+    const allCharms = Object.values(CHARMS).sort((a, b) => {
+      const ownA = ownedById.has(a.id) ? 1 : 0;
+      const ownB = ownedById.has(b.id) ? 1 : 0;
+      if (ownA !== ownB) return ownB - ownA;
+      const dupesA = (copiesById.get(a.id)?.length || 0) > 1 ? 1 : 0;
+      const dupesB = (copiesById.get(b.id)?.length || 0) > 1 ? 1 : 0;
+      if (dupesA !== dupesB) return dupesB - dupesA;
+      if (b.tier !== a.tier) return b.tier - a.tier;
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    const filteredCharms = tierFilter === 'all'
+      ? allCharms
+      : tierFilter === 'bag'
+        ? allCharms.filter((c) => ownedById.has(c.id))
+        : allCharms.filter((c) => String(c.tier) === String(tierFilter));
+
+    if (!this.charmPreviewId && !eqCharmId && filteredCharms.length > 0) {
+      this.charmPreviewId = filteredCharms[0].id;
+    }
+
+    const previewId = this.charmPreviewId || null;
+    const activeStageCharmId = previewId || eqCharmId;
+    const activeStageCharmDef = activeStageCharmId ? CHARMS[activeStageCharmId] : null;
+    const stageState = getPaperDollStageState();
+
+    const activeTier = activeStageCharmDef?.tier || 0;
+    const layerBadges = activeTier === 4
+      ? ['👑 Sovereign Spirit + 2★ Moons', '☄️×2 Braided Comet Tail', '🔄×2 Double Ground Seals', '👣 Footprints']
+      : activeTier === 3
+        ? ['🌸 Radiant Spirit Wisp', '☄️×1 Silk Comet Ribbon', '🔄 Large Ground Seal']
+        : activeTier === 2
+          ? ['💎 Whisper Spirit Wisp', '✨ Sparkle-Dot Wake', '🔄 Compact Ground Seal']
+          : activeTier === 1
+            ? ['🎀 Petite Knee Wisp', '👣 Footstep Blooms']
+            : [];
+
+    const renderPlusPips = (plusVal) => {
+      const pVal = Math.max(0, Math.min(CHARM_MAX_PLUS, Number(plusVal) || 0));
+      let out = '';
+      for (let i = 1; i <= CHARM_MAX_PLUS; i++) {
+        out += `<span style="color:${i <= pVal ? '#ffd859' : 'rgba(255,255,255,0.22)'};font-size:10px;">◆</span>`;
+      }
+      return out;
+    };
+
+    const formatCharmStatsRow = (effStats, rawStats, plusVal, gradeDef) => {
+      if (!effStats) return '';
+      const parts = [];
+      const meta = [
+        { k: 'fortune', ico: '💰', lbl: 'FOR' },
+        { k: 'swiftness', ico: '⚡', lbl: 'SWF' },
+        { k: 'power', ico: '⚔️', lbl: 'PWR' },
+        { k: 'luck', ico: '🍀', lbl: 'LCK' },
+      ];
+      for (const m of meta) {
+        const v = Number(effStats[m.k]) || 0;
+        if (v > 0) {
+          const baseV = Number(rawStats?.[m.k]) || v;
+          const bonusV = v - baseV;
+          parts.push(
+            `<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(0,0,0,0.35);padding:1px 6px;border-radius:6px;border:1px solid rgba(255,216,107,0.22);">` +
+              `${m.ico} +${v}` +
+              `${plusVal > 0 && bonusV > 0 ? `<span style="color:#86efac;font-size:9.5px;">(+${bonusV})</span>` : ''}` +
+            `</span>`
+          );
+        }
+      }
+      return `
+        <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px;">
+          ${parts.join('')}
+          <span style="font-size:10px;font-weight:900;color:${gradeDef.color};margin-left:2px;">
+            (${gradeDef.label}${plusVal > 0 ? ` • +${plusVal * 15}%` : ''})
+          </span>
+        </div>
+      `;
+    };
+
+    // Inspect & +1..+5 Duplicate Fusion Drawer for the selected Charm (or auto-focused in Charm Bag mode)
+    const activeInspectId = this.charmInspectId && copiesById.has(this.charmInspectId)
+      ? this.charmInspectId
+      : (tierFilter === 'bag' && filteredCharms[0] && copiesById.has(filteredCharms[0].id) ? filteredCharms[0].id : null);
+
+    let inspectDrawerHtml = '';
+    if (activeInspectId && CHARMS[activeInspectId]) {
+      const iDef = CHARMS[activeInspectId];
+      const copies = copiesById.get(activeInspectId) || [];
+      const baseCharm = copies.find((c) => c.uid === this.charmBaseUid) || copies[0] || null;
+      if (baseCharm) {
+        const basePlus = getCharmPlus(baseCharm);
+        const baseGradeDef = CHARM_GRADES[baseCharm.grade || 'B'] || CHARM_GRADES.B;
+        const baseEff = computeCharmStats(baseCharm);
+        const isBaseEq = (eqCharmUid && eqCharmUid === baseCharm.uid) || (!eqCharmUid && eqCharmId === baseCharm.id);
+
+        const copyRowsHtml = copies.map((copy, idx) => {
+          const isBase = copy.uid === baseCharm.uid;
+          const isCopyEq = (eqCharmUid && eqCharmUid === copy.uid) || (!eqCharmUid && isBase && eqCharmId === copy.id);
+          const cPlus = getCharmPlus(copy);
+          const cGrade = CHARM_GRADES[copy.grade || 'B'] || CHARM_GRADES.B;
+          const cEff = computeCharmStats(copy);
+          const cSum = getCharmStatSum(copy);
+          const salv = computeCharmSalvageValue(copy);
+
+          // Calculate what happens if Base (`A`) consumes this Copy (`B`)
+          const gainPlus = 1 + cPlus;
+          const nextPlus = Math.min(CHARM_MAX_PLUS, basePlus + gainPlus);
+          const nextBaseEff = computeCharmStats({ ...baseCharm, plus: nextPlus, level: nextPlus + 1 });
+          const nextSum = CHARM_STAT_KEYS.reduce((a, k) => a + (Number(nextBaseEff[k]) || 0), 0);
+          const curBaseSum = getCharmStatSum(baseCharm);
+          const sumDelta = nextSum - curBaseSum;
+
+          const hasHigherGrade = (GRADE_RANK[copy.grade] || 0) > (GRADE_RANK[baseCharm.grade] || 0);
+          const higherStatKeys = CHARM_STAT_KEYS.filter((k) => (Number(copy.stats?.[k]) || 0) > (Number(baseCharm.stats?.[k]) || 0));
+          const canInfuse = hasHigherGrade || higherStatKeys.length > 0;
+          const canUpgradePlus = basePlus < CHARM_MAX_PLUS;
+
+          return `
+            <div style="padding:8px 10px;border-radius:11px;margin-top:6px;background:${isBase ? 'linear-gradient(180deg,rgba(88,52,20,0.92),rgba(44,26,12,0.95))' : 'rgba(22,14,10,0.82)'};border:${isBase ? '2px solid #ffd859' : '1px solid rgba(255,215,120,0.28)'};">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <span style="font-size:11px;font-weight:900;padding:1.5px 7px;border-radius:999px;background:${isBase ? '#ffd859' : 'rgba(255,255,255,0.12)'};color:${isBase ? '#2a1810' : '#fff4d8'};">
+                    ${isBase ? '👑 BASE (A)' : `🎒 Roll #${idx + 1} (B)`}
+                  </span>
+                  <span style="font-size:12px;font-weight:900;color:${cGrade.color};">
+                    ${copy.grade || 'B'}-Grade ${cPlus > 0 ? `+${cPlus}` : '+0'}
+                  </span>
+                  <span>${renderPlusPips(cPlus)}</span>
+                  <span style="font-size:10px;color:#cbd5e1;font-weight:800;">Score: ${cSum}</span>
+                  ${isCopyEq ? `<span style="font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:999px;background:#15803d;color:#fff;">✓ Equipped</span>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button type="button" class="rpg-equip-btn" data-charm-lock="${copy.uid}" title="Toggle Lock Protection" style="padding:3px 7px;font-size:10px;background:${copy.locked ? '#b45309' : 'rgba(255,255,255,0.1)'};color:#fff;">
+                    ${copy.locked ? '🔒 Locked' : '🔓 Lock'}
+                  </button>
+                  ${!isBase ? `
+                    <button type="button" class="rpg-equip-btn" data-charm-select-base="${copy.uid}" style="padding:3px 8px;font-size:10px;background:#0284c7;color:#fff;">
+                      🎯 Set as Base
+                    </button>
+                  ` : ''}
+                  ${!isCopyEq ? `
+                    <button type="button" class="rpg-equip-btn" data-charm-equip="${copy.id}" data-charm-uid="${copy.uid}" style="padding:3px 8px;font-size:10px;background:rgba(255,216,89,0.22);color:#ffd859;border:1px solid #ffd85966;">
+                      ✨ Equip Roll
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+
+              ${formatCharmStatsRow(cEff, copy.stats, cPlus, cGrade)}
+
+              ${!isBase ? `
+                <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-top:7px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.14);">
+                  <div style="font-size:10px;color:#fde68a;font-weight:800;">
+                    ${copy.locked
+                      ? '🔒 Unlock this roll to Consume or Salvage it.'
+                      : canUpgradePlus
+                        ? `🔥 Feed into Base: <b>+${basePlus} ➔ +${nextPlus}</b> (+${nextPlus * 15}% Stats • <b>+${sumDelta} Total Stat Gain</b>${cPlus > 0 ? ` • Full +${cPlus} Inherited!` : ''})`
+                        : canInfuse
+                          ? `🧬 Base is +5 MAX — Feed to infuse higher ${hasHigherGrade ? `${copy.grade}-Grade ` : ''}stat roll!`
+                          : `✅ Base is already +5 MAX with equal/higher stats — Salvage for Shards & Gold!`}
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-left:auto;">
+                    ${!copy.locked && canUpgradePlus ? `
+                      <button type="button" class="btn-gold small" data-charm-consume="${copy.uid}" data-charm-base="${baseCharm.uid}" data-charm-mode="upgrade" style="padding:4px 9px;font-size:10.5px;">
+                        🔥 Consume (+${gainPlus} ➔ +${nextPlus})
+                      </button>
+                    ` : ''}
+                    ${!copy.locked && canInfuse ? `
+                      <button type="button" class="rpg-equip-btn" data-charm-consume="${copy.uid}" data-charm-base="${baseCharm.uid}" data-charm-mode="infuse" style="padding:4px 9px;font-size:10.5px;background:linear-gradient(180deg,#9333ea,#6b21a8);color:#fff;border:1px solid #d8b4fe;">
+                        🧬 ${canUpgradePlus ? `Consume & Infuse (+${nextPlus})` : 'Infuse Better Roll'}
+                      </button>
+                    ` : ''}
+                    ${!copy.locked && !isCopyEq ? `
+                      <button type="button" class="rpg-equip-btn" data-charm-salvage="${copy.uid}" style="padding:4px 8px;font-size:10px;background:rgba(185,28,28,0.38);color:#fecaca;border:1px solid rgba(248,113,113,0.45);">
+                        ♻️ Salvage (+${salv.shards} 🌟, +${fmtNum(salv.gold)} <img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="Gold">)
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              ` : `
+                <div style="font-size:10px;color:#a7f3d0;font-weight:800;margin-top:5px;">
+                  ✨ Active Base Charm (${basePlus >= CHARM_MAX_PLUS ? '👑 +5 MAX AWAKENED (+75% Stats)!' : `+${basePlus} / +${CHARM_MAX_PLUS} • +${basePlus * 15}% Stat Growth — Consume a duplicate below to reach +${ Math.min(CHARM_MAX_PLUS, basePlus + 1) }!`})
+                </div>
+              `}
+            </div>
+          `;
+        }).join('');
+
+        inspectDrawerHtml = `
+          <div class="rpg-card" style="padding:10px 12px;margin-bottom:10px;border-radius:14px;border:2px solid #f59e0b;background:linear-gradient(180deg,rgba(48,28,16,0.97),rgba(24,14,10,0.98));box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px solid rgba(255,216,107,0.25);">
+              <div>
+                <div style="font-size:13px;font-weight:900;color:#ffe89e;">
+                  🎒 Charm Bag & +5 Awakening Altar — ${iDef.icon} ${escapeHtml(iDef.name)} (${copies.length} ${copies.length === 1 ? 'Roll' : 'Rolls'})
+                </div>
+                <div style="font-size:10.5px;color:#d6e8ff;">
+                  Compare your rolled Grades (B/A/S/SS) & Stats. Pick a <b>Base (A)</b> and consume duplicate <b>(B)</b> for <b>+1 ➔ +5 (+15% stats per step)</b>!
+                </div>
+              </div>
+              <button type="button" class="rpg-equip-btn" data-charm-inspect="" style="padding:3px 9px;font-size:10.5px;background:rgba(255,255,255,0.14);color:#fff;">
+                ✕ Close Bag
+              </button>
+            </div>
+            ${copyRowsHtml}
+          </div>
+        `;
+      }
+    }
+
+    const cardsHtml = filteredCharms.map((c) => {
+      const copies = copiesById.get(c.id) || [];
+      const owned = ownedById.get(c.id) || null;
+      const isEq = eqCharmId === c.id;
+      const isPrev = activeStageCharmId === c.id;
+      const isInspecting = activeInspectId === c.id;
+      const tierDef = CHARM_TIERS[c.tier] || CHARM_TIERS[1];
+      const gradeKey = owned?.grade || 'B';
+      const gradeDef = CHARM_GRADES[gradeKey] || CHARM_GRADES.B;
+      const plus = owned ? getCharmPlus(owned) : 0;
+      const effStats = owned ? computeCharmStats(owned) : null;
+
+      const tierColor = c.tier === 4 ? '#ffd859' : c.tier === 3 ? '#ff8ae2' : c.tier === 2 ? '#6bd4ff' : '#9ee89e';
+      const borderStyle = isEq
+        ? 'border:2px solid #ffd859;background:linear-gradient(180deg,rgba(70,48,18,0.92),rgba(36,24,14,0.96));box-shadow:0 0 14px rgba(255,216,89,0.35);'
+        : (isPrev
+          ? `border:2px solid ${tierColor};background:linear-gradient(180deg,rgba(56,32,68,0.94),rgba(28,18,38,0.96));box-shadow:0 0 14px ${tierColor}44;`
+          : (owned
+            ? 'border:1.5px solid rgba(255,215,120,0.45);background:rgba(40,26,18,0.88);'
+            : 'border:1px dashed rgba(255,255,255,0.22);background:rgba(28,18,14,0.68);opacity:0.92;'));
+
+      return `
+        <div class="rpg-card" style="padding:10px 12px;margin-bottom:8px;border-radius:14px;${borderStyle}">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div style="position:relative;width:58px;height:58px;border-radius:12px;background:radial-gradient(circle,rgba(255,235,175,0.28),rgba(20,12,8,0.85));border:1.5px solid ${tierColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <img src="${c.art}" alt="${escapeHtml(c.name)}" style="width:50px;height:50px;object-fit:contain;${owned ? '' : 'filter:grayscale(0.35) brightness(0.88);'}" />
+              ${copies.length > 1 ? `
+                <span style="position:absolute;top:-6px;left:-6px;background:linear-gradient(180deg,#f59e0b,#b45309);border:1px solid #fef08a;color:#fff;font-size:9.5px;font-weight:900;padding:1px 5px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,0.45);">
+                  ×${copies.length}
+                </span>
+              ` : ''}
+              <span style="position:absolute;bottom:-5px;right:-5px;background:#2a1810;border:1px solid ${tierColor};color:${tierColor};font-size:10px;font-weight:900;padding:1px 5px;border-radius:999px;">
+                ${owned ? `${gradeKey} +${plus}` : '🔒 Drop'}
+              </span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:900;color:#fff4d8;">
+                  ${c.icon} ${escapeHtml(c.name)}
+                  ${owned ? `<span style="margin-left:4px;">${renderPlusPips(plus)}</span>` : ''}
+                </span>
+                <span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(0,0,0,0.45);color:${tierColor};border:1px solid ${tierColor}55;">
+                  ${escapeHtml(tierDef.badge)} • Waves ${tierDef.minWave}+
+                </span>
+              </div>
+              <div style="font-size:11px;color:#ffd89b;font-weight:700;margin-top:3px;">
+                ${effStats
+                  ? formatCharmStatsRow(effStats, owned?.stats, plus, gradeDef)
+                  : `Base Roll: +${tierDef.statMin}~${tierDef.statMax} Stats (×2.25 at SS-Grade & +75% at +5 Awakening!)`}
+              </div>
+              <div style="font-size:11px;color:#d6e8ff;margin-top:3px;">
+                ✨ <b>3D Chibi Aura:</b> ${escapeHtml(c.visualDesc)}
+              </div>
+              <div style="font-size:11px;color:#a8ffb8;margin-top:2px;">
+                🌙 <b>${escapeHtml(c.cheatTitle)}:</b> ${escapeHtml(c.cheatDesc)}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            <button type="button" class="rpg-equip-btn" data-charm-preview="${c.id}" style="background:${isPrev ? '#7c3aed' : 'rgba(255,255,255,0.12)'};color:#fff;">
+              ${isPrev ? '👁️ Previewing' : '👁️ Preview Aura'}
+            </button>
+            ${owned ? `
+              <button type="button" class="rpg-equip-btn" data-charm-inspect="${c.id}" style="background:${copies.length > 1 ? 'linear-gradient(180deg,#d97706,#92400e)' : (isInspecting ? '#0284c7' : 'rgba(255,255,255,0.16)')};color:#fff;border:1px solid ${copies.length > 1 ? '#fde047' : 'rgba(255,255,255,0.28)'};">
+                ${copies.length > 1 ? `🔥 Fuse Dupes (${copies.length})` : `🔍 Inspect Roll (+${plus})`}
+              </button>
+            ` : ''}
+            ${isEq
+              ? `<button type="button" class="rpg-equip-btn" data-charm-equip="" style="background:#b91c1c;color:#fff;">✓ Wearing (Unequip)</button>`
+              : (owned
+                ? `<button type="button" class="btn-gold small" data-charm-equip="${c.id}" data-charm-uid="${owned.uid || ''}">✨ Equip 3D Aura</button>`
+                : `<span style="font-size:11px;color:#f4c97a;font-weight:800;align-self:center;">🏹 Boss Drop Only (Moon Sanctuary)</span>`)}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      ${tabsHtml}
+      <div class="s2-hair-mirror-card s2-charm-mirror-card" style="margin-bottom:8px;">
+        <div class="s2-pd-figure s2-hair-stage-fig s2-charm-stage-fig" id="pd-hero-figure">
+          <div class="s2-pd-stage-ctrls">
+            <button type="button" class="s2-pd-ctrl-btn" data-pd-turn="1" title="Rotate Character View">
+              🔄 ${stageState.view.toUpperCase()}
+            </button>
+            <button type="button" class="s2-pd-ctrl-btn ${stageState.walking ? 'active' : ''}" data-pd-walk="1" title="Toggle Walk / Idle Motion">
+              ${stageState.walking ? '🏃 Walk' : '🧍 Idle'}
+            </button>
+          </div>
+          <img class="s2-pd-pedestal" src="/assets/ui/stage_wardrobe_pedestal.png" alt="" />
+          ${renderPaperDollDomLayers(lineage, eq, stageState.view, p.appearance)}
+          <div class="s2-pd-webgl-host" id="pd-live-canvas-wrap"></div>
+        </div>
+        <div class="s2-hair-current-strip" style="justify-content:space-between;padding:4px 10px 2px;">
+          <div style="font-size:12px;font-weight:800;color:#fff2cc;">
+            ${activeStageCharmDef
+              ? `${previewId && previewId !== eqCharmId ? '👁️ Previewing:' : '🎐 Wearing:'} <b>${activeStageCharmDef.icon} ${escapeHtml(activeStageCharmDef.name)}</b>`
+              : '🎐 Select any Charm below to preview its 3D Aura!'}
+          </div>
+          <div style="font-size:11px;font-weight:900;color:#ffd859;">
+            ${ownedById.size} / 16 Unboxed • 🎒 ${ownedList.length} in Bag
+          </div>
+        </div>
+        ${activeStageCharmDef ? `
+          <div style="font-size:10.5px;color:#e4f0ff;text-align:center;padding:0 10px 2px;line-height:1.3;">
+            ✨ ${escapeHtml(activeStageCharmDef.visualDesc)}
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:0 8px 4px;">
+            ${layerBadges.map((b) => `<span style="font-size:9.5px;font-weight:800;padding:1.5px 6px;border-radius:999px;background:rgba(124,58,237,0.35);border:1px solid rgba(216,180,254,0.45);color:#f3e8ff;">${b}</span>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="s2-slot-pills-bar" style="margin-bottom:8px;">
+        <button type="button" class="s2-slot-pill ${tierFilter === 'all' ? 'active' : ''}" data-charm-tier="all">All (${ownedById.size}/16)</button>
+        <button type="button" class="s2-slot-pill ${tierFilter === 'bag' ? 'active' : ''}" data-charm-tier="bag">
+          🎒 Charm Bag (${ownedList.length}${totalDupes > 0 ? ` • 🔥${totalDupes}` : ''})
+        </button>
+        <button type="button" class="s2-slot-pill ${tierFilter === '4' ? 'active' : ''}" data-charm-tier="4">👑 Tier 4 MVP</button>
+        <button type="button" class="s2-slot-pill ${tierFilter === '3' ? 'active' : ''}" data-charm-tier="3">🌸 Tier 3</button>
+        <button type="button" class="s2-slot-pill ${tierFilter === '2' ? 'active' : ''}" data-charm-tier="2">💎 Tier 2</button>
+        <button type="button" class="s2-slot-pill ${tierFilter === '1' ? 'active' : ''}" data-charm-tier="1">🎀 Tier 1</button>
+      </div>
+
+      ${inspectDrawerHtml}
+
+      <div>
+        ${cardsHtml}
+      </div>
+    `;
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -2344,7 +3715,7 @@ export class RpgUI {
         actionHtml = `<button class="rpg-equip-btn" data-hair-equip="${h.id}">Equip Free</button>`;
       } else if (h.tier === 'classic' && (mode === 'classic' || mode === 'closet')) {
         const canAfford = gold >= classicGoldCost;
-        actionHtml = `<button class="rpg-equip-btn s2-hair-buy-btn" data-hair-buy="${h.id}" ${canAfford ? '' : 'disabled'}>🪙 ${fmtNum(classicGoldCost)}</button>`;
+        actionHtml = `<button class="rpg-equip-btn s2-hair-buy-btn" data-hair-buy="${h.id}" ${canAfford ? '' : 'disabled'}>${GOLD_ICO_HTML} ${fmtNum(classicGoldCost)}</button>`;
       } else {
         actionHtml = `<button class="rpg-equip-btn s2-hair-goto-gacha" data-hsec="gacha">👑 Summon</button>`;
       }
@@ -2390,7 +3761,7 @@ export class RpgUI {
       sectionBodyHtml = `
         <div class="rpg-card s2-hair-quick-dye-bar">
           <div class="s2-hair-quick-head">
-            <span>🎨 Unlocked Dyes (${unlockedColorList.length}/20) — <b>0🪙 Instant Switch</b></span>
+            <span>🎨 Unlocked Dyes (${unlockedColorList.length}/20) — <b>0 ${GOLD_ICO_HTML} Instant Switch</b></span>
             <button type="button" class="rpg-goforge-btn" data-hsec="dyes">Unlock More Dyes ➜</button>
           </div>
           <div class="s2-hair-quick-swatches">
@@ -2401,7 +3772,7 @@ export class RpgUI {
         <div class="rpg-card">
           <div class="rpg-card-title">
             <span>🗂️ Your Hair Closet (${ownedList.length}/${allHairs.length} Owned)</span>
-            <span class="s2-badge-green">0🪙 Free Switch</span>
+            <span class="s2-badge-green">0 ${GOLD_ICO_HTML} Free Switch</span>
           </div>
           <div class="s2-hair-grid">
             ${ownedList.map((h) => renderHairCard(h, 'closet')).join('')}
@@ -2415,7 +3786,7 @@ export class RpgUI {
         <div class="rpg-card">
           <div class="rpg-card-title">
             <span>✂️ Classic Salon Catalog (${ownedClassicCount}/${classicHairs.length} Owned)</span>
-            <span class="s2-badge-gold">🪙 3,000 Gold • Permanent</span>
+            <span class="s2-badge-gold">${GOLD_ICO_HTML} 3,000 Gold • Permanent</span>
           </div>
           <div class="s2-hair-section-note">
             Every Classic cut unlocks permanently in your Hair Closet and can be dyed with any of your 20 colours!
@@ -2547,7 +3918,7 @@ export class RpgUI {
             btnHtml = `<button type="button" class="rpg-equip-btn" data-color-equip="${c.id}">Apply Free</button>`;
           } else if (tierKey === 'basic') {
             const cost = HAIR_DYE_TIERS.basic.price?.gold || 500;
-            btnHtml = `<button type="button" class="rpg-equip-btn" data-color-unlock="${c.id}" ${gold >= cost ? '' : 'disabled'}>🪙 ${fmtNum(cost)}</button>`;
+            btnHtml = `<button type="button" class="rpg-equip-btn" data-color-unlock="${c.id}" ${gold >= cost ? '' : 'disabled'}>${GOLD_ICO_HTML} ${fmtNum(cost)}</button>`;
           } else if (tierKey === 'ombre') {
             const cost = HAIR_DYE_TIERS.ombre.price?.diamonds || 50;
             btnHtml = `<button type="button" class="rpg-equip-btn" data-color-unlock="${c.id}" ${diamonds >= cost ? '' : 'disabled'}>💎 ${cost}</button>`;
@@ -2590,7 +3961,7 @@ export class RpgUI {
       sectionBodyHtml = `
         ${renderDyeTierGroup('celestial', '✨ Celestial Prismatic Dyes', '<span class="s2-badge-gold">Bundled w/ Celestial Hair</span>', 'Animated 3-stop iridescent GPU shader tints — automatically unlocked forever when you pull their matching Celestial Hairstyle!')}
         ${renderDyeTierGroup('ombre', '🌈 Two-Tone Ombre Glow Dyes', '<span class="s2-badge-gold">💎 50 Diamonds • Permanent</span>', 'Smooth vertical root-to-tip UV gradient shader while keeping woven ribbons, pearls, and crowns in their original colours!')}
-        ${renderDyeTierGroup('basic', '🎨 Basic Salon Dyes', '<span class="s2-badge-gold">🪙 500 Gold • Permanent</span>', 'Classic salon shades unlocked permanently in your Dye Closet — switch anytime for 0 Gold!')}
+        ${renderDyeTierGroup('basic', '🎨 Basic Salon Dyes', `<span class="s2-badge-gold">${GOLD_ICO_HTML} 500 Gold • Permanent</span>`, 'Classic salon shades unlocked permanently in your Dye Closet — switch anytime for 0 Gold!')}
         ${renderDyeTierGroup('starter', '🌱 Starter Palette', '<span class="s2-badge-green">FREE • Unlocked</span>', 'Included free for every adventurer from day one.')}
       `;
     }
@@ -2602,7 +3973,7 @@ export class RpgUI {
         <img class="s2-fluffe-mascot" src="/assets/ui/npc_fluffe_poodle.png" alt="Fluffé the Starlight Poodle" />
         <div class="s2-fluffe-info">
           <div class="s2-fluffe-title">✂️✨ Fluffé's Starlight Hair Studio</div>
-          <div class="s2-fluffe-sub">Permanent Hair &amp; Dye Closet • 0🪙 Free Switching!</div>
+          <div class="s2-fluffe-sub">Permanent Hair &amp; Dye Closet • 0 ${GOLD_ICO_HTML} Free Switching!</div>
           <div class="s2-fluffe-bar">
             <div class="s2-body-toggle" title="Switch Mannequin Base (Free)">
               <button type="button" class="s2-body-btn ${curBody === 'boy' ? 'active' : ''}" data-body-equip="boy">👦 Boy Base</button>
@@ -2648,7 +4019,7 @@ export class RpgUI {
           🗂️ Closet (${ownedHairs.size}/${allHairs.length})
         </button>
         <button type="button" class="s2-slot-pill ${hsec === 'classic' ? 'active' : ''}" data-hsec="classic">
-          ✂️ Classic (3k🪙)
+          ✂️ Classic (3k ${GOLD_ICO_HTML})
         </button>
         <button type="button" class="s2-slot-pill ${hsec === 'gacha' ? 'active' : ''}" data-hsec="gacha">
           👑✨ Royal Gacha
@@ -3038,7 +4409,7 @@ export class RpgUI {
       const pool = buildGachaPrizePool('box2', null, p);
       const previewEntry = this.gachaPreviewKey ? pool.find((x) => x.key === this.gachaPreviewKey) : null;
 
-      const featuredWonderId = VIP_WONDERS[0] || Object.keys(WONDERS)[0];
+      const featuredWonderId = WONDERS.wnd_burj_khalifa ? 'wnd_burj_khalifa' : (VIP_WONDERS[0] || Object.keys(WONDERS)[0]);
       const featuredWonder = WONDERS[featuredWonderId] || {};
       const featuredWonderVis = resolveItemVisual(featuredWonderId, lineage);
       const epicWonderId = (BOX2_POOL[2] && BOX2_POOL[2][0]) || 'wnd_onsen';
@@ -3048,7 +4419,7 @@ export class RpgUI {
       const bp2Key = `bp_${CORE_LANDMARKS[2] || 'patisserie'}`;
       const bp1Vis = resolveItemVisual(bp1Key, lineage);
       const bp2Vis = resolveItemVisual(bp2Key, lineage);
-      const decor1Id = (BOX2_POOL.decor && BOX2_POOL.decor[0]) || Object.keys(DECOR)[0];
+      const decor1Id = DECOR.dec_palm_jumeirah_island ? 'dec_palm_jumeirah_island' : ((BOX2_POOL.decor && BOX2_POOL.decor[0]) || Object.keys(DECOR)[0]);
       const decor1Vis = resolveItemVisual(decor1Id, lineage);
 
       const bpCardsHtml = CORE_LANDMARKS.map((key) => {
@@ -3076,10 +4447,10 @@ export class RpgUI {
         : `🧭 ROYAL ARCHITECT'S BLUEPRINT &amp; WONDER GACHA`;
       const box2TitleHtml = previewEntry
         ? previewEntry.stageTitle
-        : `🎡 ${'★'.repeat(featuredWonder.rarity || 3)} ${escapeHtml(featuredWonder.name || 'Couple Heart Ferris Wheel')}`;
+        : `${featuredWonder.emoji || '🏙️'} ${'★'.repeat(featuredWonder.rarity || 3)} ${escapeHtml(featuredWonder.name || 'Burj Khalifa & Dancing Fountain')}`;
       const box2SubHtml = previewEntry
         ? previewEntry.stageSub
-        : `+25% Couple Gold &amp; Berry Yield!`;
+        : `${escapeHtml(featuredWonder.effect || '+30–55% Match Gold • +10–25 💎 Daily Tribute!')}`;
 
       return `
         ${tabsHtml}
@@ -3109,7 +4480,7 @@ export class RpgUI {
               <img class="s2-draft-prop" src="/assets/ui/stage_architect_stand.png" alt="" />
               <img class="s2-box1-magic-circle" src="/assets/ui/fx_magic_circle.png" alt="" />
               <img class="s2-wonder-hero" src="${heroUrl}" alt="${escapeHtml(heroAlt)}" />
-              <div class="s2-wonder-yield-tag">+25% Couple Gold &amp; Berry Yield!</div>
+              <div class="s2-wonder-yield-tag">+30–55% Gold &amp; Daily 💎!</div>
             </div>
 
             <div class="s2-float-bubbles s2-bubbles-right">
@@ -3119,7 +4490,7 @@ export class RpgUI {
               </button>
               <button type="button" class="s2-bubble s2-polaroid-card tilt-left s2-rarity-${decor1Vis.rarity} ${previewEntry?.key === decor1Id ? 'is-selected' : ''}" data-gacha-preview="${escapeHtml(decor1Id)}">
                 <img src="${decor1Vis.url}" alt="" />
-                <span>Sakura Couple Swing Decor</span>
+                <span>Palm Jumeirah Lagoon Decor</span>
               </button>
             </div>
           </div>
@@ -3298,15 +4669,45 @@ export class RpgUI {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // VIEW 3: BLACKSMITH STAR-FORCE FORGE (Screen 20)
+  // VIEW 3: BLACKSMITH STAR-FORCE FORGE & STAT ATTUNEMENT V2 (Screen 20)
   // ---------------------------------------------------------------------------------------------
   renderForge(p) {
     const inv = p.inventory || {};
     const lineage = p.lineage === 'dxb' ? 'dxb' : 'bkk';
     const ownedIds = Object.keys(inv);
+    const isAttuneMode = this.forgeMode === 'attune';
 
-    if (!this.selectedForgeItem || !inv[this.selectedForgeItem]) {
-      this.selectedForgeItem = ownedIds[0] || null;
+    // Clean 2-pill mode bar (no duplicate Wardrobe/Gacha sub-tabs)
+    const forgeTabsHtml = `
+      <div class="s2-forge-mode-bar s2-forge-mode-bar-v2">
+        <button type="button" class="s2-slot-pill s2-forge-mode-pill ${!isAttuneMode ? 'active' : ''}" data-forge-mode="upgrade">
+          <img src="/assets/ui/forge_hammer_star.png" class="s2-mode-pill-ico" alt="" />
+          <span class="s2-mode-pill-txt">
+            <b>Star-Force (+10)</b>
+            <small>Power &amp; Aura</small>
+          </span>
+        </button>
+        <button type="button" class="s2-slot-pill s2-forge-mode-pill ${isAttuneMode ? 'active' : ''}" data-forge-mode="attune">
+          <img src="/assets/ui/attune_rune_wheel.png" class="s2-mode-pill-ico" alt="" />
+          <span class="s2-mode-pill-txt">
+            <b>Stat Attune (+5)</b>
+            <small>Shift Secondary Stat</small>
+          </span>
+        </button>
+      </div>
+    `;
+
+    if (isAttuneMode) {
+      const curItem = this.selectedForgeItem ? inv[this.selectedForgeItem] : null;
+      const curInfo = this.selectedForgeItem ? inspectItemAttune(this.selectedForgeItem, curItem?.refine | 0, curItem?.attune?.stat) : null;
+      if (!curInfo || !curInfo.attunable) {
+        const firstAttunable = ownedIds.find((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat).attunable);
+        if (firstAttunable) {
+          this.selectedForgeItem = firstAttunable;
+        }
+      }
+    } else if (!this.selectedForgeItem || !inv[this.selectedForgeItem]) {
+      this.selectedForgeItem = this.resolveDefaultForgeItem(p);
     }
 
     const itemPickerHtml = ownedIds.length ? ownedIds.map((id) => {
@@ -3317,16 +4718,20 @@ export class RpgUI {
       const dupes = inv[id].dupes | 0;
       const isActive = id === this.selectedForgeItem;
       const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
+      const attuneStat = inv[id]?.attune?.stat;
+      const attuneInfo = inspectItemAttune(id, refine, attuneStat);
+      const attuneDim = isAttuneMode && !attuneInfo.attunable ? 'opacity:0.42;' : '';
       const pickThumbInnerHtml = isOutfitPick
         ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: def?.name || id })
         : `<img src="${vis.url}" alt="${escapeHtml(def?.name || id)}" style="${filterStyle}" />`;
 
       return `
-        <div class="rpg-forge-item s2-rarity-${vis.rarity || 1} ${isActive ? 'active' : ''}" data-forge-item="${id}">
+        <div class="rpg-forge-item s2-rarity-${vis.rarity || 1} ${isActive ? 'active' : ''}" data-forge-item="${id}" style="${attuneDim}">
           <div class="s2-forge-pick-thumb ${isOutfitPick ? 's2-thumb-has-hair' : ''}">
             ${pickThumbInnerHtml}
             <span class="s2-thumb-refine">+${refine}</span>
             ${dupes > 0 ? `<span class="s2-thumb-badge">x${dupes}</span>` : ''}
+            ${attuneStat ? `<span class="s2-thumb-attune-badge" style="position:absolute;bottom:-2px;right:-2px;font-size:9.5px;z-index:4;" title="Attuned: ${attuneStat}">🎯</span>` : ''}
           </div>
           <span class="s2-forge-pick-name">${escapeHtml(def?.name || id)}</span>
         </div>
@@ -3335,6 +4740,7 @@ export class RpgUI {
 
     if (!this.selectedForgeItem || !inv[this.selectedForgeItem]) {
       return `
+        ${forgeTabsHtml}
         <div class="rpg-card">
           <div class="rpg-card-title">🔨 Star-Force Blacksmith Anvil</div>
           <div class="rpg-forge-picker">${itemPickerHtml}</div>
@@ -3361,7 +4767,7 @@ export class RpgUI {
     const isScrollAllowed = scrollAllowed(refine);
     const ownedScrolls = p.bag_items?.[FORGE.SCROLL_ITEM] | 0;
     const canUseScroll = isScrollAllowed && ownedScrolls >= 1;
-    const scrollHint = !isScrollAllowed ? 'Scrolls work on +5 → +10' : ownedScrolls < 1 ? 'No scrolls' : '';
+    const scrollHint = !isScrollAllowed ? 'Unlocks at +5 → +10' : ownedScrolls < 1 ? '0 Owned' : `Owned: x${ownedScrolls}`;
     const activeScroll = Boolean(this.forgeScroll && canUseScroll);
 
     const liveChance = isMax ? 100 : forgeChance(refine, {
@@ -3396,11 +4802,15 @@ export class RpgUI {
 
     const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
 
-    // Build quick 6-slot equipped/top gear strip for 1-tap switching on the main Forge screen
+    // Quick 6-slot equipped/top gear strip for 1-tap switching
     const equippedIds = Object.values(p.equipped || {})
       .map((e) => e?.id)
       .filter((id) => id && inv[id]);
-    const quickIds = [...new Set([...equippedIds, ...ownedIds])].slice(0, 6);
+    const attunableOwnedIds = ownedIds.filter((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat).attunable);
+    const baseQuickPool = isAttuneMode
+      ? [...attunableOwnedIds, ...equippedIds, ...ownedIds]
+      : [...equippedIds, ...ownedIds];
+    const quickIds = [...new Set(baseQuickPool)].slice(0, 6);
     const quickBarSlotsHtml = quickIds.map((id) => {
       const qDef = itemDef(id);
       const qVis = resolveItemVisual(id, lineage);
@@ -3409,14 +4819,18 @@ export class RpgUI {
       const qDupes = inv[id]?.dupes | 0;
       const isAct = id === curId;
       const qFilter = qVis.filter && qVis.filter !== 'none' ? `filter:${qVis.filter};` : '';
+      const qAttune = inv[id]?.attune?.stat;
+      const qAttuneInfo = inspectItemAttune(id, qRef, qAttune);
+      const qDim = isAttuneMode && !qAttuneInfo.attunable ? 'opacity:0.4;' : '';
       const qInnerHtml = qIsOutfit
         ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: qVis.url, filter: qVis.filter, alt: qDef?.name || id })
         : `<img src="${qVis.url}" alt="${escapeHtml(qDef?.name || id)}" style="${qFilter}" />`;
       return `
-        <button type="button" class="s2-forge-quick-slot s2-rarity-${qVis.rarity || 1} ${qIsOutfit ? 's2-thumb-has-hair' : ''} ${isAct ? 'active' : ''}" data-forge-item="${id}" title="${escapeHtml(qDef?.name || id)} (+${qRef})">
+        <button type="button" class="s2-forge-quick-slot s2-rarity-${qVis.rarity || 1} ${qIsOutfit ? 's2-thumb-has-hair' : ''} ${isAct ? 'active' : ''}" data-forge-item="${id}" style="${qDim}" title="${escapeHtml(qDef?.name || id)} (+${qRef})">
           ${qInnerHtml}
           <span class="s2-thumb-refine">+${qRef}</span>
           ${qDupes > 0 ? `<span class="s2-thumb-badge">x${qDupes}</span>` : ''}
+          ${qAttune ? `<span style="position:absolute;bottom:-2px;right:-2px;font-size:9.5px;z-index:4;">🎯</span>` : ''}
         </button>
       `;
     }).join('');
@@ -3429,13 +4843,395 @@ export class RpgUI {
       ? renderOutfitThumbLayers(curId, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: def?.name || curId })
       : `<img src="${vis.url}" alt="${escapeHtml(def?.name || curId)}" style="${filterStyle}" />`;
 
+    // Attunement console data & logic
+    const info = inspectItemAttune(curId, refine, it?.attune?.stat);
+    const attuneCount = it?.attune?.count ?? it?.attune_count ?? 0;
+    const cost = attuneCostFor(attuneCount);
+    const ownedAttuneScrolls = (p.bag_items?.scroll_stat_attune | 0) || (p.bag_items?.attune_scroll | 0);
+    let costLabel = '';
+    let costShortLabel = '';
+    let canAffordAttune = false;
+
+    if (cost.free) {
+      costLabel = '🎁 FIRST ATTUNE FREE! (0 Gold • 0 Berries)';
+      costShortLabel = '🎁 FREE 1st Attune!';
+      canAffordAttune = true;
+    } else if (ownedAttuneScrolls > 0) {
+      costLabel = `<img src="/assets/ui/item_protection_scroll.png" class="s2-inline-ico" alt="" /> 1× Attune Scroll (x${ownedAttuneScrolls} owned)`;
+      costShortLabel = `<img src="/assets/ui/item_protection_scroll.png" class="s2-inline-ico" alt="" /> 1× Scroll`;
+      canAffordAttune = true;
+    } else {
+      costLabel = `${GOLD_ICO_HTML} ${cost.gold.toLocaleString()} + <img src="/assets/ui/icon_berry.png" class="s2-inline-ico" alt="" /> ${cost.berries}`;
+      costShortLabel = `${GOLD_ICO_HTML} ${cost.gold.toLocaleString()} + <img src="/assets/ui/icon_berry.png" class="s2-inline-ico" alt="" /> ${cost.berries}`;
+      canAffordAttune = (p.gold >= cost.gold) && (p.berries >= cost.berries);
+    }
+
+    const chosenStat = (this.selectedAttuneStat && info.allowedStats?.includes(this.selectedAttuneStat))
+      ? this.selectedAttuneStat
+      : (info.allowedStats?.find((s) => s !== info.activeSecStat) || info.allowedStats?.[0] || 'fortune');
+    const isSameStat = chosenStat === info.activeSecStat;
+    const canAttuneGo = info.unlocked && !isSameStat && canAffordAttune;
+
+    // Declarative Stage Animation State (immune to WebSocket profile push double-renders)
+    const activeAnim = (this.forgeAnimState && (Date.now() - this.forgeAnimState.at < 1180) && this.forgeAnimState.itemId === curId)
+      ? this.forgeAnimState
+      : null;
+    const stageAnimClass = activeAnim
+      ? (activeAnim.kind === 'attune_win'
+          ? 'is-attuning-win'
+          : activeAnim.kind === 'forge_pity'
+            ? 'is-striking-pity'
+            : 'is-striking-win')
+      : '';
+    const justForgedStar = (activeAnim && (activeAnim.kind === 'forge_win' || activeAnim.kind === 'sovereign'))
+      ? (activeAnim.star | 0)
+      : 0;
+
+    // Radial spark burst + shockwave + floating dopamine banner
+    let stageVfxHtml = '';
+    if (activeAnim) {
+      const sparkColors = activeAnim.kind === 'attune_win'
+        ? ['#38bdf8', '#fde047', '#f472b6', '#34d399']
+        : activeAnim.kind === 'forge_pity'
+          ? ['#fbbf24', '#93c5fd', '#fde68a', '#ffffff']
+          : ['#fde047', '#fb923c', '#38bdf8', '#ffffff'];
+      const sparks = [];
+      for (let i = 0; i < 14; i++) {
+        const ang = (i / 14) * Math.PI * 2 + (i % 2 ? 0.14 : -0.08);
+        const dist = 54 + (i % 3) * 20;
+        const tx = Math.round(Math.cos(ang) * dist);
+        const ty = Math.round(Math.sin(ang) * dist - 10);
+        const col = sparkColors[i % sparkColors.length];
+        sparks.push(`<span class="s2-forge-spark" style="--tx:${tx}px;--ty:${ty}px;--spark-col:${col};animation-delay:${(i % 4) * 18}ms;"></span>`);
+      }
+      const bannerText = activeAnim.kind === 'sovereign'
+        ? `👑 ★10 SOVEREIGN AWAKENED!`
+        : activeAnim.kind === 'forge_win'
+          ? `✨ +${activeAnim.star} STAR-FORCE SUCCESS!`
+          : activeAnim.kind === 'forge_pity'
+            ? `🛡️ SAFE! PITY +1 (${activeAnim.pity}/${FORGE.PITY_FAILS_GUARANTEE})`
+            : `🎯 TRANSMUTED! +${activeAnim.val} ${(activeAnim.stat || '').toUpperCase()}`;
+      stageVfxHtml = `
+        <div class="s2-forge-vfx-layer" aria-hidden="true">
+          <div class="s2-forge-shockwave ${activeAnim.kind}"></div>
+          <div class="s2-forge-sparks-wrap">${sparks.join('')}</div>
+          <div class="s2-forge-dopamine-banner ${activeAnim.kind}">${escapeHtml(bannerText)}</div>
+        </div>
+      `;
+    }
+
+    // Build visual Before -> After Stat Delta Pills for Star-Force mode
+    const curEff = getItemEffectiveStats(curId, refine, it?.attune?.stat);
+    const nextEff = isMax ? curEff : getItemEffectiveStats(curId, target, it?.attune?.stat);
+    const statDeltaPills = [];
+    statDeltaPills.push(`
+      <div class="s2-forge-delta-pill is-cp">
+        <span class="s2-fdp-label">⚔️ CP</span>
+        <span class="s2-fdp-vals">
+          <b>${curCP}</b>
+          ${isMax ? '<span class="s2-fdp-max">MAX</span>' : `<span class="s2-fdp-arr">➜</span><b class="s2-fdp-next">${nextCP}</b><em class="s2-fdp-diff">+${Math.max(0, nextCP - curCP)}</em>`}
+        </span>
+      </div>
+    `);
+    if (curEff.isAll) {
+      const diffAll = Math.max(0, nextEff.allVal - curEff.allVal);
+      statDeltaPills.push(`
+        <div class="s2-forge-delta-pill is-all">
+          <span class="s2-fdp-label">🌟 All 4 Stats</span>
+          <span class="s2-fdp-vals">
+            <b>+${curEff.allVal}</b>
+            ${isMax ? '' : `<span class="s2-fdp-arr">➜</span><b class="s2-fdp-next">+${nextEff.allVal}</b><em class="s2-fdp-diff">+${diffAll}</em>`}
+          </span>
+        </div>
+      `);
+    } else {
+      for (const k of ['power', 'swiftness', 'fortune', 'luck']) {
+        const cVal = curEff[k] || 0;
+        const nVal = nextEff[k] || 0;
+        if (cVal > 0 || nVal > 0) {
+          const m = STAT_PILL_META[k];
+          const dVal = Math.max(0, nVal - cVal);
+          statDeltaPills.push(`
+            <div class="s2-forge-delta-pill elem-${k}">
+              <img src="/assets/ui/rune_stat_${k}.png" class="s2-fdp-ico" alt="" />
+              <span class="s2-fdp-label">${m.short}</span>
+              <span class="s2-fdp-vals">
+                <b>+${cVal}</b>
+                ${isMax ? '' : `<span class="s2-fdp-arr">➜</span><b class="s2-fdp-next">+${nVal}</b>${dVal > 0 ? `<em class="s2-fdp-diff">+${dVal}</em>` : ''}`}
+              </span>
+            </div>
+          `);
+        }
+      }
+    }
+
+    // 8-Pip Artisan Pity Flame Strip
+    const pityPips = [];
+    for (let i = 1; i <= FORGE.PITY_FAILS_GUARANTEE; i++) {
+      pityPips.push(`<span class="s2-pity-pip ${i <= pityFails ? 'filled' : ''}">🔥</span>`);
+    }
+
+    // Elemental Rune Cards for Stat Attunement
+    const statSubLabels = {
+      swiftness: 'Top Speed & Accel',
+      power: 'Fury & Knockback',
+      fortune: 'Gold & Star Yield',
+      luck: 'Crit & Jackpot Odds',
+    };
+    const statCardsHtml = (info.allowedStats || []).map((stKey) => {
+      const isSelected = stKey === chosenStat;
+      const isActive = stKey === info.activeSecStat;
+
+      const simEquipped = {
+        ...(p.equipped || {}),
+        [info.slot || slot]: {
+          ...(p.equipped?.[info.slot || slot] || {}),
+          id: curId,
+          refine,
+          attune: { stat: stKey },
+        },
+      };
+      const simProfile = { ...p, equipped: simEquipped };
+      const diff = diffBuilds(computeUniversalStats(p).bonus, computeUniversalStats(simProfile).bonus);
+      const afterBuild = diff.after;
+      const tierRoman = ['', 'I', 'II', 'III', 'IV'][afterBuild.tier] || '';
+      const buildNameWithTier = formatGoldIcons(escapeHtml(`${afterBuild.icon} ${afterBuild.name}${tierRoman ? ` ${tierRoman}` : ''}`));
+
+      return `
+        <div class="s2-attune-stat-card s2-rune-card elem-${stKey} ${isSelected ? 'selected' : ''} ${isActive ? 'is-active' : ''}"
+             data-attune-stat="${stKey}">
+          ${isActive ? `<span class="s2-attune-active-tag">● Equipped</span>` : isSelected ? `<span class="s2-attune-target-tag">✨ Target</span>` : ''}
+          <div class="s2-rune-medallion-wrap">
+            <img src="/assets/ui/rune_stat_${stKey}.png" class="s2-rune-medallion-img" alt="${stKey}" />
+          </div>
+          <b class="s2-attune-name">${stKey.toUpperCase()}</b>
+          <div class="s2-attune-val">+${info.secVal}</div>
+          <small class="s2-rune-sub-role">${statSubLabels[stKey] || ''}</small>
+          <div class="s2-attune-build-preview" title="Resulting Cloud Dash Build">${buildNameWithTier}</div>
+        </div>
+      `;
+    }).join('');
+
+    let consoleHtml = '';
+    if (isAttuneMode) {
+      if (!info.attunable) {
+        consoleHtml = `
+          <div class="rpg-forge-console s2-forge-parchment s2-attune-console">
+            <div class="s2-attune-locked-notice">
+              <img src="/assets/ui/attune_rune_wheel.png" class="s2-locked-wheel-ico" alt="" />
+              <b>Accessory Required for Attunement</b>
+              <p>
+                ${info.reason === 'all_stat_item'
+                  ? 'All-Stat relics already boost all 4 stats equally! Pick a Hat, Face, Gloves, or Boots item below.'
+                  : 'Outfits and Dice have fixed signature stats. Pick a Hat, Face, Gloves, or Boots accessory to transmute!'}
+              </p>
+              <button type="button" class="s2-slot-pill active" data-forge-mode="upgrade">
+                🔨 Switch to Star-Force
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (!info.unlocked) {
+        const curSecKey = info.activeSecStat || info.defaultSecStat || 'fortune';
+        consoleHtml = `
+          <div class="rpg-forge-console s2-forge-parchment s2-attune-console">
+            <div class="s2-attune-transmute-strip is-locked-strip">
+              <div class="s2-transmute-pill locked elem-${info.mainStat}">
+                <img src="/assets/ui/rune_stat_${info.mainStat}.png" alt="" />
+                <div>
+                  <small>🔒 MAIN STAT</small>
+                  <b>${(STAT_PILL_META[info.mainStat]?.short || info.mainStat).toUpperCase()} +${info.mainVal}</b>
+                </div>
+              </div>
+              <div class="s2-transmute-arrow">＋</div>
+              <div class="s2-transmute-pill morph elem-${curSecKey}">
+                <img src="/assets/ui/rune_stat_${curSecKey}.png" alt="" />
+                <div>
+                  <small>🔒 UNLOCKS AT +${ATTUNE_MIN_REFINE}</small>
+                  <b>${(STAT_PILL_META[curSecKey]?.short || curSecKey).toUpperCase()} +${info.secVal}</b>
+                </div>
+              </div>
+            </div>
+            <div class="s2-attune-locked-notice">
+              <b>🔒 Upgrade to +${ATTUNE_MIN_REFINE} to Unlock Alchemical Attunement!</b>
+              <p>
+                This accessory is currently <b>+${refine}</b>. Reach <b>+${ATTUNE_MIN_REFINE}</b> in Star-Force (${ATTUNE_MIN_REFINE - refine} more) to freely shift its secondary stat!
+              </p>
+              <button type="button" class="s2-slot-pill active" data-forge-mode="upgrade">
+                🔨 Forge to +${ATTUNE_MIN_REFINE} Now
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        const curSecKey = info.activeSecStat || info.defaultSecStat || 'fortune';
+        const curSecShort = (STAT_PILL_META[curSecKey]?.short || curSecKey).toUpperCase();
+        const targetShort = (STAT_PILL_META[chosenStat]?.short || chosenStat).toUpperCase();
+        consoleHtml = `
+          <div class="rpg-forge-console s2-forge-parchment s2-attune-console">
+            <div class="s2-attune-transmute-strip">
+              <div class="s2-transmute-pill locked elem-${info.mainStat}">
+                <img src="/assets/ui/rune_stat_${info.mainStat}.png" alt="" />
+                <div>
+                  <small>🔒 LOCKED MAIN</small>
+                  <b>${info.mainStat.toUpperCase()} +${info.mainVal}</b>
+                </div>
+              </div>
+              <div class="s2-transmute-arrow">＋</div>
+              <div class="s2-transmute-pill morph elem-${chosenStat}">
+                <img src="/assets/ui/rune_stat_${chosenStat}.png" alt="" />
+                <div>
+                  <small>🔄 SECONDARY STAT</small>
+                  <b>${curSecShort} ➜ ${targetShort} +${info.secVal}</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="s2-attune-stat-cards">
+              ${statCardsHtml}
+            </div>
+
+            <div class="s2-attune-cost-row">
+              <span>🧪 Alchemical Cost:</span>
+              <b class="${canAffordAttune ? '' : 's2-lack'}">${costLabel}</b>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      const milestoneHint = refine === 4
+        ? `<span class="s2-forge-milestone-chip">🎯 +5 Unlocks Stat Attune!</span>`
+        : target === MAX_REFINE
+          ? `<span class="s2-forge-milestone-chip gold">👑 +10 Unlocks Sovereign Aura!</span>`
+          : '';
+      consoleHtml = `
+        <div class="rpg-forge-console s2-forge-parchment s2-forge-console-v2">
+          <div class="s2-forge-stat-strip">
+            ${statDeltaPills.join('')}
+            ${milestoneHint}
+          </div>
+
+          <div class="s2-forge-mid-row s2-forge-mid-row-v2">
+            <div class="rpg-chance-gauge s2-conic-gauge" style="--chance-pct: ${liveChance};">
+              <div class="s2-gauge-inner">
+                <div class="rpg-chance-num">${liveChance}%</div>
+                <div class="rpg-chance-sub">SUCCESS</div>
+                <div class="s2-gauge-safe-tag">🛡️ 0% Break</div>
+              </div>
+            </div>
+
+            <div class="s2-forge-controls-col s2-booster-col">
+              <label class="rpg-berries-check s2-booster-chip ${this.forgeBerries ? 'is-on' : ''}">
+                <input type="checkbox" id="forge-berries" ${this.forgeBerries ? 'checked' : ''} />
+                <img src="/assets/ui/icon_berry.png" class="s2-booster-ico" alt="" />
+                <div class="s2-booster-meta">
+                  <b>Star-Berry Catalyst</b>
+                  <small>${FORGE.BERRY_COST} Berries (${fmtNum(p.berries)} owned)</small>
+                </div>
+                <span class="s2-booster-badge">+${FORGE.BERRY_BONUS}%</span>
+              </label>
+
+              <label class="rpg-scroll-check s2-booster-chip ${activeScroll ? 'is-on' : ''} ${canUseScroll ? '' : 'disabled'}" ${canUseScroll ? '' : `title="${scrollHint}"`}>
+                <input type="checkbox" id="forge-scroll" ${activeScroll ? 'checked' : ''} ${canUseScroll ? '' : 'disabled'} />
+                <img src="/assets/ui/item_protection_scroll.png" class="s2-booster-ico" alt="" />
+                <div class="s2-booster-meta">
+                  <b>Artisan Scroll</b>
+                  <small>${escapeHtml(scrollHint)}</small>
+                </div>
+                <span class="s2-booster-badge gold">+25% &amp; 2×🔥</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="s2-forge-pity-cost-bar">
+            <div class="s2-pity-flame-cluster" title="Every failed strike adds +${FORGE.PITY_PER_FAIL}% rate and guarantees 100% at ${FORGE.PITY_FAILS_GUARANTEE}/8!">
+              <div class="s2-pity-head-mini">
+                <span>🔥 Artisan Pity <b>${pityFails}/${FORGE.PITY_FAILS_GUARANTEE}</b></span>
+                <em class="s2-pity-bonus-tag">+${(pityFails * FORGE.PITY_PER_FAIL).toFixed(0)}% Rate</em>
+              </div>
+              <div class="s2-pity-pips-row">${pityPips.join('')}</div>
+            </div>
+
+            <div class="s2-forge-mat-pills">
+              <div class="s2-mat-pill ${canAffordDupes ? 'ok' : 's2-lack'}" title="Duplicate copies required for Star-Force">
+                <img src="/assets/ui/item_dupe_box.png" class="s2-inline-ico" alt="" />
+                <span>Dupes: <b>${it.dupes | 0}/${dupesCost}</b></span>
+              </div>
+              <div class="s2-mat-pill ${canAffordGold ? 'ok' : 's2-lack'}" title="Gold required for Star-Force">
+                <img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" />
+                <span><b>${goldCost.toLocaleString()}</b></span>
+              </div>
+              ${onsenPct ? `<div class="s2-mat-pill ok">♨️ +${onsenPct}%</div>` : ''}
+            </div>
+          </div>
+
+          ${resultHtml}
+        </div>
+      `;
+    }
+
+    const bottomBarHtml = isAttuneMode ? `
+      <div class="s2-forge-bottom-bar">
+        <div class="s2-forge-title-ribbon">
+          <span>🎯 <b>Alchemical Wheel</b><br/><small>${cost.free ? '🎁 1st Free!' : 'Instant Shift'}</small></span>
+        </div>
+        ${info.unlocked ? `
+          <button id="attune-go" type="button" class="btn-gold s2-btn-rainbow s2-forge-cta-btn s2-attune-cta elem-${chosenStat}" data-act="trigger-attune-go" ${canAttuneGo ? '' : 'disabled'}>
+            <span>🎯 TRANSMUTE TO ${chosenStat.toUpperCase()} (+${info.secVal})</span>
+            <small class="s2-cta-sub-cost">${isSameStat ? 'Already Active' : costShortLabel}</small>
+          </button>
+        ` : `
+          <button type="button" class="btn-gold s2-btn-rainbow s2-forge-cta-btn" data-forge-mode="upgrade">
+            🔨 GO TO STAR-FORCE (+${ATTUNE_MIN_REFINE} TO UNLOCK)
+          </button>
+        `}
+      </div>
+    ` : `
+      <div class="s2-forge-bottom-bar">
+        <div class="s2-forge-title-ribbon">
+          <span>👑 <b>+${MAX_REFINE} Sovereign</b><br/><small>Title &amp; Aura</small></span>
+        </div>
+        <button id="forge-go" class="btn-gold s2-btn-rainbow s2-forge-cta-btn" ${canForge ? '' : 'disabled'}>
+          ${isMax
+            ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX REACHED ✨`
+            : `🔨 STRIKE +${target}! (${GOLD_ICO_HTML} ${goldCost.toLocaleString()}${this.forgeBerries ? ` + <img src="/assets/ui/icon_berry.png" class="s2-inline-ico" alt="" /> ${FORGE.BERRY_COST}` : ''}${activeScroll ? ' + 📜' : ''})`}
+        </button>
+      </div>
+    `;
+
+
+    // Stage Top Bar: 10-Star Arch in Upgrade mode, or Alchemical Resonance Pill in Attune mode
+    const stageTopHtml = isAttuneMode
+      ? `
+        <div class="s2-attune-stage-header">
+          <span class="s2-ash-pill">🧪 Alchemical Resonance • <b>+${refine} ${escapeHtml(SLOT_LABELS[slot] || slot)}</b></span>
+        </div>
+      `
+      : renderStarForceArc(refine, MAX_REFINE, justForgedStar);
+
+    // Stage Flanking Orbs in Attune mode
+    const stageOrbsHtml = (isAttuneMode && info.attunable) ? `
+      <div class="s2-stage-stat-orb is-locked elem-${info.mainStat}" title="Locked Main Stat">
+        <img src="/assets/ui/rune_stat_${info.mainStat}.png" alt="" />
+        <span>🔒 +${info.mainVal}</span>
+      </div>
+      <div class="s2-stage-stat-orb is-target elem-${chosenStat}" title="Target Secondary Stat">
+        <img src="/assets/ui/rune_stat_${chosenStat}.png" alt="" />
+        <span>🎯 +${info.secVal}</span>
+      </div>
+    ` : '';
+
     return `
-      <div class="s2-forge-stage">
-        ${renderStarForceArc(refine, MAX_REFINE)}
+      ${forgeTabsHtml}
+      <div class="s2-forge-stage s2-forge-stage-v2 ${isAttuneMode ? `is-attune-mode elem-${chosenStat}` : 'is-upgrade-mode'} ${stageAnimClass}">
+        ${stageTopHtml}
 
         <div class="s2-anvil-diorama">
           <div class="s2-anvil-center">
-            <img class="s2-anvil-magic" src="/assets/ui/fx_magic_circle.png" alt="" />
+            ${stageVfxHtml}
+            <img class="s2-anvil-magic" src="${isAttuneMode ? '/assets/ui/attune_rune_wheel.png' : '/assets/ui/fx_magic_circle.png'}" alt="" />
+            ${!isAttuneMode ? `<img class="s2-forge-hammer-prop" src="/assets/ui/forge_hammer_star.png" alt="" />` : ''}
+            ${stageOrbsHtml}
             <div class="s2-anvil-item-box s2-rarity-${vis.rarity || 1} ${isCurOutfit ? 's2-thumb-has-hair' : ''}">
               ${anvilItemInnerHtml}
               <span class="s2-anvil-plus">+${refine}</span>
@@ -3453,65 +5249,13 @@ export class RpgUI {
         </div>
 
         <div class="rpg-forge-target">
-          [${escapeHtml(def?.name || curId)}]: +${refine} ${isMax ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX!` : `➜ +${target}`}
+          ${isAttuneMode
+            ? `${escapeHtml(def?.name || curId)} • 🎯 ${info.unlocked ? `Shift ${(info.activeSecStat || '').toUpperCase()} ➜ ${chosenStat.toUpperCase()}` : `Requires +${ATTUNE_MIN_REFINE}`}`
+            : `${escapeHtml(def?.name || curId)} • +${refine} ${isMax ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX!` : `➜ +${target}`}`}
         </div>
       </div>
 
-      <div class="rpg-forge-console">
-        <div class="s2-forge-level-header">
-          <span>Level +${refine}  ➜  Level +${isMax ? MAX_REFINE : target}</span>
-        </div>
-
-        <div class="s2-aura-banner">
-          ⚔️ Power: <b>+${curCP} CP ➜ +${nextCP} CP (+15% Boost!)</b> • ✨ ★${MAX_REFINE} Unlocks Golden Sovereign Aura!
-        </div>
-
-        <div class="s2-forge-mid-row">
-          <div class="rpg-chance-gauge" style="--chance-pct: ${liveChance}%;">
-            <div class="rpg-chance-num">${liveChance}%</div>
-            <div class="rpg-chance-sub">SUCCESS</div>
-          </div>
-
-          <div class="s2-forge-controls-col">
-            <div class="rpg-safe-badge">
-              <img src="/assets/ui/stage_shield_emblem.png" alt="" class="s2-inline-ico" />
-              🛡️ ZERO DESTRUCTION / NO DOWNGRADE ON FAIL!
-            </div>
-
-            <label class="rpg-berries-check">
-              <input type="checkbox" id="forge-berries" ${this.forgeBerries ? 'checked' : ''} />
-              <img src="/assets/ui/icon_berry.png" class="s2-inline-ico" alt="" />
-              <span>Use ${FORGE.BERRY_COST} Star-Berries (+${FORGE.BERRY_BONUS}% Rate!)</span>
-            </label>
-
-            <label class="rpg-scroll-check ${canUseScroll ? '' : 'disabled'}" ${canUseScroll ? '' : `title="${scrollHint}"`}>
-              <input type="checkbox" id="forge-scroll" ${this.forgeScroll && canUseScroll ? 'checked' : ''} ${canUseScroll ? '' : 'disabled'} />
-              <img src="/assets/ui/item_protection_scroll.png" class="s2-inline-ico" alt="" />
-              <span>Use Artisan Scroll (+25%, double pity on miss) — owned: ${ownedScrolls}${!canUseScroll ? ` (${scrollHint})` : ''}</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="s2-pity-box">
-          <div class="s2-pity-box-head">
-            <span>🔥 Artisan Pity Energy (+${FORGE.PITY_PER_FAIL}% per Fail)</span>
-            <span>${pityFails} / ${FORGE.PITY_FAILS_GUARANTEE} Fails (+${(pityFails * FORGE.PITY_PER_FAIL).toFixed(1)}%)</span>
-          </div>
-          <div class="rpg-pity-bar s2-pity-bar-slim">
-            <div class="rpg-pity-fill" style="width:${Math.min(100, (pityFails / FORGE.PITY_FAILS_GUARANTEE) * 100)}%;"></div>
-          </div>
-        </div>
-
-        <div class="rpg-cost-rows">
-          <span><img src="/assets/ui/icon_gold.png" class="s2-inline-ico" alt="" /> Gold Required:</span>
-          <b class="${canAffordGold ? '' : 's2-lack'}">${goldCost.toLocaleString()} Gold (${fmtNum(p.gold)} owned)</b>
-          <span><img src="/assets/ui/item_dupe_box.png" class="s2-inline-ico" alt="" /> Duplicate Copies:</span>
-          <b class="${canAffordDupes ? '' : 's2-lack'}">${it.dupes | 0} / ${dupesCost} dupes</b>
-          ${onsenPct ? `<span>♨️ Yuzu Hot Spring Buff:</span><b>+${onsenPct}% Active!</b>` : ''}
-        </div>
-
-        ${resultHtml}
-      </div>
+      ${consoleHtml}
 
       <div class="s2-forge-equipped-bar">
         <div class="s2-forge-quick-slots">${quickBarSlotsHtml}</div>
@@ -3533,23 +5277,23 @@ export class RpgUI {
         </div>
       </div>
 
-      <div class="s2-forge-bottom-bar">
-        <div class="s2-forge-title-ribbon">
-          <span>👑 <b>+${MAX_REFINE} Sovereign</b><br/><small>Title at ★${MAX_REFINE}!</small></span>
-        </div>
-        <button id="forge-go" class="btn-gold s2-btn-rainbow s2-forge-cta-btn" ${canForge ? '' : 'disabled'}>
-          ${isMax
-            ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX REACHED ✨`
-            : `🔨 FORGE TO +${target}! (${goldCost.toLocaleString()} Gold${this.forgeBerries ? ` + ${FORGE.BERRY_COST} Berries` : ''}${activeScroll ? ' + 1 Scroll' : ''})`}
-        </button>
-      </div>
+      ${bottomBarHtml}
     `;
   }
+
 
   // ---------------------------------------------------------------------------------------------
   // VIEW 4: COZY PET NEST & SANCTUARY (Screen 16 V2 — Soul-Bond Companions)
   // ---------------------------------------------------------------------------------------------
   renderPets(p) {
-    return renderPetSanctuary(this, p);
+    const tabsHtml = `
+      <div class="rpg-sub-tabs s2-folder-tabs">
+        <button class="rpg-sub-tab" data-wtab="fashion">👗 Fashion</button>
+        <button class="rpg-sub-tab active" data-wtab="pets">🐾 Pets</button>
+        <button class="rpg-sub-tab" data-wtab="charms">🎐 Charms</button>
+        <button class="rpg-sub-tab" data-wtab="bag">🎒 Bag &amp; VIP</button>
+      </div>
+    `;
+    return `${tabsHtml}${renderPetSanctuary(this, p)}`;
   }
 }

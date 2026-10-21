@@ -247,13 +247,13 @@ export function productionPerHour(v) {
   return r;
 }
 
-/** Daily diamonds (Shrine + World-Tree), claimable once per UTC day. */
+/** Daily diamonds (Shrine + World-Tree / Burj Khalifa / Pearl / Aurora Wonders), claimable once per UTC day. */
 export function dailyDiamonds(v, now) {
   if (v.daily_claim_day === utcDay(now)) return 0;
   let d = 0;
   for (const b of v.buildings) {
     if (CORE[b.type]?.daily === 'diamonds') d += CORE[b.type].perDay(v.levels?.[b.type] || 1);
-    if (b.type === 'wnd_world_tree') d += WONDERS.wnd_world_tree.perDay(v.wonders?.wnd_world_tree?.stars || 1);
+    if (WONDERS[b.type]?.perDay) d += WONDERS[b.type].perDay(v.wonders?.[b.type]?.stars || 1);
   }
   return d;
 }
@@ -318,7 +318,39 @@ export function buildCellIndex(island) {
   for (const t of v.tiles) if (t.x >= 0 && t.y >= 0 && t.x < S && t.y < S) tile[t.y * S + t.x] = t.t;
   const owner = new Array(S * S).fill(null);
   for (const b of v.buildings) for (const [x, y] of cellsOf(b)) if (x >= 0 && y >= 0 && x < S && y < S) { solid[y * S + x] = 1; owner[y * S + x] = b; }
-  island.index = { solid, tile, owner };
+
+  // Compute 4-connected walkable component sizes so enclosed pockets (< 6 tiles) between buildings are detected
+  // for both ground walkers (blocked by buildings + water) and winged flyers (blocked by buildings).
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const buildComp = (ignoreWater) => {
+    const arr = new Int16Array(S * S);
+    const vis = new Uint8Array(S * S);
+    for (let i = 0; i < S * S; i++) {
+      if (vis[i] || solid[i] || (!ignoreWater && TILES[tile[i]]?.water)) continue;
+      const comp = [i];
+      vis[i] = 1;
+      for (let head = 0; head < comp.length; head++) {
+        const cur = comp[head];
+        const cx = cur % S, cy = (cur / S) | 0;
+        for (const [dx, dy] of dirs) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= S || ny >= S) continue;
+          const ni = ny * S + nx;
+          if (!vis[ni] && !solid[ni] && (ignoreWater || !TILES[tile[ni]]?.water)) {
+            vis[ni] = 1;
+            comp.push(ni);
+          }
+        }
+      }
+      const sz = comp.length;
+      for (const ci of comp) arr[ci] = sz;
+    }
+    return arr;
+  };
+  const compSize = buildComp(false);
+  const flyCompSize = buildComp(true);
+
+  island.index = { solid, tile, owner, compSize, flyCompSize };
   return island.index;
 }
 
@@ -327,18 +359,20 @@ export function onBridge(layout, x, z) {
   return !!b && x >= b.x0 - 0.01 && x <= b.x1 + 0.01 && z >= b.z0 && z <= b.z1;
 }
 
-/** Ground query for movement: { walkable, road, water, building } */
+/** Ground query for movement: { walkable, road, water, building, compSize } */
 export function groundAt(layout, x, z, { canFly = false } = {}) {
-  if (onBridge(layout, x, z)) return { walkable: true, road: true, water: false, building: null };
+  if (onBridge(layout, x, z)) return { walkable: true, road: true, water: false, building: null, compSize: 999 };
   const isl = islandAt(layout, x, z);
-  if (!isl) return { walkable: false };
+  if (!isl) return { walkable: false, compSize: 0 };
   const idx = isl.index || buildCellIndex(isl);
   const { gx, gy } = worldToCell(isl, x, z);
   const i = gy * isl.S + gx;
   const t = idx.tile[i];
   const water = !!TILES[t]?.water;
   const building = idx.owner[i];
-  return { walkable: !building && (!water || canFly), road: !!(TILES[t]?.road || TILES[t]?.bridge), water, building, island: isl };
+  const compArr = canFly ? (idx.flyCompSize || idx.compSize) : idx.compSize;
+  const compSize = compArr ? compArr[i] : 999;
+  return { walkable: !building && (!water || canFly), road: !!(TILES[t]?.road || TILES[t]?.bridge), water, building, island: isl, compSize };
 }
 
 /** Server sanity clamp: keep a position inside the islands ∪ bridge (no building collision). */
@@ -357,27 +391,31 @@ export function clampToArea(layout, x, z) {
 }
 
 export const BODY_RADIUS = 0.28;
+export const MIN_POCKET_CELLS = 6;
 
-export function isWalkablePos(layout, x, z, { canFly = false, radius = BODY_RADIUS } = {}) {
+export function isWalkablePos(layout, x, z, { canFly = false, radius = BODY_RADIUS, minComp = MIN_POCKET_CELLS } = {}) {
   if (!layout) return true;
-  for (const [ox, oz] of [[0, 0], [radius, 0], [-radius, 0], [0, radius * 0.6], [0, -radius * 0.6]]) {
+  const center = groundAt(layout, x, z, { canFly });
+  if (!center.walkable) return false;
+  if (minComp > 1 && center.compSize > 0 && center.compSize < minComp) return false;
+  for (const [ox, oz] of [[radius, 0], [-radius, 0], [0, radius * 0.6], [0, -radius * 0.6], [radius * 0.7, radius * 0.45], [-radius * 0.7, radius * 0.45], [radius * 0.7, -radius * 0.45], [-radius * 0.7, -radius * 0.45]]) {
     if (!groundAt(layout, x + ox, z + oz, { canFly }).walkable) return false;
   }
   return true;
 }
 
 /**
- * Find the nearest position to (x, z) whose full body circle is walkable.
+ * Find the nearest position to (x, z) whose full body circle is walkable and not trapped in a pocket.
  * If (x, z) is inside a building footprint, tries the building's perimeter steps first.
  */
 export function nearestWalkablePos(layout, x, z, { canFly = false, radius = BODY_RADIUS } = {}) {
-  if (!layout || isWalkablePos(layout, x, z, { canFly, radius })) return { x, z };
+  if (!layout || isWalkablePos(layout, x, z, { canFly, radius, minComp: MIN_POCKET_CELLS })) return { x, z };
   const g = groundAt(layout, x, z, { canFly });
   if (g.building && g.island) {
     const f = footprint(g.building.type, g.building.rot);
     const c = cellToWorld(g.island, g.building.x, g.building.y, f.w, f.h);
-    const padX = f.w / 2 + radius + 0.12;
-    const padZ = f.h / 2 + radius + 0.12;
+    const padX = f.w / 2 + radius + 0.16;
+    const padZ = f.h / 2 + radius + 0.16;
     const candidates = [
       { x: c.x, z: c.z + padZ },
       { x: c.x - 0.6, z: c.z + padZ },
@@ -388,27 +426,29 @@ export function nearestWalkablePos(layout, x, z, { canFly = false, radius = BODY
     ];
     let best = null;
     for (const pt of candidates) {
-      if (isWalkablePos(layout, pt.x, pt.z, { canFly, radius })) {
+      if (isWalkablePos(layout, pt.x, pt.z, { canFly, radius, minComp: 10 })) {
         const d = Math.hypot(pt.x - x, pt.z - z);
         if (!best || d < best.d) best = { x: pt.x, z: pt.z, d };
       }
     }
     if (best) return { x: best.x, z: best.z };
   }
-  for (let r = 0.25; r <= 18; r += 0.25) {
-    const steps = 24;
-    let best = null;
-    for (let i = 0; i < steps; i++) {
-      const a = (i / steps) * Math.PI * 2;
-      const px = x + Math.cos(a) * r;
-      const pz = z + Math.sin(a) * r;
-      if (isWalkablePos(layout, px, pz, { canFly, radius })) {
-        // Prefer points south (+Z) or closer to the island center
-        const score = r + (pz < z ? 0.05 : 0);
-        if (!best || score < best.score) best = { x: px, z: pz, score };
+  for (const minComp of [10, MIN_POCKET_CELLS, 1]) {
+    for (let r = 0.25; r <= 20; r += 0.25) {
+      const steps = 24;
+      let best = null;
+      for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const px = x + Math.cos(a) * r;
+        const pz = z + Math.sin(a) * r;
+        if (isWalkablePos(layout, px, pz, { canFly, radius, minComp })) {
+          // Prefer points south (+Z) or closer to the island center
+          const score = r + (pz < z ? 0.05 : 0);
+          if (!best || score < best.score) best = { x: px, z: pz, score };
+        }
       }
+      if (best) return { x: best.x, z: best.z };
     }
-    if (best) return { x: best.x, z: best.z };
   }
   const isl = islandAt(layout, x, z) || layout.islands?.[0];
   return isl ? { x: isl.cx, z: 2.5 } : { x, z };
@@ -451,3 +491,166 @@ export function findPlaced(layout, uid, x = 0, z = 0) {
   }
   return null;
 }
+
+/** Check whether the straight line between (x1, z1) and (x2, z2) is walkable every ~0.12 m. */
+export function isSegmentWalkable(layout, x1, z1, x2, z2, { canFly = false, radius = BODY_RADIUS } = {}) {
+  const dist = Math.hypot(x2 - x1, z2 - z1);
+  if (dist < 0.04) return true;
+  const steps = Math.max(2, Math.ceil(dist / 0.12));
+  for (let i = 1; i <= steps; i++) {
+    const u = i / steps;
+    const px = x1 + (x2 - x1) * u;
+    const pz = z1 + (z2 - z1) * u;
+    if (!isWalkablePos(layout, px, pz, { canFly, radius, minComp: 1 })) return false;
+  }
+  return true;
+}
+
+/** Single-island 8-directional A* + line-of-sight string-pulling. */
+function findIslandPath(isl, layout, sx, sz, gx, gz, { canFly = false, radius = BODY_RADIUS } = {}) {
+  const S = isl.S;
+  const sc = worldToCell(isl, sx, sz);
+  const gc = worldToCell(isl, gx, gz);
+  const clampCell = (v) => Math.max(0, Math.min(S - 1, v));
+  const startX = clampCell(sc.gx), startY = clampCell(sc.gy);
+  const goalX = clampCell(gc.gx), goalY = clampCell(gc.gy);
+  if (startX === goalX && startY === goalY) return [{ x: gx, z: gz }];
+
+  const idx = isl.index || buildCellIndex(isl);
+  const isCellOpen = (cx, cy) => {
+    if (cx < 0 || cy < 0 || cx >= S || cy >= S) return false;
+    const i = cy * S + cx;
+    if (idx.solid[i]) return false;
+    if (!canFly && TILES[idx.tile[i]]?.water) return false;
+    return true;
+  };
+
+  const N = S * S;
+  const gScore = new Float32Array(N).fill(1e9);
+  const fScore = new Float32Array(N).fill(1e9);
+  const cameFrom = new Int16Array(N).fill(-1);
+  const closed = new Uint8Array(N);
+
+  const startIdx = startY * S + startX;
+  const goalIdx = goalY * S + goalX;
+  gScore[startIdx] = 0;
+  fScore[startIdx] = Math.hypot(goalX - startX, goalY - startY);
+  const open = [startIdx];
+
+  const dirs = [
+    [1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1],
+    [1, 1, 1.414], [-1, 1, 1.414], [1, -1, 1.414], [-1, -1, 1.414],
+  ];
+
+  let bestIdx = startIdx;
+  let bestH = fScore[startIdx];
+
+  while (open.length > 0) {
+    let minPos = 0;
+    for (let i = 1; i < open.length; i++) {
+      if (fScore[open[i]] < fScore[open[minPos]]) minPos = i;
+    }
+    const cur = open[minPos];
+    open.splice(minPos, 1);
+    if (closed[cur]) continue;
+    closed[cur] = 1;
+
+    if (cur === goalIdx) {
+      bestIdx = cur;
+      break;
+    }
+
+    const cx = cur % S, cy = (cur / S) | 0;
+    const hCur = Math.hypot(goalX - cx, goalY - cy);
+    if (hCur < bestH) {
+      bestH = hCur;
+      bestIdx = cur;
+    }
+
+    for (const [dx, dy, cost] of dirs) {
+      const nx = cx + dx, ny = cy + dy;
+      if (!isCellOpen(nx, ny)) continue;
+      // Prevent cutting diagonally across solid/water corners
+      if (dx !== 0 && dy !== 0 && (!isCellOpen(cx + dx, cy) || !isCellOpen(cx, cy + dy))) continue;
+      const ni = ny * S + nx;
+      if (closed[ni]) continue;
+      const tileType = idx.tile[ni];
+      const roadFactor = TILES[tileType]?.road || TILES[tileType]?.bridge ? 0.88 : 1.0;
+      const tentativeG = gScore[cur] + cost * roadFactor;
+      if (tentativeG < gScore[ni]) {
+        cameFrom[ni] = cur;
+        gScore[ni] = tentativeG;
+        fScore[ni] = tentativeG + Math.hypot(goalX - nx, goalY - ny);
+        open.push(ni);
+      }
+    }
+  }
+
+  const rawPts = [];
+  let cur = bestIdx;
+  while (cur !== -1 && cur !== startIdx) {
+    const cx = cur % S, cy = (cur / S) | 0;
+    rawPts.push(cellToWorld(isl, cx, cy, 1, 1));
+    cur = cameFrom[cur];
+  }
+  rawPts.reverse();
+  const startCellCenter = cellToWorld(isl, startX, startY, 1, 1);
+  if (rawPts.length > 0 && Math.hypot(startCellCenter.x - sx, startCellCenter.z - sz) > 0.16 &&
+      !isSegmentWalkable(layout, sx, sz, rawPts[0].x, rawPts[0].z, { canFly, radius: radius * 0.90 })) {
+    rawPts.unshift(startCellCenter);
+  }
+  rawPts.push({ x: gx, z: gz });
+
+  // String-pulling (line-of-sight smoothing) so character walks natural diagonals around corners
+  const smooth = [];
+  let anchor = { x: sx, z: sz };
+  let i = 0;
+  while (i < rawPts.length) {
+    let furthest = i;
+    for (let j = rawPts.length - 1; j > i; j--) {
+      if (isSegmentWalkable(layout, anchor.x, anchor.z, rawPts[j].x, rawPts[j].z, { canFly, radius: radius * 0.90 })) {
+        furthest = j;
+        break;
+      }
+    }
+    smooth.push(rawPts[furthest]);
+    anchor = rawPts[furthest];
+    i = furthest + 1;
+  }
+  return smooth;
+}
+
+/**
+ * Compute a smooth, obstacle-avoiding waypoint list from (startX, startZ) to (goalX, goalZ).
+ * Handles buildings, water canals, and cross-island Rainbow Heart Bridge traversal.
+ */
+export function findWalkPath(layout, startX, startZ, goalX, goalZ, { canFly = false, radius = BODY_RADIUS } = {}) {
+  const goal = nearestWalkablePos(layout, goalX, goalZ, { canFly, radius });
+  if (!layout || !Array.isArray(layout.islands)) return [goal];
+  if (isSegmentWalkable(layout, startX, startZ, goal.x, goal.z, { canFly, radius: radius * 0.90 })) {
+    return [goal];
+  }
+
+  const startIsl = islandAt(layout, startX, startZ);
+  const goalIsl = islandAt(layout, goal.x, goal.z);
+
+  // Same island -> run single-island A* + string-pulling
+  if (startIsl && goalIsl && startIsl.owner === goalIsl.owner) {
+    return findIslandPath(startIsl, layout, startX, startZ, goal.x, goal.z, { canFly, radius });
+  }
+
+  // Cross-island traversal via Rainbow Heart Bridge
+  if (layout.bridge && startIsl && goalIsl && startIsl.owner !== goalIsl.owner) {
+    const b = layout.bridge;
+    const bridgeMidZ = (b.z0 + b.z1) * 0.5;
+    const goingEast = goalIsl.cx > startIsl.cx;
+    const exitPt = nearestWalkablePos(layout, goingEast ? b.x0 - 0.5 : b.x1 + 0.5, bridgeMidZ, { canFly, radius });
+    const entryPt = nearestWalkablePos(layout, goingEast ? b.x1 + 0.5 : b.x0 - 0.5, bridgeMidZ, { canFly, radius });
+    const leg1 = findIslandPath(startIsl, layout, startX, startZ, exitPt.x, exitPt.z, { canFly, radius });
+    const leg2 = findIslandPath(goalIsl, layout, entryPt.x, entryPt.z, goal.x, goal.z, { canFly, radius });
+    return [...leg1, entryPt, ...leg2];
+  }
+
+  return [goal];
+}
+

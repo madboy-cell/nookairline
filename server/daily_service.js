@@ -1,13 +1,35 @@
 // server/daily_service.js — Phase 5 daily features: Hall of Fame, Cheer, Owl Gifts, VIP Cards, Passport, Couple Streak, Founder.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   HALL_CATEGORIES, QUESTS, PASSPORT, STREAK, OWL, VIP_CARDS, FOUNDER, CHEER, WORSHIP,
-  utcDay, yesterday,
+  NOOK_NEEN_COUPLE_SINCE, utcDay, coupleDaysSince, yesterday,
 } from '../shared/phase5_rules.js';
+import { SEASON_OUTFITS, MAX_REFINE, itemDef } from '../shared/rpg_rules.js';
+import { grantItem } from './rpg_service.js';
+
+const POLAROID_SEED_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'data', 'nook_neen_polaroids_seed.json');
+let _cachedPolaroidSeed = null;
+function getNookNeenPolaroidSeed() {
+  if (_cachedPolaroidSeed !== null) return _cachedPolaroidSeed;
+  try {
+    if (fs.existsSync(POLAROID_SEED_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(POLAROID_SEED_PATH, 'utf8'));
+      _cachedPolaroidSeed = Array.isArray(parsed) ? parsed : [];
+    } else {
+      _cachedPolaroidSeed = [];
+    }
+  } catch {
+    _cachedPolaroidSeed = [];
+  }
+  return _cachedPolaroidSeed;
+}
 
 /**
  * Ensures all Phase 5 profile fields exist lazily and idempotently per Section 0.
  */
-export function ensurePhase5(p) {
+export function ensurePhase5(p, nowMs = Date.now()) {
   if (!p) return p;
 
   if (p.gold === undefined) p.gold = 0;
@@ -63,6 +85,15 @@ export function ensurePhase5(p) {
   if (p.login_day === undefined) p.login_day = null;
   if (p.couple_streak === undefined) p.couple_streak = 0;
   if (p.couple_streak_day === undefined) p.couple_streak_day = null;
+  if (p.couple_since === undefined) p.couple_since = null;
+  if (!p.past_couple_streaks || typeof p.past_couple_streaks !== 'object') {
+    p.past_couple_streaks = {};
+  }
+
+  if (!Array.isArray(p.friend_requests_in)) p.friend_requests_in = [];
+  if (!Array.isArray(p.friend_requests_out)) p.friend_requests_out = [];
+  if (!Array.isArray(p.couple_requests_in)) p.couple_requests_in = [];
+  if (p.couple_requests_out === undefined) p.couple_requests_out = null;
 
   if (p.founder_claimed === undefined) p.founder_claimed = false;
 
@@ -80,6 +111,106 @@ export function ensurePhase5(p) {
     p.call_stats = { day: null, chunks: 0 };
   }
 
+  if (!p.past_couple_stats || typeof p.past_couple_stats !== 'object') {
+    p.past_couple_stats = {};
+  }
+
+  if (!p.couple_stats || typeof p.couple_stats !== 'object') {
+    p.couple_stats = {
+      bestStreak: p.couple_streak || 0,
+      callMinutes: 0,
+      callSessions: 0,
+      callDiamonds: 0,
+      blessingsShared: 0,
+      giftsExchanged: 0,
+      momentsCaptured: 0,
+      coopActivities: 0,
+      _seeded: false,
+    };
+  } else {
+    p.couple_stats.bestStreak = Math.max(p.couple_stats.bestStreak || 0, p.couple_streak || 0);
+    p.couple_stats.callMinutes = p.couple_stats.callMinutes || 0;
+    p.couple_stats.callSessions = p.couple_stats.callSessions || 0;
+    p.couple_stats.callDiamonds = p.couple_stats.callDiamonds || 0;
+    p.couple_stats.blessingsShared = p.couple_stats.blessingsShared || 0;
+    p.couple_stats.giftsExchanged = p.couple_stats.giftsExchanged || 0;
+    p.couple_stats.momentsCaptured = p.couple_stats.momentsCaptured || 0;
+    p.couple_stats.coopActivities = p.couple_stats.coopActivities || 0;
+  }
+
+  const isNookNeenPair =
+    (p.id === 'nook' || p.id === 'neen') &&
+    (p.partner_id === 'neen' || p.partner_id === 'nook');
+
+  if (isNookNeenPair) {
+    if (!p.couple_since || typeof p.couple_since === 'number') {
+      p.couple_since = NOOK_NEEN_COUPLE_SINCE;
+    }
+    const autoDays = coupleDaysSince(p.couple_since, nowMs);
+    if (autoDays > 0) {
+      p.couple_streak = Math.max(p.couple_streak || 0, autoDays);
+      p.couple_stats.bestStreak = Math.max(p.couple_stats.bestStreak || 0, p.couple_streak, 17);
+    }
+    if (!p.couple_stats._v2ChronicleFloor) {
+      // Verified V1 + V2 cumulative Love Chronicle baseline (81h 43m / 56 calls / +6,360💎 / 119 blessings / 30 gifts / 1703 moments / 118 co-op dates)
+      p.couple_stats.bestStreak = Math.max(p.couple_stats.bestStreak || 0, 17);
+      p.couple_stats.callMinutes = Math.max(p.couple_stats.callMinutes || 0, 4903);
+      p.couple_stats.callSessions = Math.max(p.couple_stats.callSessions || 0, 56);
+      p.couple_stats.callDiamonds = Math.max(p.couple_stats.callDiamonds || 0, 6360);
+      p.couple_stats.blessingsShared = Math.max(p.couple_stats.blessingsShared || 0, 119);
+      p.couple_stats.giftsExchanged = Math.max(p.couple_stats.giftsExchanged || 0, 30);
+      p.couple_stats.momentsCaptured = Math.max(p.couple_stats.momentsCaptured || 0, 1703);
+      p.couple_stats.coopActivities = Math.max(p.couple_stats.coopActivities || 0, 118);
+      p.couple_stats._seeded = true;
+      p.couple_stats._nookairlineImported = true;
+      p.couple_stats._v2ChronicleFloor = true;
+    }
+  } else if (p.partner_id) {
+    if (typeof p.couple_since === 'string') {
+      const autoDays = coupleDaysSince(p.couple_since, nowMs);
+      if (autoDays > 0) {
+        p.couple_streak = autoDays;
+        p.couple_stats.bestStreak = Math.max(p.couple_stats.bestStreak || 0, autoDays);
+      }
+    }
+    if (!p.couple_stats._seeded) {
+      const s = p.couple_streak || 1;
+      const isZero =
+        !p.couple_stats.callMinutes &&
+        !p.couple_stats.blessingsShared &&
+        !p.couple_stats.giftsExchanged &&
+        !p.couple_stats.momentsCaptured &&
+        !p.couple_stats.coopActivities;
+      if (s > 1 && isZero) {
+        p.couple_stats.bestStreak = Math.max(p.couple_stats.bestStreak || 0, s);
+        p.couple_stats.callMinutes = s * 14;
+        p.couple_stats.callSessions = Math.max(1, Math.round(s * 0.65));
+        p.couple_stats.callDiamonds = Math.floor((s * 14) / 15) * 20;
+        p.couple_stats.blessingsShared = Math.max(1, Math.round(s * 0.85));
+        p.couple_stats.giftsExchanged = Math.max(1, Math.round(s * 0.55));
+        p.couple_stats.momentsCaptured = Math.max(1, Math.round(s * 0.42));
+        p.couple_stats.coopActivities = Math.max(1, Math.round(s * 0.36));
+      }
+      p.couple_stats._seeded = true;
+    }
+  }
+
+  if (!Array.isArray(p.couple_album)) {
+    p.couple_album = [];
+  }
+  if (isNookNeenPair) {
+    const seedAlbum = getNookNeenPolaroidSeed();
+    if (seedAlbum.length > 0) {
+      const existingIds = new Set(p.couple_album.map((item) => item?.id).filter(Boolean));
+      for (const item of seedAlbum) {
+        if (item?.id && !existingIds.has(item.id) && p.couple_album.length < 12) {
+          p.couple_album.push({ ...item });
+          existingIds.add(item.id);
+        }
+      }
+    }
+  }
+
   return p;
 }
 
@@ -94,6 +225,9 @@ export function createDailyService({
   pushProfile = () => {},
   rng = Math.random,
   listProfiles,
+  isOnline = () => false,
+  getPresence = () => null,
+  onCoupleChanged = () => {},
 } = {}) {
   // In-memory cheer banners: cheerId -> { cheerId, winnerId, winnerName, achievement, expiresAt, claimed: Set }
   const activeCheers = new Map();
@@ -293,7 +427,12 @@ export function createDailyService({
         }
         extraBerries = Math.floor(amt);
       } else if (slot2.kind === 'bag') {
-        const allowed = ['streak_freeze', 'vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black'];
+        const allowed = [
+          'streak_freeze', 'vip_call_day_pass', 'vip_communicator', 'vip_telelink_box', 'vip_black',
+          'ticket_standard', 'ticket_gold', 'ticket_royal_hair',
+          'scroll_forge_boost', 'protection_scroll',
+          'random_dupe_box', 'dupe_box', 'mythic_selector_box',
+        ];
         if (!allowed.includes(slot2.key)) return { ok: false, error: 'invalid_bag_key' };
         if ((p.bag_items?.[slot2.key] || 0) < 1) return { ok: false, error: 'insufficient_item' };
       } else {
@@ -343,6 +482,16 @@ export function createDailyService({
         } else {
           const refine = inv.refine || 0;
           delete p.inventory[slot1.itemId];
+          for (const eqSlot of Object.values(p.equipped || {})) {
+            if (eqSlot && typeof eqSlot === 'object' && eqSlot.glamour === slot1.itemId) {
+              delete eqSlot.glamour;
+            }
+          }
+          if (p.glamour && typeof p.glamour === 'object') {
+            for (const [gSlot, gId] of Object.entries(p.glamour)) {
+              if (gId === slot1.itemId) delete p.glamour[gSlot];
+            }
+          }
           mailItems.push({ kind: 'gear', itemId: slot1.itemId, refine, dupe: false });
         }
       } else if (slot1.kind === 'decor') {
@@ -365,6 +514,12 @@ export function createDailyService({
     p.owl_sent.count += 1;
 
     ensurePhase5(recipient);
+    if (isPartner) {
+      const mergedGifts = Math.max(p.couple_stats?.giftsExchanged || 0, recipient.couple_stats?.giftsExchanged || 0) + 1;
+      p.couple_stats.giftsExchanged = mergedGifts;
+      recipient.couple_stats.giftsExchanged = mergedGifts;
+    }
+
     const nowMs = now();
     const mailId = `m_${nowMs}_${Math.floor(rng() * 1e6)}`;
     const mail = {
@@ -462,8 +617,9 @@ export function createDailyService({
       target = db?.getProfile?.(m.target);
       if (!target) return { ok: false, error: 'no_such_user' };
       if (target.id.toLowerCase() === (p.id || '').toLowerCase()) return { ok: false, error: 'invalid_target' };
+      const isPartner = !!(p.partner_id && p.partner_id.toLowerCase() === target.id.toLowerCase());
       const isFriend = Array.isArray(p.friends) && p.friends.some((f) => f.toLowerCase() === target.id.toLowerCase());
-      if (!isFriend) return { ok: false, error: 'not_friend' };
+      if (!isPartner && !isFriend) return { ok: false, error: 'not_friend' };
     }
 
     if (cardKey === 'vip_communicator' && m?.currency === 'shards') {
@@ -525,8 +681,9 @@ export function createDailyService({
       target = db?.getProfile?.(m.target);
       if (!target) return { ok: false, error: 'no_such_user' };
       if (target.id.toLowerCase() === (p.id || '').toLowerCase()) return { ok: false, error: 'invalid_target' };
+      const isPartner = !!(p.partner_id && p.partner_id.toLowerCase() === target.id.toLowerCase());
       const isFriend = Array.isArray(p.friends) && p.friends.some((f) => f.toLowerCase() === target.id.toLowerCase());
-      if (!isFriend) return { ok: false, error: 'not_friend' };
+      if (!isPartner && !isFriend) return { ok: false, error: 'not_friend' };
     }
 
     p.bag_items[bKey] -= 1;
@@ -556,6 +713,68 @@ export function createDailyService({
     pushProfile(p);
 
     return { ok: true, card: cardKey, activated: true };
+  }
+
+  function bagItemUse(p, m) {
+    ensurePhase5(p);
+    const key = String(m?.key || '');
+    if (!key) return { ok: false, error: 'invalid_bag_key' };
+
+    const cardKey = normalizeCardKey(key);
+    if (cardKey) {
+      return vipCardUse(p, { card: cardKey, target: m?.target });
+    }
+
+    if ((p.bag_items?.[key] || 0) < 1) {
+      return { ok: false, error: 'not_owned' };
+    }
+
+    if (key === 'random_dupe_box' || key === 'dupe_box') {
+      p.bag_items[key] -= 1;
+      if (p.bag_items[key] <= 0) delete p.bag_items[key];
+      const invEntries = Object.entries(p.inventory || {}).filter(
+        ([id, it]) => id !== 'newbie_outfit' && itemDef(id) && (it?.refine | 0) < MAX_REFINE
+      );
+      let pickedId = 'hat_wolf_ears';
+      if (invEntries.length > 0) {
+        const idx = Math.min(invEntries.length - 1, Math.floor(rng() * invEntries.length));
+        pickedId = invEntries[idx][0];
+      }
+      const grantRes = grantItem(p, pickedId);
+      const def = itemDef(pickedId);
+      db?.markProfile?.(p.id);
+      pushProfile(p);
+      return {
+        ok: true,
+        key,
+        grantedItemId: pickedId,
+        grantedName: def?.name || pickedId,
+        grant: grantRes,
+      };
+    }
+
+    if (key === 'mythic_selector_box') {
+      p.bag_items[key] -= 1;
+      if (p.bag_items[key] <= 0) delete p.bag_items[key];
+      let pickedId = m?.pickId && SEASON_OUTFITS.includes(m.pickId) ? m.pickId : null;
+      if (!pickedId) {
+        const unowned = SEASON_OUTFITS.filter((id) => !p.inventory?.[id]);
+        pickedId = unowned[0] || p.gacha?.featured_outfit || SEASON_OUTFITS[0];
+      }
+      const grantRes = grantItem(p, pickedId);
+      const def = itemDef(pickedId);
+      db?.markProfile?.(p.id);
+      pushProfile(p);
+      return {
+        ok: true,
+        key,
+        grantedItemId: pickedId,
+        grantedName: def?.name || pickedId,
+        grant: grantRes,
+      };
+    }
+
+    return { ok: false, error: 'invalid_bag_key' };
   }
 
   function syncPassportDay(p) {
@@ -679,9 +898,209 @@ export function createDailyService({
     return { ok: false, error: 'invalid_quest_key' };
   }
 
-  function onDailyLogin(p) {
+  function mergeCoupleStats(sA = {}, sB = {}, currentStreak = 0) {
+    return {
+      bestStreak: Math.max(sA.bestStreak || 0, sB.bestStreak || 0, currentStreak || 0),
+      callMinutes: Math.max(sA.callMinutes || 0, sB.callMinutes || 0),
+      callSessions: Math.max(sA.callSessions || 0, sB.callSessions || 0),
+      callDiamonds: Math.max(sA.callDiamonds || 0, sB.callDiamonds || 0),
+      blessingsShared: Math.max(sA.blessingsShared || 0, sB.blessingsShared || 0),
+      giftsExchanged: Math.max(sA.giftsExchanged || 0, sB.giftsExchanged || 0),
+      momentsCaptured: Math.max(sA.momentsCaptured || 0, sB.momentsCaptured || 0),
+      coopActivities: Math.max(sA.coopActivities || 0, sB.coopActivities || 0),
+      _seeded: true,
+      _nookairlineImported: Boolean(sA._nookairlineImported || sB._nookairlineImported),
+    };
+  }
+
+  function bumpCoupleStat(p, deltas = {}) {
+    if (!p) return { ok: false };
     ensurePhase5(p);
-    const today = utcDay(now());
+    if (!p.partner_id) return { ok: false };
+    const partner = db?.getProfile?.(p.partner_id);
+    if (!partner || !partner.partner_id || partner.partner_id.toLowerCase() !== p.id.toLowerCase()) {
+      return { ok: false };
+    }
+    ensurePhase5(partner);
+    const merged = mergeCoupleStats(p.couple_stats, partner.couple_stats, Math.max(p.couple_streak || 0, partner.couple_streak || 0));
+    for (const [k, v] of Object.entries(deltas)) {
+      if (typeof v === 'number' && Number.isFinite(v) && k in merged && k !== '_seeded') {
+        merged[k] = Math.max(0, (merged[k] || 0) + v);
+      }
+    }
+    p.couple_stats = { ...merged };
+    partner.couple_stats = { ...merged };
+    db?.markProfile?.(p.id);
+    db?.markProfile?.(partner.id);
+    pushProfile(p);
+    pushProfile(partner);
+    return { ok: true, coupleStats: merged };
+  }
+
+  function mergeCoupleAlbums(listA = [], listB = [], maxItems = 12) {
+    const map = new Map();
+    for (const item of [...(Array.isArray(listA) ? listA : []), ...(Array.isArray(listB) ? listB : [])]) {
+      if (item && typeof item === 'object' && item.id && !map.has(item.id)) {
+        map.set(item.id, item);
+      }
+    }
+    return [...map.values()]
+      .sort((a, b) => (b.at || 0) - (a.at || 0))
+      .slice(0, maxItems);
+  }
+
+  const lastCouplePoseByPair = new Map();
+
+  function coupleMoment(p, m = {}) {
+    ensurePhase5(p);
+    const partner = p.partner_id ? db?.getProfile?.(p.partner_id) : null;
+    const isBoundCouple = !!(partner && partner.partner_id && partner.partner_id.toLowerCase() === p.id.toLowerCase());
+    if (partner) ensurePhase5(partner);
+
+    if (m?.deletePhotoId) {
+      const delId = String(m.deletePhotoId);
+      p.couple_album = (p.couple_album || []).filter((x) => x && x.id !== delId);
+      db?.markProfile?.(p.id);
+      pushProfile(p);
+      if (isBoundCouple && partner) {
+        partner.couple_album = (partner.couple_album || []).filter((x) => x && x.id !== delId);
+        db?.markProfile?.(partner.id);
+        pushProfile(partner);
+      }
+      return {
+        ok: true,
+        deletedId: delId,
+        coupleAlbum: p.couple_album,
+        directory: socialDirectory(p),
+      };
+    }
+
+    const kind = String(m?.kind || 'pose');
+    const pose = String(m?.pose || (kind === 'polaroid' ? 'heart_hands' : 'hug'));
+    const nowMs = now();
+
+    // Prevent infinite ping-pong echo if partner's client auto-replies to couple_interaction within 2.5s
+    if (kind === 'pose' && isBoundCouple && partner) {
+      const pairKey = [p.id.toLowerCase(), partner.id.toLowerCase()].sort().join('|');
+      const prevPose = lastCouplePoseByPair.get(pairKey);
+      if (prevPose && nowMs - prevPose.at < 2500 && prevPose.from !== p.id) {
+        return {
+          ok: true,
+          throttled: true,
+          kind,
+          pose: prevPose.pose,
+          coupleAlbum: p.couple_album,
+          coupleStats: p.couple_stats,
+          directory: socialDirectory(p),
+        };
+      }
+      if (prevPose && nowMs - prevPose.at < 500 && prevPose.from === p.id && prevPose.pose === pose) {
+        return {
+          ok: true,
+          throttled: true,
+          kind,
+          pose,
+          coupleAlbum: p.couple_album,
+          coupleStats: p.couple_stats,
+          directory: socialDirectory(p),
+        };
+      }
+      lastCouplePoseByPair.set(pairKey, { at: nowMs, from: p.id, pose });
+    }
+
+    let savedPhoto = null;
+    if (m?.photo && typeof m.photo === 'object') {
+      const rawThumb = typeof m.photo.thumbDataUrl === 'string' && m.photo.thumbDataUrl.startsWith('data:image/') && m.photo.thumbDataUrl.length < 240000
+        ? m.photo.thumbDataUrl
+        : null;
+      savedPhoto = {
+        id: String(m.photo.id || `pol_${nowMs}_${Math.floor(Math.random() * 10000)}`).slice(0, 48),
+        at: nowMs,
+        by: p.id,
+        byName: p.username || p.id,
+        partnerId: isBoundCouple && partner ? partner.id : null,
+        partnerName: isBoundCouple && partner ? (partner.username || partner.id) : null,
+        mode: m.photo.mode === 'solo' || !isBoundCouple ? 'solo' : 'couple',
+        caption: String(m.photo.caption || '').trim().slice(0, 64),
+        pose: String(m.photo.pose || pose).slice(0, 32),
+        backdrop: String(m.photo.backdrop || 'balcony').slice(0, 32),
+        frame: String(m.photo.frame || 'classic').slice(0, 32),
+        filter: String(m.photo.filter || 'warm').slice(0, 32),
+        expression: String(m.photo.expression || 'blush').slice(0, 32),
+        streak: isBoundCouple ? Math.max(p.couple_streak || 1, partner?.couple_streak || 1) : 0,
+        thumbDataUrl: rawThumb,
+      };
+    }
+
+    if (!p.partner_id || !isBoundCouple) {
+      if (savedPhoto) {
+        p.couple_album = mergeCoupleAlbums([savedPhoto], p.couple_album);
+        bumpQuest(p, 'pet', 1);
+        db?.markProfile?.(p.id);
+        pushProfile(p);
+        return {
+          ok: true,
+          kind,
+          pose,
+          photo: savedPhoto,
+          coupleAlbum: p.couple_album,
+          directory: socialDirectory(p),
+        };
+      }
+      return { ok: false, error: 'not_coupled' };
+    }
+
+    const res = bumpCoupleStat(p, { momentsCaptured: 1 });
+    if (!res.ok) return { ok: false, error: 'not_coupled' };
+
+    if (savedPhoto) {
+      const mergedAlbum = mergeCoupleAlbums([savedPhoto], mergeCoupleAlbums(p.couple_album, partner.couple_album));
+      p.couple_album = mergedAlbum;
+      partner.couple_album = [...mergedAlbum];
+    }
+
+    // Grant 1-hour Couple Harmony village buff (+15%/+25% yield aura) & daily harmony progress
+    if (p.village) {
+      p.village.blessed_until = Math.max(p.village.blessed_until || 0, nowMs + 3600 * 1000);
+    }
+    if (partner?.village) {
+      partner.village.blessed_until = Math.max(partner.village.blessed_until || 0, nowMs + 3600 * 1000);
+      db?.markProfile?.(partner.id);
+      pushProfile(partner);
+    }
+    bumpQuest(p, 'pet', 1);
+    db?.markProfile?.(p.id);
+    pushProfile(p);
+    if (partner) {
+      sendTo(partner.id, {
+        type: 'couple_interaction',
+        from: p.id,
+        fromName: p.username || p.id,
+        kind,
+        pose,
+        initiatorRole: m?.initiatorRole === 'right' ? 'right' : (m?.initiatorRole === 'left' ? 'left' : null),
+        photo: savedPhoto ? { id: savedPhoto.id, caption: savedPhoto.caption, pose: savedPhoto.pose, at: savedPhoto.at } : null,
+        mood: m?.mood ? String(m.mood) : null,
+        x: typeof m?.x === 'number' && Number.isFinite(m.x) ? m.x : null,
+        z: typeof m?.z === 'number' && Number.isFinite(m.z) ? m.z : null,
+        at: nowMs,
+      });
+    }
+    return {
+      ok: true,
+      kind,
+      pose,
+      photo: savedPhoto,
+      coupleAlbum: p.couple_album,
+      coupleStats: res.coupleStats,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function onDailyLogin(p) {
+    const nowMs = now();
+    ensurePhase5(p, nowMs);
+    const today = utcDay(nowMs);
     const yest = yesterday(today);
 
     p.login_day = today;
@@ -697,15 +1116,18 @@ export function createDailyService({
       return { ok: true, streak: 0, rewards: null };
     }
 
-    ensurePhase5(partner);
+    ensurePhase5(partner, nowMs);
 
     // Couple streak applies when both have logged in today and streak hasn't been applied today
     if (partner.login_day === today && p.couple_streak_day !== today) {
       const prevStreakDay = p.couple_streak_day || partner.couple_streak_day;
+      const sinceDays = typeof p.couple_since === 'string' ? coupleDaysSince(p.couple_since, nowMs) : 0;
       let newStreak;
       let consumedFreeze = false;
 
-      if (prevStreakDay === yest) {
+      if (sinceDays > 0) {
+        newStreak = sinceDays;
+      } else if (prevStreakDay === yest) {
         newStreak = (p.couple_streak || 0) + 1;
       } else if ((p.couple_streak || 0) > 0 && ((p.bag_items?.streak_freeze || 0) >= 1 || (partner.bag_items?.streak_freeze || 0) >= 1)) {
         if ((p.bag_items?.streak_freeze || 0) >= 1) {
@@ -725,6 +1147,10 @@ export function createDailyService({
       partner.couple_streak = newStreak;
       p.couple_streak_day = today;
       partner.couple_streak_day = today;
+
+      const mergedStats = mergeCoupleStats(p.couple_stats, partner.couple_stats, newStreak);
+      p.couple_stats = { ...mergedStats };
+      partner.couple_stats = { ...mergedStats };
 
       let diamonds = STREAK.DAILY_DIAMONDS;
       let tickets = 0;
@@ -769,7 +1195,7 @@ export function createDailyService({
   }
 
   function founderClaim(p, m) {
-    ensurePhase5(p);
+    ensurePhase5(p, now());
     if (p.founder_claimed) {
       return { ok: false, error: 'already_claimed' };
     }
@@ -804,8 +1230,8 @@ export function createDailyService({
 
   function canCall(caller, callee, nowMs = now()) {
     if (!caller || !callee) return { ok: false, error: 'invalid_user' };
-    ensurePhase5(caller);
-    ensurePhase5(callee);
+    ensurePhase5(caller, nowMs);
+    ensurePhase5(callee, nowMs);
 
     if (caller.id === callee.id) {
       return { ok: false, error: 'cannot_call_self' };
@@ -832,6 +1258,575 @@ export function createDailyService({
     return { ok: false, error: 'call_locked' };
   }
 
+  function describeUserSummary(viewer, target) {
+    if (!target) return null;
+    const nowMs = now();
+    ensurePhase5(target, nowMs);
+    const online = Boolean(target.is_bot || isOnline(target.id));
+    const pres = getPresence(target.id);
+    let locationLabel = 'Offline';
+    if (online) {
+      if (target.is_bot || pres?.instanceId === 'townhall') {
+        locationLabel = 'In Town Hall Plaza';
+      } else if (pres?.instanceId?.startsWith('couple:')) {
+        locationLabel = 'In Couple Sanctuary';
+      } else if (pres?.instanceId?.startsWith('village:')) {
+        const islOwner = pres.instanceId.slice('village:'.length);
+        locationLabel = islOwner === target.id ? 'In Sky Village' : `Visiting ${islOwner}'s Isle`;
+      } else {
+        locationLabel = 'In Sky Village';
+      }
+    }
+    const isPartner = !!(viewer?.partner_id && viewer.partner_id.toLowerCase() === target.id.toLowerCase());
+    const callCheck = viewer ? canCall(viewer, target, nowMs) : { ok: false };
+    const hasTelelink = Array.isArray(viewer?.vip?.telelinks) &&
+      viewer.vip.telelinks.some((t) => t.toLowerCase() === target.id.toLowerCase());
+    const today = utcDay(nowMs);
+    const blessedToday = viewer?.bless_day === today;
+
+    return {
+      id: target.id,
+      username: target.username || target.id,
+      level: target.level || 1,
+      cp: target.cp || 0,
+      lineage: target.lineage || 'bkk',
+      appearance: target.appearance || null,
+      equipped: target.equipped || {},
+      title: target.title || null,
+      isBot: !!target.is_bot,
+      isPartner,
+      partner_id: target.partner_id || null,
+      couple_streak: target.couple_streak || 0,
+      couple_since: target.couple_since || null,
+      couple_stats: target.couple_stats || null,
+      online,
+      instanceId: pres?.instanceId || (target.is_bot ? 'townhall' : `village:${target.id}`),
+      locationLabel,
+      canCall: !!callCheck?.ok,
+      hasTelelink,
+      blessedToday,
+      blessedUntil: target.village?.blessed_until || 0,
+    };
+  }
+
+  function socialDirectory(p) {
+    const nowMs = now();
+    ensurePhase5(p, nowMs);
+    const partnerProf = p.partner_id ? db?.getProfile?.(p.partner_id) : null;
+    const isBoundCouple = !!(partnerProf && partnerProf.partner_id && partnerProf.partner_id.toLowerCase() === p.id.toLowerCase());
+    let coupleStats = p.couple_stats;
+    let coupleAlbum = Array.isArray(p.couple_album) ? p.couple_album : [];
+    if (isBoundCouple && partnerProf) {
+      ensurePhase5(partnerProf, nowMs);
+      coupleStats = mergeCoupleStats(p.couple_stats, partnerProf.couple_stats, Math.max(p.couple_streak || 0, partnerProf.couple_streak || 0));
+      p.couple_stats = { ...coupleStats };
+      partnerProf.couple_stats = { ...coupleStats };
+      coupleAlbum = mergeCoupleAlbums(p.couple_album, partnerProf.couple_album);
+      p.couple_album = coupleAlbum;
+      partnerProf.couple_album = [...coupleAlbum];
+    }
+    const partner = isBoundCouple ? describeUserSummary(p, partnerProf) : null;
+
+    const friendIds = Array.from(new Set(
+      (p.friends || [])
+        .map((f) => String(f || '').toLowerCase())
+        .filter((f) => f && f !== p.id.toLowerCase())
+    ));
+    const friends = friendIds
+      .map((fid) => db?.getProfile?.(fid))
+      .filter(Boolean)
+      .map((fProf) => describeUserSummary(p, fProf));
+
+    const friendRequestsIn = (p.friend_requests_in || [])
+      .map((req) => {
+        const sender = db?.getProfile?.(req.from);
+        if (!sender) return null;
+        return {
+          from: sender.id,
+          fromName: sender.username || sender.id,
+          at: req.at || 0,
+          user: describeUserSummary(p, sender),
+        };
+      })
+      .filter(Boolean);
+
+    const coupleRequestsIn = (p.couple_requests_in || [])
+      .map((req) => {
+        const sender = db?.getProfile?.(req.from);
+        if (!sender) return null;
+        return {
+          from: sender.id,
+          fromName: sender.username || sender.id,
+          at: req.at || 0,
+          savedStreak: p.past_couple_streaks?.[sender.id] || 0,
+          user: describeUserSummary(p, sender),
+        };
+      })
+      .filter(Boolean);
+
+    const friendSet = new Set(friendIds);
+    const reqOutSet = new Set((p.friend_requests_out || []).map((x) => String(x).toLowerCase()));
+    const discoverPlayers = getAllProfiles()
+      .filter((other) => other && other.id && other.id.toLowerCase() !== p.id.toLowerCase() && !friendSet.has(other.id.toLowerCase()))
+      .slice(0, 8)
+      .map((other) => ({
+        ...describeUserSummary(p, other),
+        requestPending: reqOutSet.has(other.id.toLowerCase()),
+      }));
+
+    return {
+      ok: true,
+      partner,
+      coupleStats,
+      coupleAlbum,
+      friends,
+      friendRequestsIn,
+      friendRequestsOut: p.friend_requests_out || [],
+      coupleRequestsIn,
+      coupleRequestOut: p.couple_requests_out || null,
+      discoverPlayers,
+      pastStreaks: p.past_couple_streaks || {},
+    };
+  }
+
+  function linkFriendsBothWays(a, b) {
+    ensurePhase5(a);
+    ensurePhase5(b);
+    if (!a.friends.some((x) => x.toLowerCase() === b.id.toLowerCase())) {
+      a.friends.push(b.id);
+    }
+    if (!b.friends.some((x) => x.toLowerCase() === a.id.toLowerCase())) {
+      b.friends.push(a.id);
+    }
+    a.friend_requests_in = (a.friend_requests_in || []).filter((r) => r.from?.toLowerCase() !== b.id.toLowerCase());
+    b.friend_requests_in = (b.friend_requests_in || []).filter((r) => r.from?.toLowerCase() !== a.id.toLowerCase());
+    a.friend_requests_out = (a.friend_requests_out || []).filter((id) => id.toLowerCase() !== b.id.toLowerCase());
+    b.friend_requests_out = (b.friend_requests_out || []).filter((id) => id.toLowerCase() !== a.id.toLowerCase());
+  }
+
+  function friendRequestSend(p, m) {
+    ensurePhase5(p);
+    const rawTo = String(m?.to || m?.username || '').trim().toLowerCase();
+    if (!rawTo) return { ok: false, error: 'no_such_user' };
+
+    let target = db?.getProfile?.(rawTo);
+    if (!target) {
+      target = getAllProfiles().find((x) => (x.username || x.id || '').toLowerCase() === rawTo) || null;
+    }
+    if (!target) return { ok: false, error: 'no_such_user' };
+    ensurePhase5(target);
+
+    if (target.id.toLowerCase() === p.id.toLowerCase()) {
+      return { ok: false, error: 'cannot_friend_self' };
+    }
+    if ((p.friends || []).some((f) => f.toLowerCase() === target.id.toLowerCase())) {
+      return { ok: false, error: 'already_friends' };
+    }
+    if ((p.friends || []).length >= 200) {
+      return { ok: false, error: 'friend_limit_reached' };
+    }
+
+    const reversePending = (p.friend_requests_in || []).some((r) => r.from?.toLowerCase() === target.id.toLowerCase());
+    if (target.is_bot || reversePending) {
+      linkFriendsBothWays(p, target);
+      db?.markProfile?.(p.id);
+      db?.markProfile?.(target.id);
+      pushProfile(p);
+      pushProfile(target);
+      sendTo(target.id, {
+        type: 'social_notify',
+        kind: 'friend_accepted',
+        by: p.id,
+        byName: p.username || p.id,
+      });
+      return {
+        ok: true,
+        status: 'accepted',
+        targetId: target.id,
+        targetName: target.username || target.id,
+        directory: socialDirectory(p),
+      };
+    }
+
+    if ((p.friend_requests_out || []).some((id) => id.toLowerCase() === target.id.toLowerCase())) {
+      return { ok: false, error: 'request_already_sent' };
+    }
+
+    p.friend_requests_out.push(target.id);
+    if (!target.friend_requests_in.some((r) => r.from?.toLowerCase() === p.id.toLowerCase())) {
+      target.friend_requests_in.unshift({
+        from: p.id,
+        fromName: p.username || p.id,
+        at: now(),
+      });
+    }
+
+    db?.markProfile?.(p.id);
+    db?.markProfile?.(target.id);
+    pushProfile(p);
+    pushProfile(target);
+    sendTo(target.id, {
+      type: 'social_notify',
+      kind: 'friend_request',
+      from: p.id,
+      fromName: p.username || p.id,
+    });
+
+    return {
+      ok: true,
+      status: 'pending',
+      targetId: target.id,
+      targetName: target.username || target.id,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function friendRequestAccept(p, m) {
+    ensurePhase5(p);
+    const fromId = String(m?.from || m?.userId || '').trim().toLowerCase();
+    if (!fromId) return { ok: false, error: 'no_such_user' };
+    const sender = db?.getProfile?.(fromId);
+    if (!sender) return { ok: false, error: 'no_such_user' };
+    ensurePhase5(sender);
+
+    const hasIncoming = (p.friend_requests_in || []).some((r) => r.from?.toLowerCase() === sender.id.toLowerCase());
+    const hasOutgoing = (sender.friend_requests_out || []).some((id) => id.toLowerCase() === p.id.toLowerCase());
+    if (!hasIncoming && !hasOutgoing) {
+      return { ok: false, error: 'no_such_request' };
+    }
+
+    linkFriendsBothWays(p, sender);
+    db?.markProfile?.(p.id);
+    db?.markProfile?.(sender.id);
+    pushProfile(p);
+    pushProfile(sender);
+    sendTo(sender.id, {
+      type: 'social_notify',
+      kind: 'friend_accepted',
+      by: p.id,
+      byName: p.username || p.id,
+    });
+
+    return {
+      ok: true,
+      friendId: sender.id,
+      friendName: sender.username || sender.id,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function friendRequestDecline(p, m) {
+    ensurePhase5(p);
+    const otherId = String(m?.from || m?.to || m?.userId || '').trim().toLowerCase();
+    if (!otherId) return { ok: false, error: 'no_such_user' };
+    const other = db?.getProfile?.(otherId);
+
+    p.friend_requests_in = (p.friend_requests_in || []).filter((r) => r.from?.toLowerCase() !== otherId);
+    p.friend_requests_out = (p.friend_requests_out || []).filter((id) => id.toLowerCase() !== otherId);
+
+    if (other) {
+      ensurePhase5(other);
+      other.friend_requests_in = (other.friend_requests_in || []).filter((r) => r.from?.toLowerCase() !== p.id.toLowerCase());
+      other.friend_requests_out = (other.friend_requests_out || []).filter((id) => id.toLowerCase() !== p.id.toLowerCase());
+      db?.markProfile?.(other.id);
+      pushProfile(other);
+    }
+
+    db?.markProfile?.(p.id);
+    pushProfile(p);
+    return { ok: true, directory: socialDirectory(p) };
+  }
+
+  function friendRemove(p, m) {
+    ensurePhase5(p);
+    const targetId = String(m?.targetId || m?.friendId || m?.userId || m?.to || '').trim().toLowerCase();
+    if (!targetId) return { ok: false, error: 'no_such_user' };
+
+    if (p.partner_id && p.partner_id.toLowerCase() === targetId) {
+      return { ok: false, error: 'take_break_first' };
+    }
+
+    const wasFriend = (p.friends || []).some((f) => f.toLowerCase() === targetId);
+    if (!wasFriend) {
+      return { ok: false, error: 'not_friend' };
+    }
+
+    p.friends = (p.friends || []).filter((f) => f.toLowerCase() !== targetId);
+    p.couple_requests_in = (p.couple_requests_in || []).filter((r) => r.from?.toLowerCase() !== targetId);
+    if (p.couple_requests_out && p.couple_requests_out.toLowerCase() === targetId) {
+      p.couple_requests_out = null;
+    }
+
+    const target = db?.getProfile?.(targetId);
+    if (target) {
+      ensurePhase5(target);
+      target.friends = (target.friends || []).filter((f) => f.toLowerCase() !== p.id.toLowerCase());
+      target.couple_requests_in = (target.couple_requests_in || []).filter((r) => r.from?.toLowerCase() !== p.id.toLowerCase());
+      if (target.couple_requests_out && target.couple_requests_out.toLowerCase() === p.id.toLowerCase()) {
+        target.couple_requests_out = null;
+      }
+      db?.markProfile?.(target.id);
+      pushProfile(target);
+      sendTo(target.id, {
+        type: 'social_notify',
+        kind: 'friend_removed',
+        by: p.id,
+        byName: p.username || p.id,
+      });
+    }
+
+    db?.markProfile?.(p.id);
+    pushProfile(p);
+
+    return {
+      ok: true,
+      removedId: targetId,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function bindCouple(a, b) {
+    ensurePhase5(a);
+    ensurePhase5(b);
+    linkFriendsBothWays(a, b);
+
+    // If b is a bot that had a default bot partner, cleanly clear the old bot partner first
+    if (b.is_bot && b.partner_id && b.partner_id !== a.id) {
+      const oldBotPartner = db?.getProfile?.(b.partner_id);
+      if (oldBotPartner && oldBotPartner.partner_id === b.id) {
+        oldBotPartner.partner_id = null;
+        oldBotPartner.couple_streak = 0;
+        db?.markProfile?.(oldBotPartner.id);
+      }
+    }
+
+    const restoredStreak = Math.max(
+      1,
+      a.past_couple_streaks?.[b.id] || 0,
+      b.past_couple_streaks?.[a.id] || 0
+    );
+    const savedStatsA = a.past_couple_stats?.[b.id] || {};
+    const savedStatsB = b.past_couple_stats?.[a.id] || {};
+    const restoredStats = mergeCoupleStats(savedStatsA, savedStatsB, restoredStreak);
+    const nowMs = now();
+    const today = utcDay(nowMs);
+
+    a.partner_id = b.id;
+    b.partner_id = a.id;
+    a.couple_streak = restoredStreak;
+    b.couple_streak = restoredStreak;
+    a.couple_streak_day = today;
+    b.couple_streak_day = today;
+    a.couple_since = nowMs;
+    b.couple_since = nowMs;
+    a.couple_stats = { ...restoredStats };
+    b.couple_stats = { ...restoredStats };
+
+    a.couple_requests_in = [];
+    b.couple_requests_in = [];
+    a.couple_requests_out = null;
+    b.couple_requests_out = null;
+
+    db?.markProfile?.(a.id);
+    db?.markProfile?.(b.id);
+    pushProfile(a);
+    pushProfile(b);
+
+    onCoupleChanged(a.id, b.id, true);
+
+    sendTo(a.id, {
+      type: 'social_notify',
+      kind: 'couple_bound',
+      partnerId: b.id,
+      partnerName: b.username || b.id,
+      streak: restoredStreak,
+    });
+    sendTo(b.id, {
+      type: 'social_notify',
+      kind: 'couple_bound',
+      partnerId: a.id,
+      partnerName: a.username || a.id,
+      streak: restoredStreak,
+    });
+  }
+
+  function couplePropose(p, m) {
+    ensurePhase5(p);
+    if (p.partner_id) {
+      return { ok: false, error: 'already_coupled' };
+    }
+    const targetId = String(m?.to || m?.userId || '').trim().toLowerCase();
+    if (!targetId) return { ok: false, error: 'no_such_user' };
+    const target = db?.getProfile?.(targetId);
+    if (!target) return { ok: false, error: 'no_such_user' };
+    ensurePhase5(target);
+
+    if (target.id.toLowerCase() === p.id.toLowerCase()) {
+      return { ok: false, error: 'invalid_target' };
+    }
+    const isFriend = (p.friends || []).some((f) => f.toLowerCase() === target.id.toLowerCase());
+    if (!isFriend) {
+      return { ok: false, error: 'must_be_friends' };
+    }
+    if (target.partner_id && target.partner_id.toLowerCase() !== p.id.toLowerCase() && !target.is_bot) {
+      return { ok: false, error: 'target_already_coupled' };
+    }
+
+    const reverseProposal = (p.couple_requests_in || []).some((r) => r.from?.toLowerCase() === target.id.toLowerCase());
+    if (target.is_bot || reverseProposal) {
+      bindCouple(p, target);
+      return {
+        ok: true,
+        status: 'coupled',
+        partnerId: target.id,
+        partnerName: target.username || target.id,
+        streak: p.couple_streak,
+        directory: socialDirectory(p),
+      };
+    }
+
+    p.couple_requests_out = target.id;
+    if (!target.couple_requests_in.some((r) => r.from?.toLowerCase() === p.id.toLowerCase())) {
+      target.couple_requests_in.unshift({
+        from: p.id,
+        fromName: p.username || p.id,
+        at: now(),
+      });
+    }
+
+    db?.markProfile?.(p.id);
+    db?.markProfile?.(target.id);
+    pushProfile(p);
+    pushProfile(target);
+    sendTo(target.id, {
+      type: 'social_notify',
+      kind: 'couple_propose',
+      from: p.id,
+      fromName: p.username || p.id,
+    });
+
+    return {
+      ok: true,
+      status: 'pending',
+      targetId: target.id,
+      targetName: target.username || target.id,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function coupleAccept(p, m) {
+    ensurePhase5(p);
+    if (p.partner_id) {
+      return { ok: false, error: 'already_coupled' };
+    }
+    const fromId = String(m?.from || m?.userId || '').trim().toLowerCase();
+    if (!fromId) return { ok: false, error: 'no_such_user' };
+    const sender = db?.getProfile?.(fromId);
+    if (!sender) return { ok: false, error: 'no_such_user' };
+    ensurePhase5(sender);
+
+    if (sender.partner_id && sender.partner_id.toLowerCase() !== p.id.toLowerCase()) {
+      return { ok: false, error: 'target_already_coupled' };
+    }
+
+    const hasIncoming = (p.couple_requests_in || []).some((r) => r.from?.toLowerCase() === sender.id.toLowerCase());
+    const hasOutgoing = sender.couple_requests_out && sender.couple_requests_out.toLowerCase() === p.id.toLowerCase();
+    if (!hasIncoming && !hasOutgoing) {
+      return { ok: false, error: 'no_such_proposal' };
+    }
+
+    bindCouple(p, sender);
+    return {
+      ok: true,
+      status: 'coupled',
+      partnerId: sender.id,
+      partnerName: sender.username || sender.id,
+      streak: p.couple_streak,
+      directory: socialDirectory(p),
+    };
+  }
+
+  function coupleDecline(p, m) {
+    ensurePhase5(p);
+    const otherId = String(m?.from || m?.to || m?.userId || p.couple_requests_out || '').trim().toLowerCase();
+    if (!otherId) return { ok: false, error: 'no_such_user' };
+    const other = db?.getProfile?.(otherId);
+
+    p.couple_requests_in = (p.couple_requests_in || []).filter((r) => r.from?.toLowerCase() !== otherId);
+    if (p.couple_requests_out && p.couple_requests_out.toLowerCase() === otherId) {
+      p.couple_requests_out = null;
+    }
+
+    if (other) {
+      ensurePhase5(other);
+      other.couple_requests_in = (other.couple_requests_in || []).filter((r) => r.from?.toLowerCase() !== p.id.toLowerCase());
+      if (other.couple_requests_out && other.couple_requests_out.toLowerCase() === p.id.toLowerCase()) {
+        other.couple_requests_out = null;
+      }
+      db?.markProfile?.(other.id);
+      pushProfile(other);
+    }
+
+    db?.markProfile?.(p.id);
+    pushProfile(p);
+    return { ok: true, directory: socialDirectory(p) };
+  }
+
+  function coupleBreak(p) {
+    ensurePhase5(p);
+    if (!p.partner_id) {
+      return { ok: false, error: 'not_coupled' };
+    }
+    const oldPartnerId = p.partner_id;
+    const partner = db?.getProfile?.(oldPartnerId);
+    const savedStreak = Math.max(1, p.couple_streak || partner?.couple_streak || 1);
+    const savedStats = mergeCoupleStats(p.couple_stats, partner?.couple_stats, savedStreak);
+
+    p.past_couple_streaks = p.past_couple_streaks || {};
+    p.past_couple_streaks[oldPartnerId] = savedStreak;
+    p.past_couple_stats = p.past_couple_stats || {};
+    p.past_couple_stats[oldPartnerId] = { ...savedStats };
+    p.partner_id = null;
+    p.couple_streak = 0;
+    p.couple_since = null;
+    p.couple_streak_day = null;
+
+    if (partner) {
+      ensurePhase5(partner);
+      partner.past_couple_streaks = partner.past_couple_streaks || {};
+      partner.past_couple_streaks[p.id] = savedStreak;
+      partner.past_couple_stats = partner.past_couple_stats || {};
+      partner.past_couple_stats[p.id] = { ...savedStats };
+      if (partner.partner_id && partner.partner_id.toLowerCase() === p.id.toLowerCase()) {
+        partner.partner_id = null;
+        partner.couple_streak = 0;
+        partner.couple_since = null;
+        partner.couple_streak_day = null;
+      }
+      db?.markProfile?.(partner.id);
+      pushProfile(partner);
+      sendTo(partner.id, {
+        type: 'social_notify',
+        kind: 'couple_break',
+        by: p.id,
+        byName: p.username || p.id,
+        savedStreak,
+      });
+    }
+
+    db?.markProfile?.(p.id);
+    pushProfile(p);
+
+    onCoupleChanged(p.id, oldPartnerId, false);
+
+    return {
+      ok: true,
+      oldPartnerId,
+      savedStreak,
+      directory: socialDirectory(p),
+    };
+  }
+
   return {
     hallList,
     hallWorship,
@@ -841,11 +1836,23 @@ export function createDailyService({
     owlClaimMail,
     vipCardBuy,
     vipCardUse,
+    bagItemUse,
     passportState,
     passportClaim,
     bumpQuest,
+    bumpCoupleStat,
+    coupleMoment,
     onDailyLogin,
     founderClaim,
     canCall,
+    socialDirectory,
+    friendRequestSend,
+    friendRequestAccept,
+    friendRequestDecline,
+    friendRemove,
+    couplePropose,
+    coupleAccept,
+    coupleDecline,
+    coupleBreak,
   };
 }

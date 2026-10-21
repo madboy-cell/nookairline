@@ -800,11 +800,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
 }
 .pokdeng-chip-pill {
   position: relative;
   flex: 1;
+  min-width: 0;
   height: 34px !important;
   width: auto !important;
   border-radius: 999px !important;
@@ -812,16 +813,34 @@
   border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
   display: inline-flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
-  padding: 0 10px 0 3px !important;
-  gap: 5px;
+  justify-content: center !important;
+  padding: 0 5px 0 3px !important;
+  gap: 3px;
   color: #ffffff;
   font-weight: 900;
-  font-size: 12px;
+  font-size: 10.5px;
+  white-space: nowrap;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5) !important;
 }
 .pokdeng-chip-pill.chip-max {
   color: #ffb830;
+}
+.pokdeng-reset-bet-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  margin: 0 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffe88a;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.pokdeng-reset-bet-btn:active {
+  transform: scale(0.95);
 }
 .pokdeng-chip-pill.selected {
   border-color: #ffd700 !important;
@@ -829,8 +848,8 @@
   transform: translateY(-2px);
 }
 .chip-art-ico {
-  width: 28px;
-  height: 28px;
+  width: 21px;
+  height: 21px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -1106,17 +1125,20 @@
 .roulette-felt-callouts {
   position: absolute;
   bottom: 6%;
-  right: 6%;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   z-index: 7;
+  pointer-events: none;
 }
 .felt-callout-pill {
-  font-size: clamp(8px, 1.15dvh, 9.5px);
+  font-size: clamp(7.8px, 1.1dvh, 9px);
   font-weight: 900;
-  padding: 1px 7px;
+  padding: 1px 6px;
   border-radius: 999px;
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);

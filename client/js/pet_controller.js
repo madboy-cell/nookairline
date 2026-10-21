@@ -9,6 +9,13 @@ import { normalizeActivePoses } from '/shared/pet_rules.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { blobShadowTexture } from './chibi_rig.js';
 import { PetActionDriver } from './pet_actions.js';
+import {
+  computePetBoneState,
+  PET_RIG_VERTEX_SHADER,
+  PET_RIG_FRAGMENT_SHADER,
+  PET_LOCO_MODE,
+  PET_VIEW_MODE,
+} from './pet_rig.js';
 
 const LOCO = {
   HOP_WADDLE: { baseY: 0 },
@@ -80,36 +87,6 @@ function buildNameplateSprite(nickname, stars = 1, bondLv = 1) {
   sp.renderOrder = 12;
   return sp;
 }
-
-const petVertShader = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const petFragShader = /* glsl */ `
-  uniform sampler2D uMap;
-  uniform vec3 uTint;
-  uniform float uShimmer;
-  uniform float uTime;
-  varying vec2 vUv;
-
-  void main() {
-    vec4 tex = texture2D(uMap, vUv);
-    if (tex.a < 0.06) discard;
-    vec3 col = tex.rgb * uTint;
-    if (uShimmer > 0.01) {
-      float diag = vUv.x * 0.85 + vUv.y * 1.15;
-      float wave = sin(diag * 7.0 - uTime * 2.8);
-      float band = smoothstep(0.75, 0.99, wave);
-      vec3 glowCol = mix(vec3(1.0, 0.92, 0.68), vec3(0.78, 0.94, 1.0), 0.5 + 0.5 * sin(uTime * 1.9 + vUv.y * 4.0));
-      col = mix(col, col + glowCol * 0.38, band * uShimmer);
-    }
-    gl_FragColor = vec4(col, tex.a);
-  }
-`;
 
 const shadowVertShader = /* glsl */ `
   varying vec2 vUv;
@@ -226,6 +203,17 @@ export class PetController {
     this.shownRight = true;
     this.mirror = 1;
     this.t = Math.random() * 10;
+    this.walkWeight = 0;
+    this.walkPhase = Math.random() * Math.PI * 2;
+    this.smoothVx = 0;
+    this.smoothVz = 0;
+    this.visX = 0;
+    this.visZ = 0;
+    this.visPosInit = false;
+    this.curW = 0;
+    this.curH = 0;
+    this.poseHoldTimer = 0;
+    this.lastBoneState = null;
     this.idleFor = 0;
     this.poseTimer = 1.8 + Math.random() * 1.4;
     this.lastCyclePose = 'front';
@@ -248,18 +236,38 @@ export class PetController {
     this.mat = new THREE.ShaderMaterial({
       uniforms: {
         uMap: { value: null },
+        uSize: { value: new THREE.Vector2(this.height, this.height) },
+        uMirror: { value: 1 },
+        uViewMode: { value: 0 },
+        uLocoMode: { value: PET_LOCO_MODE[this.loco] ?? 0 },
+        uLegL: { value: 0 },
+        uLegR: { value: 0 },
+        uFootLiftL: { value: 0 },
+        uFootLiftR: { value: 0 },
+        uTorso: { value: 0 },
+        uBreath: { value: 0 },
+        uHead: { value: 0 },
+        uEarFlutter: { value: 0 },
+        uWingFlap: { value: 0 },
+        uTailWave: { value: 0 },
+        uTailAmp: { value: 0.045 },
+        uCloth: { value: 0.008 },
         uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) },
         uShimmer: { value: this.visualTier >= 3 ? 1.0 : this.visualTier === 2 ? 0.25 : 0.0 },
+        uRim: { value: 0.7 },
         uTime: { value: 0 },
       },
-      vertexShader: petVertShader,
-      fragmentShader: petFragShader,
+      vertexShader: PET_RIG_VERTEX_SHADER,
+      fragmentShader: PET_RIG_FRAGMENT_SHADER,
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: true,
     });
 
-    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0), this.mat);
+    this.mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1, 14, 18).translate(0, 0.5, 0),
+      this.mat,
+    );
     this.billboard.add(this.mesh);
 
     const aura = pdef.auraRing || {};
@@ -324,8 +332,13 @@ export class PetController {
       this.shadowMat.uniforms.uPulseSec.value = nextAura.pulseSec || 2.0;
     }
 
-    if (this.mat?.uniforms?.uShimmer) {
-      this.mat.uniforms.uShimmer.value = this.visualTier >= 3 ? 1.0 : this.visualTier === 2 ? 0.25 : 0.0;
+    if (this.mat?.uniforms) {
+      if (this.mat.uniforms.uShimmer) {
+        this.mat.uniforms.uShimmer.value = this.visualTier >= 3 ? 1.0 : this.visualTier === 2 ? 0.25 : 0.0;
+      }
+      if (this.mat.uniforms.uLocoMode) {
+        this.mat.uniforms.uLocoMode.value = PET_LOCO_MODE[this.loco] ?? 0;
+      }
     }
     this.setNickname(next.nickname, this.stars, this.bondLv);
     if (tierChanged) {
@@ -389,15 +402,22 @@ export class PetController {
     if (!this.views) return;
     const v = this.views[view] || this.views.front;
     if (!v) return;
-    if (this.mat.uniforms?.uMap) {
-      this.mat.uniforms.uMap.value = v.tex;
-    } else {
-      this.mat.map = v.tex;
-    }
-    this.mat.needsUpdate = true;
     this.baseW = v.w;
     this.baseH = v.h;
+    if (!this.curW || !this.curH) {
+      this.curW = v.w;
+      this.curH = v.h;
+    }
     this.mirror = right === v.nativeRight ? 1 : -1;
+    if (this.mat.uniforms) {
+      this.mat.uniforms.uMap.value = v.tex;
+      this.mat.uniforms.uSize.value.set(this.curW, this.curH);
+      this.mat.uniforms.uMirror.value = this.mirror;
+      this.mat.uniforms.uViewMode.value = PET_VIEW_MODE[view] ?? 0;
+    } else {
+      this.mat.map = v.tex;
+      this.mat.needsUpdate = true;
+    }
   }
 
   act(kind, dur) {
@@ -446,6 +466,11 @@ export class PetController {
     const r = this.follower.restSpot(owner);
     this.follower.x = r.x; this.follower.z = r.z;
     this.follower.crumbs.length = 0; this.follower.lastCrumb = null;
+    this.visX = r.x;
+    this.visZ = r.z;
+    this.visPosInit = true;
+    this.smoothVx = 0;
+    this.smoothVz = 0;
   }
 
   bubble(char) {
@@ -470,6 +495,8 @@ export class PetController {
     }
 
     const f = this.follower;
+    const directTrack = Boolean(owner?.directTrackSpace || this.directTrackSpace || owner?.mounted || this.mounted);
+    const isMounted = Boolean(owner?.mounted || this.mounted);
 
     if (this.actions.mode === 'lifted') {
       // While lifted by finger, stay at current follower x/z
@@ -479,6 +506,7 @@ export class PetController {
       this.nuzzle = null;
     }
 
+    let teleported = false;
     if (this.actions.mode !== 'lifted') {
       if (this.nuzzle) {
         const px = f.x, pz = f.z;
@@ -496,32 +524,104 @@ export class PetController {
         }
         f.vx = (f.x - px) / Math.max(dt, 1e-4); f.vz = (f.z - pz) / Math.max(dt, 1e-4);
         f.crumbs.length = 0; f.lastCrumb = null;
+      } else if (directTrack) {
+        f.x = owner?.x ?? f.x;
+        f.z = owner?.z ?? f.z;
+        f.vx = owner?.vx ?? 0;
+        f.vz = owner?.vz ?? -3.2;
+        f.crumbs.length = 0;
+        f.lastCrumb = null;
       } else {
         f.update(dt, owner);
-        if (f.events.includes('teleport')) this.fx?.emit('fx_star', f.x, 0.4, f.z, 10);
+        if (f.events.includes('teleport')) {
+          teleported = true;
+          this.fx?.emit('fx_star', f.x, 0.4, f.z, 10);
+        }
       }
     }
 
-    const speed = Math.hypot(f.vx, f.vz);
+    if (!this.visPosInit || teleported || directTrack || Math.hypot(f.x - this.visX, f.z - this.visZ) > 2.4) {
+      this.visX = f.x;
+      this.visZ = f.z;
+      this.visPosInit = true;
+    } else {
+      this.visX = damp(this.visX, f.x, 0.032, dt);
+      this.visZ = damp(this.visZ, f.z, 0.032, dt);
+    }
+
+    // Effective velocity: uses follower velocity, and if follower hasn't been pulled yet (or is direct-driven
+    // in Cloud Dash / Runway where owner.directTrackSpace is true), inherits owner's active heading immediately.
+    let rawVx = f.vx;
+    let rawVz = f.vz;
+    if (directTrack) {
+      rawVx = owner?.vx ?? 0;
+      rawVz = owner?.vz ?? -3.2;
+    } else {
+      const rawSpeed = Math.hypot(rawVx, rawVz);
+      const ownerSpeed = Math.hypot(owner?.vx || 0, owner?.vz || 0);
+      if (rawSpeed < 0.08 && owner?.moving && ownerSpeed > 0.25 && this.actions.mode !== 'lifted' && !this.nuzzle) {
+        rawVx = (owner.vx || 0) * 0.85;
+        rawVz = (owner.vz || 0) * 0.85;
+      }
+    }
+    this.smoothVx = damp(this.smoothVx, rawVx, 0.075, dt);
+    this.smoothVz = damp(this.smoothVz, rawVz, 0.075, dt);
+    const evx = this.smoothVx;
+    const evz = this.smoothVz;
+    const speed = Math.hypot(evx, evz);
+
+    // Smoothly blend walkWeight (0..1) and advance stride/wing-beat phase continuously
+    const moving = speed > 0.1 || isMounted;
+    this.walkWeight = damp(this.walkWeight, moving ? Math.min(1, 0.28 + speed * 0.26) : 0, 0.11, dt);
+    const idlePhaseRate = this.loco === 'FLY_FLUTTER' ? 4.8
+      : this.loco === 'SKY_SWIM' ? 3.2
+      : this.loco === 'FLOAT_SPIRIT' ? 3.6
+      : 0;
+    const movePhaseRate = 6.2 + Math.min(4.0, speed) * 1.35;
+    this.walkPhase += dt * (idlePhaseRate + (movePhaseRate - idlePhaseRate) * this.walkWeight);
+
     if (speed >= 0.05) {
-      this.facing.update(dt, f.vx, f.vz);
+      this.facing.update(dt, evx, evz);
     } else {
       this.facing.update(dt, 0, 0);
-      const want = this.nuzzle ? this.nuzzle.partner.x > f.x : owner.right;
+      const want = this.nuzzle ? this.nuzzle.partner.x > f.x : owner?.right;
       if (this.facing.idleFor >= PET_FACING.idleTurnTime && this.facing.right !== want && !this.facing.turning) {
         this.facing.set(want, this.facing.back);
       }
     }
     const shown = this.facing.shown(!!this.views?.side);
-    const actState = this.actions.update(dt, speed, shown.view);
-    const targetPose = this.views?.[actState.pose] ? actState.pose : shown.view;
+    const actState = this.actions.update(dt, speed, shown.view, {
+      vx: evx,
+      vz: evz,
+      turning: this.facing.turning,
+      walkPhase: this.walkPhase,
+      currentPose: this.shownView,
+    });
+    let targetPose = this.views?.[actState.pose] ? actState.pose : shown.view;
+    if (isMounted) {
+      targetPose = (Math.abs(evx) > 2.35 && this.views?.side)
+        ? 'side'
+        : (this.views?.back ? 'back' : 'move');
+    } else if (directTrack && evz < -0.5) {
+      targetPose = (Math.abs(evx) > 2.35 && this.views?.side)
+        ? 'side'
+        : (this.views?.back ? 'back' : targetPose);
+    }
+
+    this.poseHoldTimer = Math.max(0, (this.poseHoldTimer || 0) - dt);
+    const isActionOverride = Boolean(this.actions.activeAction) || this.actions.mode === 'lifted' || this.actions.mode === 'sleep' || isMounted;
+    if (!isActionOverride && targetPose !== this.shownView && this.poseHoldTimer > 0) {
+      targetPose = this.shownView;
+    }
 
     if (targetPose !== this.shownView || shown.right !== this.shownRight) {
+      if (targetPose !== this.shownView && !isActionOverride) {
+        this.poseHoldTimer = 0.14;
+      }
       this.applyView(targetPose, shown.right);
     }
 
     // Idle pose rotation among player-selected activePoses (zero array allocation per frame)
-    const moving = speed > 0.1;
     if (moving) {
       this.idleFor = 0;
       this.poseTimer = 1.1 + Math.random() * 1.1;
@@ -634,51 +734,75 @@ export class PetController {
       }
     }
 
-    // Locomotion archetype kinematics
-    const L = LOCO[this.loco] || LOCO.HOP_WADDLE;
-    let y = L.baseY + actState.bounceY;
-    let sx = actState.scalePulse;
-    let sy = actState.scalePulse;
-    let rz = actState.rollZ;
-
-    if (this.loco === 'HOP_WADDLE') {
-      const hop = Math.abs(Math.sin(this.t * 13));
-      const w = Math.min(1, speed / 1.5) + (this.nuzzle && speed < 0.05 ? 0.6 : 0);
-      y += hop * 0.09 * w;
-      sy *= 1 + (hop - 0.5) * 0.16 * w;
-      sx *= 2 - (1 + (hop - 0.5) * 0.16 * w);
-      rz += Math.sin(this.t * 6.5) * 0.06 * Math.max(w, 0.3);
-    } else if (this.loco === 'SKY_SWIM') {
-      y += Math.sin(this.t * 2.2) * 0.06;
-      rz += Math.sin(this.t * 2.2) * 0.07;
-      sx *= 1 + Math.sin(this.t * 3.1) * 0.03;
-    } else {
-      const bob = this.loco === 'FLY_FLUTTER' ? Math.sin(this.t * 5) * 0.06 : Math.sin(this.t * 2.4) * 0.04;
-      y += bob;
-      if (this.loco === 'FLY_FLUTTER') sx *= 1 + Math.sin(this.t * Math.PI * 2 * 2.8) * 0.05;
-      rz += Math.sin(this.t * 1.7) * 0.04;
-    }
-
     if (this.trick) {
       this.trick.t += dt;
-      const k = this.trick.t;
-      if (this.trick.kind === 'ear_wiggle') rz += Math.sin(k * 30) * 0.12 * Math.max(0, 1 - k);
-      if (k > 1.2) this.trick = null;
+      if (this.trick.t > 1.2) this.trick = null;
     }
+
+    // 7-Bone Skeletal Kinematics & Locomotion Archetype Solver
+    const bones = computePetBoneState({
+      petId: this.petId,
+      loco: this.loco,
+      pose: targetPose,
+      t: this.t,
+      speed,
+      vx: evx,
+      vz: evz,
+      walkWeight: this.walkWeight + (this.nuzzle && speed < 0.05 ? 0.45 : 0),
+      walkPhase: this.walkPhase,
+      mirror: this.mirror,
+      action: this.actions.activeAction,
+      trick: this.trick,
+      mounted: isMounted,
+      rideStyle: owner?.rideStyle || this.rideStyle || null,
+    });
+    this.lastBoneState = bones;
+
+    const targetW = this.baseW || 0.6;
+    const targetH = this.baseH || 0.6;
+    this.curW = this.curW ? damp(this.curW, targetW, 0.04, dt) : targetW;
+    this.curH = this.curH ? damp(this.curH, targetH, 0.04, dt) : targetH;
+
+    if (this.mat.uniforms) {
+      const u = this.mat.uniforms;
+      u.uSize.value.set(this.curW, this.curH);
+      u.uMirror.value = this.mirror || 1;
+      u.uViewMode.value = bones.viewMode;
+      u.uLocoMode.value = bones.locoMode;
+      u.uLegL.value = bones.legL;
+      u.uLegR.value = bones.legR;
+      u.uFootLiftL.value = bones.footLiftL;
+      u.uFootLiftR.value = bones.footLiftR;
+      u.uTorso.value = bones.torso;
+      u.uBreath.value = bones.breath;
+      u.uHead.value = bones.head;
+      u.uEarFlutter.value = bones.earFlutter;
+      u.uWingFlap.value = bones.wingFlap;
+      u.uTailWave.value = bones.tailWave;
+      u.uTailAmp.value = bones.tailAmp;
+      u.uCloth.value = bones.cloth;
+    }
+
+    const L = LOCO[this.loco] || LOCO.HOP_WADDLE;
+    let y = bones.bobY + actState.bounceY;
+    let sx = bones.scaleX * actState.scalePulse;
+    let sy = bones.scaleY * actState.scalePulse;
+    let rz = bones.rollZ + actState.rollZ;
 
     // Pop turn squash-and-stretch
     const ts = this.facing.turnSquash;
     sx *= ts.sx; sy *= ts.sy;
     y += this.facing.turnHop * 0.05;
 
-    this.mesh.scale.set((this.baseW || 0.6) * sx * (this.mirror || 1), (this.baseH || 0.6) * sy, 1);
+    // Keep mesh.scale.x > 0 (mirroring is handled in UV/shader space via uMirror)
+    this.mesh.scale.set(this.curW * sx, this.curH * sy, 1);
     this.mesh.position.y = y;
     this.mesh.rotation.z = rz;
-    this.root.position.set(f.x, 0, f.z);
+    this.root.position.set(this.visX, 0, this.visZ);
     const air = y;
     const auraScale = this.bondLv >= 30 ? 1.35 : 1.0;
     this.shadow.scale.set(
-      Math.max(0.25, ((this.baseW || 0.6) * 0.8 - air * 0.4) * auraScale),
+      Math.max(0.25, (this.curW * 0.8 - air * 0.4) * auraScale),
       1,
       Math.max(0.12, (0.32 - air * 0.15) * auraScale)
     );

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T22:59:40.885Z",
+  "generatedAt": "2026-10-21T04:46:08.022Z",
   "sprites": {
     "mono_villa_a": {
       "file": "monopoly/mono_villa_a.png",
@@ -453,131 +453,131 @@
     },
     "mono_ult_naga": {
       "file": "monopoly/mono_ult_naga.png",
-      "w": 350,
-      "h": 359,
+      "w": 312,
+      "h": 322,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.659
+      "coverage": 0.537
     },
     "mono_ult_kitsune": {
       "file": "monopoly/mono_ult_kitsune.png",
-      "w": 277,
-      "h": 367,
+      "w": 310,
+      "h": 319,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.58
+      "coverage": 0.599
     },
     "mono_ult_eclipse": {
       "file": "monopoly/mono_ult_eclipse.png",
       "w": 270,
-      "h": 275,
+      "h": 309,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.707
+      "coverage": 0.423
     },
     "mono_ult_djinn": {
       "file": "monopoly/mono_ult_djinn.png",
-      "w": 312,
-      "h": 344,
+      "w": 311,
+      "h": 319,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.544
+      "coverage": 0.616
     },
     "mono_ult_phoenix": {
       "file": "monopoly/mono_ult_phoenix.png",
-      "w": 377,
-      "h": 350,
+      "w": 314,
+      "h": 338,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.529
+      "coverage": 0.402
     },
     "mono_ult_roulette": {
       "file": "monopoly/mono_ult_roulette.png",
-      "w": 312,
-      "h": 313,
+      "w": 320,
+      "h": 292,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.614
+    },
+    "mono_ult_siren": {
+      "file": "monopoly/mono_ult_siren.png",
+      "w": 219,
+      "h": 331,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.447
+    },
+    "mono_ult_astral": {
+      "file": "monopoly/mono_ult_astral.png",
+      "w": 332,
+      "h": 270,
       "anchorX": 0.5,
       "anchorY": 0,
       "coverage": 0.553
     },
-    "mono_ult_siren": {
-      "file": "monopoly/mono_ult_siren.png",
-      "w": 338,
-      "h": 347,
-      "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.684
-    },
-    "mono_ult_astral": {
-      "file": "monopoly/mono_ult_astral.png",
-      "w": 280,
-      "h": 337,
-      "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.673
-    },
     "mono_ult_clock": {
       "file": "monopoly/mono_ult_clock.png",
-      "w": 282,
-      "h": 343,
+      "w": 298,
+      "h": 296,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.621
+      "coverage": 0.753
     },
     "mono_ult_glacial": {
       "file": "monopoly/mono_ult_glacial.png",
-      "w": 271,
-      "h": 303,
+      "w": 297,
+      "h": 315,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.624
+      "coverage": 0.509
     },
     "mono_ult_pharaoh": {
       "file": "monopoly/mono_ult_pharaoh.png",
-      "w": 380,
-      "h": 360,
+      "w": 274,
+      "h": 312,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.531
+      "coverage": 0.532
     },
     "mono_ult_phantom": {
       "file": "monopoly/mono_ult_phantom.png",
-      "w": 275,
-      "h": 348,
+      "w": 273,
+      "h": 313,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.627
+      "coverage": 0.549
     },
     "mono_ult_zeus": {
       "file": "monopoly/mono_ult_zeus.png",
-      "w": 272,
-      "h": 336,
+      "w": 326,
+      "h": 334,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.62
+      "coverage": 0.431
     },
     "mono_trap_midas": {
       "file": "monopoly/mono_trap_midas.png",
-      "w": 313,
-      "h": 294,
+      "w": 270,
+      "h": 289,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.588
+      "coverage": 0.522
     },
     "mono_trap_chips": {
       "file": "monopoly/mono_trap_chips.png",
-      "w": 213,
-      "h": 236,
+      "w": 270,
+      "h": 243,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.538
+      "coverage": 0.533
     },
     "mono_trap_ruins": {
       "file": "monopoly/mono_trap_ruins.png",
-      "w": 302,
-      "h": 278,
+      "w": 270,
+      "h": 273,
       "anchorX": 0.5,
       "anchorY": 0,
-      "coverage": 0.633
+      "coverage": 0.661
     },
     "casino_dealer_pokdeng": {
       "file": "monopoly/casino_dealer_pokdeng.png",
@@ -740,6 +740,600 @@
       "anchorY": 0.5,
       "flat": true,
       "coverage": 0.548
+    },
+    "mono_ult_sm_seraphim": {
+      "file": "monopoly/mono_ult_sm_seraphim.png",
+      "w": 307,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.539
+    },
+    "mono_ult_sm_cyber": {
+      "file": "monopoly/mono_ult_sm_cyber.png",
+      "w": 330,
+      "h": 279,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.459
+    },
+    "mono_ult_sm_ribbon": {
+      "file": "monopoly/mono_ult_sm_ribbon.png",
+      "w": 314,
+      "h": 301,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.497
+    },
+    "mono_trap_eclipse_sun": {
+      "file": "monopoly/mono_trap_eclipse_sun.png",
+      "w": 316,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.606
+    },
+    "mono_trap_aurora_veil": {
+      "file": "monopoly/mono_trap_aurora_veil.png",
+      "w": 283,
+      "h": 320,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.535
+    },
+    "mono_trap_rose_thorns": {
+      "file": "monopoly/mono_trap_rose_thorns.png",
+      "w": 312,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.42
+    },
+    "mono_trap_cyber_glitch": {
+      "file": "monopoly/mono_trap_cyber_glitch.png",
+      "w": 253,
+      "h": 276,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.66
+    },
+    "mono_trap_starlight_gift": {
+      "file": "monopoly/mono_trap_starlight_gift.png",
+      "w": 280,
+      "h": 281,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.495
+    },
+    "mono_trap_lunar_lantern": {
+      "file": "monopoly/mono_trap_lunar_lantern.png",
+      "w": 243,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.376
+    },
+    "mono_trap_supernova": {
+      "file": "monopoly/mono_trap_supernova.png",
+      "w": 281,
+      "h": 247,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.612
+    },
+    "mono_trap_foxfire": {
+      "file": "monopoly/mono_trap_foxfire.png",
+      "w": 280,
+      "h": 274,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.433
+    },
+    "mono_trap_glacial_crest": {
+      "file": "monopoly/mono_trap_glacial_crest.png",
+      "w": 242,
+      "h": 261,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.653
+    },
+    "mb_moon_bunny_idle": {
+      "file": "monopoly/mb_moon_bunny_idle.png",
+      "w": 256,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.525
+    },
+    "mb_moon_bunny_pound": {
+      "file": "monopoly/mb_moon_bunny_pound.png",
+      "w": 281,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.55
+    },
+    "mb_green_slime": {
+      "file": "monopoly/mb_green_slime.png",
+      "w": 235,
+      "h": 227,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.672
+    },
+    "mb_ribbon_pig": {
+      "file": "monopoly/mb_ribbon_pig.png",
+      "w": 247,
+      "h": 252,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.644
+    },
+    "mb_berry_slime": {
+      "file": "monopoly/mb_berry_slime.png",
+      "w": 254,
+      "h": 245,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.703
+    },
+    "mb_gold_pinata_pig": {
+      "file": "monopoly/mb_gold_pinata_pig.png",
+      "w": 302,
+      "h": 278,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.519
+    },
+    "mb_armored_boar": {
+      "file": "monopoly/mb_armored_boar.png",
+      "w": 302,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.602
+    },
+    "mb_king_mochi_boss": {
+      "file": "monopoly/mb_king_mochi_boss.png",
+      "w": 337,
+      "h": 320,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.62
+    },
+    "mb_primrose_seed": {
+      "file": "monopoly/mb_primrose_seed.png",
+      "w": 287,
+      "h": 286,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.592
+    },
+    "mb_green_slime_hop": {
+      "file": "monopoly/mb_green_slime_hop.png",
+      "w": 223,
+      "h": 268,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.609
+    },
+    "mb_ribbon_pig_run": {
+      "file": "monopoly/mb_ribbon_pig_run.png",
+      "w": 281,
+      "h": 278,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.585
+    },
+    "mb_berry_slime_hop": {
+      "file": "monopoly/mb_berry_slime_hop.png",
+      "w": 279,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.575
+    },
+    "mb_gold_pinata_pig_run": {
+      "file": "monopoly/mb_gold_pinata_pig_run.png",
+      "w": 304,
+      "h": 278,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.528
+    },
+    "mb_armored_boar_charge": {
+      "file": "monopoly/mb_armored_boar_charge.png",
+      "w": 302,
+      "h": 292,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.613
+    },
+    "mb_king_mochi_boss_slam": {
+      "file": "monopoly/mb_king_mochi_boss_slam.png",
+      "w": 314,
+      "h": 295,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.615
+    },
+    "mb_star_mochi_cake": {
+      "file": "monopoly/mb_star_mochi_cake.png",
+      "w": 286,
+      "h": 277,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.627
+    },
+    "mb_bounty_bell": {
+      "file": "monopoly/mb_bounty_bell.png",
+      "w": 294,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.491
+    },
+    "mb_shrine_shield_orb": {
+      "file": "monopoly/mb_shrine_shield_orb.png",
+      "w": 306,
+      "h": 251,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.597
+    },
+    "icon_cloud_dash": {
+      "file": "monopoly/icon_cloud_dash.png",
+      "w": 338,
+      "h": 228,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.559
+    },
+    "cd_cloud_bank_a": {
+      "file": "monopoly/cd_cloud_bank_a.png",
+      "w": 326,
+      "h": 211,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.675
+    },
+    "cd_cloud_bank_b": {
+      "file": "monopoly/cd_cloud_bank_b.png",
+      "w": 302,
+      "h": 173,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.785
+    },
+    "cd_pad_rainbow": {
+      "file": "monopoly/cd_pad_rainbow.png",
+      "w": 309,
+      "h": 240,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "flat": true,
+      "coverage": 0.603
+    },
+    "cd_arch_start": {
+      "file": "monopoly/cd_arch_start.png",
+      "w": 311,
+      "h": 447,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "coverage": 0.486
+    },
+    "cd_btn_dir_gold": {
+      "file": "monopoly/cd_btn_dir_gold.png",
+      "w": 237,
+      "h": 253,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.932
+    },
+    "cd_ult_cradle_gold": {
+      "file": "monopoly/cd_ult_cradle_gold.png",
+      "w": 336,
+      "h": 262,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.657
+    },
+    "cd_stage_preview": {
+      "file": "monopoly/cd_stage_preview.png",
+      "w": 320,
+      "h": 291,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.599
+    },
+    "cd_mount_saddle_royal": {
+      "file": "monopoly/cd_mount_saddle_royal.png",
+      "w": 275,
+      "h": 317,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.596
+    },
+    "cd_mount_reins_gold": {
+      "file": "monopoly/cd_mount_reins_gold.png",
+      "w": 296,
+      "h": 267,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.502
+    },
+    "cd_mount_ragdoll_cushion": {
+      "file": "monopoly/cd_mount_ragdoll_cushion.png",
+      "w": 324,
+      "h": 236,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.588
+    },
+    "cd_mount_nyx_harness": {
+      "file": "monopoly/cd_mount_nyx_harness.png",
+      "w": 299,
+      "h": 294,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.54
+    },
+    "cd_mount_kitsune_palanquin": {
+      "file": "monopoly/cd_mount_kitsune_palanquin.png",
+      "w": 324,
+      "h": 316,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.47
+    },
+    "cd_mount_skywhale_surfboard": {
+      "file": "monopoly/cd_mount_skywhale_surfboard.png",
+      "w": 317,
+      "h": 286,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.643
+    },
+    "cd_fx_wind_ribbon": {
+      "file": "monopoly/cd_fx_wind_ribbon.png",
+      "w": 272,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.449
+    },
+    "cd_fx_landing_ring": {
+      "file": "monopoly/cd_fx_landing_ring.png",
+      "w": 320,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "flat": true,
+      "coverage": 0.563
+    },
+    "dec_nookairline_museum": {
+      "file": "monopoly/dec_nookairline_museum.png",
+      "w": 341,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.571
+    },
+    "museum_golden_plane_monument": {
+      "file": "monopoly/museum_golden_plane_monument.png",
+      "w": 239,
+      "h": 297,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.563
+    },
+    "museum_portal_frame_gold": {
+      "file": "monopoly/museum_portal_frame_gold.png",
+      "w": 203,
+      "h": 348,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.655
+    },
+    "museum_easel_frame_royal": {
+      "file": "monopoly/museum_easel_frame_royal.png",
+      "w": 198,
+      "h": 309,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.601
+    },
+    "museum_firstclass_suite_seat": {
+      "file": "monopoly/museum_firstclass_suite_seat.png",
+      "w": 298,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.671
+    },
+    "museum_paris_eiffel_spire": {
+      "file": "monopoly/museum_paris_eiffel_spire.png",
+      "w": 271,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.453
+    },
+    "museum_swiss_matterhorn_chalet": {
+      "file": "monopoly/museum_swiss_matterhorn_chalet.png",
+      "w": 298,
+      "h": 328,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.556
+    },
+    "museum_maldives_bungalow_pier": {
+      "file": "monopoly/museum_maldives_bungalow_pier.png",
+      "w": 311,
+      "h": 307,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.596
+    },
+    "fuji_mountain_horizon": {
+      "file": "monopoly/fuji_mountain_horizon.png",
+      "w": 648,
+      "h": 307,
+      "anchorX": 0.5,
+      "anchorY": 0.85,
+      "coverage": 0.636
+    },
+    "fuji_torii_gate_red": {
+      "file": "monopoly/fuji_torii_gate_red.png",
+      "w": 297,
+      "h": 358,
+      "anchorX": 0.5,
+      "anchorY": 0.92,
+      "coverage": 0.362
+    },
+    "fuji_stone_lantern_toro": {
+      "file": "monopoly/fuji_stone_lantern_toro.png",
+      "w": 155,
+      "h": 336,
+      "anchorX": 0.5,
+      "anchorY": 0.92,
+      "coverage": 0.59
+    },
+    "fuji_kyoto_pagoda_hill": {
+      "file": "monopoly/fuji_kyoto_pagoda_hill.png",
+      "w": 317,
+      "h": 374,
+      "anchorX": 0.5,
+      "anchorY": 0.92,
+      "coverage": 0.418
+    },
+    "museum_s4_montecarlo_balcony": {
+      "file": "monopoly/museum_s4_montecarlo_balcony.png",
+      "w": 341,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.523
+    },
+    "museum_s4_casino_palace_horizon": {
+      "file": "monopoly/museum_s4_casino_palace_horizon.png",
+      "w": 308,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.552
+    },
+    "museum_s5_atlantis_coral_lounge": {
+      "file": "monopoly/museum_s5_atlantis_coral_lounge.png",
+      "w": 310,
+      "h": 218,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.549
+    },
+    "museum_s5_atlantis_citadel_dome": {
+      "file": "monopoly/museum_s5_atlantis_citadel_dome.png",
+      "w": 300,
+      "h": 330,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.609
+    },
+    "museum_s6_starlight_sofa_set": {
+      "file": "monopoly/museum_s6_starlight_sofa_set.png",
+      "w": 307,
+      "h": 304,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.577
+    },
+    "museum_s7_fairytale_castle_lanterns": {
+      "file": "monopoly/museum_s7_fairytale_castle_lanterns.png",
+      "w": 248,
+      "h": 340,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.556
+    },
+    "museum_s7_fairytale_rose_arch": {
+      "file": "monopoly/museum_s7_fairytale_rose_arch.png",
+      "w": 272,
+      "h": 338,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.652
+    },
+    "museum_s8_permafrost_ice_throne": {
+      "file": "monopoly/museum_s8_permafrost_ice_throne.png",
+      "w": 300,
+      "h": 318,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.57
+    },
+    "museum_s9_luxor_divan_lantern": {
+      "file": "monopoly/museum_s9_luxor_divan_lantern.png",
+      "w": 320,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.484
+    },
+    "museum_s9_luxor_pyramids_nile": {
+      "file": "monopoly/museum_s9_luxor_pyramids_nile.png",
+      "w": 335,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.635
+    },
+    "museum_s10_venice_gondola_arch": {
+      "file": "monopoly/museum_s10_venice_gondola_arch.png",
+      "w": 270,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.497
+    },
+    "museum_s10_venice_velvet_booth": {
+      "file": "monopoly/museum_s10_venice_velvet_booth.png",
+      "w": 302,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.645
+    },
+    "museum_s11_olympus_golden_chaise": {
+      "file": "monopoly/museum_s11_olympus_golden_chaise.png",
+      "w": 314,
+      "h": 317,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.57
+    },
+    "museum_s11_santorini_blue_dome": {
+      "file": "monopoly/museum_s11_santorini_blue_dome.png",
+      "w": 280,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.659
+    },
+    "museum_cats_purrst_tree_sofa": {
+      "file": "monopoly/museum_cats_purrst_tree_sofa.png",
+      "w": 230,
+      "h": 324,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.577
+    },
+    "museum_bkk_naga_river_barge": {
+      "file": "monopoly/museum_bkk_naga_river_barge.png",
+      "w": 308,
+      "h": 308,
+      "anchorX": 0.5,
+      "anchorY": 0.9,
+      "coverage": 0.508
     }
   }
 }
