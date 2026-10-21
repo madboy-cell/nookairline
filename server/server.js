@@ -259,6 +259,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   const sendHealth = (_req, res) => {
     res.json({
       ok: true,
+      status: 'ok',
       version: '2.0.0',
       uptimeSec: Math.round(process.uptime()),
       uptime: process.uptime(),
