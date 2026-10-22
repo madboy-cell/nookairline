@@ -9,6 +9,9 @@ import {
   MUSEUM_TIMELINE_CHAPTERS,
   MUSEUM_GACHA_EXHIBITS,
   MUSEUM_SCENERY_PORTALS,
+  PORTAL_FLOOR_ART_DIRECTION,
+  getPortalFloorArtDirection,
+  buildPortalTileMap,
   NOOK_MUSEUM,
   getNookMuseumConfig,
   NookMuseumScene,
@@ -429,4 +432,90 @@ test('Client-server WebSocket movement & zoneSeq across Museum Hall and all 16 L
     await srv.close();
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+test('All 16 Portal Worlds have bespoke Art-Director floor palettes (pattern, groundColor, cobbleColor, creamColor, sakuraColor, curbColor) and unique 36x36 tile layouts', () => {
+  const portalIds = MUSEUM_SCENERY_PORTALS.map((p) => p.id);
+  assert.equal(portalIds.length, 16);
+  assert.equal(Object.keys(PORTAL_FLOOR_ART_DIRECTION).length, 16);
+
+  const patterns = new Set();
+  const groundColors = new Set();
+  const cobbleColors = new Set();
+  const creamColors = new Set();
+  const sakuraColors = new Set();
+  const curbColors = new Set();
+  const tileLayoutSignatures = new Set();
+
+  const dummyScene = new THREE.Scene();
+  const museum = new NookMuseumScene({
+    world: {
+      scene: dummyScene,
+      local: { x: 0, z: 8, tx: 0, tz: 8 },
+      remotes: new Map(),
+    },
+  });
+  museum.setActive(true);
+
+  const nonGrassWorlds = new Set([
+    'swiss',
+    'permafrost',
+    'atlantis',
+    'starlight',
+    'dubai',
+    'luxor',
+    'maldives',
+    'cabin',
+    'cat_lounge',
+  ]);
+
+  for (const portalId of portalIds) {
+    const spec = getPortalFloorArtDirection(portalId);
+    assert.ok(spec, `Missing floor art spec for ${portalId}`);
+    assert.equal(spec.id, portalId);
+
+    patterns.add(spec.pattern);
+    groundColors.add(spec.groundColor);
+    cobbleColors.add(spec.cobbleColor);
+    creamColors.add(spec.creamColor);
+    sakuraColors.add(spec.sakuraColor);
+    curbColors.add(spec.curbColor);
+
+    const tileMap = buildPortalTileMap(portalId, 36);
+    const sig = [...tileMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}:${v}`)
+      .join('|');
+    tileLayoutSignatures.add(sig);
+
+    museum.enterPortal(portalId);
+    const byName = new Map();
+    let curbTuftCount = 0;
+    museum.realmGroup.traverse((obj) => {
+      if (obj.name) byName.set(obj.name, obj);
+      if (obj.name === 'portal_curb_tuft') curbTuftCount++;
+    });
+
+    assert.equal(byName.get(`portal_floor_${portalId}`)?.material?.color?.getHex(), spec.groundColor);
+    assert.equal(byName.get('portal_tiles_cobble')?.material?.color?.getHex(), spec.cobbleColor);
+    assert.equal(byName.get('portal_tiles_cream')?.material?.color?.getHex(), spec.creamColor);
+    assert.equal(byName.get('portal_tiles_sakura')?.material?.color?.getHex(), spec.sakuraColor);
+    assert.equal(byName.get('portal_road_curbs')?.material?.color?.getHex(), spec.curbColor);
+    assert.equal(byName.get('terrace_south_cliff_rim')?.material?.color?.getHex(), spec.cliffRimColor);
+    assert.equal(byName.get('terrace_south_cliff_wall')?.material?.color?.getHex(), spec.cliffWallColor);
+
+    if (nonGrassWorlds.has(portalId)) {
+      assert.equal(curbTuftCount, 0, `Expected 0 green grass curb tufts in ${portalId}, got ${curbTuftCount}`);
+    }
+  }
+
+  assert.equal(patterns.size, 16, 'Expected 16 unique floor pattern archetypes');
+  assert.equal(groundColors.size, 16, 'Expected 16 unique groundColor hex values');
+  assert.equal(cobbleColors.size, 16, 'Expected 16 unique cobbleColor hex values');
+  assert.equal(creamColors.size, 16, 'Expected 16 unique creamColor hex values');
+  assert.equal(sakuraColors.size, 16, 'Expected 16 unique sakuraColor hex values');
+  assert.equal(curbColors.size, 16, 'Expected 16 unique curbColor hex values');
+  assert.equal(tileLayoutSignatures.size, 16, 'Expected 16 unique 36x36 tile cell layouts');
+
+  museum.dispose();
 });

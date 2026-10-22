@@ -3570,6 +3570,11 @@ export class RpgUI {
               <div style="font-size:11px;color:#a8ffb8;margin-top:2px;">
                 🌙 <b>${escapeHtml(c.cheatTitle)}:</b> ${escapeHtml(c.cheatDesc)}
               </div>
+              ${c.ultimate ? `
+                <div style="font-size:11px;color:#fde047;margin-top:2px;">
+                  ⚡ <b>Ultimate:</b> ${escapeHtml(c.ultimate.name)} (${c.ultimate.cooldownSec}s) — ${escapeHtml(c.ultimate.desc)}
+                </div>
+              ` : ''}
             </div>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;flex-wrap:wrap;">
@@ -4455,6 +4460,11 @@ export class RpgUI {
       return `
         ${tabsHtml}
         ${resultsHtml}
+
+        <div class="s2-architect-retirement-notice" style="margin:8px 0 10px;padding:10px 14px;border-radius:12px;background:linear-gradient(180deg,rgba(74,40,16,0.95),rgba(42,22,10,0.98));border:1.5px solid #f59e0b;color:#fef3c7;font-size:12.5px;font-weight:700;line-height:1.45;box-shadow:0 3px 12px rgba(0,0,0,0.45);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;flex-shrink:0;">🏛️</span>
+          <span>🏛️ VIP Wonders are now Stage-Built Monuments! Construct them from Sky Frontier materials in your Village → 🔨 Build → 🏛️ Monuments.</span>
+        </div>
 
         <div class="s2-gacha-stage s2-stage-box2 ${previewEntry ? 'is-previewing' : ''}">
           <div class="s2-stage-top-bar">

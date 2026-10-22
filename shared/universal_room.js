@@ -31,7 +31,6 @@ export const DASH_MODES = Object.freeze(['quick', 'chaos', 'league', 'ghost']);
 export const MODES = Object.freeze({
   monopoly:   { label: 'Sky Monopoly', icon: '🎲', available: true,  minSeats: 2 },
   casino:     { label: 'Grand Casino', icon: '🎰', available: true,  minSeats: 1 },
-  moon_bunny: { label: 'Moon Defense', icon: '🌙', available: true,  minSeats: 1 },
   cloud_dash: { label: 'Cloud Dash',   icon: '☁️', available: true,  phase: 6, minSeats: 1 },
 });
 
@@ -429,10 +428,10 @@ export class TableManager {
     }
     t.status = 'lobby';
     t.match = null; t.seatOf = null; t.deadline = null; t.podiumRewards = null;
-    t.moonDefense = null; t.cloudDash = null;
+    t.cloudDash = null;
     t.seats = t.seats.map((s) => (s.leftUserId ? { kind: 'empty' } : { ...s, ready: s.kind === 'bot' || t.mode !== 'monopoly' || s.userId === t.hostId }));
     this.pushState(t);
-    if (t.solo || ((t.mode === 'moon_bunny' || t.mode === 'cloud_dash') && this.humans(t).length <= 1)) {
+    if (t.solo || (t.mode === 'cloud_dash' && this.humans(t).length <= 1)) {
       return this.start(t.hostId);
     }
     this.pushList(t.mode);

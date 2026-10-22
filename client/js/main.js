@@ -1,7 +1,7 @@
 // client/js/main.js — boot: gate → sign-in → world + realtime session.
 // Step 2: village HUD (Harvest All + bubbles, Edit Grid, mood, couple blessing, Wonder actions),
 // building / upgrade / Cloud Territory / Welcome-Back modals, Finger Pick-Up & Drop and Dock fishing.
-import { WorldEngine } from './world_engine.js?v=nm14';
+import { WorldEngine } from './world_engine.js?v=sf1';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
 import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
@@ -14,10 +14,13 @@ import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
 import { MonopolyBridge } from './monopoly_bridge.js?v=nm18';
 import { NetRoom } from './minigames/monopoly_25d/room_client.js';
 import { TownHallScene, getTownHallConfig } from './town_hall_scene.js?v=cd44';
-import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?v=nm18';
+import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?v=nm19';
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
+import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf1';
+import { BasecampUI } from './basecamp_ui.js?v=bc1';
+import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
   CORE, WONDERS, DECOR, MOODS, EXPANSION_TIERS, BLUEPRINT_CARDS, MAX_CORE_LV, MAX_CASTLE_LV, CORE_LANDMARKS,
@@ -36,6 +39,7 @@ let net = null;
 let editor = null;
 let fishing = null;
 let rpg = null;
+let basecampUI = null;      // Stage 3 Base Camp panels (story / build / production / orders / storage)
 let mono = null;            // Step 4: Table Hub + Sky Monopoly bridge (rebuilt with every socket session)
 let townHallScene = null;
 let nookMuseumScene = null;
@@ -165,6 +169,39 @@ function request(type, payload = {}) {
   });
 }
 
+// ------------------------------------------------------------------ Sky Frontier routing (Master Plan v2 §2)
+/** Server snapshot/auth/resume carried a `kind: 'sky_frontier'` layout → show the frontier scene. */
+function applyFrontierLayout(layout, self) {
+  if (!world) return;
+  S.visitingOwner = null;
+  $('hud').dataset.scene = 'SKY_FRONTIER';
+  fishing?.setAvailable(false);
+  radar?.setActive(false);
+  world.serverOffset = S.serverOffset || 0;
+  world.setFrontierMode(true, layout);
+  if (S.profile?.frontier?.energy) world.frontierScene?.setEnergy?.(S.profile.frontier.energy);
+  if (self && world.local) world.setLocalPosition(self.x, self.z);
+  // resume into the same shard/region after a reconnect (server re-validates room + unlocks)
+  if (net) net.resumeInstanceId = `frontier:${layout.shardId}~${layout.regionId}`;
+}
+
+function enterFrontier() {
+  if (!net) return;
+  net.send({ type: 'instance_switch', to: 'frontier', force: true });
+}
+
+function exitFrontier() {
+  if (!world) return;
+  world.setFrontierMode(false);
+  $('hud').dataset.scene = 'VILLAGE';
+  setActiveDock('village');
+  world.setZoneSeq((world.zoneSeq || 1) + 1);
+  if (net) {
+    net.resumeInstanceId = null;
+    net.send({ type: 'instance_switch', to: 'home', force: true });
+  }
+}
+
 // ------------------------------------------------------------------ village & guide HUD tick (1 Hz)
 let currentGuideAction = 'harvest';
 
@@ -176,9 +213,9 @@ function updateGuidePill() {
   if (!pill || !txt || !cta || !p || !world) return;
 
   if (world.layout?.kind === 'townhall') {
-    currentGuideAction = 'moon_defense';
-    txt.textContent = '🌙 North Shrine: Defend Moon Bunny in Co-Op Siege!';
-    cta.textContent = 'Play ▸';
+    currentGuideAction = 'sky_frontier';
+    txt.textContent = '🏝️ Sky Frontier: Gather, craft & defend the Meadow!';
+    cta.textContent = 'Explore ▸';
     return;
   }
 
@@ -197,9 +234,9 @@ function updateGuidePill() {
     txt.textContent = '🎁 Pet has a Daily Gift! Tap to collect';
     cta.textContent = 'Claim ▸';
   } else if (fishing && !fishing.available) {
-    currentGuideAction = 'moon_defense';
-    txt.textContent = '🌙 Try Co-Op Moon Defense V2 or walk to Dock to Fish!';
-    cta.textContent = 'Play ▸';
+    currentGuideAction = 'sky_frontier';
+    txt.textContent = '🏝️ Explore the Sky Frontier or walk to Dock to Fish!';
+    cta.textContent = 'Explore ▸';
   } else {
     currentGuideAction = 'townhall';
     txt.textContent = '🏛️ Visit Town Hall Sanctuary for Co-Op & Hall of Fame!';
@@ -212,16 +249,10 @@ function runGuideAction() {
     harvestAll();
   } else if (currentGuideAction === 'pet_gift') {
     world?.onPetTap?.();
-  } else if (currentGuideAction === 'moon_defense') {
+  } else if (currentGuideAction === 'sky_frontier' || currentGuideAction === 'moon_defense') {
     closeModal();
     rpg?.close?.();
-    setActiveDock('play');
-    if (mono?.hub) {
-      mono.hub.mode = 'moon_bunny';
-      mono.openHub();
-    } else {
-      openPlayHub();
-    }
+    enterFrontier();
   } else if (currentGuideAction === 'townhall') {
     if (editor?.active) editor.close(true);
     closeModal();
@@ -245,11 +276,11 @@ function tickVillage() {
 
   const btn = $('act-harvest');
   if (hasOwnIsland) {
-    btn.hidden = false;
     if ($('act-edit')) $('act-edit').hidden = false;
     if ($('act-mood')) $('act-mood').hidden = false;
     const pv = harvestPreview(p, serverNow(), { coupled: S.coupled });
     const any = pv.gold + pv.berries + pv.diamonds > 0;
+    btn.hidden = !(pv.ready && any);   // Stage 3: passive harvest retired — only show when something is actually ready
     btn.disabled = !pv.ready || !any;
     btn.classList.toggle('ready', pv.ready && any);
     const bits = [];
@@ -708,13 +739,15 @@ function wonderMoodModal(focusWonderType = null) {
   });
 }
 
-function buildingModal(pick) {
+function buildingModal(pick, { legacy = false } = {}) {
   const p = S.profile;
   const mine = pick.owner === p.id;
   const isl = islandOf(world.layout, pick.owner);
   const v = mine ? p.village : isl.village;
   const b = v.buildings.find((q) => q.uid === pick.uid);
   if (!b) return;
+  // Stage 3 Base Camp: production buildings + farm plots open the Base Camp sheet instead.
+  if (!legacy && basecampUI?.handles(b.type) && basecampUI.openBuilding({ owner: pick.owner, uid: b.uid, type: b.type, village: mine ? null : v })) return;
   const d = placeable(b.type);
   const rows = [];
   const actions = [];
@@ -751,7 +784,7 @@ function buildingModal(pick) {
     if (d.daily) rows.push(['Daily Diamonds', `${d.perDay(lv)} ${diaIco}/day`]);
     if (b.type === 'nest') rows.push(['Mythic/Epic Trait Odds', `${d.traitOdds(lv).toFixed(2)}x`]);
     if (b.type === 'dock') rows.push(['Offline Storage Cap', `${storageCapHrs(v, mine ? p : {}).toFixed(1)} h`], ['Co-Op Fishing', 'Walk onto the dock and tap 🎣']);
-    if (b.type === 'patisserie') rows.push(['Post-Match Gold', `+${d.matchGoldPct(lv)}%`]);
+    if (b.type === 'patisserie' && typeof d.matchGoldPct === 'function') rows.push(['Post-Match Gold', `+${d.matchGoldPct(lv)}%`]);
     if (b.type === 'shrine') {
       rows.push(['1-Tap Warp to Town Hall', 'Active ✨']);
       actions.push({
@@ -1009,8 +1042,31 @@ async function startGame(profile) {
     await loadManifest(world.renderer);
     world.start();
     rpg = new RpgUI({ request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile });
+    basecampUI = new BasecampUI({
+      request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile, now: serverNow,
+      onEnterEdit: () => enterEdit(),
+      onOpenLegacy: (pk) => buildingModal(pk, { legacy: true }),
+      onEnergy: (e) => world?.frontierScene?.setEnergy?.(e),
+    });
+    basecampUI.mountHud($('village-actions'));
     townHallScene = new TownHallScene({ world, onAction: (act) => handleTownHallAction(act) });
     world.townHallScene = townHallScene;
+    // Sky Frontier scene (Master Plan v2 §2): engine delegates bounds / picking / update while active.
+    world.frontierScene = new SkyFrontierScene({ world, request: (t, p) => request(t, p), toast });
+    world.frontierScene.onExit = () => exitFrontier();
+    // DEV_FRONTIER entry (Stage 1): `?frontier=1` or localStorage.DEV_FRONTIER = '1' shows a launcher button.
+    // The Play Hub tab replaces Moon Defense at the Stage 7 cutover.
+    try {
+      const devFrontier = new URLSearchParams(location.search).get('frontier') === '1' || localStorage.getItem('DEV_FRONTIER') === '1';
+      if (devFrontier && !document.getElementById('sf-dev-launch')) {
+        const b = document.createElement('button');
+        b.id = 'sf-dev-launch';
+        b.textContent = '🏝️ Frontier';
+        b.style.cssText = 'position:fixed;right:12px;top:calc(env(safe-area-inset-top,0px) + 120px);z-index:60;padding:8px 12px;border-radius:14px;border:2px solid #C9A45C;background:#3B2A20;color:#E9DCC0;font:600 13px system-ui;box-shadow:0 3px 10px rgba(0,0,0,.35)';
+        b.onclick = () => (world.activeFrontier ? exitFrontier() : enterFrontier());
+        document.body.appendChild(b);
+      }
+    } catch { /* storage blocked: ignore */ }
     nookMuseumScene = new NookMuseumScene({
       world,
       getProfile: () => S.profile,
@@ -1055,7 +1111,7 @@ async function startGame(profile) {
       getVoiceClient: () => voiceClient,
       onApplyMood: (m) => applyMood(m),
     });
-    window.__neora = { world, debug: () => world.debugState(), request: (t, p) => request(t, p), state: S, rpg, townHallScene, nookMuseumScene, enterNookMuseum, showMuseumInviteBanner, radar, hallOfFameUI, couplePhotobooth, openAccountModal, doLogout };
+    window.__neora = { world, net, debug: () => world.debugState(), request: (t, p) => request(t, p), state: S, rpg, basecampUI, townHallScene, nookMuseumScene, enterFrontier, exitFrontier, enterNookMuseum, showMuseumInviteBanner, radar, hallOfFameUI, couplePhotobooth, openAccountModal, doLogout };
     trackSpeech();
     setInterval(tickVillage, 1000);
     $('act-harvest').onclick = harvestAll;
@@ -1080,11 +1136,14 @@ async function startGame(profile) {
     $('modal-x').onclick = closeModal;
     $('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
     world.onPick = (pk) => {
+      if (pk.kind === 'sf_node' || pk.kind === 'sf_gate' || pk.kind === 'sf_monster') { world.frontierScene?.interact?.(pk); return true; }
       if (pk.kind === 'bubble') { harvestAll(); return true; }
       if (pk.kind === 'signpost') { expansionModal(); return true; }
       if (pk.kind === 'building') { buildingModal(pk); return true; }
       return false;
     };
+    const heartIsleUI = new HeartIsleUI({ world, request: (t, p) => request(t, p), toast, humanError, openModal, closeModal }).install($('village-actions'));
+    if (window.__neora) window.__neora.heartIsleUI = heartIsleUI;
     world.onPetTap = async () => {
       const p = S.profile;
       const petCtrl = world?.local?.pet;
@@ -1190,43 +1249,7 @@ async function startGame(profile) {
       .catch(() => {});
   }
 
-  if (moonDefenseUI) {
-    moonDefenseUI.net = net;
-  } else {
-    import('./minigames/moon_defense_ui.js?v=nm18')
-      .then(({ MoonDefenseUI }) => {
-        moonDefenseUI = new MoonDefenseUI({
-          net,
-          world,
-          getProfile: () => S.profile,
-          toast,
-          onExit: () => {
-            $('hud').hidden = false;
-            setActiveDock(world?.getInstanceKind?.() === 'townhall' ? 'townhall' : 'village');
-            if (mono?.hub) {
-              if (mono.hub.table?.status !== 'lobby') mono.hub.table = null;
-              mono.hub._moonStarted = false;
-              mono.hub._moonStartedTableId = null;
-              mono.hub._mbStarted = false;
-              mono.hub._mbStartedTableId = null;
-            }
-          },
-        });
-        if (world) world.moonDefenseUI = moonDefenseUI;
-        if (window.__neora) window.__neora.moonDefenseUI = moonDefenseUI;
-        if (pendingMoonTable) {
-          const t = pendingMoonTable;
-          pendingMoonTable = null;
-          moonDefenseUI.open(t);
-        }
-        if (pendingMoonMsg) {
-          const m = pendingMoonMsg;
-          pendingMoonMsg = null;
-          moonDefenseUI.handle(m);
-        }
-      })
-      .catch(() => {});
-  }
+  // Moon Defense UI retired in Stage 7 (replaced by Sky Frontier)
 
   if (cloudDashUI) {
     cloudDashUI.net = net;
@@ -1380,7 +1403,9 @@ async function startGame(profile) {
       S.serverOffset = m.serverNow - Date.now();
       S.coupled = !!m.coupled;
       S.visitingOwner = m.visitingOwner || null;
-      if (m.layout?.kind === 'museum' || m.museum) {
+      if (m.layout?.kind === 'sky_frontier') {
+        applyFrontierLayout(m.layout, null);
+      } else if (m.layout?.kind === 'museum' || m.museum) {
         const mus = m.museum || m.layout;
         const portalId = mus?.portalId || null;
         S.visitingOwner = null;
@@ -1412,6 +1437,7 @@ async function startGame(profile) {
         S.visitingOwner = m.visitingOwner || null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
+          if (world.activeFrontier) world.setFrontierMode(false);
           world.setMuseumMode(false);
           world.setTownHallMode(false);
         }
@@ -1430,12 +1456,15 @@ async function startGame(profile) {
         if (!moonDefenseUI?.active && !cloudDashUI?.active && m.self) world.setLocalPosition(m.self.x, m.self.z);
         world.syncPetGiftAndYard(m.profile);
       }
-      if (m.offline) welcomeBack(m.offline);
+      if (m.offline && (m.offline.gold || m.offline.berries || m.offline.diamonds)) welcomeBack(m.offline);   // server sends null since Stage 3
+      basecampUI?.onProfile(m.profile);
     })
     .on('instance_snapshot', (m) => {
       if (m.zoneSeq) world.setZoneSeq(m.zoneSeq);
       S.partnerCompanion = m.partnerCompanion || null;
-      if (m.layout?.kind === 'museum') {
+      if (m.layout?.kind === 'sky_frontier') {
+        applyFrontierLayout(m.layout, m.self);
+      } else if (m.layout?.kind === 'museum') {
         S.visitingOwner = null;
         net.resumeInstanceId = m.layout.portalId ? `nook_museum:${m.layout.portalId}` : 'nook_museum';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
@@ -1466,6 +1495,7 @@ async function startGame(profile) {
         net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
+          if (world.activeFrontier) world.setFrontierMode(false);
           world.setMuseumMode(false);
           world.setTownHallMode(false);
         }
@@ -1491,6 +1521,19 @@ async function startGame(profile) {
       couplePhotobooth?.updateProximityBarVisibility?.();
     })
     .on('player_joined', (m) => { world.upsertRemote(m.player); toast(`${m.player.username} arrived ✨`, 1600); })
+    .on('sf_node_hit', (m) => world?.frontierScene?.onNodeHit?.(m))
+    .on('sf_node_break', (m) => world?.frontierScene?.onNodeBreak?.(m))
+    .on('sf_monsters', (m) => world?.frontierScene?.onMonsters?.(m))
+    .on('sf_monster_dead', (m) => world?.frontierScene?.onMonsterDead?.(m))
+    .on('sf_hit', (m) => world?.frontierScene?.onHit?.(m))
+    .on('sf_player_hp', (m) => world?.frontierScene?.onPlayerHp?.(m))
+    .on('sf_player_down', (m) => world?.frontierScene?.onPlayerDown?.(m))
+    .on('sf_player_respawn', (m) => world?.frontierScene?.onPlayerRespawn?.(m))
+    .on('sf_outpost', (m) => world?.frontierScene?.onOutpost?.(m))
+    .on('sf_invasion', (m) => world?.frontierScene?.onInvasion?.(m))
+    .on('sf_boss', (m) => world?.frontierScene?.onBoss?.(m))
+    .on('sf_boss_defeated', (m) => world?.frontierScene?.onBossDefeated?.(m))
+    .on('sf_ult', (m) => world?.frontierScene?.onUlt?.(m))
     .on('player_left', (m) => {
       if (S.partnerCompanion && m.id === S.partnerCompanion.id && world?.layout?.kind !== 'townhall') {
         world.upsertRemote(S.partnerCompanion);
@@ -1507,10 +1550,13 @@ async function startGame(profile) {
     })
     .on('profile_update', (m) => {
       if (m.serverNow) S.serverOffset = m.serverNow - Date.now();
+      if (world) world.serverOffset = S.serverOffset || 0;
+      if (m.profile?.frontier?.energy) world?.frontierScene?.setEnergy?.(m.profile.frontier.energy);
       renderHud(m.profile);
       world.applyEquipment(m.profile.id, m.profile.equipped, m.profile.appearance);
       world.syncPetGiftAndYard(m.profile);
       rpg?.onProfile(m.profile);
+      basecampUI?.onProfile(m.profile);
       voiceClient?.onProfileUpdate?.(m.profile);
     })
     .on('player_equipped', (m) => world.applyEquipment(m.id, m.equipped, m.appearance))
@@ -1561,7 +1607,9 @@ async function startGame(profile) {
     .on('resume_ok', (m) => {
       if (m.zoneSeq) world.setZoneSeq(m.zoneSeq);
       S.serverOffset = m.serverNow - Date.now();
-      if (m.layout?.kind === 'museum') {
+      if (m.layout?.kind === 'sky_frontier') {
+        applyFrontierLayout(m.layout, null);
+      } else if (m.layout?.kind === 'museum') {
         net.resumeInstanceId = m.layout.portalId ? `nook_museum:${m.layout.portalId}` : 'nook_museum';
         if (!moonDefenseUI?.active && !cloudDashUI?.active) {
           $('hud').dataset.scene = 'NOOK_MUSEUM';
@@ -1583,6 +1631,7 @@ async function startGame(profile) {
         net.resumeInstanceId = S.visitingOwner ? `village:${S.visitingOwner}` : null;
         $('hud').dataset.scene = editor?.active ? 'VILLAGE_EDIT' : 'VILLAGE';
         if (!moonDefenseUI?.active) {
+          if (world.activeFrontier) world.setFrontierMode(false);
           world.setMuseumMode(false);
           world.setTownHallMode(false);
         }
@@ -1598,7 +1647,7 @@ async function startGame(profile) {
       world.syncPetGiftAndYard(m.profile);
     })
     .on('village_updated', (m) => {
-      if (world.layout?.kind === 'townhall' || world.layout?.kind === 'museum' || !Array.isArray(world.layout?.islands)) return;
+      if (world.layout?.kind === 'townhall' || world.layout?.kind === 'museum' || world.layout?.kind === 'sky_frontier' || !Array.isArray(world.layout?.islands)) return;
       const isl = islandOf(world.layout, m.owner);
       const resized = m.layout && (!isl || isl.S !== m.layout.islands.find((i) => i.owner === m.owner)?.S);
       if (resized) { world.plaza.setLayout(m.layout, S.profile.id); S.layoutKey = ''; syncSelfVillage(); world.syncPetGiftAndYard(S.profile); return; }

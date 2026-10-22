@@ -8,6 +8,7 @@ import {
 } from '../shared/phase5_rules.js';
 import { SEASON_OUTFITS, MAX_REFINE, itemDef } from '../shared/rpg_rules.js';
 import { grantItem } from './rpg_service.js';
+import { canFormCouple } from '../shared/couple_rules.js';
 
 const POLAROID_SEED_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'data', 'nook_neen_polaroids_seed.json');
 let _cachedPolaroidSeed = null;
@@ -228,6 +229,8 @@ export function createDailyService({
   isOnline = () => false,
   getPresence = () => null,
   onCoupleChanged = () => {},
+  // Heart Isle lifecycle (server/heart_isle_service.js): { onBind(a, b), onBreak(a, b) } — optional.
+  coupleHooks = null,
 } = {}) {
   // In-memory cheer banners: cheerId -> { cheerId, winnerId, winnerName, achievement, expiresAt, claimed: Set }
   const activeCheers = new Map();
@@ -1605,6 +1608,29 @@ export function createDailyService({
     };
   }
 
+  /**
+   * Master Plan v2 §12 formation gate for both partners: 72 h cooldown after a split, waived when
+   * re-coupling with the same ex. Friendship age is only checked when it is tracked (`friend_since`).
+   */
+  function coupleFormCheck(a, b) {
+    const lower = (s) => String(s || '').toLowerCase();
+    const nowMs = now();
+    for (const [x, y] of [[a, b], [b, a]]) {
+      const since = x.friend_since?.[y.id] ?? x.friend_since?.[lower(y.id)];
+      const r = canFormCouple({
+        friendSince: Number.isFinite(since) ? since : -Infinity,
+        now: nowMs,
+        lastSplitAt: Number.isFinite(x.last_split_at) ? x.last_split_at : null,
+        sameAsEx: !!(x.last_partner_id && lower(x.last_partner_id) === lower(y.id)),
+      });
+      if (!r.ok) {
+        const until = r.error === 'cooldown' ? x.last_split_at + 72 * 3600e3 : undefined;
+        return { ok: false, error: r.error === 'cooldown' ? 'couple_cooldown' : r.error, ...(until ? { until } : {}) };
+      }
+    }
+    return { ok: true };
+  }
+
   function bindCouple(a, b) {
     ensurePhase5(a);
     ensurePhase5(b);
@@ -1652,6 +1678,7 @@ export function createDailyService({
     pushProfile(a);
     pushProfile(b);
 
+    try { coupleHooks?.onBind?.(a, b); } catch (err) { console.warn('[heart_isle] onBind failed', err?.message || err); }
     onCoupleChanged(a.id, b.id, true);
 
     sendTo(a.id, {
@@ -1694,6 +1721,8 @@ export function createDailyService({
 
     const reverseProposal = (p.couple_requests_in || []).some((r) => r.from?.toLowerCase() === target.id.toLowerCase());
     if (target.is_bot || reverseProposal) {
+      const gate = coupleFormCheck(p, target);
+      if (!gate.ok) return gate;
       bindCouple(p, target);
       return {
         ok: true,
@@ -1755,6 +1784,8 @@ export function createDailyService({
       return { ok: false, error: 'no_such_proposal' };
     }
 
+    const gate = coupleFormCheck(p, sender);
+    if (!gate.ok) return gate;
     bindCouple(p, sender);
     return {
       ok: true,
@@ -1810,9 +1841,14 @@ export function createDailyService({
     p.couple_streak = 0;
     p.couple_since = null;
     p.couple_streak_day = null;
+    const splitAt = now();
+    p.last_split_at = splitAt;
+    p.last_partner_id = oldPartnerId;
 
     if (partner) {
       ensurePhase5(partner);
+      partner.last_split_at = splitAt;
+      partner.last_partner_id = p.id;
       partner.past_couple_streaks = partner.past_couple_streaks || {};
       partner.past_couple_streaks[p.id] = savedStreak;
       partner.past_couple_stats = partner.past_couple_stats || {};
@@ -1837,12 +1873,23 @@ export function createDailyService({
     db?.markProfile?.(p.id);
     pushProfile(p);
 
+    let heartIsle = null;
+    try {
+      const r = coupleHooks?.onBreak?.(p, partner);
+      if (r) {
+        heartIsle = { id: r.isle?.id, frozen: !!r.isle?.frozen, share: r.shares?.[p.id] || {} };
+        if (partner) pushProfile(partner);
+        pushProfile(p);
+      }
+    } catch (err) { console.warn('[heart_isle] onBreak failed', err?.message || err); }
+
     onCoupleChanged(p.id, oldPartnerId, false);
 
     return {
       ok: true,
       oldPartnerId,
       savedStreak,
+      ...(heartIsle ? { heartIsle } : {}),
       directory: socialDirectory(p),
     };
   }

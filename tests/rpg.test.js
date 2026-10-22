@@ -101,8 +101,11 @@ test('gacha box 2: gold / berries costs, blueprints, decor, wonder star-up', () 
   assert.equal(g.paid.gold, BOX2.COST_1); assert.equal(g.items[0].kind, 'blueprint'); assert.equal(g.items[0].target, 'mint');
   const d = rpg.gachaPull(p, { box: 2, count: 1, currency: 'gold' }, seq(0.5, 0.9, 0.0));  // common, decor
   assert.equal(d.items[0].kind, 'decor');
-  const w = rpg.gachaPull(p, { box: 2, count: 1, currency: 'gold' }, seq(0.001, 0.0));     // mythic wonder (first ★3 = ferris, neen has ★2)
-  assert.equal(w.items[0].kind, 'star_up'); assert.equal(p.village.wonders[w.items[0].id].stars, 3);
+  const starsBefore = JSON.stringify(p.village.wonders);
+  const shardsBefore = p.shards;
+  const w = rpg.gachaPull(p, { box: 2, count: 1, currency: 'gold' }, seq(0.001, 0.0));     // mythic tier → shards (Stage 5: no wonders)
+  assert.equal(w.items[0].kind, 'shards'); assert.equal(p.shards, shardsBefore + w.items[0].shards);
+  assert.equal(JSON.stringify(p.village.wonders), starsBefore, 'wonders are Monuments now — never rolled');
   const b = rpg.gachaPull(p, { box: 2, count: 10, currency: 'berries' }, fixed(0.5));
   assert.equal(b.paid.berries, BOX2.COST_10_BERRIES); assert.equal(b.items.length, 10);
 });

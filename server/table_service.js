@@ -11,20 +11,18 @@ import { playerInfoFromProfile, podiumRewards, matchMods, PODIUM } from '../shar
 import { applyExp, expToNext, recalcPlayerCP } from '../shared/progression.js';
 import { grantPetActivityExp } from './rpg_service.js';
 import { createCasinoAdapter } from './casino_service.js';
-import { createMoonDefenseAdapter } from './moon_defense_service.js';
 import { createCloudDashAdapter } from './cloud_dash_service.js';
+import { monopolyMerchantCrate, grantProfileMinigameMaterials } from '../shared/minigame_rewards.js';
 
 export const TABLE_TYPES = new Set([
   'table_list', 'table_create', 'table_sit', 'table_leave', 'table_set_bot', 'table_ready', 'table_start', 'table_solo', 'table_rematch',
   'table_set_option',
   'mono_roll', 'mono_ult', 'mono_buy', 'mono_event_choice',
   'mono_pet_cast', 'mono_pet_arm', 'mono_pet_toggle_auto',
-  'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave', 'casino_state',
-  'mb_move', 'mb_dash', 'mb_ult', 'mb_buy_tome', 'mb_hire_merc', 'mb_stance', 'mb_bounty_bell', 'mb_toss_coins', 'mb_pick_blessing', 'mb_leave',
-  'mb_draft_card', 'mb_swap_pedestals', 'mb_sell_pedestal', 'mb_reroll_shop', 'mb_toggle_speed', 'mb_equip_charm',
+  'casino_bet', 'casino_cheer', 'casino_hit', 'casino_stay', 'casino_roulette_bets', 'casino_leave', 'casino_state', 'casino_material_exchange',
   'cd_report', 'cd_leave', 'cd_item',
 ]);
-export const isTableMessage = (type) => TABLE_TYPES.has(type) || (typeof type === 'string' && type.startsWith('mb_'));
+export const isTableMessage = (type) => TABLE_TYPES.has(type) || (typeof type === 'string' && type.startsWith('casino_'));
 
 export const MATCH_EXP = [180, 140, 120, 100];       // base 1.00× player EXP by rank
 const MAX_MULTIPLIER = 3.0;                          // safety cap on the uncapped podium multiplier
@@ -128,6 +126,9 @@ export function createTableService({
         withPartner = true;
       }
       try { onMatchFinished(prof, withPartner ? { withPartner: true } : undefined); } catch (e) { log.error?.('[tables] onMatchFinished', e); }
+      // Sky Frontier minigame materials hook (§13)
+      const merchantCrate = monopolyMerchantCrate(r.rank);
+      grantProfileMinigameMaterials(prof, merchantCrate, t);
       db.markProfile(prof.id);
       pushProfile(prof);
       out[seat.id] = {
@@ -138,6 +139,8 @@ export function createTableService({
         petCombos: seat.petCombos || 0, petCasts: seat.petCasts || 0,
         petExpGained: petExpRes?.ok ? petExpRes.expGained : 0,
         chaos: !!chaos,
+        merchantCrate,
+        materials: merchantCrate,
       };
     }
     log.info?.(`[tables] ${table.id} ended (${result.reason}) winner=${table.match.players[result.winner]?.id}`);
@@ -166,21 +169,6 @@ export function createTableService({
     onHandSettled,
   });
 
-  const moon_bunny = createMoonDefenseAdapter({
-    db,
-    send: (userIds, msg) => {
-      const ids = Array.isArray(userIds) ? userIds : [userIds];
-      for (const id of ids) sendTo(id, msg);
-    },
-    humans: (t) => t.seats.filter((s) => s.kind === 'human' && s.userId).map((s) => s.userId),
-    rng,
-    now,
-    pushProfile,
-    onMatchFinished,
-    onMvpCharmDrop,
-    catalogs,
-  });
-
   const cloud_dash = createCloudDashAdapter({
     db,
     send: (userIds, msg) => {
@@ -201,7 +189,7 @@ export function createTableService({
     onMatchEnd: payout,
     onPetAuto,
     seedFn: () => (rng() * 2 ** 31) >>> 0,
-    games: { casino, moon_bunny, cloud_dash },
+    games: { casino, cloud_dash },
   });
 
   function flush() {
@@ -217,7 +205,24 @@ export function createTableService({
   return {
     mgr,
     isTableMessage,
-    handle(userId, m) { const r = mgr.handle(userId, m); flush(); return r; },
+    handle(userId, m) {
+      if (m?.type === 'casino_material_exchange') {
+        const prof = db.getProfile(userId);
+        if (!prof) return { ok: false, error: 'no_profile' };
+        const res = casino.exchangeMaterial(prof, m.item, now());
+        if (res.ok) {
+          db.markProfile(prof.id);
+          pushProfile(prof);
+          sendTo(userId, { type: 'casino_material_exchange_result', ...res });
+        } else {
+          sendTo(userId, { type: 'casino_error', error: res.error });
+        }
+        return res;
+      }
+      const r = mgr.handle(userId, m);
+      flush();
+      return r;
+    },
     connect(userId) { mgr.connect(userId); flush(); },
     disconnect(userId) { mgr.disconnect(userId); flush(); },
     tick() { mgr.tick(); flush(); },

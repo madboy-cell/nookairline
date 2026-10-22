@@ -8,11 +8,14 @@ import { ALL_BUILDS, BUILD_PERKS, detectBuild, getWeeklyWeather, leagueTierFor, 
 import { computeUniversalStats } from '/shared/universal_stats.js';
 import { normalizePetId, PETS } from '/shared/pet_catalog.js';
 
+const modesBase = { ...MODES };
+delete modesBase.moon_bunny;
+
 export const HUB_MODES = Object.freeze({
-  ...MODES,
+  ...modesBase,
   monopoly: { ...(MODES.monopoly || {}), label: 'Sky Monopoly', icon: '🎲', iconImg: '/assets/ui/dice_zeus_thunder.png', available: true, minSeats: 2 },
   casino: { ...(MODES.casino || {}), label: 'Grand Casino', icon: '🎰', iconImg: '/assets/monopoly/mono_ult_roulette.png', available: true, minSeats: 1 },
-  moon_bunny: { ...(MODES.moon_bunny || {}), label: 'Moon Defense', icon: '🌙', iconImg: '/assets/ui/mb_tab_moon_emblem.png', available: true, minSeats: 1 },
+  sky_frontier: { label: 'Sky Frontier', icon: '🏝️', available: true, minSeats: 1 },
   cloud_dash: { ...(MODES.cloud_dash || {}), label: 'Cloud Dash', icon: '☁️', iconImg: '/assets/ui/icon_cloud_dash.png', available: true, minSeats: 1 },
 });
 
@@ -221,6 +224,8 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
   get isOpen() { return !this.root.hidden; }
   get me() { return this.room.userId; }
   get isHost() { return this.table?.hostId === this.me; }
+  get tab() { return this.mode; }
+  set tab(v) { this.mode = v; }
 
   // ------------------------------------------------------------------------- render
   render() {
@@ -234,9 +239,55 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
     const activeCasinoGame = (t?.options?.casinoGame || t?.casinoGame || this.casinoGame || 'pokdeng');
     const isChaos = !isCasino && !isMoon && !isDash && (((t?.status === 'lobby' ? modeOf(t) : null) || this.matchMode) === 'chaos');
     const tabs = Object.entries(HUB_MODES).map(([k, m]) => `
-      <button class="hub-tab ${k === this.mode ? 'on' : ''} ${m.available ? '' : 'locked'}" data-tab="${k}">
+      <button class="hub-tab ${(k === this.mode || k === this.tab) ? 'on' : ''} ${m.available ? '' : 'locked'}" data-tab="${k}">
         <span class="hub-tab-ico">${m.iconImg ? `<img class="hub-tab-img" src="${m.iconImg}" alt="${esc(m.label)}">` : m.icon}</span><span>${m.label}</span>${m.available ? '' : `<em>🔒 Phase ${m.phase}</em>`}
       </button>`).join('');
+
+    if (this.mode === 'sky_frontier' || this.tab === 'sky_frontier') {
+      this.root.innerHTML = `
+      <div class="hub">
+        <div class="hub-head"><span>🎮 PLAY &amp; 4-SEAT TABLE HUB</span><button class="hub-x" data-act="close">✕</button></div>
+        <div class="hub-tabs">${tabs}</div>
+        <div class="hub-table-card frontier-hub-card" style="padding:16px 14px;background:linear-gradient(180deg,#241810 0%,#1a1008 100%);border:2px solid #C9A45C;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.55);color:#FFF8E7;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:28px;">🏝️</span>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#FFE6A3;letter-spacing:0.3px;">🏝️ Sky Frontier — Co-op Expedition</div>
+              <div style="font-size:11.5px;color:#C9B29B;margin-top:2px;line-height:1.35;">Up to 10 adventurers per shard • Split loot by contribution • Tools are weapons • Zero item loss on KO</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin:14px 0;">
+            <div class="sf-region-card" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(201,164,92,0.45);border-radius:14px;padding:12px 14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <b style="font-size:13.5px;color:#86EFAC;">🌾 Whispering Meadow (Region 1)</b>
+                <span style="font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:#15803D;color:#fff;">Open</span>
+              </div>
+              <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
+                Open • Gather Wood, Stone, Sky Wheat &amp; Herbs • Defend the Goddess Outpost • Boss: Elder Moss Golem
+              </div>
+            </div>
+
+            <div class="sf-region-card" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(201,164,92,0.3);border-radius:14px;padding:12px 14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <b style="font-size:13.5px;color:#93C5FD;">💎 Crystal Hollow (Region 2)</b>
+                <span style="font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:#1E3A8A;color:#93C5FD;">Ch 2 Unlock</span>
+              </div>
+              <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
+                Chapter 2 Unlock (or Partner Guest) • Gather Crystal Ore, Quartz &amp; Mithril • Boss: Hollow Crystal Weaver
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:center;margin-top:16px;">
+            <button type="button" id="hub-enter-frontier" class="hub-btn gold big" data-act="enter-frontier" style="width:100%;max-width:320px;padding:12px 18px;font-size:15px;font-weight:900;background:linear-gradient(180deg,#F59E0B,#B45309);border:2px solid #FDE68A;color:#FFF;box-shadow:0 4px 14px rgba(245,158,11,0.45);cursor:pointer;border-radius:12px;">
+              🏝️ Enter Sky Frontier
+            </button>
+          </div>
+        </div>
+      </div>`;
+      return;
+    }
     const seats = t ? t.seats : [];
     const resolveSeatHair = (s) => {
       const isMe = s?.userId === this.me;
@@ -545,25 +596,32 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
 
   // ------------------------------------------------------------------------- input
   onClick(e) {
-    const el = e.target.closest('[data-act],[data-tab],[data-seat],[data-join],[data-casino-game],[data-dash-mode],[data-preset-equip],[data-preset-save]');
+    const el = e.target.closest('#hub-enter-frontier,[data-act],[data-tab],[data-seat],[data-join],[data-casino-game],[data-dash-mode],[data-preset-equip],[data-preset-save]');
     if (!el || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
+    if (el.id === 'hub-enter-frontier' || el.dataset.act === 'enter-frontier') {
+      this.close();
+      window.__neora?.enterFrontier?.();
+      return;
+    }
     const t = this.table;
     if (el.dataset.tab) {
       const tabKey = el.dataset.tab;
       const m = HUB_MODES[tabKey];
-      if (!m.available) { this.toast(`${m.icon} ${m.label} opens in Phase ${m.phase} 🔒`); return; }
+      if (m && !m.available) { this.toast(`${m.icon} ${m.label} opens in Phase ${m.phase} 🔒`); return; }
       const prevMode = this.mode;
       this.mode = tabKey;
       this.onModeChange?.(this.mode);
-      this.room.send({ type: 'table_list', mode: this.mode });
-      if (this.isHost && t?.status === 'lobby' && prevMode !== this.mode) {
-        this.room.send({
-          type: 'table_set_option',
-          mode: this.mode,
-          casinoGame: this.mode === 'casino' ? this.casinoGame : undefined,
-          dashMode: this.mode === 'cloud_dash' ? this.dashMode : undefined,
-          matchMode: this.mode === 'monopoly' ? this.matchMode : undefined,
-        });
+      if (this.mode !== 'sky_frontier') {
+        this.room.send({ type: 'table_list', mode: this.mode });
+        if (this.isHost && t?.status === 'lobby' && prevMode !== this.mode) {
+          this.room.send({
+            type: 'table_set_option',
+            mode: this.mode,
+            casinoGame: this.mode === 'casino' ? this.casinoGame : undefined,
+            dashMode: this.mode === 'cloud_dash' ? this.dashMode : undefined,
+            matchMode: this.mode === 'monopoly' ? this.matchMode : undefined,
+          });
+        }
       }
       this.render();
       return;

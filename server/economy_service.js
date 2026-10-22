@@ -10,6 +10,9 @@ import {
   landingCells, cellsOf,
 } from '../shared/village_rules.js';
 import { applyExp, recalcPlayerCP, LEVEL_UP_REWARD } from '../shared/progression.js';
+import { hasItems, takeItems } from '../shared/production_rules.js';
+import { BASE_ISLAND_SIZE } from '../shared/story_rules.js';
+import { fishingCatchMaterials, grantProfileMinigameMaterials } from '../shared/minigame_rewards.js';
 
 export const EXP = { HARVEST: 15, UPGRADE: 100, CASTLE: 100, FISH: 25, CHEST: 50 };
 export const DOUBLE_JACKPOT_CHANCE = 0.18;
@@ -45,32 +48,45 @@ const hasTrait = (p, trait) => {
   return Array.isArray(pet.traits) && pet.traits.includes(trait);
 };
 
-// ---------------------------------------------------------------------------------------------
-// Harvest + offline catch-up (one formula: shared/village_rules.harvestPreview)
-// ---------------------------------------------------------------------------------------------
-export function harvestAll(p, now, { coupled = false, rng = Math.random } = {}) {
-  const pv = harvestPreview(p, now, { coupled });
-  if (!pv.ready) return fail('not_ready', { waitMs: 60_000 - pv.elapsedMs });
-  if (pv.gold + pv.berries + pv.diamonds <= 0) return fail('nothing_to_harvest');
-  let { gold, berries } = pv;
-  const jackpot = (gold > 0 || berries > 0) && hasTrait(p, 'double_jackpot') && rng() < DOUBLE_JACKPOT_CHANCE;
-  if (jackpot) { gold *= 2; berries *= 2; }
-  const v = p.village;
-  if (gold > 0 || berries > 0) v.last_harvest_at = now;
-  if (pv.diamonds > 0) v.daily_claim_day = utcDay(now);
-  p.gold += gold; p.berries += berries; p.diamonds += pv.diamonds;
-  const levelsGained = grantExp(p, EXP.HARVEST);
-  refreshDerived(p);
-  return { ok: true, gold, berries, diamonds: pv.diamonds, jackpot, exp: EXP.HARVEST, levelsGained, hrs: pv.hrs, capHrs: pv.capHrs };
+/** Item stores view over the profile's Sky Frontier warehouse + pantry (creates the pantry if missing). */
+export function storesOf(p) {
+  p.frontier = p.frontier || {};
+  if (!p.frontier.warehouse || typeof p.frontier.warehouse !== 'object') p.frontier.warehouse = { lv: 1, items: {} };
+  if (!p.frontier.warehouse.items) p.frontier.warehouse.items = {};
+  if (!p.frontier.pantry || typeof p.frontier.pantry !== 'object') p.frontier.pantry = { lv: 1, items: {} };
+  if (!p.frontier.pantry.items) p.frontier.pantry.items = {};
+  return { warehouse: p.frontier.warehouse, pantry: p.frontier.pantry };
 }
 
-/** "Welcome back" report: only when away >= 5 min. Gains wait in the bubbles until Harvest All. */
+/** Split a `{ gold, ...items }` cost; check + pay atomically (gold from p.gold, items from the stores). */
+export function canPay(p, cost = {}) {
+  const { gold = 0, ...items } = cost;
+  if ((p.gold || 0) < gold) return fail('not_enough_gold', { cost });
+  if (!hasItems(storesOf(p), items)) return fail('missing_materials', { cost });
+  return { ok: true };
+}
+export function payCost(p, cost = {}) {
+  const chk = canPay(p, cost);
+  if (!chk.ok) return chk;
+  const { gold = 0, ...items } = cost;
+  p.gold -= gold;
+  takeItems(storesOf(p), items);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Passive harvest is retired (Stage 3 "Village Base Camp"): the village is a production base fed
+// by Sky Frontier materials. The entry points stay so older clients don't break.
+// ---------------------------------------------------------------------------------------------
+// eslint-disable-next-line no-unused-vars
+export function harvestAll(p, now, { coupled = false, rng = Math.random } = {}) {
+  return fail('nothing_to_harvest');
+}
+
+/** "Welcome back" report: nothing accrues passively any more. */
+// eslint-disable-next-line no-unused-vars
 export function computeOfflineGains(p, now, awaySince, { coupled = false } = {}) {
-  const awayMs = now - (awaySince || now);
-  if (awayMs < OFFLINE_REPORT_MS) return null;
-  const pv = harvestPreview(p, now, { coupled });
-  if (!pv.ready) return null;
-  return { awayMs, gold: pv.gold, berries: pv.berries, diamonds: pv.diamonds, capHrs: pv.capHrs, full: pv.full };
+  return null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -78,7 +94,8 @@ export function computeOfflineGains(p, now, awaySince, { coupled = false } = {})
 // ---------------------------------------------------------------------------------------------
 export function saveLayout(p, layout) {
   const v = p.village;
-  const r = validateLayout(v, layout);
+  // personal island: Heart-Isle-only Monuments (Couple Ferris Wheel) are rejected ('heart_isle_only')
+  const r = validateLayout(v, layout, { heartIsle: false });
   if (!r.ok) return r;
   v.buildings = r.buildings; v.tiles = r.tiles; v.ground = r.ground;
   refreshDerived(p);
@@ -131,14 +148,16 @@ export function upgradeBuilding(p, type) {
   return { ok: true, type, lv: lv + 1, exp: EXP.UPGRADE, levelsGained };
 }
 
+/** Cloud Territory: unlocked by story chapters (`village.max_grid`), paid with planks + stone (+ ingots) + gold. */
 export function expandTerritory(p) {
   const v = p.village;
   const tier = EXPANSION_TIERS.findIndex((t) => t.size === v.grid_size);
   const next = EXPANSION_TIERS[tier + 1];
   if (!next) return fail('max_size');
-  if (v.castle_lv < next.castleLv) return fail('castle_too_low', { need: next.castleLv });
-  if (p.gold < next.gold) return fail('not_enough_gold', { cost: next.gold });
-  p.gold -= next.gold;
+  const maxGrid = Number.isInteger(v.max_grid) ? v.max_grid : BASE_ISLAND_SIZE;
+  if (next.size > maxGrid) return fail('story_locked', { need: next.size, max: maxGrid });
+  const paid = payCost(p, next.cost);
+  if (!paid.ok) return paid;
   // grow one tile on every side: shift everything by +1 so nothing moves visually
   const d = (next.size - v.grid_size) / 2;
   for (const b of v.buildings) { b.x += d; b.y += d; }
@@ -149,7 +168,7 @@ export function expandTerritory(p) {
   v.buildings = v.buildings.filter((b) => !cellsOf(b).some(([x, y]) => landing.has(`${x},${y}`)));
   v.tiles = v.tiles.filter((t) => !(landing.has(`${t.x},${t.y}`) && t.t === 'water'));
   refreshDerived(p);
-  return { ok: true, grid_size: next.size, cost: next.gold };
+  return { ok: true, grid_size: next.size, cost: next.cost };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -260,7 +279,8 @@ export function awardCatch(p, key, rng = Math.random, opts = {}) {
     out.perfectBonusGold = bonusGold;
   }
   if (f.reward.dupe) {
-    const owned = Object.keys(p.inventory || {});
+    p.inventory ||= {};
+    const owned = Object.keys(p.inventory);
     const randomPick = owned[Math.floor(rng() * owned.length)] || 'newbie_outfit';
     const targetedPick = p.fish_target_item && p.inventory?.[p.fish_target_item] ? p.fish_target_item : null;
     const pick = targetedPick || randomPick;
@@ -290,6 +310,12 @@ export function awardCatch(p, key, rng = Math.random, opts = {}) {
   out.count = n;
   out.exp = f.exp;
   out.levelsGained = grantExp(p, f.exp);
+  // Sky Frontier minigame materials hook (§13)
+  const materials = fishingCatchMaterials(key, rng);
+  if (materials && Object.keys(materials).length > 0) {
+    grantProfileMinigameMaterials(p, materials, opts?.now || Date.now());
+  }
+  out.materials = materials;
   refreshDerived(p);
   return out;
 }

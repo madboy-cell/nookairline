@@ -14,8 +14,7 @@ import { itemDef, itemSlot, FEATURED_OUTFIT, MYTHIC_DICE, petPassivePct, forgeRe
 import { computePaperDollParts, OUTFIT_FALLBACK } from '/shared/accessory_attach.js';
 import { HAIRSTYLES, HAIR_COLORS, hairSpriteName } from '/shared/hair_catalog.js';
 import { normalizeItemStats, matchMods } from '/shared/monopoly_rules.js';
-import { moonDefenseMods } from '/shared/moon_defense_rules.js';
-import { computeUniversalStats, inspectItemAttune } from '/shared/universal_stats.js';
+import { computeUniversalStats, inspectItemAttune, skyFrontierMods } from '/shared/universal_stats.js';
 import { detectBuild, BUILDS, BUILD_PERKS } from '/shared/dash_builds.js';
 import { loadManifest, spriteInfo } from './assets.js';
 import { ChibiRig } from './chibi_rig.js?v=cd37';
@@ -46,7 +45,7 @@ export const SLOT_ROLE_GUIDE = {
   outfit: {
     icon: '👘',
     badge: '🌈 Ultimate + 4 Stats',
-    text: 'Unlocks your [🌈 Ultimate] skill in 🎲 Monopoly, 🌙 Moon Defense & ☁️ Cloud Dash + boosts Universal Stats (+0→+10).',
+    text: 'Unlocks your [🌈 Ultimate] skill in 🎲 Monopoly, 🏝️ Sky Frontier & ☁️ Cloud Dash + boosts Universal Stats (+0→+10).',
   },
   hat: {
     icon: '🎩',
@@ -66,7 +65,7 @@ export const SLOT_ROLE_GUIDE = {
   boots: {
     icon: '🥾',
     badge: 'Universal 4-Stat Gear',
-    text: 'Boosts ⚡ Swiftness, 🔥 Power, 🪙 Fortune & 🍀 Luck in 🎲 Monopoly, 🌙 Moon Defense & ☁️ Cloud Dash (+0→+10).',
+    text: 'Boosts ⚡ Swiftness, 🔥 Power, 🪙 Fortune & 🍀 Luck in 🎲 Monopoly, 🏝️ Sky Frontier & ☁️ Cloud Dash (+0→+10).',
   },
   wings: {
     icon: '🪽',
@@ -218,6 +217,26 @@ export function formatStatsSummary(stats, rarity = 1, refine = 0) {
     }
   }
   return parts.join(' • ');
+}
+
+export function formatCharmTooltip(charm) {
+  if (!charm) return '';
+  const parts = [charm.name || 'Charm'];
+  if (charm.ultimate) {
+    parts.push(`⚡ Ultimate: ${charm.ultimate.name} (${charm.ultimate.cooldownSec}s) — ${charm.ultimate.desc}`);
+  }
+  return parts.join(' | ');
+}
+
+export function renderCharmCard(charm, { owned = false } = {}) {
+  if (!charm) return '';
+  const ultText = charm.ultimate ? `⚡ Ultimate: ${charm.ultimate.name} (${charm.ultimate.cooldownSec}s) — ${charm.ultimate.desc}` : '';
+  return `
+    <div class="s2-charm-card" title="${escapeHtml(ultText)}">
+      <span class="s2-charm-name">${escapeHtml(charm.name)}</span>
+      ${ultText ? `<div class="s2-charm-ult" style="font-size:11px;color:#fde047;margin-top:2px;">${escapeHtml(ultText)}</div>` : ''}
+    </div>
+  `;
 }
 
 export function renderItemStatPills(itemId, refine = 0, { compact = false } = {}) {
@@ -633,7 +652,9 @@ export function computePlayerStats(profile) {
   const petPct = uni.petPct;
 
   const monoMods = matchMods(stats, { petFamily, petPct });
-  const mbMods = moonDefenseMods(stats, { petFamily, petPct });
+  const sf = skyFrontierMods(stats, { petFamily, petPct });
+  const sfMods = sf;
+  const mbMods = sf;
   const dashMods = {
     topSpeedPct: `+${Math.min(20, +(stats.swiftness * 0.04).toFixed(1))}%`,
     accelPct: `+${Math.min(25, +(stats.swiftness * 0.05).toFixed(1))}%`,
@@ -652,6 +673,8 @@ export function computePlayerStats(profile) {
     luckPct: +(stats.luck * 0.12).toFixed(1),
     raw: stats,
     monoMods,
+    sfMods,
+    sf,
     mbMods,
     dashMods,
     base: uni.base,
@@ -668,6 +691,7 @@ export function computePlayerStats(profile) {
  */
 export function renderStatGrid(profile, selectedStat = null) {
   const st = computePlayerStats(profile);
+  const sf = st.sf || st.sfMods || skyFrontierMods(st.raw);
   const pts = {
     fortune: Math.round(st.raw.fortune || 0),
     swiftness: Math.round(st.raw.swiftness || 0),
@@ -701,7 +725,7 @@ export function renderStatGrid(profile, selectedStat = null) {
       label: 'Fortune',
       pts: pts.fortune,
       mono: `Start Cash +${Math.round(st.monoMods.startCashPct * 100)}% • Rent Toll +${Math.round(st.monoMods.rentPct * 100)}% • Podium +${Math.min(200, Math.round(st.raw.fortune))}%`,
-      moon: `Start +${st.mbMods.startCoins - 100}🪙 • Kill Coins +${Math.round((st.mbMods.coinMult - 1) * 100)}% • Podium +${Math.round((st.mbMods.podiumMult - 1) * 100)}%`,
+      moon: `Gather Yield ×${sf.gatherYieldMult}`,
       dash: `Podium/Track Gold ${st.dashMods.podiumGoldPct} • Coin Magnet ${st.dashMods.magnetRadiusPct}`,
     },
     swiftness: {
@@ -709,7 +733,7 @@ export function renderStatGrid(profile, selectedStat = null) {
       label: 'Swiftness',
       pts: pts.swiftness,
       mono: `START Lap Salary +${Math.round(st.monoMods.salaryPct * 100)}% • Tempo & Sprint Boost`,
-      moon: `Fire Rate +${Math.round((st.mbMods.atkSpeedMult - 1) * 100)}% • Dash Cooldown -${Math.round((1 - st.mbMods.dashCdMult) * 100)}%`,
+      moon: `Move/Swing Speed ×${sf.moveSpeedMult}`,
       dash: `Top Speed ${st.dashMods.topSpeedPct} • Boost Pad Recovery ${st.dashMods.accelPct}`,
     },
     power: {
@@ -717,7 +741,7 @@ export function renderStatGrid(profile, selectedStat = null) {
       label: 'Power',
       pts: pts.power,
       mono: `Ultimate Skill & Takeover Power +${Math.round(st.monoMods.ultPct * 100)}%`,
-      moon: `Shot/Ult DMG +${Math.round((st.mbMods.dmgMult - 1) * 100)}% • Ult Charge +${Math.round((st.mbMods.ultChargeMult - 1) * 100)}%`,
+      moon: `Attack Power ×${sf.attackDamageMult}`,
       dash: `Fury Gauge ${st.dashMods.furyChargePct} • Stumble Resist ${st.dashMods.knockbackResistPct}`,
     },
     luck: {
@@ -725,7 +749,7 @@ export function renderStatGrid(profile, selectedStat = null) {
       label: 'Luck',
       pts: pts.luck,
       mono: `Buy/Upgrade Discount -${Math.round(st.monoMods.discountPct * 100)}% • Casino & Podium Chest Boost`,
-      moon: `Crit Shot +${Math.round(st.mbMods.critChance * 100)}% (1.75×) • ★2/★3 Merc Odds +${Math.round(st.mbMods.mercLuckPct * 100)}%`,
+      moon: `Rare Find ×${sf.rareFindMult} • Crit +${Math.round(sf.critChance * 100)}%`,
       dash: `Rare Item Box ${st.dashMods.rareBoxPct} • Miracle Shield ${st.dashMods.miracleShieldPct}`,
     },
   };
@@ -760,6 +784,16 @@ export function renderStatGrid(profile, selectedStat = null) {
         <span class="s2-dash-build-main">☁️ ${String(dashBuild.icon || '').replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')} <b>Dash Build: ${escapeHtml(dashBuild.name)}${tierStr}</b>${buildProgressTag ? ` <small class="s2-dash-build-share">(${escapeHtml(buildProgressTag)})</small>` : ''}</span>
         ${buildPerkOrTip ? `<span class="s2-dash-build-perk">${escapeHtml(buildPerkOrTip).replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')}</span>` : ''}
       </div>
+      <div class="s2-sf-mods-strip" style="display:flex;flex-wrap:wrap;gap:8px;padding:6px 10px;background:rgba(20,108,148,0.10);border:1px solid rgba(20,108,148,0.32);border-radius:8px;margin-top:6px;font-size:12px;color:#3A281E;">
+        <span style="font-weight:800;color:#146C94;">🏝️ Sky Frontier Mods:</span>
+        <span>Attack Power <b>×${sf.attackDamageMult}</b></span>
+        <span>•</span>
+        <span>Gather Yield <b>×${sf.gatherYieldMult}</b></span>
+        <span>•</span>
+        <span>Rare Find <b>×${sf.rareFindMult}</b></span>
+        <span>•</span>
+        <span>Move/Swing Speed <b>×${sf.moveSpeedMult}</b></span>
+      </div>
       ${b ? `
         <div class="s2-stat-bridge-box" data-active-stat="${activeStat}">
           <div class="s2-stat-bridge-head">
@@ -768,7 +802,7 @@ export function renderStatGrid(profile, selectedStat = null) {
           </div>
           <div class="s2-stat-bridge-rows">
             <div class="s2-stat-bridge-row"><span class="s2-mode-tag">🎲 Monopoly</span><span>${b.mono}</span></div>
-            <div class="s2-stat-bridge-row"><span class="s2-mode-tag">🏝️ Island Def</span><span>${b.moon}</span></div>
+            <div class="s2-stat-bridge-row"><span class="s2-mode-tag">🏝️ Sky Frontier</span><span>${b.moon}</span></div>
             <div class="s2-stat-bridge-row"><span class="s2-mode-tag">☁️ Cloud Dash</span><span>${b.dash}</span></div>
           </div>
         </div>
@@ -801,10 +835,12 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
   const roleInfo = SLOT_ROLE_GUIDE[slot];
   const glamourName = hasGlamour ? (itemDef(glamItemId)?.name || glamItemId) : null;
   const attuneStr = equippedSlot?.attune?.stat ? ` | 🎯 Attuned: ${equippedSlot.attune.stat}` : '';
+  const ult = def?.ultimate || equippedSlot?.ultimate;
+  const ultStr = ult ? ` | ⚡ Ultimate: ${ult.name} (${ult.cooldownSec}s) — ${ult.desc}` : '';
   const fullTooltip = def
     ? (isGlamourMode
         ? `👗 Look: ${rawName}${hasGlamour ? ' (Custom Glamour)' : ' (Same as Stat Gear)'}`
-        : `${rawName} (+${refine})${statTip ? ` — ${statTip}` : ''}${attuneStr}${hasGlamour ? ` | 👗 Look: ${glamourName}` : ''}${roleInfo ? ` | ${roleInfo.badge}` : ''}`)
+        : `${rawName} (+${refine})${statTip ? ` — ${statTip}` : ''}${attuneStr}${ultStr}${hasGlamour ? ` | 👗 Look: ${glamourName}` : ''}${roleInfo ? ` | ${roleInfo.badge}` : ''}`)
     : `${SLOT_LABELS[slot]} (Empty)${roleInfo ? ` — ${roleInfo.text}` : ''}`;
   const slotThumbHtml = itemId
     ? (slot === 'outfit'

@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS public.world_zones (
   updated_at timestamptz DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS idx_world_zones_kind ON public.world_zones (kind);
+
 -- 7. Enable Row Level Security (RLS) & Server Sync Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
@@ -112,3 +114,5 @@ DROP POLICY IF EXISTS "Allow server insert world_zones" ON public.world_zones;
 CREATE POLICY "Allow server insert world_zones" ON public.world_zones FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow server update world_zones" ON public.world_zones;
 CREATE POLICY "Allow server update world_zones" ON public.world_zones FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow server delete world_zones" ON public.world_zones;
+CREATE POLICY "Allow server delete world_zones" ON public.world_zones FOR DELETE USING (true);

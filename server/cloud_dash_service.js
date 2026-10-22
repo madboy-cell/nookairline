@@ -29,13 +29,13 @@ import {
   DASH_DAILY_CHEST_MAX,
   DASH_CHEST_BAR_MAX,
 } from '../shared/dash_builds.js';
-import { computeUniversalStats } from '../shared/universal_stats.js';
+import { computeUniversalStats, defenderModsFromProfile } from '../shared/universal_stats.js';
 import { buildTrack } from '../shared/cloud_dash_track.js';
 import { normalizePetId } from '../shared/pet_catalog.js';
-import { defenderModsFromProfile } from '../shared/moon_defense_rules.js';
 import { applyExp, expToNext, recalcPlayerCP } from '../shared/progression.js';
 import { utcDay } from '../shared/village_rules.js';
 import { grantPetActivityExp, checkBuildDiscovery, syncGlamourAndAttune } from './rpg_service.js';
+import { cloudDashMaterials, grantProfileMinigameMaterials } from '../shared/minigame_rewards.js';
 
 const COUNTDOWN_MS = 3500;
 const BOT_NAMES = ['Sky Mochi', 'Captain Boba', 'Lady Seraphina', 'Kitsune Kai', 'Nimbus Nana', 'Zephyr Jin'];
@@ -371,6 +371,8 @@ export function createCloudDashAdapter({
       let dailyChestReward = null, chestPopped = null, chestGain = 0;
       const completedMissions = [];
       let league = null, buildUpdate = null;
+      const distance = p.r?.s || 0;
+      const materials = cloudDashMaterials({ place, distance, style: p.style });
 
       if (prof) {
         const ds = prof.dash_stats || {};
@@ -484,6 +486,8 @@ export function createCloudDashAdapter({
           withPartner = true;
         }
         try { onMatchFinished(prof, withPartner ? { withPartner: true } : undefined); } catch {}
+        // Sky Frontier minigame materials hook (§13)
+        grantProfileMinigameMaterials(prof, materials, getNow());
         db.markProfile?.(prof.id);
         pushProfile(prof);
       }
@@ -496,6 +500,7 @@ export function createCloudDashAdapter({
         dailyChestReward, chestGain, chestPopped, completedMissions,
         league, buildUpdate,
         level: prof?.level || 1, levelExp: prof?.exp || 0, levelExpNext: nextExp(prof?.level || 1),
+        materials,
       };
     });
     s.rewards = rewardsByUser;

@@ -243,3 +243,65 @@ export function inspectItemAttune(itemId, refine = 0, attuneStat = null, opts = 
   };
 }
 
+function defenderModsFromStats(stats = {}, { petFamily = null, petPct = 0 } = {}) {
+  const fortune = Number(stats.fortune) || 0;
+  const swiftness = Number(stats.swiftness) || 0;
+  const power = Number(stats.power) || 0;
+  const luck = Number(stats.luck) || 0;
+
+  return {
+    startCoins: 100 + Math.min(200, Math.round(fortune * 1.0)),
+    coinMult: +(1 + Math.min(1.5, fortune * 0.005)).toFixed(3),
+    podiumMult: +(1 + Math.min(2.0, fortune * 0.006)).toFixed(3),
+    atkSpeedMult: +(1 + Math.min(0.8, swiftness * 0.004)).toFixed(3),
+    moveSpeedMult: +(1 + Math.min(0.35, swiftness * 0.002)).toFixed(3),
+    dashCdMult: +(Math.max(0.45, 1 - swiftness * 0.0025)).toFixed(3),
+    dmgMult: +(1 + Math.min(1.5, power * 0.006)).toFixed(3),
+    ultChargeMult: +(1 + Math.min(1.0, power * 0.004)).toFixed(3),
+    critChance: +(Math.min(0.55, 0.05 + luck * 0.002)).toFixed(3),
+    critMult: 1.75,
+    mercLuckPct: +(Math.min(0.5, luck * 0.0025)).toFixed(3),
+    petFamily,
+    petPct,
+  };
+}
+
+export function defenderModsFromProfile(prof = {}, catalogs = {}) {
+  const uni = computeUniversalStats(prof, { catalogs });
+  const mods = defenderModsFromStats(uni.total, {
+    petFamily: uni.petFamily,
+    petPct: uni.petPct,
+  });
+  return {
+    ...mods,
+    stats: uni.total,
+    bonus: uni.bonus,
+    outfitId: prof?.equipped?.outfit?.id || 's1_naga_sovereign',
+    petId: prof?.equipped?.pet?.id || prof?.pets?.[0]?.id || 'pet_ragdoll',
+    petStars: prof?.equipped?.pet?.stars || prof?.pets?.[0]?.stars || 1,
+  };
+}
+
+/**
+ * Sky Frontier stat multipliers (Master Plan v2 §9.1 / §10):
+ * Power -> attackDamageMult (+60% softCap), Fortune -> gatherYieldMult (+50% softCap),
+ * Luck -> rareFindMult (+25% softCap), Swiftness -> moveSpeedMult (+25% softCap).
+ */
+export function skyFrontierMods(stats = {}, { petFamily = null, petPct = 0 } = {}) {
+  const fortune = Number(stats.fortune) || 0;
+  const swiftness = Number(stats.swiftness) || 0;
+  const power = Number(stats.power) || 0;
+  const luck = Number(stats.luck) || 0;
+  return {
+    attackDamageMult: +(1 + softCap(power, 0.60, 140)).toFixed(3),
+    gatherYieldMult: +(1 + softCap(fortune, 0.50, 140)).toFixed(3),
+    rareFindMult: +(1 + softCap(luck, 0.25, 140)).toFixed(3),
+    moveSpeedMult: +(1 + softCap(swiftness, 0.25, 140)).toFixed(3),
+    critChance: +(Math.min(0.45, 0.10 + softCap(luck, 0.20, 140))).toFixed(3),
+    petFamily,
+    petPct,
+  };
+}
+
+
+

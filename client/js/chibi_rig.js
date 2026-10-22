@@ -15,6 +15,9 @@ import { ATTACH, getAttachDef, getWingScale, resolveWingDimensions, RIG_METRICS,
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { HAIRSTYLES, hairSpriteName, hairAttach, hairHatFit, resolveHairColor } from '/shared/hair_catalog.js';
 import { WearAura } from './wear_aura.js?v=cd37';
+import { getToolTexture, TOOL_ATTACH_DEFS, clearToolTextureCache } from './frontier/tool_sprites.js';
+
+export { clearToolTextureCache };
 
 export const CHIBI_HEIGHT = RIG_METRICS.CHIBI_HEIGHT; // world metres for the Front-3/4 sprite
 const BILLBOARD_TILT = 0.55;                          // fraction of camera pitch the sprite leans back (reduces foreshortening)
@@ -395,6 +398,8 @@ export class ChibiRig {
     this.hairMeshes = [];         // [behind, front] copies of one wig sprite set (Section 23)
     this.hair = null;
     this.tail = null;             // Back-slot item with socket 'hip' (wolf / dragon tail)
+    this.heldTool = null;         // Held gathering tool { kind, tier, mesh, def, texture }
+    this._heldToolDef = null;
     this.equipKey = '';
     this.outfitId = null;
 
@@ -819,6 +824,7 @@ export class ChibiRig {
     this.layoutAccessories(view, right, v.hem);
     this.layoutHair(view, right);
     this.layoutTail(view, right);
+    this.layoutHeldTool(view, right);
   }
 
   layoutTail(view, right) {
@@ -841,6 +847,92 @@ export class ChibiRig {
     this.tail.baseRot = 0;
   }
 
+  /**
+   * Attach or remove a procedurally drawn gathering tool (Master Plan v2 §9.1).
+   * kind: 'pickaxe' | 'axe' | 'staff' | null.
+   * Attaches to the dominant-hand arm group so it rotates with arm bone animations.
+   * @param {'pickaxe'|'axe'|'staff'|null} kind
+   * @param {number} [tier=1]
+   */
+  setHeldTool(kind, tier = 1) {
+    if (!kind) {
+      if (this.heldTool) {
+        this.heldTool.mesh.parent?.remove(this.heldTool.mesh);
+        this.heldTool.mesh.geometry?.dispose();
+        this.heldTool.mesh.material?.dispose();
+        this.heldTool = null;
+      }
+      this._heldToolDef = null;
+      return;
+    }
+
+    const t = Math.max(1, Math.floor(tier || 1));
+    if (this._heldToolDef?.kind === kind && this._heldToolDef?.tier === t && this.heldTool?.mesh) {
+      this.layoutHeldTool(this.shownView || 'front', this.shownRight ?? true);
+      return;
+    }
+
+    if (this.heldTool) {
+      this.heldTool.mesh.parent?.remove(this.heldTool.mesh);
+      this.heldTool.mesh.geometry?.dispose();
+      this.heldTool.mesh.material?.dispose();
+      this.heldTool = null;
+    }
+
+    const tex = getToolTexture(kind, t);
+    const def = TOOL_ATTACH_DEFS[kind] || TOOL_ATTACH_DEFS.pickaxe;
+    const geom = new THREE.PlaneGeometry(1, 1);
+    const mat = makeAccMaterial();
+    mat.uniforms.map.value = tex;
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.renderOrder = 6;
+
+    this.heldTool = { kind, tier: t, mesh, def, texture: tex };
+    this._heldToolDef = { kind, tier: t };
+    this.layoutHeldTool(this.shownView || 'front', this.shownRight ?? true);
+  }
+
+  layoutHeldTool(view, right) {
+    if (!this.heldTool?.mesh) return;
+    const v = view === 'lifted' ? 'front' : view;
+    const flip = right ? 1 : -1;
+    const domArm = right ? this.ARM_R_G : this.ARM_L_G;
+    if (this.heldTool.mesh.parent !== domArm) {
+      domArm.add(this.heldTool.mesh);
+    }
+
+    const stow = !!(this.couplePose || this.riding);
+    if (stow) {
+      this.heldTool.mesh.visible = false;
+      return;
+    }
+    this.heldTool.mesh.visible = true;
+
+    const def = this.heldTool.def;
+    const spriteAspect = 1.0;
+    const { effScale, ox, effOy, rotZ = 0 } = resolveAccessoryLayout({
+      def,
+      slot: 'gloves',
+      view: v,
+      spriteAspect,
+      hairId: this.hair?.id || null,
+      longHem: false,
+      bodyMeta: this.views?.[v] || this.views?.front || null,
+    });
+
+    const wM = effScale * HEAD_H;
+    const hM = wM * spriteAspect;
+    const scaleSign = flip;
+    const posSign = flip;
+    const armTilt = rotZ * scaleSign;
+    const stepZ = v === 'back' ? 0.062 : 0;
+    const z = (ACC_Z[v]?.gloves ?? 0.068) + stepZ;
+
+    this.heldTool.mesh.rotation.z = armTilt;
+    this.heldTool.mesh.scale.set(wM * scaleSign, hM, 1);
+    this.heldTool.mesh.position.set(ox * HEAD_H * posSign, effOy * HEAD_H, z);
+  }
+
   setPosition(x, z) { this.ROOT.position.set(x, 0, z); }
 
   triggerCast(dur = 1.15) {
@@ -848,12 +940,21 @@ export class ChibiRig {
     this.castT = this.castMax;
   }
 
-  triggerAttack(kind = 'slash', { dur = 0.42 } = {}) {
+  triggerAttack(kind = 'slash', { dur, onImpact } = {}) {
+    const isGathering = kind === 'mine_swing' || kind === 'chop_swing' || kind === 'staff_cast';
+    const defaultDur = isGathering ? 0.75 : 0.42;
+    const effDur = Math.max(0.18, dur !== undefined ? dur : defaultDur);
     if (kind === 'spell_cast') {
-      this.triggerCast(dur);
+      this.triggerCast(effDur);
       return;
     }
-    this.combatAnim = { kind, t: 0, dur: Math.max(0.18, dur) };
+    this.combatAnim = {
+      kind,
+      t: 0,
+      dur: effDur,
+      onImpact: typeof onImpact === 'function' ? onImpact : null,
+      impactFired: false,
+    };
   }
 
   triggerHitRecoil(dur = 0.24) {
@@ -1111,6 +1212,7 @@ export class ChibiRig {
     if (wasRiding) {
       this.riding = null;
       if (this.views) this.layoutAccessories(this.shownView, this.shownRight, (this.views[this.shownView] || this.views.front)?.hem);
+      if (this.heldTool) this.layoutHeldTool(this.shownView, this.shownRight);
     }
     if (!this.shadow.visible) this.shadow.visible = true;
 
@@ -1127,10 +1229,18 @@ export class ChibiRig {
     if (this.combatAnim) {
       this.combatAnim.t += dt;
       if (this.combatAnim.t >= this.combatAnim.dur) {
+        if (!this.combatAnim.impactFired && this.combatAnim.onImpact) {
+          this.combatAnim.impactFired = true;
+          try { this.combatAnim.onImpact(); } catch (err) { console.error('onImpact error:', err); }
+        }
         this.combatAnim = null;
         this.TORSO_G.rotation.y = 0;
       } else {
         const ck = this.combatAnim.t / this.combatAnim.dur;
+        if (ck >= 0.55 && !this.combatAnim.impactFired && this.combatAnim.onImpact) {
+          this.combatAnim.impactFired = true;
+          try { this.combatAnim.onImpact(); } catch (err) { console.error('onImpact error:', err); }
+        }
         const cArc = Math.sin(ck * Math.PI);
         const dir = this.shownRight ? 1 : -1;
         const kind = this.combatAnim.kind;
@@ -1180,6 +1290,164 @@ export class ChibiRig {
           cArmR = 0.95 * cArc;
           cHop = 0.12 * cArc;
           cRim = 2.2 * cArc;
+        } else if (kind === 'mine_swing') {
+          this.TORSO_G.rotation.y = 0;
+          let swing = 0, torsoAngle = 0;
+          if (ck < 0.12) {
+            // Phase 1: Ready (0 – 0.12)
+            const p = ck / 0.12;
+            swing = -0.15 * p;
+            torsoAngle = -0.02 * p;
+            cHop = 0.01 * p;
+          } else if (ck < 0.42) {
+            // Phase 2: Anticipation (0.12 – 0.42): arm drawn high (~-1.25 rad), torso leaning back ~-0.18, slight hop
+            const p = (ck - 0.12) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = -0.15 - 1.10 * s;
+            torsoAngle = -0.02 - 0.16 * s;
+            cHop = 0.01 + 0.07 * Math.sin(p * Math.PI * 0.5);
+          } else if (ck < 0.55) {
+            // Phase 3: Swing (0.42 – 0.55): fast downward arc to ~+1.15 rad, torso snapping forward +0.26
+            const p = (ck - 0.42) / 0.13;
+            const s = p * p;
+            swing = -1.25 + 2.40 * s;
+            torsoAngle = -0.18 + 0.44 * s;
+            cHop = 0.08 * (1 - p);
+            cSx = 1.0 + 0.06 * p;
+            cSy = 1.0 - 0.06 * p;
+          } else if (ck < 0.70) {
+            // Phase 5: Reaction (0.55 – 0.70): recoil to ~+0.85 rad
+            const p = (ck - 0.55) / 0.15;
+            const s = Math.sin(p * Math.PI * 0.5);
+            swing = 1.15 - 0.30 * s;
+            torsoAngle = 0.26 - 0.18 * s;
+            cSx = 1.06 - 0.06 * s;
+            cSy = 0.94 + 0.06 * s;
+            cRim = 1.6 * (1 - p);
+          } else {
+            // Phase 6: Recovery (0.70 – 1.00)
+            const p = (ck - 0.70) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = 0.85 * (1 - s);
+            torsoAngle = 0.08 * (1 - s);
+          }
+
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = -0.30 * swing;
+          } else {
+            cArmL = -swing;
+            cArmR = 0.30 * swing;
+          }
+          cTorso = dir * torsoAngle;
+        } else if (kind === 'chop_swing') {
+          // chop_swing = more horizontal arc + rotate torso around vertical axis
+          let swing = 0, torsoAngle = 0, torsoY = 0;
+          if (ck < 0.12) {
+            // Phase 1: Ready (0 – 0.12)
+            const p = ck / 0.12;
+            swing = -0.10 * p;
+            torsoAngle = -0.02 * p;
+            torsoY = -dir * 0.05 * p;
+            cHop = 0.01 * p;
+          } else if (ck < 0.42) {
+            // Phase 2: Anticipation (0.12 – 0.42)
+            const p = (ck - 0.12) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = -0.10 - 0.85 * s;
+            torsoAngle = -0.02 - 0.14 * s;
+            torsoY = -dir * (0.05 + 0.40 * s);
+            cHop = 0.01 + 0.06 * Math.sin(p * Math.PI * 0.5);
+          } else if (ck < 0.55) {
+            // Phase 3: Swing (0.42 – 0.55): fast horizontal chop arc
+            const p = (ck - 0.42) / 0.13;
+            const s = p * p;
+            swing = -0.95 + 2.00 * s;
+            torsoAngle = -0.16 + 0.38 * s;
+            torsoY = dir * (-0.45 + 0.85 * s);
+            cHop = 0.07 * (1 - p);
+            cSx = 1.0 + 0.06 * p;
+            cSy = 1.0 - 0.06 * p;
+          } else if (ck < 0.70) {
+            // Phase 5: Reaction (0.55 – 0.70): recoil
+            const p = (ck - 0.55) / 0.15;
+            const s = Math.sin(p * Math.PI * 0.5);
+            swing = 1.05 - 0.25 * s;
+            torsoAngle = 0.22 - 0.15 * s;
+            torsoY = dir * (0.40 - 0.22 * s);
+            cSx = 1.06 - 0.06 * s;
+            cSy = 0.94 + 0.06 * s;
+            cRim = 1.6 * (1 - p);
+          } else {
+            // Phase 6: Recovery (0.70 – 1.00)
+            const p = (ck - 0.70) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = 0.80 * (1 - s);
+            torsoAngle = 0.07 * (1 - s);
+            torsoY = dir * 0.18 * (1 - s);
+          }
+
+          this.TORSO_G.rotation.y = torsoY;
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = -0.30 * swing;
+          } else {
+            cArmL = -swing;
+            cArmR = 0.30 * swing;
+          }
+          cTorso = dir * torsoAngle;
+        } else if (kind === 'staff_cast') {
+          // staff_cast = arms raised forward and up, with no big downswing
+          this.TORSO_G.rotation.y = 0;
+          let swing = 0, torsoAngle = 0;
+          if (ck < 0.12) {
+            // Phase 1: Ready (0 – 0.12): arms begin raising forward and up
+            const p = ck / 0.12;
+            swing = 0.20 * p;
+            torsoAngle = -0.02 * p;
+            cHop = 0.02 * p;
+          } else if (ck < 0.42) {
+            // Phase 2: Anticipation (0.12 – 0.42): channeling forward and up
+            const p = (ck - 0.12) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = 0.20 + 0.90 * s;
+            torsoAngle = -0.02 - 0.13 * s;
+            cHop = 0.02 + 0.08 * Math.sin(p * Math.PI * 0.5);
+            cRim = 1.2 * s;
+          } else if (ck < 0.55) {
+            // Phase 3: Cast thrust (0.42 – 0.55): arms held forward-up with no downswing
+            const p = (ck - 0.42) / 0.13;
+            const s = Math.sin(p * Math.PI * 0.5);
+            swing = 1.10 + 0.15 * s;
+            torsoAngle = -0.15 + 0.25 * s;
+            cHop = 0.10 + 0.03 * s;
+            cRim = 1.2 + 1.2 * s;
+          } else if (ck < 0.70) {
+            // Phase 5: Reaction (0.55 – 0.70): burst recoil, arms settle slightly
+            const p = (ck - 0.55) / 0.15;
+            const s = Math.sin(p * Math.PI * 0.5);
+            swing = 1.25 - 0.35 * s;
+            torsoAngle = 0.10 - 0.08 * s;
+            cHop = 0.13 - 0.08 * s;
+            cRim = 2.4 - 1.2 * s;
+          } else {
+            // Phase 6: Recovery (0.70 – 1.00): return to resting pose
+            const p = (ck - 0.70) / 0.30;
+            const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
+            swing = 0.90 * (1 - s);
+            torsoAngle = 0.02 * (1 - s);
+            cHop = 0.05 * (1 - s);
+            cRim = 1.2 * (1 - s);
+          }
+
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = -0.70 * swing;
+          } else {
+            cArmL = -swing;
+            cArmR = 0.70 * swing;
+          }
+          cTorso = dir * torsoAngle;
         }
       }
     } else if (this.TORSO_G.rotation.y !== 0) {
@@ -1243,6 +1511,7 @@ export class ChibiRig {
       const a = this.accMeshes[i];
       if (a.def?.singleHand && a.mesh.visible) a.mesh.visible = false;
     }
+    if (this.heldTool?.mesh) this.heldTool.mesh.visible = false;
 
     // Seated Astride Legs: straddle wide astride the pet's back so boots hug the flanks/stirrups
     const straddle = this.shownView === 'side' ? 0.38 : 0.50;
@@ -1289,6 +1558,13 @@ export class ChibiRig {
 
   dispose() {
     try { WearAura.dispose(this); } catch (e) { /* cosmetic only */ }
+    if (this.heldTool) {
+      this.heldTool.mesh.parent?.remove(this.heldTool.mesh);
+      this.heldTool.mesh.geometry?.dispose();
+      this.heldTool.mesh.material?.dispose();
+      this.heldTool = null;
+      this._heldToolDef = null;
+    }
     this.ROOT.traverse((o) => {
       o.geometry?.dispose?.();
       if (o.material) {

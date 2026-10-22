@@ -153,7 +153,9 @@ test('starter profile matches Section 21.M.2 & Pet System V2 starters', () => {
   const p = createStarterProfile('newbie', 'pw12', 'dxb');
   assert.equal(p.gold, 2500); assert.equal(p.berries, 300); assert.equal(p.diamonds, 600); assert.equal(p.shards, 50);
   assert.deepEqual(p.bag_items, { ticket_standard: 5, ticket_gold: 2, ticket_royal_hair: 2, streak_freeze: 1, scroll_forge_boost: 2, random_dupe_box: 1 });
-  assert.equal(p.village.buildings.length, 6);
+  // Stage 3 base camp: the Castle (ruins) + 2 starter farm plots
+  assert.deepEqual(p.village.buildings.map((b) => b.type), ['castle', 'farm_plot', 'farm_plot']);
+  assert.equal(p.village.copies.farm_plot, 2);
   assert.equal(p.equipped.pet.id, 'pet_ragdoll');
   const pBkk = createStarterProfile('newbie2', 'pw12', 'bkk');
   assert.equal(pBkk.equipped.pet.id, 'pet_nyx');

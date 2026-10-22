@@ -1227,47 +1227,933 @@ function makePortalPlaqueSprite(label, { scaleW = 1.55, scaleH = 0.34 } = {}) {
 }
 
 /**
- * Returns the authentic hand-painted `/assets/terrain/` ground texture and fallback tint
- * for each of the 16 Living Scenery Portal Memory Rooms.
+ * Bespoke Art-Director Floor Palette, Material Motif & Architectural Grid Archetype
+ * for all 16 Living Scenery Portal Memory Worlds.
  */
-function getPortalGroundTheme(portalId) {
-  if (portalId === 'fuji' || portalId === 'fairytale' || portalId === 'cat_lounge') {
-    return {
-      url: '/assets/terrain/ground_sakura.png',
-      color: 0xeeb8c8,
-      indoor: portalId === 'cat_lounge',
-    };
-  }
-  if (
-    portalId === 'swiss' ||
-    portalId === 'permafrost' ||
-    portalId === 'starlight' ||
-    portalId === 'atlantis' ||
-    portalId === 'cabin'
-  ) {
-    return {
-      url: '/assets/terrain/ground_aurora.png',
-      color: 0x8ac4e8,
-      indoor: portalId === 'cabin',
-    };
-  }
-  if (
-    portalId === 'dubai' ||
-    portalId === 'maldives' ||
-    portalId === 'bangkok' ||
-    portalId === 'luxor'
-  ) {
-    return {
-      url: '/assets/terrain/ground_vanilla.png',
-      color: 0xe2ca98,
-      indoor: false,
-    };
-  }
-  return {
-    url: '/assets/terrain/ground_classic.png',
-    color: 0xb9c54f,
+export const PORTAL_FLOOR_ART_DIRECTION = Object.freeze({
+  fuji: Object.freeze({
+    id: 'fuji',
+    pattern: 'shrine_courtyard',
+    groundUrl: '/assets/terrain/ground_sakura.png',
+    groundColor: 0xf2cad8,
+    cobbleColor: 0x8c8694,
+    creamColor: 0xc8925a,
+    sakuraColor: 0xf6bfd4,
+    waterColor: 0x3ba8b5,
+    bridgeColor: 0xc93b2b,
+    curbColor: 0x645862,
+    bridgeCurbColor: 0xd93829,
+    bankColor: 0x5b6068,
+    cliffRimColor: 0xd888a8,
+    cliffWallColor: 0x7c6e78,
     indoor: false,
+    hasGrassTufts: true,
+    hasCanalFlora: true,
+  }),
+  paris: Object.freeze({
+    id: 'paris',
+    pattern: 'rond_point_parterre',
+    groundUrl: '/assets/terrain/ground_classic.png',
+    groundColor: 0x829c68,
+    cobbleColor: 0x949eb4,
+    creamColor: 0xf2e4ce,
+    sakuraColor: 0xe0a4c0,
+    waterColor: 0x2e5c90,
+    bridgeColor: 0xe6c268,
+    curbColor: 0xd8ccb8,
+    bridgeCurbColor: 0xf4d47c,
+    bankColor: 0x788296,
+    cliffRimColor: 0x76985e,
+    cliffWallColor: 0xb8ae9e,
+    indoor: false,
+    hasGrassTufts: true,
+    hasCanalFlora: false,
+  }),
+  swiss: Object.freeze({
+    id: 'swiss',
+    pattern: 'alpine_snow_chalet',
+    groundUrl: '/assets/terrain/ground_aurora.png',
+    groundColor: 0xe8f4ff,
+    cobbleColor: 0x7a8ba0,
+    creamColor: 0xb47844,
+    sakuraColor: 0xcc4444,
+    waterColor: 0x74daf8,
+    bridgeColor: 0x9c6234,
+    curbColor: 0xdcecf8,
+    bridgeCurbColor: 0x7c4a24,
+    bankColor: 0x9ab4cc,
+    cliffRimColor: 0xeaf6ff,
+    cliffWallColor: 0x8c9cb0,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  dubai: Object.freeze({
+    id: 'dubai',
+    pattern: 'arabian_zellige_star',
+    groundUrl: '/assets/terrain/ground_vanilla.png',
+    groundColor: 0xecc47e,
+    cobbleColor: 0xe0a430,
+    creamColor: 0xfbf0d6,
+    sakuraColor: 0xb82e56,
+    waterColor: 0x1cd2e0,
+    bridgeColor: 0xf4d078,
+    curbColor: 0xe8be68,
+    bridgeCurbColor: 0xf2c85b,
+    bankColor: 0xc89648,
+    cliffRimColor: 0xe6be74,
+    cliffWallColor: 0xc48c46,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  maldives: Object.freeze({
+    id: 'maldives',
+    pattern: 'overwater_boardwalk_atoll',
+    groundUrl: '/assets/terrain/ground_vanilla.png',
+    groundColor: 0x1ebec8,
+    cobbleColor: 0xcca06c,
+    creamColor: 0xfff6e4,
+    sakuraColor: 0xf6987e,
+    waterColor: 0x24d8de,
+    bridgeColor: 0xdab07c,
+    curbColor: 0xe4c290,
+    bridgeCurbColor: 0xe8c896,
+    bankColor: 0xf2e2c4,
+    cliffRimColor: 0xfaf0d8,
+    cliffWallColor: 0x2898a8,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  cabin: Object.freeze({
+    id: 'cabin',
+    pattern: 'first_class_fuselage_aisle',
+    groundUrl: '/assets/terrain/ground_aurora.png',
+    groundColor: 0x283252,
+    cobbleColor: 0x2e3c66,
+    creamColor: 0xe8d4b8,
+    sakuraColor: 0xa63850,
+    waterColor: 0x1e2844,
+    bridgeColor: 0xc89e52,
+    curbColor: 0xe4b858,
+    bridgeCurbColor: 0xe4b858,
+    bankColor: 0x3a4668,
+    cliffRimColor: 0x344064,
+    cliffWallColor: 0x1c243c,
+    indoor: true,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  bangkok: Object.freeze({
+    id: 'bangkok',
+    pattern: 'thai_mandapa_star',
+    groundUrl: '/assets/terrain/ground_vanilla.png',
+    groundColor: 0x5e7844,
+    cobbleColor: 0xb47642,
+    creamColor: 0xf8e4b4,
+    sakuraColor: 0xd44a3e,
+    waterColor: 0x287688,
+    bridgeColor: 0xe2a838,
+    curbColor: 0xd8a648,
+    bridgeCurbColor: 0xf0be4c,
+    bankColor: 0x7c5838,
+    cliffRimColor: 0x688848,
+    cliffWallColor: 0x9c6442,
+    indoor: false,
+    hasGrassTufts: true,
+    hasCanalFlora: true,
+  }),
+  montecarlo: Object.freeze({
+    id: 'montecarlo',
+    pattern: 'casino_royale_octagon',
+    groundUrl: '/assets/terrain/ground_classic.png',
+    groundColor: 0x3a6852,
+    cobbleColor: 0x3c3848,
+    creamColor: 0xfaf0d8,
+    sakuraColor: 0xb82838,
+    waterColor: 0x1e689e,
+    bridgeColor: 0xe8c878,
+    curbColor: 0xd8b458,
+    bridgeCurbColor: 0xf2d278,
+    bankColor: 0x6c7484,
+    cliffRimColor: 0x48785e,
+    cliffWallColor: 0x988e82,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  atlantis: Object.freeze({
+    id: 'atlantis',
+    pattern: 'sunken_concentric_citadel',
+    groundUrl: '/assets/terrain/ground_aurora.png',
+    groundColor: 0x1c5c78,
+    cobbleColor: 0x3898b4,
+    creamColor: 0xbef4fa,
+    sakuraColor: 0xdc74b8,
+    waterColor: 0x14c8ec,
+    bridgeColor: 0x58dce8,
+    curbColor: 0x46d2e4,
+    bridgeCurbColor: 0x72f0fa,
+    bankColor: 0x1c6882,
+    cliffRimColor: 0x227894,
+    cliffWallColor: 0x123e54,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  starlight: Object.freeze({
+    id: 'starlight',
+    pattern: 'cosmic_astrolabe_rings',
+    groundUrl: '/assets/terrain/ground_aurora.png',
+    groundColor: 0x28204c,
+    cobbleColor: 0x3c3268,
+    creamColor: 0xebe4ff,
+    sakuraColor: 0xa664f0,
+    waterColor: 0x5246d4,
+    bridgeColor: 0xd8c4ff,
+    curbColor: 0xc8a8ff,
+    bridgeCurbColor: 0xe6c878,
+    bankColor: 0x342864,
+    cliffRimColor: 0x46387c,
+    cliffWallColor: 0x1e163a,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  fairytale: Object.freeze({
+    id: 'fairytale',
+    pattern: 'enchanted_heart_ballroom',
+    groundUrl: '/assets/terrain/ground_sakura.png',
+    groundColor: 0xa8d898,
+    cobbleColor: 0xcbb4e2,
+    creamColor: 0xfff0f6,
+    sakuraColor: 0xf8a4c8,
+    waterColor: 0x58c2f0,
+    bridgeColor: 0xf8d274,
+    curbColor: 0xf4d6e8,
+    bridgeCurbColor: 0xffe088,
+    bankColor: 0xb89ec8,
+    cliffRimColor: 0x98cc88,
+    cliffWallColor: 0xd8b8c8,
+    indoor: false,
+    hasGrassTufts: true,
+    hasCanalFlora: true,
+  }),
+  permafrost: Object.freeze({
+    id: 'permafrost',
+    pattern: 'glacial_snowflake_cathedral',
+    groundUrl: '/assets/terrain/ground_aurora.png',
+    groundColor: 0xa8e6ff,
+    cobbleColor: 0x64c0e8,
+    creamColor: 0xeefbff,
+    sakuraColor: 0x68e8dc,
+    waterColor: 0x2898d8,
+    bridgeColor: 0xc4f2ff,
+    curbColor: 0xa8eeff,
+    bridgeCurbColor: 0xd8f8ff,
+    bankColor: 0x72bce0,
+    cliffRimColor: 0xb8f0ff,
+    cliffWallColor: 0x82c4e4,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  luxor: Object.freeze({
+    id: 'luxor',
+    pattern: 'pharaonic_nile_temple',
+    groundUrl: '/assets/terrain/ground_vanilla.png',
+    groundColor: 0xe0a85c,
+    cobbleColor: 0xcc9854,
+    creamColor: 0xfae4b4,
+    sakuraColor: 0x2aa8a8,
+    waterColor: 0x26828c,
+    bridgeColor: 0xe4b448,
+    curbColor: 0xd49e48,
+    bridgeCurbColor: 0xebb844,
+    bankColor: 0xa8783c,
+    cliffRimColor: 0xd89e52,
+    cliffWallColor: 0xb47838,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: true,
+  }),
+  venice: Object.freeze({
+    id: 'venice',
+    pattern: 'grand_canal_piazza',
+    groundUrl: '/assets/terrain/ground_classic.png',
+    groundColor: 0x246e78,
+    cobbleColor: 0xe6b8a2,
+    creamColor: 0xfff6ec,
+    sakuraColor: 0xa82e46,
+    waterColor: 0x1e828c,
+    bridgeColor: 0xf4ece0,
+    curbColor: 0xefe4d4,
+    bridgeCurbColor: 0xfaf2e6,
+    bankColor: 0x9c8878,
+    cliffRimColor: 0xdccab8,
+    cliffWallColor: 0xa86858,
+    indoor: false,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+  olympus: Object.freeze({
+    id: 'olympus',
+    pattern: 'pantheon_rotunda_meander',
+    groundUrl: '/assets/terrain/ground_classic.png',
+    groundColor: 0xe8f0d0,
+    cobbleColor: 0xeef4fc,
+    creamColor: 0xfffdf4,
+    sakuraColor: 0x2468c8,
+    waterColor: 0x289ce0,
+    bridgeColor: 0xfcf8ec,
+    curbColor: 0xe8d088,
+    bridgeCurbColor: 0xf4dc84,
+    bankColor: 0xc8d8ec,
+    cliffRimColor: 0xd8e4b8,
+    cliffWallColor: 0xe2dcd0,
+    indoor: false,
+    hasGrassTufts: true,
+    hasCanalFlora: false,
+  }),
+  cat_lounge: Object.freeze({
+    id: 'cat_lounge',
+    pattern: 'purrst_paw_parquet',
+    groundUrl: '/assets/terrain/ground_sakura.png',
+    groundColor: 0xfbe0ec,
+    cobbleColor: 0xdba870,
+    creamColor: 0xfff4e6,
+    sakuraColor: 0xf8a8cc,
+    waterColor: 0xf4c8dc,
+    bridgeColor: 0xe8b882,
+    curbColor: 0xf2bfd8,
+    bridgeCurbColor: 0xf2bfd8,
+    bankColor: 0xd89cb8,
+    cliffRimColor: 0xf6cce0,
+    cliffWallColor: 0xc88ea8,
+    indoor: true,
+    hasGrassTufts: false,
+    hasCanalFlora: false,
+  }),
+});
+
+export function getPortalFloorArtDirection(portalId) {
+  return PORTAL_FLOOR_ART_DIRECTION[portalId] || PORTAL_FLOOR_ART_DIRECTION.fuji;
+}
+
+function getPortalGroundTheme(portalId) {
+  const spec = getPortalFloorArtDirection(portalId);
+  return {
+    url: spec.groundUrl,
+    color: spec.groundColor,
+    indoor: spec.indoor,
   };
+}
+
+function hexIntToCss(hexInt) {
+  return `#${Number(hexInt || 0).toString(16).padStart(6, '0')}`;
+}
+
+function shadeHexInt(hexInt, delta) {
+  const r = Math.max(0, Math.min(255, ((hexInt >> 16) & 0xff) + delta));
+  const g = Math.max(0, Math.min(255, ((hexInt >> 8) & 0xff) + delta));
+  const b = Math.max(0, Math.min(255, (hexInt & 0xff) + delta));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Paints the bespoke 256×256 repeatable architectural tile surface for `(portalId, tileType)`
+ * and subtly blends the organic `/assets/terrain/` texture grain at ~26% without washing out
+ * the world's custom color palette.
+ */
+function paintPortalTilePattern(ctx, W, H, portalId, tileType, artSpec, baseImg) {
+  const colorMap = {
+    ground: artSpec.groundColor,
+    cobble: artSpec.cobbleColor,
+    cream: artSpec.creamColor,
+    sakura: artSpec.sakuraColor,
+    bridge: artSpec.bridgeColor,
+    water: artSpec.waterColor,
+  };
+  const baseHex = colorMap[tileType] ?? artSpec.cobbleColor;
+  ctx.save();
+  ctx.fillStyle = hexIntToCss(baseHex);
+  ctx.fillRect(0, 0, W, H);
+
+  if (baseImg) {
+    ctx.save();
+    ctx.globalAlpha = tileType === 'water' ? 0.32 : 0.26;
+    ctx.globalCompositeOperation = 'luminosity';
+    try {
+      ctx.drawImage(baseImg, 0, 0, W, H);
+    } catch {
+      // Ignore incomplete image draw in non-DOM environments
+    }
+    ctx.restore();
+  }
+
+  const darkStroke = shadeHexInt(baseHex, -34);
+  const midStroke = shadeHexInt(baseHex, -18);
+  const lightStroke = shadeHexInt(baseHex, 28);
+
+  if (tileType === 'water') {
+    // Shimmering water caustics & ripples tailored to each world's water hue
+    ctx.strokeStyle = lightStroke;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.42;
+    for (let ry = 24; ry < H; ry += 48) {
+      ctx.beginPath();
+      for (let rx = 0; rx <= W; rx += 16) {
+        const wy = ry + Math.sin((rx / W) * Math.PI * 4 + ry * 0.1) * 6;
+        if (rx === 0) ctx.moveTo(rx, wy);
+        else ctx.lineTo(rx, wy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // Wood plank decks: Fuji cream (Hinoki), Swiss cream/bridge (Cedar), Bangkok cobble (Teak),
+  // Maldives cobble/bridge (Sun-bleached Teak), Cabin cream (Burled Walnut)
+  const isWoodPlank =
+    (portalId === 'fuji' && (tileType === 'cream' || tileType === 'bridge')) ||
+    (portalId === 'swiss' && (tileType === 'cream' || tileType === 'bridge')) ||
+    (portalId === 'bangkok' && tileType === 'cobble') ||
+    (portalId === 'maldives' && (tileType === 'cobble' || tileType === 'bridge')) ||
+    (portalId === 'cabin' && tileType === 'cream');
+
+  if (isWoodPlank) {
+    const plankH = 32;
+    for (let y = 0; y < H; y += plankH) {
+      const row = Math.floor(y / plankH);
+      ctx.fillStyle = shadeHexInt(baseHex, (row % 3 - 1) * 8);
+      ctx.fillRect(0, y, W, plankH);
+      ctx.strokeStyle = darkStroke;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, y, W, plankH);
+      ctx.strokeStyle = lightStroke;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, y + 2);
+      ctx.lineTo(W, y + 2);
+      ctx.stroke();
+      const jointX = ((row * 96) % W) + 32;
+      ctx.strokeStyle = darkStroke;
+      ctx.beginPath();
+      ctx.moveTo(jointX, y);
+      ctx.lineTo(jointX, y + plankH);
+      ctx.stroke();
+      // Dowel studs
+      ctx.fillStyle = portalId === 'fuji' && tileType === 'bridge' ? '#f6d268' : darkStroke;
+      ctx.beginPath();
+      ctx.arc(jointX - 6, y + 8, 2.2, 0, Math.PI * 2);
+      ctx.arc(jointX - 6, y + plankH - 8, 2.2, 0, Math.PI * 2);
+      ctx.arc(jointX + 6, y + 8, 2.2, 0, Math.PI * 2);
+      ctx.arc(jointX + 6, y + plankH - 8, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'montecarlo' && tileType === 'cobble') {
+    // Black-and-Ivory Casino Royale Checkerboard Marble with fine gold veining
+    const step = 64;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        const isIvory = ((gx / step + gy / step) & 1) === 1;
+        ctx.fillStyle = isIvory ? '#f4ecdc' : '#3c3848';
+        ctx.fillRect(gx, gy, step, step);
+        ctx.strokeStyle = '#d8b458';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(gx + 1, gy + 1, step - 2, step - 2);
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  if ((portalId === 'montecarlo' || portalId === 'cabin') && (tileType === 'sakura' || tileType === 'cobble')) {
+    // Quilted Royal Carpet with Gold Bullion Piping & Diamond Tufting
+    ctx.strokeStyle = '#e8c464';
+    ctx.lineWidth = 2.5;
+    for (let d = -W; d < W * 2; d += 48) {
+      ctx.beginPath();
+      ctx.moveTo(d, 0);
+      ctx.lineTo(d + H, H);
+      ctx.moveTo(d + H, 0);
+      ctx.lineTo(d, H);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#f8dc84';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(6, 6, W - 12, H - 12);
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'venice' && tileType === 'cobble') {
+    // Piazza San Marco Terracotta-Rose & White Istrian Diamond Pavers
+    const step = 64;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        ctx.fillStyle = '#e6b8a2';
+        ctx.fillRect(gx, gy, step, step);
+        ctx.strokeStyle = '#fff6ec';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(gx + 3, gy + 3, step - 6, step - 6);
+        ctx.fillStyle = '#fff6ec';
+        ctx.beginPath();
+        ctx.moveTo(gx + step / 2, gy + 14);
+        ctx.lineTo(gx + step - 14, gy + step / 2);
+        ctx.lineTo(gx + step / 2, gy + step - 14);
+        ctx.lineTo(gx + 14, gy + step / 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'olympus') {
+    // Santorini Whitewashed Stone with Cobalt-Blue Joints or Golden Greek Meander
+    const step = 64;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        ctx.strokeStyle = tileType === 'cobble' ? '#2468c8' : '#e4bc54';
+        ctx.lineWidth = tileType === 'cobble' ? 4 : 3;
+        ctx.strokeRect(gx + 2, gy + 2, step - 4, step - 4);
+        if (tileType === 'sakura' || tileType === 'cream') {
+          ctx.strokeStyle = tileType === 'sakura' ? '#ffe082' : '#2468c8';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(gx + 10, gy + 10, step - 20, step - 20);
+        }
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'dubai' || portalId === 'luxor' || portalId === 'bangkok') {
+    // 8-Pointed Zellige Star / Egyptian Scarab Faience / Thai Benjarong Ceramic Mosaic
+    const step = 64;
+    const accent =
+      portalId === 'luxor'
+        ? tileType === 'sakura'
+          ? '#f2c44c'
+          : '#2aa8a8'
+        : portalId === 'dubai'
+          ? tileType === 'sakura'
+            ? '#f6d268'
+            : '#1cd2e0'
+          : '#f6c84c';
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        const cx = gx + step / 2;
+        const cy = gy + step / 2;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(gx + 3, gy + 3, step - 6, step - 6);
+        ctx.beginPath();
+        ctx.moveTo(cx, gy + 8);
+        ctx.lineTo(gx + step - 8, cy);
+        ctx.lineTo(cx, gy + step - 8);
+        ctx.lineTo(gx + 8, cy);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'atlantis' || portalId === 'permafrost' || portalId === 'starlight') {
+    // Glowing Hexagonal Orichalcum / Faceted Glacier Frost / Astral Constellation Lattice
+    const glowColor =
+      portalId === 'atlantis'
+        ? '#64f4ff'
+        : portalId === 'permafrost'
+          ? '#ffffff'
+          : '#ffe694';
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.72;
+    const step = 64;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        const cx = gx + step / 2;
+        const cy = gy + step / 2;
+        ctx.beginPath();
+        for (let a = 0; a < 6; a++) {
+          const ang = (a * Math.PI) / 3;
+          const px = cx + Math.cos(ang) * 26;
+          const py = cy + Math.sin(ang) * 26;
+          if (a === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (portalId === 'cat_lounge') {
+    if (tileType === 'sakura') {
+      // Pastel Pink & Lavender Cat-Paw Pad Mosaic
+      const step = 64;
+      for (let gy = 0; gy < H; gy += step) {
+        for (let gx = 0; gx < W; gx += step) {
+          const cx = gx + step / 2;
+          const cy = gy + step / 2 + 5;
+          ctx.fillStyle = '#fff0f8';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+          ctx.arc(cx - 12, cy - 14, 5, 0, Math.PI * 2);
+          ctx.arc(cx - 4, cy - 18, 5, 0, Math.PI * 2);
+          ctx.arc(cx + 4, cy - 18, 5, 0, Math.PI * 2);
+          ctx.arc(cx + 12, cy - 14, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+      return;
+    }
+    // Herringbone Honey-Oak Parquet
+    const step = 32;
+    for (let gy = 0; gy < H; gy += step) {
+      for (let gx = 0; gx < W; gx += step) {
+        ctx.strokeStyle = darkStroke;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(gx, gy, step, step);
+      }
+    }
+    ctx.restore();
+    return;
+  }
+
+  // Default Ashlar Flagstones / Parisian Pavés / Storybook Stepping Stones
+  const step = 64;
+  for (let gy = 0; gy < H; gy += step) {
+    const shift = ((gy / step) & 1) * 32;
+    for (let gx = -32; gx < W; gx += step) {
+      ctx.fillStyle = shadeHexInt(baseHex, (((gx + gy) / 32) & 1) ? 7 : -7);
+      ctx.fillRect(gx + shift + 2, gy + 2, step - 4, step - 4);
+      ctx.strokeStyle = midStroke;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(gx + shift + 1, gy + 1, step - 2, step - 2);
+      ctx.strokeStyle = lightStroke;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(gx + shift + 4, gy + 4, step - 8, step - 8);
+    }
+  }
+  ctx.restore();
+}
+
+export function createPortalTileCanvasTexture(portalId, tileType, artSpec = getPortalFloorArtDirection(portalId)) {
+  if (typeof document === 'undefined') return null;
+  const cacheKey = `__portal_tile_${portalId}_${tileType}`;
+  if (texCache.has(cacheKey)) return texCache.get(cacheKey);
+
+  const W = 256;
+  const H = 256;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext?.('2d');
+  if (!ctx) return null;
+
+  const urlMap = {
+    ground: artSpec.groundUrl || '/assets/terrain/ground_classic.png',
+    cobble: '/assets/terrain/road_cobble.png',
+    cream: '/assets/terrain/road_cream.png',
+    sakura: '/assets/terrain/road_sakura.png',
+    bridge: '/assets/terrain/road_cobble.png',
+    water: '/assets/terrain/water_canal.png',
+  };
+  const baseTerrainUrl = urlMap[tileType] || '/assets/terrain/road_cobble.png';
+
+  paintPortalTilePattern(ctx, W, H, portalId, tileType, artSpec, null);
+  const canvasTex = new THREE.CanvasTexture(c);
+  canvasTex.colorSpace = THREE.SRGBColorSpace;
+  canvasTex.wrapS = THREE.RepeatWrapping;
+  canvasTex.wrapT = THREE.RepeatWrapping;
+  texCache.set(cacheKey, canvasTex);
+
+  loadBillboardTexture(
+    baseTerrainUrl,
+    (loadedTex) => {
+      if (loadedTex?.image) {
+        paintPortalTilePattern(ctx, W, H, portalId, tileType, artSpec, loadedTex.image);
+        canvasTex.needsUpdate = true;
+      }
+    },
+    { repeat: true }
+  );
+
+  return canvasTex;
+}
+
+/**
+ * Builds the bespoke 36×36 architectural tile grid (`cobble`, `cream`, `sakura`, `water`, `bridge`)
+ * uniquely shaped for each of the 16 Portal Worlds while preserving all landmark walkways.
+ */
+export function buildPortalTileMap(portalId, S = 36) {
+  const artSpec = getPortalFloorArtDirection(portalId);
+  const isIndoor = artSpec.indoor;
+  const tileMap = new Map();
+  const setTile = (gx, gy, type) => {
+    if (gx >= 0 && gx < S && gy >= 0 && gy < S) {
+      tileMap.set(`${gx},${gy}`, type);
+    }
+  };
+  const fillRect = (gx0, gy0, gx1, gy1, type) => {
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        setTile(gx, gy, type);
+      }
+    }
+  };
+  const fillCircle = (cx, cy, rMin, rMax, type) => {
+    for (let gy = 9; gy <= 27; gy++) {
+      for (let gx = 4; gx <= 31; gx++) {
+        const d = Math.hypot(gx - cx, gy - cy);
+        if (d >= rMin && d <= rMax) setTile(gx, gy, type);
+      }
+    }
+  };
+
+  // Base functional spine so North Terrace, Overlook, Couple Spot (0, 1.5),
+  // SW Couture Showcase (-7.6, 5.4), and SE Exit Arch (7.8, 6.2) are always connected
+  fillRect(16, 9, 19, 27, 'cobble');
+  fillRect(8, 18, 27, 20, 'cobble');
+  fillRect(9, 20, 11, 24, 'cobble');
+  fillRect(9, 22, 11, 24, 'sakura');
+  fillRect(24, 20, 26, 25, 'cobble');
+  fillRect(24, 23, 26, 25, 'cream');
+  fillRect(12, 9, 23, 9, 'cream');
+  fillRect(6, 13, 29, 14, 'cream');
+  fillRect(12, 17, 14, 20, 'sakura');
+  fillRect(21, 17, 23, 20, 'sakura');
+  fillRect(14, 17, 21, 21, 'cream');
+  fillRect(16, 18, 19, 20, 'sakura');
+
+  // Now sculpt each world's unmistakable architectural floor archetype:
+  if (portalId === 'fuji') {
+    // Stepped Kyoto Shrine Courtyard: Hinoki wood verandas + 4 corner sakura tatami sanctuaries + Koi pond alcoves
+    fillRect(10, 15, 25, 16, 'cream');
+    fillRect(13, 16, 22, 22, 'cream');
+    fillRect(16, 14, 19, 26, 'cobble');
+    fillRect(15, 18, 20, 20, 'sakura');
+    fillRect(11, 16, 12, 17, 'sakura');
+    fillRect(23, 16, 24, 17, 'sakura');
+    fillRect(11, 21, 12, 22, 'sakura');
+    fillRect(23, 21, 24, 22, 'sakura');
+  } else if (portalId === 'paris') {
+    // Circular Parisian Rond-Point Plaza + diagonal Champ de Mars garden parterre walkways + Bistro Checkers
+    fillCircle(17.5, 19.0, 4.6, 6.6, 'cobble');
+    fillCircle(17.5, 19.0, 0, 4.6, 'cream');
+    for (let d = -5; d <= 5; d++) {
+      setTile(17 + d, 19 + d, 'cobble');
+      setTile(18 + d, 19 + d, 'cobble');
+      setTile(18 - d, 19 + d, 'cobble');
+      setTile(17 - d, 19 + d, 'cobble');
+    }
+    for (let gy = 16; gy <= 22; gy++) {
+      for (let gx = 14; gx <= 21; gx++) {
+        if (Math.hypot(gx - 17.5, gy - 19.0) <= 3.6) {
+          setTile(gx, gy, (gx + gy) % 2 === 0 ? 'sakura' : 'cream');
+        }
+      }
+    }
+  } else if (portalId === 'swiss') {
+    // Expansive Roasted Swiss Chalet Cedar Timber Deck + Heated Zermatt Slate Walkways + Nordic Red Wool Hearth Rugs
+    fillRect(10, 14, 25, 23, 'cream');
+    fillRect(16, 13, 19, 27, 'cobble');
+    fillRect(7, 18, 28, 20, 'cobble');
+    fillRect(12, 16, 15, 21, 'sakura');
+    fillRect(20, 16, 23, 21, 'sakura');
+    fillRect(16, 18, 19, 20, 'sakura');
+  } else if (portalId === 'dubai') {
+    // 8-Pointed Islamic Star Zellige Courtyard + Flanking Cyan Infinity Pools + Persian Ruby Majlis Carpets
+    for (let gy = 14; gy <= 24; gy++) {
+      for (let gx = 11; gx <= 24; gx++) {
+        const dx = Math.abs(gx - 17.5);
+        const dy = Math.abs(gy - 19.0);
+        if ((dx <= 4.5 && dy <= 4.5) || dx + dy <= 6.2) {
+          setTile(gx, gy, 'cream');
+        }
+      }
+    }
+    fillRect(6, 15, 8, 22, 'water');
+    fillRect(27, 15, 29, 22, 'water');
+    fillRect(6, 18, 8, 20, 'bridge');
+    fillRect(27, 18, 29, 20, 'bridge');
+    fillRect(15, 17, 20, 21, 'sakura');
+    fillRect(14, 18, 21, 20, 'sakura');
+  } else if (portalId === 'maldives') {
+    // Expansive Turquoise Coral Lagoon Atoll + Overwater Teak Boardwalk Jetties + Central White Coral Sandbar Island
+    fillRect(5, 13, 30, 24, 'water');
+    fillCircle(17.5, 19.0, 0, 4.5, 'cream');
+    fillRect(16, 9, 19, 27, 'cobble');
+    fillRect(6, 13, 29, 14, 'cobble');
+    fillRect(7, 18, 28, 20, 'cobble');
+    fillRect(9, 20, 11, 24, 'cobble');
+    fillRect(24, 20, 26, 25, 'cobble');
+    fillRect(12, 17, 14, 20, 'sakura');
+    fillRect(21, 17, 23, 20, 'sakura');
+    fillRect(16, 18, 19, 20, 'sakura');
+  } else if (portalId === 'cabin') {
+    // Indoor Widebody First-Class Fuselage Cabin Deck: Walnut Suite Floors + Quilted Navy Center Aisle + 6 VIP Suite Rugs
+    fillRect(7, 9, 28, 26, 'cream');
+    fillRect(16, 9, 19, 27, 'cobble');
+    fillRect(8, 18, 27, 20, 'cobble');
+    fillRect(9, 11, 14, 13, 'sakura');
+    fillRect(21, 11, 26, 13, 'sakura');
+    fillRect(9, 15, 14, 17, 'sakura');
+    fillRect(21, 15, 26, 17, 'sakura');
+    fillRect(9, 21, 14, 24, 'sakura');
+    fillRect(21, 21, 26, 23, 'sakura');
+    fillRect(16, 18, 19, 20, 'sakura');
+  } else if (portalId === 'bangkok') {
+    // Stepped Royal Thai Mandapa Indented-Corner Cross + Golden Teakwood Pier + Crimson Benjarong Lotus Mosaic
+    for (let gy = 13; gy <= 25; gy++) {
+      for (let gx = 10; gx <= 25; gx++) {
+        const dx = Math.abs(gx - 17.5);
+        const dy = Math.abs(gy - 19.0);
+        if (dx + dy <= 6.8 || (dx <= 4.6 && dy <= 3.6) || (dx <= 3.6 && dy <= 4.6)) {
+          setTile(gx, gy, 'cream');
+        }
+        if (dx + dy <= 3.6) {
+          setTile(gx, gy, 'sakura');
+        }
+      }
+    }
+    fillRect(16, 13, 19, 15, 'cobble');
+    fillRect(16, 23, 19, 27, 'cobble');
+  } else if (portalId === 'montecarlo') {
+    // Grand Octagonal Casino Royale Roulette Plaza + Black/Ivory Checkerboard + Crimson Red-Carpet Center Avenue
+    for (let gy = 13; gy <= 25; gy++) {
+      for (let gx = 10; gx <= 25; gx++) {
+        const dx = Math.abs(gx - 17.5);
+        const dy = Math.abs(gy - 19.0);
+        if (dx <= 6.5 && dy <= 5.5 && dx + dy <= 9.2) {
+          setTile(gx, gy, dx + dy <= 5.8 ? 'cream' : 'cobble');
+        }
+      }
+    }
+    // Red-carpeted center avenue all the way down the main aisle!
+    fillRect(16, 13, 19, 26, 'sakura');
+    fillRect(12, 18, 14, 20, 'sakura');
+    fillRect(21, 18, 23, 20, 'sakura');
+  } else if (portalId === 'atlantis') {
+    // Poseidon's 3-Ring Concentric Sunken Citadel with Inner Trench Moat & 4 Cardinal Orichalcum Bridges
+    fillCircle(17.5, 19.0, 5.4, 7.4, 'cobble');
+    fillCircle(17.5, 19.0, 4.1, 5.4, 'water');
+    fillCircle(17.5, 19.0, 2.3, 4.1, 'cream');
+    fillCircle(17.5, 19.0, 0, 2.3, 'sakura');
+    fillRect(16, 13, 19, 15, 'bridge');
+    fillRect(16, 23, 19, 25, 'bridge');
+    fillRect(11, 18, 13, 20, 'bridge');
+    fillRect(22, 18, 24, 20, 'bridge');
+  } else if (portalId === 'starlight') {
+    // Circular Zodiac Astrolabe Ring & 8-Ray Starburst Layout
+    fillCircle(17.5, 19.0, 4.4, 6.4, 'cream');
+    fillCircle(17.5, 19.0, 2.4, 4.4, 'cobble');
+    fillCircle(17.5, 19.0, 0, 2.4, 'sakura');
+    for (const [nx, ny] of [
+      [12, 14],
+      [23, 14],
+      [12, 24],
+      [23, 24],
+      [11, 19],
+      [24, 19],
+    ]) {
+      fillRect(nx, ny, nx + 1, ny + 1, 'sakura');
+    }
+  } else if (portalId === 'fairytale') {
+    // Enchanted Royal Heart-Shaped Ballroom Courtyard & Sunburst Marble Terrace
+    fillCircle(17.5, 19.2, 0, 5.8, 'cream');
+    for (let gy = 15; gy <= 23; gy++) {
+      for (let gx = 13; gx <= 22; gx++) {
+        const x = (gx - 17.5) / 3.4;
+        const y = (18.6 - gy) / 3.0;
+        const heartEq = Math.pow(x * x + y * y - 1, 3) - x * x * y * y * y;
+        if (heartEq <= 0.05) {
+          setTile(gx, gy, 'sakura');
+        }
+      }
+    }
+  } else if (portalId === 'permafrost') {
+    // 6-Pointed Crystalline Snowflake-Star Cathedral Geometry
+    fillCircle(17.5, 19.0, 0, 5.4, 'cream');
+    fillRect(16, 13, 19, 25, 'cobble');
+    fillRect(9, 18, 26, 20, 'cobble');
+    for (let d = -5; d <= 5; d++) {
+      setTile(17 + d, 19 + d, 'cobble');
+      setTile(18 + d, 19 + d, 'cobble');
+      setTile(18 - d, 19 + d, 'cobble');
+      setTile(17 - d, 19 + d, 'cobble');
+    }
+    fillRect(16, 17, 19, 21, 'sakura');
+    fillRect(11, 18, 12, 20, 'sakura');
+    fillRect(23, 18, 24, 20, 'sakura');
+  } else if (portalId === 'luxor') {
+    // Processional Karnak Pylon Avenue & Turquoise-Faience Scarab Sun Court
+    fillRect(10, 15, 25, 22, 'cream');
+    fillRect(15, 9, 20, 27, 'cobble');
+    fillRect(16, 16, 19, 21, 'sakura');
+    fillRect(11, 17, 13, 20, 'sakura');
+    fillRect(22, 17, 24, 20, 'sakura');
+  } else if (portalId === 'venice') {
+    // Expanded Venetian Lagoon & Side Canals flanking Piazza San Marco with East/West Rialto Side Bridges
+    fillRect(8, 15, 27, 23, 'cream');
+    fillRect(10, 16, 25, 22, 'cobble');
+    fillRect(15, 17, 20, 21, 'sakura');
+    fillRect(6, 13, 7, 24, 'water');
+    fillRect(28, 13, 29, 24, 'water');
+    fillRect(6, 18, 7, 20, 'bridge');
+    fillRect(28, 18, 29, 20, 'bridge');
+  } else if (portalId === 'olympus') {
+    // Circular Greek Pantheon Rotunda & Cross-Colonnade with Aegean Cobalt Medallion
+    fillCircle(17.5, 19.0, 4.5, 6.6, 'cream');
+    fillCircle(17.5, 19.0, 2.3, 4.5, 'cobble');
+    fillCircle(17.5, 19.0, 0, 2.3, 'sakura');
+    fillRect(11, 18, 13, 20, 'sakura');
+    fillRect(22, 18, 24, 20, 'sakura');
+  } else if (portalId === 'cat_lounge') {
+    // Indoor Cozy Playroom: Honey-Oak Parquet + Circular Vanilla Yarn Rug + Giant Pixel-Art Cat-Paw Pad & Toe-Beans
+    fillRect(6, 9, 29, 26, 'cobble');
+    fillCircle(17.5, 19.0, 0, 6.2, 'cream');
+    // Main central cat-paw pad
+    fillRect(15, 18, 20, 21, 'sakura');
+    fillRect(16, 17, 19, 22, 'sakura');
+    // 4 cute oval toe-bean pads above the main paw pad
+    fillRect(12, 15, 13, 16, 'sakura');
+    fillRect(15, 14, 16, 15, 'sakura');
+    fillRect(19, 14, 20, 15, 'sakura');
+    fillRect(22, 15, 23, 16, 'sakura');
+  }
+
+  // North Horizon Water Canal / Moat (`gy = 10..12`, `z = -8.0..-5.0`) + Central Footbridge (`gx = 16..19`)
+  if (isIndoor) {
+    fillRect(6, 10, 29, 12, 'cream');
+    fillRect(16, 10, 19, 12, 'sakura');
+  } else {
+    fillRect(3, 10, 32, 12, 'water');
+    const bridgeW0 = portalId === 'paris' ? 15 : 16;
+    const bridgeW1 = portalId === 'paris' ? 20 : 19;
+    fillRect(bridgeW0, 10, bridgeW1, 12, 'bridge');
+  }
+
+  // Ensure SW Couture Pad & SE Return Arch Pad stay intact
+  fillRect(9, 22, 11, 24, 'sakura');
+  fillRect(24, 23, 26, 25, 'cream');
+
+  return tileMap;
 }
 
 /**
@@ -2314,29 +3200,41 @@ export class NookMuseumScene {
     this.realmLeanSprites = [];
 
     const size = NOOK_MUSEUM.SIZE;
+    const artSpec = getPortalFloorArtDirection(portal.id);
     const groundTheme = getPortalGroundTheme(portal.id);
 
-    // 1. Hand-Painted Village Ground Mesh (`36m × 19.2m` spanning `z = -8.6..+10.6`, tiled with `repeat: true`)
+    // 1. Hand-Painted & Bespoke Art-Directed Ground Mesh (`36m × 19.2m` spanning `z = -8.6..+10.6`, tiled with `repeat: true`)
     const floorD = 19.2;
     const floorGeo = new THREE.PlaneGeometry(size, floorD).rotateX(-Math.PI / 2);
     const guv = floorGeo.attributes.uv;
     for (let i = 0; i < guv.count; i++) {
       guv.setXY(i, guv.getX(i) * 9, guv.getY(i) * 5);
     }
-    const floorMat = new THREE.MeshBasicMaterial({ color: groundTheme.color });
-    loadBillboardTexture(
-      groundTheme.url,
-      (tex) => {
-        floorMat.map = tex;
-        floorMat.color.setHex(0xffffff);
-        floorMat.needsUpdate = true;
-      },
-      { repeat: true }
-    );
+    const groundCanvasTex = createPortalTileCanvasTexture(portal.id, 'ground', artSpec);
+    const floorMat = new THREE.MeshBasicMaterial({
+      map: groundCanvasTex || null,
+      color: groundCanvasTex ? 0xffffff : groundTheme.color,
+    });
+    if (!groundCanvasTex) {
+      loadBillboardTexture(
+        groundTheme.url,
+        (tex) => {
+          floorMat.map = tex;
+          floorMat.color.setHex(groundTheme.color);
+          floorMat.needsUpdate = true;
+        },
+        { repeat: true }
+      );
+    }
     const floorMesh = new THREE.Mesh(floorGeo, floorMat);
     floorMesh.name = `portal_floor_${portal.id}`;
     floorMesh.position.set(0, 0, 1.0);
     floorMesh.renderOrder = 0;
+    floorMesh.userData = {
+      portalId: portal.id,
+      pattern: artSpec.pattern,
+      groundColor: groundTheme.color,
+    };
     this.realmGroup.add(floorMesh);
 
     // 2. 3-Wall Wrap-Around Panoramic 2.5D Sky & Horizon Stage
@@ -2449,6 +3347,7 @@ export class NookMuseumScene {
         z: 0.08,
         opacity: 0.96,
         renderOrder: 1,
+        color: artSpec.creamColor,
         name: 'portal_return_pad',
       })
     );
@@ -2505,12 +3404,18 @@ export class NookMuseumScene {
   }
 
   /**
-   * True 36 × 36 (1m × 1m cell) Pixel-Perfect Village Tile Grid, North Horizon Water Canal & Footbridge,
-   * Overlook Marble Balustrade, Raised Cream-Stone Road Curbs, and Floating Sky-Island Cliff Rim for every Portal Room.
+   * True 36 × 36 (1m × 1m cell) Bespoke Art-Directed Village Tile Grid, North Horizon Water Canal & Footbridge,
+   * Overlook Marble Balustrade, Raised Road Curbs, and Floating Sky-Island Cliff Rim for every Portal Room.
    */
   buildTiledRoomArchitecture(portal) {
+    const artSpec = getPortalFloorArtDirection(portal.id);
     const archGroup = new THREE.Group();
     archGroup.name = `portal_tile_foundation_${portal.id}`;
+    archGroup.userData = {
+      portalId: portal.id,
+      pattern: artSpec.pattern,
+      artSpec,
+    };
 
     const S = NOOK_MUSEUM.SIZE;
     const Y_WATER = 0.006;
@@ -2519,55 +3424,9 @@ export class NookMuseumScene {
     const ox = -S / 2;
     const oz = -S / 2;
     const cellCenter = (gx, gy) => ({ x: ox + gx + 0.5, z: oz + gy + 0.5 });
-    const isIndoor = portal.id === 'cabin' || portal.id === 'cat_lounge';
+    const isIndoor = artSpec.indoor;
 
-    const tileMap = new Map();
-    const setTile = (gx, gy, type) => {
-      if (gx >= 0 && gx < S && gy >= 0 && gy < S) {
-        tileMap.set(`${gx},${gy}`, type);
-      }
-    };
-    const fillRect = (gx0, gy0, gx1, gy1, type) => {
-      for (let gy = gy0; gy <= gy1; gy++) {
-        for (let gx = gx0; gx <= gx1; gx++) {
-          setTile(gx, gy, type);
-        }
-      }
-    };
-
-    // 1. North–South Central Cobblestone Avenue (`gx = 16..19, gy = 9..27`, `x = -2..+2, z = -9..+9`)
-    //    & East–West Cross-Street (`gx = 8..27, gy = 18..20`, `x = -10..+10, z = 0..+3`)
-    fillRect(16, 9, 19, 27, 'cobble');
-    fillRect(8, 18, 27, 20, 'cobble');
-
-    // Walkways & grid plots for South-West Couture Showcase (`(-7.6, 5.4)`) & South-East Exit Arch (`(7.8, 6.2)`)
-    fillRect(9, 20, 11, 24, 'cobble');
-    fillRect(9, 22, 11, 24, 'sakura');
-    fillRect(24, 20, 26, 25, 'cobble');
-    fillRect(24, 23, 26, 25, 'cream');
-
-    // 2. North Horizon Monument Terrace (`gx = 12..23, gy = 9..9`, `z = -9..-8`)
-    fillRect(12, 9, 23, 9, 'cream');
-
-    // 3. North Overlook Promenade (`gx = 6..29, gy = 13..14`, `z = -5.0..-3.0`)
-    fillRect(6, 13, 29, 14, 'cream');
-
-    // 4. Foreground Left & Right Lounge Feature Pads (`gx = 12..14, gy = 17..20` & `gx = 21..23, gy = 17..20`)
-    fillRect(12, 17, 14, 20, 'sakura');
-    fillRect(21, 17, 23, 20, 'sakura');
-
-    // 5. Central Couple Sanctuary Plaza (`gx = 14..21, gy = 17..21`, `x = -4..+4, z = -1..+3`)
-    fillRect(14, 17, 21, 21, 'cream');
-    fillRect(16, 18, 19, 20, 'sakura');
-
-    // 6. North Horizon Water Canal / Moat (`gy = 10..12`, `z = -8.0..-5.0`) + Central Footbridge (`gx = 16..19`)
-    if (isIndoor) {
-      fillRect(6, 10, 29, 12, 'cream');
-      fillRect(16, 10, 19, 12, 'sakura');
-    } else {
-      fillRect(3, 10, 32, 12, 'water');
-      fillRect(16, 10, 19, 12, 'bridge');
-    }
+    const tileMap = buildPortalTileMap(portal.id, S);
 
     // Group cells by tile type and create 1 merged mesh per type
     const byType = {};
@@ -2577,36 +3436,47 @@ export class NookMuseumScene {
     }
 
     const tileDefs = {
-      cobble: { url: '/assets/terrain/road_cobble.png', y: Y_ROAD, color: 0xd8c8b4 },
-      cream: { url: '/assets/terrain/road_cream.png', y: Y_ROAD, color: 0xf4e8d4 },
-      sakura: { url: '/assets/terrain/road_sakura.png', y: Y_ROAD, color: 0xf5d6de },
-      bridge: { url: '/assets/terrain/road_cobble.png', y: Y_BRIDGE, color: 0xe2d2be },
-      water: { url: '/assets/terrain/water_canal.png', y: Y_WATER, color: 0x48b8e8, water: true },
+      cobble: { url: '/assets/terrain/road_cobble.png', y: Y_ROAD, color: artSpec.cobbleColor },
+      cream: { url: '/assets/terrain/road_cream.png', y: Y_ROAD, color: artSpec.creamColor },
+      sakura: { url: '/assets/terrain/road_sakura.png', y: Y_ROAD, color: artSpec.sakuraColor },
+      bridge: { url: '/assets/terrain/road_cobble.png', y: Y_BRIDGE, color: artSpec.bridgeColor },
+      water: { url: '/assets/terrain/water_canal.png', y: Y_WATER, color: artSpec.waterColor, water: true },
     };
 
     for (const [type, cells] of Object.entries(byType)) {
       const def = tileDefs[type];
       if (!def || !cells.length) continue;
+      const canvasTex = createPortalTileCanvasTexture(portal.id, type, artSpec);
       const mat = new THREE.MeshBasicMaterial({
-        color: def.color,
+        map: canvasTex || null,
+        color: canvasTex ? 0xffffff : def.color,
         transparent: Boolean(def.water),
         opacity: def.water ? 0.96 : 1,
       });
-      loadBillboardTexture(
-        def.url,
-        (tex) => {
-          mat.map = tex;
-          mat.color.setHex(0xffffff);
-          mat.needsUpdate = true;
-        },
-        { repeat: true }
-      );
+      if (!canvasTex) {
+        loadBillboardTexture(
+          def.url,
+          (tex) => {
+            mat.map = tex;
+            mat.color.setHex(def.color);
+            mat.needsUpdate = true;
+          },
+          { repeat: true }
+        );
+      }
       const mesh = new THREE.Mesh(museumCellsGeometry(cells, def.y, 0.5, S), mat);
       mesh.name = `portal_tiles_${type}`;
+      mesh.userData = {
+        portalId: portal.id,
+        tileType: type,
+        tileColor: def.color,
+        cellCount: cells.length,
+        pattern: artSpec.pattern,
+      };
       archGroup.add(mesh);
     }
 
-    // 7. Merged 3D Raised Cream-Stone Road Curbs (`0xf3e5d0`) & Wildflower/Clover Overhang Tufts
+    // 7. Merged 3D Raised Road Curbs (`artSpec.curbColor`) & Wildflower/Clover Overhang Tufts (only in lush worlds)
     const curbGeos = [];
     const tuftUrls = [
       '/assets/village/decal_grass_daisies_b.png',
@@ -2623,7 +3493,7 @@ export class NookMuseumScene {
       const southGrass = !tileMap.has(`${gx},${gy + 1}`);
       if (westGrass) {
         curbGeos.push(new THREE.BoxGeometry(0.09, 0.035, 1.02).translate(c.x - 0.46, Y_ROAD + 0.015, c.z));
-        if ((gx + gy) % 3 === 0) {
+        if (artSpec.hasGrassTufts && (gx + gy) % 3 === 0) {
           const tuft = tuftUrls[(gx + gy) % tuftUrls.length];
           this.addRealmSprite(archGroup, tuft, 0.5, 0.4, {
             x: c.x - 0.48,
@@ -2635,7 +3505,7 @@ export class NookMuseumScene {
       }
       if (eastGrass) {
         curbGeos.push(new THREE.BoxGeometry(0.09, 0.035, 1.02).translate(c.x + 0.46, Y_ROAD + 0.015, c.z));
-        if ((gx + gy) % 3 === 1) {
+        if (artSpec.hasGrassTufts && (gx + gy) % 3 === 1) {
           const tuft = tuftUrls[(gx + gy) % tuftUrls.length];
           this.addRealmSprite(archGroup, tuft, 0.5, 0.4, {
             x: c.x + 0.48,
@@ -2653,9 +3523,10 @@ export class NookMuseumScene {
       }
     }
     if (curbGeos.length) {
-      const curbMat = new THREE.MeshBasicMaterial({ color: 0xf3e5d0 });
+      const curbMat = new THREE.MeshBasicMaterial({ color: artSpec.curbColor });
       const curbMesh = new THREE.Mesh(mergeStaticGeometries(curbGeos), curbMat);
       curbMesh.name = 'portal_road_curbs';
+      curbMesh.userData = { curbColor: artSpec.curbColor };
       curbMesh.matrixAutoUpdate = false;
       curbMesh.updateMatrix();
       archGroup.add(curbMesh);
@@ -2691,9 +3562,10 @@ export class NookMuseumScene {
         }
       }
       if (railGeos.length) {
-        const railMat = new THREE.MeshBasicMaterial({ color: 0xeee0c8 });
+        const railMat = new THREE.MeshBasicMaterial({ color: artSpec.bridgeCurbColor });
         const railMesh = new THREE.Mesh(mergeStaticGeometries(railGeos), railMat);
         railMesh.name = 'portal_bridge_curbs';
+        railMesh.userData = { bridgeCurbColor: artSpec.bridgeCurbColor };
         railMesh.matrixAutoUpdate = false;
         railMesh.updateMatrix();
         archGroup.add(railMesh);
@@ -2703,7 +3575,7 @@ export class NookMuseumScene {
       const bankGeos = [];
       waterCells.forEach(([gx, gy], idx) => {
         const c = cellCenter(gx, gy);
-        if (gy === 11 && idx % 3 === 1) {
+        if (artSpec.hasCanalFlora && gy === 11 && idx % 3 === 1) {
           const lily =
             idx % 2 === 0
               ? '/assets/village/decal_water_lily_white.png'
@@ -2728,7 +3600,7 @@ export class NookMuseumScene {
         }
         if (gy === 12) {
           bankGeos.push(new THREE.BoxGeometry(1.02, 0.04, 0.11).translate(c.x, Y_WATER + 0.015, c.z + 0.46));
-          if (gx === 12 || gx === 23) {
+          if (artSpec.hasCanalFlora && (gx === 12 || gx === 23)) {
             this.addRealmSprite(archGroup, '/assets/village/env_river_cattails.png', 0.82, 0.72, {
               x: c.x,
               y: 0,
@@ -2739,9 +3611,10 @@ export class NookMuseumScene {
         }
       });
       if (bankGeos.length) {
-        const bankMat = new THREE.MeshBasicMaterial({ color: 0x847b6e });
+        const bankMat = new THREE.MeshBasicMaterial({ color: artSpec.bankColor });
         const bankMesh = new THREE.Mesh(mergeStaticGeometries(bankGeos), bankMat);
         bankMesh.name = 'portal_canal_banks';
+        bankMesh.userData = { bankColor: artSpec.bankColor };
         bankMesh.matrixAutoUpdate = false;
         bankMesh.updateMatrix();
         archGroup.add(bankMesh);
@@ -2759,16 +3632,16 @@ export class NookMuseumScene {
       }
     }
 
-    // 9. Floating Sky-Island Cliff Rim & South Terracotta Cliff Wall (`z = +10.5`)
+    // 9. Floating Sky-Island Cliff Rim & South Cliff Wall (`z = +10.5`) tinted per world
     const southEdgeZ = 10.5;
     const wallMat = new THREE.MeshBasicMaterial({
-      color: 0xd8a882,
+      color: artSpec.cliffWallColor,
       transparent: false,
       alphaTest: 0.35,
       side: THREE.FrontSide,
     });
     const rimMat = new THREE.MeshBasicMaterial({
-      color: 0x7cb855,
+      color: artSpec.cliffRimColor,
       transparent: true,
       alphaTest: 0.02,
       depthWrite: false,
@@ -2776,12 +3649,12 @@ export class NookMuseumScene {
     });
     loadBillboardTexture('/assets/village/cliff_wall_strip.png', (tex) => {
       wallMat.map = tex;
-      wallMat.color.setHex(0xffffff);
+      wallMat.color.setHex(artSpec.cliffWallColor);
       wallMat.needsUpdate = true;
     });
     loadBillboardTexture('/assets/village/cliff_rim_turf_strip.png', (tex) => {
       rimMat.map = tex;
-      rimMat.color.setHex(0xffffff);
+      rimMat.color.setHex(artSpec.cliffRimColor);
       rimMat.needsUpdate = true;
     });
 
@@ -2838,6 +3711,7 @@ export class NookMuseumScene {
   buildSeasonCoutureShowcase(portalId) {
     const exhibit = MUSEUM_GACHA_EXHIBITS.find((ex) => ex.portalId === portalId);
     if (!exhibit) return;
+    const artSpec = getPortalFloorArtDirection(portalId);
 
     const showcaseGroup = new THREE.Group();
     showcaseGroup.name = `season_couture_showcase_${portalId}`;
@@ -2854,6 +3728,7 @@ export class NookMuseumScene {
         z: 0.05,
         opacity: 0.96,
         renderOrder: 1,
+        color: artSpec.sakuraColor,
         name: `couture_pad_${portalId}`,
       })
     );

@@ -173,14 +173,44 @@ export class WorldEngine {
   }
 
   getInstanceKind() {
+    if (this._frontierMode) return 'sky_frontier';
     if (this._museumMode || this.layout?.kind === 'museum') return 'museum';
     if (this._townhallMode || this.layout?.kind === 'townhall') return 'townhall';
     return this.layout?.kind || 'village';
   }
 
+  /** "Scene" kinds own their own bounds/picking and must never reach village-layout helpers. */
   isOpen36Kind() {
     const k = this.getInstanceKind();
-    return k === 'townhall' || k === 'museum';
+    return k === 'townhall' || k === 'museum' || k === 'sky_frontier';
+  }
+
+  /** Sky Frontier (Master Plan v2 §2): the active frontier scene, or null. */
+  get activeFrontier() {
+    return this._frontierMode && this.frontierScene ? this.frontierScene : null;
+  }
+
+  setFrontierMode(active, layout = null) {
+    this._frontierMode = !!active;
+    this.clearMoveState();
+    if (active) {
+      this._townhallMode = false; this._townhallLayout = null;
+      this._museumMode = false; this._museumLayout = null;
+      if (this.townHallScene) this.townHallScene.setActive(false);
+      if (this.nookMuseumScene) this.nookMuseumScene.setActive(false);
+      if (this.plaza?.root) this.plaza.root.visible = false;
+      for (const yp of this.yardPets) yp.dispose(this.scene);
+      this.yardPets = [];
+      this._frontierLayout = layout || { kind: 'sky_frontier', halfSize: 36 };
+      this.frontierScene?.enter?.(this._frontierLayout);
+    } else {
+      this._frontierLayout = null;
+      this.frontierScene?.exit?.();
+      if (!this._townhallMode && !this._museumMode) {
+        if (this.plaza?.root) this.plaza.root.visible = true;
+        if (this.local?.profile) this.syncYardPets(this.local.profile);
+      }
+    }
   }
 
   walkTo(x, z) {
@@ -255,6 +285,7 @@ export class WorldEngine {
     this._museumMode = !!active;
     this.clearMoveState();
     if (active) {
+      if (this._frontierMode) this.setFrontierMode(false);
       this._townhallMode = false;
       this._townhallLayout = null;
       if (this.townHallScene) this.townHallScene.setActive(false);
@@ -289,6 +320,7 @@ export class WorldEngine {
     this._townhallMode = !!active;
     this.clearMoveState();
     if (active) {
+      if (this._frontierMode) this.setFrontierMode(false);
       this._museumMode = false;
       this._museumLayout = null;
       if (this.nookMuseumScene) this.nookMuseumScene.setActive(false);
@@ -308,6 +340,7 @@ export class WorldEngine {
   }
 
   get layout() {
+    if (this._frontierMode) return this._frontierLayout || { kind: 'sky_frontier', halfSize: 36 };
     if (this._museumMode || this._museumLayout) return this._museumLayout || { kind: 'museum', size: 36 };
     if (this._townhallMode || this._townhallLayout) return this._townhallLayout || { kind: 'townhall', size: 36 };
     return this.plaza.layout;
@@ -375,7 +408,7 @@ export class WorldEngine {
   }
 
   syncYardPets(profile = this.local?.profile) {
-    if (!profile || !this.layout) return;
+    if (!profile || !this.layout || this.isOpen36Kind()) return;
     const eqId = profile.equipped?.pet?.id;
     const eqUid = profile.equipped?.pet?.uid;
     const unequipped = (profile.pets || []).filter((pt) => pt.uid !== eqUid && pt.id !== eqId).slice(0, 3);
@@ -658,11 +691,13 @@ export class WorldEngine {
       if (this.cloudDashUI?.active) {
         return;
       }
-      const picked = this.getInstanceKind() === 'museum' && this.nookMuseumScene
-        ? this.nookMuseumScene.pick(e.clientX, e.clientY)
-        : this.getInstanceKind() === 'townhall' && this.townHallScene
-          ? this.townHallScene.pick(e.clientX, e.clientY)
-          : this.plaza.pick(e.clientX, e.clientY);
+      const picked = this.activeFrontier
+        ? this.activeFrontier.pick(e.clientX, e.clientY)
+        : this.getInstanceKind() === 'museum' && this.nookMuseumScene
+          ? this.nookMuseumScene.pick(e.clientX, e.clientY)
+          : this.getInstanceKind() === 'townhall' && this.townHallScene
+            ? this.townHallScene.pick(e.clientX, e.clientY)
+            : this.plaza.pick(e.clientX, e.clientY);
       if (picked?.kind === 'landmark_walk' || picked?.kind === 'museum_interactive') return;
       if (picked?.kind === 'bubble' && this.onPick?.(picked, hit)) return;
       if (this.isOverLocalPet(e.clientX, e.clientY) && this.onPetTap && !picked) {
@@ -707,6 +742,10 @@ export class WorldEngine {
     if (anywhere) return p;
     if (this.moonDefenseUI?.active) {
       const half = this.moonDefenseUI.halfSize || 30;
+      return Math.abs(p.x) <= half && Math.abs(p.z) <= half ? p : null;
+    }
+    if (this.activeFrontier) {
+      const half = this.activeFrontier.halfSize || 36;
       return Math.abs(p.x) <= half && Math.abs(p.z) <= half ? p : null;
     }
     if (this.isOpen36Kind()) {
@@ -806,7 +845,7 @@ export class WorldEngine {
     this.lift = null;
     if (!L || !lift) return;
     let x = lift.x, z = lift.z, propId = null;
-    const g = this.layout && groundAt(this.layout, x, z, { canFly: this.canFly });
+    const g = this.layout && !this.isOpen36Kind() && groundAt(this.layout, x, z, { canFly: this.canFly });
 
     if (lift.target === 'pet' && L.pet) {
       L.pet.setLifted(false);
@@ -856,6 +895,7 @@ export class WorldEngine {
       if (this.moonDefenseUI.clampWalkable) return this.moonDefenseUI.clampWalkable(x, z);
       return { x: THREE.MathUtils.clamp(x, -17.2, 17.2), z: THREE.MathUtils.clamp(z, -17.2, 17.2) };
     }
+    if (this.activeFrontier) return this.activeFrontier.clampWalkable(x, z);
     if (this.isOpen36Kind()) {
       if (this.getInstanceKind() === 'townhall' && this.townHallScene?.siegeMode && !this.canFly && this.townHallScene.clampWalkable) {
         return this.townHallScene.clampWalkable(x, z);
@@ -872,6 +912,7 @@ export class WorldEngine {
       if (this.moonDefenseUI.isWalkable) return this.moonDefenseUI.isWalkable(x, z);
       return Math.abs(x) <= 17.2 && Math.abs(z) <= 17.2;
     }
+    if (this.activeFrontier) return this.activeFrontier.walkable(x, z);
     if (this.isOpen36Kind()) {
       if (this.getInstanceKind() === 'townhall' && this.townHallScene?.siegeMode && !this.canFly && this.townHallScene.isWalkable) {
         return this.townHallScene.isWalkable(x, z, 0.20);
@@ -1366,7 +1407,9 @@ export class WorldEngine {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > 95) c.position.x = -55;
     }
-    if (this.getInstanceKind() === 'museum') {
+    if (this.activeFrontier) {
+      this.activeFrontier.update?.(dt, this.camera);
+    } else if (this.getInstanceKind() === 'museum') {
       this.nookMuseumScene?.update?.(dt, this.camera, this.pitch);
     } else if (this.getInstanceKind() === 'townhall') {
       this.townHallScene?.update?.(dt, this.camera);

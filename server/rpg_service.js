@@ -586,7 +586,13 @@ function rollAndGrant(p, { box, BN, bannerId, count, activeFeatured }, rng) {
         p.village.decor[id] = (p.village.decor[id] | 0) + 1;
         out = { id, kind: 'decor', rarity: 1, count: p.village.decor[id] };
       }
-    } else out = grantWonder(p, pick(BOX2_POOL[r], rng));
+    } else {
+      // Stage 5 (§14): Wonders are Monuments now — built from materials in the Base Camp, never rolled.
+      // The Epic / Mythic Royal Architect tiers pay Starlight Shards instead (Stage 7 removes Box 2).
+      const shards = WONDER_DUPE_SHARDS[r] || 0;
+      p.shards += shards;
+      out = { id: `shards_${r}`, kind: 'shards', rarity: r, shards };
+    }
     shardsGained += out.shards || 0;
     items.push(out);
   }
@@ -651,6 +657,7 @@ export function gachaGiftOpen(p, sender, { giftId } = {}, rng = Math.random) {
 export function shardExchange(p, { offerId, pickId }, rng = Math.random) {
   const offer = SHARD_OFFERS[offerId];
   if (!offer) return fail('bad_offer');
+  if (offer.pick === 'wonder') return fail('monuments_are_built');   // Stage 5: Wonders → Monuments (Base Camp)
   if (offer.pick === 'outfit' && !SEASON_OUTFITS.includes(pickId)) return fail('bad_pick');
   if (offer.pick === 'wonder' && !VIP_WONDERS.includes(pickId)) return fail('bad_pick');
   if (offer.pick === 'dice' && !MYTHIC_DICE.includes(pickId)) return fail('bad_pick');
@@ -670,7 +677,7 @@ export function shardExchange(p, { offerId, pickId }, rng = Math.random) {
 // ---------------------------------------------------------------------------------------------
 // +10 Star-Force Forge
 // ---------------------------------------------------------------------------------------------
-export function blacksmithForge(p, { itemId, useBerries, useScroll }, now, rng = Math.random) {
+export function blacksmithForge(p, { itemId, useBerries, useScroll, useIngots }, now, rng = Math.random) {
   const it = p.inventory[itemId];
   if (!it || !itemDef(itemId)) return fail('not_owned');
   const from = it.refine | 0;
@@ -679,16 +686,21 @@ export function blacksmithForge(p, { itemId, useBerries, useScroll }, now, rng =
   const gold = FORGE.GOLD[target], dupes = FORGE.DUPES[target];
   const berries = useBerries ? FORGE.BERRY_COST : 0;
   const scrolls = useScroll ? 1 : 0;
+  const ingots = useIngots ? Math.max(1, Math.ceil(target / 2)) : 0;
   if (scrolls && !scrollAllowed(from)) return fail('scroll_not_allowed', { minTarget: FORGE.SCROLL_MIN_TARGET });
   if (p.gold < gold) return fail('not_enough_gold', { cost: gold });
   if ((it.dupes | 0) < dupes) return fail('not_enough_dupes', { need: dupes, have: it.dupes | 0 });
   if (p.berries < berries) return fail('not_enough_berries', { cost: berries });
   if ((p.bag_items?.[FORGE.SCROLL_ITEM] | 0) < scrolls) return fail('not_enough_scrolls');
+  const whItems = p.frontier?.warehouse?.items;
+  if (ingots && ((whItems?.ingot | 0) < ingots)) return fail('not_enough_ingots', { need: ingots, have: whItems?.ingot | 0 });
   const beforeBonus = computeUniversalStats(p).bonus;
   const onsenPct = p.buffs?.blacksmith && p.buffs.blacksmith.until > now ? p.buffs.blacksmith.pct | 0 : 0;
-  const chance = forgeChance(from, { useBerries: !!useBerries, useScroll: !!scrolls, onsenPct, pityFails: it.pity });
+  const ingotPct = ingots ? 12 : 0;
+  const chance = Math.min(100, forgeChance(from, { useBerries: !!useBerries, useScroll: !!scrolls, onsenPct: onsenPct + ingotPct, pityFails: it.pity }));
   p.gold -= gold; p.berries -= berries; it.dupes = (it.dupes | 0) - dupes;
   if (scrolls) p.bag_items[FORGE.SCROLL_ITEM] -= scrolls;
+  if (ingots && whItems) { whItems.ingot -= ingots; if (whItems.ingot <= 0) delete whItems.ingot; }
   const success = rng() * 100 < chance;
   let sovereign = false;
   if (success) {
@@ -703,7 +715,7 @@ export function blacksmithForge(p, { itemId, useBerries, useScroll }, now, rng =
   const buildUpdate = success ? checkBuildDiscovery(p, beforeBonus) : null;
   return {
     ok: true, itemId, success, newStar: it.refine, chance, pity: it.pity, pityPct: it.pity * FORGE.PITY_PER_FAIL,
-    spent: { gold, berries, dupes, scrolls }, onsenPct, sovereign, buildUpdate,
+    spent: { gold, berries, dupes, scrolls, ...(ingots ? { ingots } : {}) }, onsenPct, ...(ingots ? { ingotPct } : {}), sovereign, buildUpdate,
   };
 }
 

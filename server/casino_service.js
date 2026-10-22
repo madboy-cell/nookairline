@@ -17,6 +17,21 @@ import {
   spinRoulette,
   settleRoulette,
 } from '../shared/casino_rules.js';
+import {
+  executeCasinoMaterialExchange,
+  validateCasinoMaterialExchange,
+  CASINO_MATERIAL_EXCHANGES,
+  CASINO_MATERIAL_WEEKLY_CAP,
+  getIsoWeek,
+} from '../shared/minigame_rewards.js';
+
+export {
+  executeCasinoMaterialExchange,
+  validateCasinoMaterialExchange,
+  CASINO_MATERIAL_EXCHANGES,
+  CASINO_MATERIAL_WEEKLY_CAP,
+  getIsoWeek,
+};
 
 const dayKey = (t) => new Date(t).toISOString().slice(0, 10);
 
@@ -570,6 +585,21 @@ export function createCasinoAdapter({
         return { ok: true };
       }
 
+      // Sky Frontier minigame materials hook (§13)
+      if (m.type === 'casino_material_exchange') {
+        const p = db.getProfile(userId);
+        if (!p) return sendError(t, userId, 'no_profile');
+        const res = executeCasinoMaterialExchange(p, m.item, getNow());
+        if (!res.ok) {
+          sendMsg(userId, { type: 'casino_error', tableId: t?.id, error: res.error });
+          return res;
+        }
+        db.markProfile(p.id);
+        pushProfile(p);
+        sendMsg(userId, { type: 'casino_material_exchange_result', tableId: t?.id, ...res });
+        return res;
+      }
+
       if (c.game === 'pokdeng') {
         if (m.type === 'casino_bet') {
           if (c.phase !== 'betting') return sendError(t, userId, 'wrong_phase');
@@ -807,6 +837,10 @@ export function createCasinoAdapter({
         }
       }
       sendStateTo(t, userId);
+    },
+
+    exchangeMaterial(p, item, nowMs = getNow()) {
+      return executeCasinoMaterialExchange(p, item, nowMs);
     },
   };
 }

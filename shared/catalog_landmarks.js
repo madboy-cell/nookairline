@@ -26,46 +26,65 @@ export const lerpStar = (s1, s5, stars) => s1 + ((s5 - s1) * (Math.max(1, Math.m
 export const CORE = {
   castle: {
     kind: 'core', sprite: 'bld_castle', name: 'Grand Starlight Castle', emoji: '🏰', w: 4, h: 4, unique: true,
-    effect: '+2% All-Building Yield per Lv • unlocks Cloud Territory',
+    effect: 'Starlight Keep: story board & caps',
   },
+  // Stage 3 "Village Base Camp": no core building prints passive currency any more —
+  // each one is a production / service building fed by Sky Frontier materials.
   mint: {
     kind: 'core', sprite: 'bld_mint', name: 'Royal Gold Waterwheel Mint', emoji: '🪙', w: 3, h: 3,
-    produces: 'gold', perHour: (lv) => Math.floor(lerpLv(150, 1200, lv)), effect: 'Passive Gold 150 → 1,200 🪙/hr',
+    effect: 'Refinery: Ore → Ingots',
   },
   shrine: {
     kind: 'core', sprite: 'bld_shrine', name: 'Goddess Vakarine Shrine', emoji: '🗽', w: 2, h: 2,
-    daily: 'diamonds', perDay: (lv) => Math.floor(lerpLv(15, 60, lv)), effect: 'Free Daily Diamonds 15 → 60 💎/day',
+    effect: 'Goddess Waystone (Update 1)',
   },
   patisserie: {
     kind: 'core', sprite: 'bld_patisserie', name: 'Cat Boba Patisserie', emoji: '🧋', w: 3, h: 3,
-    produces: 'berries', perHour: (lv) => Math.floor(lerpLv(20, 120, lv)),
-    matchGoldPct: (lv) => Math.round(lerpLv(2, 20, lv)), effect: 'Star-Berries 20 → 120 🍓/hr',
+    effect: 'Cat Boba Patisserie: bread, meals & boba',
   },
   nest: {
     kind: 'core', sprite: 'bld_nest', name: 'Cozy Pet Nest & Sanctuary', emoji: '🥚', w: 2, h: 2,
-    traitOdds: (lv) => +lerpLv(1, 2, lv).toFixed(3), effect: 'Mythic/Epic Pet Trait Odds 1.0x → 2.0x',
+    traitOdds: (lv) => +lerpLv(1, 2, lv).toFixed(3), effect: 'Pet Sanctuary Barn',
   },
   dock: {
     kind: 'core', sprite: 'bld_dock', name: 'Starlight Fishing Dock', emoji: '🎣', w: 3, h: 2, needsWater: true,
-    effect: 'Offline Storage Cap 8h → 24h • Co-Op Fishing',
+    effect: 'Sky Harbor & fishing',
   },
   windmill_bakery: {
     kind: 'core', sprite: 'bld_windmill_bakery', name: 'Warm Croissant Windmill Bakery', emoji: '🥐', w: 3, h: 3, series2: true,
-    produces: 'berries', perHour: (lv) => Math.floor(lerpLv(25, 140, lv)), effect: 'Artisan Croissants & Star-Berries 25 → 140 🍓/hr',
+    effect: 'Mill: Wheat → Flour',
   },
   flower_greenhouse: {
     kind: 'core', sprite: 'bld_flower_greenhouse', name: 'Botanical Glasshouse Conservatory', emoji: '🌺', w: 2, h: 2, series2: true,
-    produces: 'berries', perHour: (lv) => Math.floor(lerpLv(18, 100, lv)), effect: 'Glasshouse Blossoms & Star-Berries 18 → 100 🍓/hr',
+    effect: 'Herbalist: herbs, potions, repair kits',
   },
   owl_post_office: {
     kind: 'core', sprite: 'bld_owl_post_office', name: 'Messenger Owl Post Office', emoji: '🦉', w: 2, h: 2, series2: true,
-    produces: 'gold', perHour: (lv) => Math.floor(lerpLv(120, 960, lv)), effect: 'Couple Letter Delivery & Gold 120 → 960 🪙/hr',
+    effect: 'Order Board',
   },
   starlight_lighthouse: {
     kind: 'core', sprite: 'bld_starlight_lighthouse', name: 'Starlight Harbor Lighthouse', emoji: '🏮', w: 2, h: 2, needsWater: true, series2: true,
-    effect: '+10% Co-Op Fishing Chest Luck • Guiding Beacon',
+    effect: 'Sky Beacon (Update 1)',
+  },
+  workshop: {
+    kind: 'core', sprite: 'bld_workshop', name: "Tinker's Workshop", emoji: '🔨', w: 3, h: 3, basecamp: true,
+    effect: 'Planks, thread & frontier tools',
+  },
+  cottage: {
+    kind: 'core', sprite: 'bld_cottage', name: 'Settler Cottage', emoji: '🏡', w: 2, h: 2, basecamp: true,
+    effect: 'Home for one village resident',
+  },
+  farm_plot: {
+    kind: 'core', sprite: 'bld_farm_plot', name: 'Farm Plot', emoji: '🌾', w: 2, h: 2, basecamp: true,
+    effect: 'Plant Sky Wheat, Berries & Herbs',
+  },
+  tent: {
+    kind: 'core', sprite: 'dec_tent', name: 'Camp Tent & Campfire', emoji: '⛺', w: 2, h: 2, basecamp: true,
+    effect: 'Base camp shelter & campfire',
   },
 };
+/** Base-camp utility buildings: excluded from the Castle `core` building cap. */
+export const UNCAPPED_CORE = ['farm_plot', 'tent', 'cottage'];
 export const CORE_LANDMARKS = ['mint', 'shrine', 'patisserie', 'nest', 'dock']; // the 5 blueprint landmarks
 
 /** Blueprint cards needed to go from Lv L to L+1 (index = L). Section 2.B. */
@@ -84,55 +103,60 @@ export function buildingCaps(castleLv) {
 export const MAX_COPIES_PER_CORE = 2;
 
 // ---------------------------------------------------------------------------------------------
-// VIP Wonders (Box 2 Royal Architect Gacha / 350 🌟 Shard Shop). Buff ranges scale ★1 → ★5.
+// VIP Wonders → Monuments (Master Plan v2 §11.4 / §14). No longer granted by the Royal Architect gacha:
+// `monument: true` entries are BUILT in stages from materials (shared/monument_rules.js + basecamp_service);
+// `cut: true` entries are retired (art kept, existing copies stay placeable, no new ownership).
 // ---------------------------------------------------------------------------------------------
 export const WONDERS = {
   wnd_onsen: {
     kind: 'wonder', sprite: 'wnd_onsen', name: 'Capybara Yuzu Hot Spring', emoji: '♨️', w: 3, h: 3, rarity: 2,
-    blacksmithPct: (s) => lerpStar(15, 25, s), buffMs: 3600_000, effect: '+15–25% Blacksmith Success for 1h (drop your Chibi in!)',
+    blacksmithPct: (s) => lerpStar(15, 25, s), buffMs: 3600_000, monument: true,
+    effect: 'Monument • Soak for Well-Rested: +15% gather yield for 30 min (every 4h)',
   },
   wnd_ferris: {
     kind: 'wonder', sprite: 'wnd_ferris', name: 'Couple Heart Ferris Wheel', emoji: '🎡', w: 4, h: 4, rarity: 3,
-    matchYieldPct: (s) => lerpStar(25, 50, s), effect: '+25–50% Post-Match Gold & Star-Berries',
+    matchYieldPct: (s) => lerpStar(25, 50, s), monument: true, heartIsleOnly: true,
+    effect: 'Monument • Heart Isle only • +10% Date buff for 30 min',
   },
   wnd_fountain: {
     kind: 'wonder', sprite: 'wnd_fountain', name: 'Fountain of 1,000 Wishes', emoji: '⛲', w: 3, h: 3, rarity: 3,
-    tossCost: 100, effect: 'Daily 100 🪙 toss → +10–50 💎 or 1 Summon Ticket',
+    tossCost: 100, monument: true, effect: 'Monument • Daily 100 🪙 wish → a rare material',
   },
   wnd_casino_dome: {
-    kind: 'wonder', sprite: 'wnd_casino_dome', name: 'Grand Golden Casino Dome', emoji: '🎰', w: 4, h: 4, rarity: 3,
+    kind: 'wonder', sprite: 'wnd_casino_dome', name: 'Grand Golden Casino Dome', emoji: '🎰', w: 4, h: 4, rarity: 3, cut: true,
     effect: '2× Offline Storage Cap • +10% Monopoly Start Cash • −8% Land Cost',
   },
   wnd_world_tree: {
-    kind: 'wonder', sprite: 'wnd_world_tree', name: 'Golden Starlight World-Tree', emoji: '🌳', w: 4, h: 4, rarity: 3,
+    kind: 'wonder', sprite: 'wnd_world_tree', name: 'Golden Starlight World-Tree', emoji: '🌳', w: 4, h: 4, rarity: 3, monument: true, update1: true,
     perDay: (s) => Math.floor(lerpStar(5, 15, s)), effect: '+5–15 💎 daily • +15–30% stats in Moon Bunny & Cloud Dash',
   },
   wnd_sakura_pagoda: {
-    kind: 'wonder', sprite: 'wnd_sakura_pagoda', name: 'Kyoto Five-Tier Sakura Pagoda', emoji: '⛩️', w: 4, h: 4, rarity: 3, series3: true,
+    kind: 'wonder', sprite: 'wnd_sakura_pagoda', name: 'Kyoto Five-Tier Sakura Pagoda', emoji: '⛩️', w: 4, h: 4, rarity: 3, series3: true, cut: true,
     matchYieldPct: (s) => lerpStar(20, 45, s), effect: '+20–45% Post-Match Gold & Sakura Blessing',
   },
   wnd_mirage_palace: {
-    kind: 'wonder', sprite: 'wnd_mirage_palace', name: "Sultan's Golden Mirage Palace", emoji: '🕌', w: 4, h: 4, rarity: 3, series3: true,
+    kind: 'wonder', sprite: 'wnd_mirage_palace', name: "Sultan's Golden Mirage Palace", emoji: '🕌', w: 4, h: 4, rarity: 3, monument: true, update1: true, series3: true,
     matchYieldPct: (s) => lerpStar(25, 50, s), effect: '+25–50% Oasis Gold Yield • +10% Monopoly Start Cash',
   },
   wnd_atlantis_sanctuary: {
-    kind: 'wonder', sprite: 'wnd_atlantis_sanctuary', name: 'Atlantis Pearl-Shell Palace', emoji: '🐚', w: 4, h: 4, rarity: 3, series3: true,
+    kind: 'wonder', sprite: 'wnd_atlantis_sanctuary', name: 'Atlantis Pearl-Shell Palace', emoji: '🐚', w: 4, h: 4, rarity: 3, monument: true, update1: true, series3: true,
     perDay: (s) => Math.floor(lerpStar(8, 20, s)), effect: '+8–20 💎 Daily Pearl Tribute • +20% Fishing Chest Luck',
   },
   wnd_aurora_observatory: {
-    kind: 'wonder', sprite: 'wnd_aurora_observatory', name: 'Starlight Aurora Observatory', emoji: '🔭', w: 4, h: 4, rarity: 3, series3: true,
+    kind: 'wonder', sprite: 'wnd_aurora_observatory', name: 'Starlight Aurora Observatory', emoji: '🔭', w: 4, h: 4, rarity: 3, monument: true, update1: true, series3: true,
     perDay: (s) => Math.floor(lerpStar(8, 20, s)), effect: '+8–20 💎 Daily Astral Reading • +15% Star-Force Focus',
   },
   wnd_tea_pavilion: {
     kind: 'wonder', sprite: 'wnd_tea_pavilion', name: 'Floating Matcha & Koi Tea House', emoji: '🍵', w: 3, h: 3, rarity: 2, series3: true,
-    blacksmithPct: (s) => lerpStar(15, 25, s), buffMs: 3600_000, effect: '+15–25% Cozy Tea Harmony & Blacksmith Focus for 1h',
+    blacksmithPct: (s) => lerpStar(15, 25, s), buffMs: 3600_000, monument: true,
+    effect: 'Monument • Unlocks the Matcha Tea recipe (brewed here)',
   },
   wnd_sky_airship_dock: {
-    kind: 'wonder', sprite: 'wnd_sky_airship_dock', name: 'Royal Starlight Airship Harbor', emoji: '🛳️', w: 3, h: 3, rarity: 2, series3: true,
+    kind: 'wonder', sprite: 'wnd_sky_airship_dock', name: 'Royal Starlight Airship Harbor', emoji: '🛳️', w: 3, h: 3, rarity: 2, series3: true, cut: true,
     matchYieldPct: (s) => lerpStar(15, 35, s), effect: '+15–35% Sky-Harbor Trade Gold & Offline Storage',
   },
   wnd_burj_khalifa: {
-    kind: 'wonder', sprite: 'wnd_burj_khalifa', name: 'Burj Khalifa & Dancing Fountain', emoji: '🏙️', w: 4, h: 4, rarity: 3, series3: true, spriteScale: 0.90,
+    kind: 'wonder', sprite: 'wnd_burj_khalifa', name: 'Burj Khalifa & Dancing Fountain', emoji: '🏙️', w: 4, h: 4, rarity: 3, series3: true, spriteScale: 0.90, cut: true,
     matchYieldPct: (s) => lerpStar(30, 55, s), perDay: (s) => Math.floor(lerpStar(10, 25, s)),
     effect: '+30–55% Post-Match Gold • +10–25 💎 Daily Dubai Royal Tribute',
   },
@@ -141,46 +165,48 @@ export const WONDER_DUPE_SHARDS = { 2: 25, 3: 100 };
 
 // ---------------------------------------------------------------------------------------------
 // Cute Decor (Section 2.E). Comfort: +120 first copy, +30 each extra copy, decor total capped 2,400.
+// Stage 5 (§11.5): flat stat buffs removed — `campProp` = functional prop, `cosmetic` = comfort only,
+// `cut` = retired (owned copies stay placeable, not craftable), `protected` = NookAirline Museum.
 // ---------------------------------------------------------------------------------------------
 export const DECOR = {
-  dec_swing:               { kind: 'decor', sprite: 'dec_swing', name: 'Sakura Couple Swing-Bench', emoji: '🪑', w: 2, h: 2, buff: { goldPct: 2 }, seats: 2, effect: '+2% Village Gold/hr' },
-  dec_picnic:              { kind: 'decor', sprite: 'dec_picnic', name: 'Strawberry Tart Picnic Mat', emoji: '🧺', w: 2, h: 2, buff: { berriesPct: 2 }, seats: 3, effect: '+2% Star-Berries/hr' },
-  dec_gramophone:          { kind: 'decor', sprite: 'dec_gramophone', name: 'Golden Gramophone Jukebox', emoji: '🎶', w: 1, h: 1, buff: { petMoodPct: 2 }, effect: '+2% Pet Mood • tap to switch BGM' },
-  dec_tent:                { kind: 'decor', sprite: 'dec_tent', name: 'Starlight Glamping Tent & Campfire', emoji: '⛺', w: 2, h: 2, buff: { storagePct: 5 }, effect: '+5% Offline Storage Cap' },
-  dec_cat_cushion:         { kind: 'decor', sprite: 'dec_cat_cushion', name: 'Giant Cat-Paw Cushion & Tree', emoji: '🐱', w: 1, h: 1, buff: { traitLuckPct: 3 }, effect: '+3% Pet Trait Roll Luck' },
-  dec_balloon_cart:        { kind: 'decor', sprite: 'dec_balloon_cart', name: 'Cotton-Candy Balloon Cart', emoji: '🎈', w: 1, h: 1, buff: { swiftnessPct: 2 }, effect: '+2% Swiftness' },
-  dec_mushroom_ring:       { kind: 'decor', sprite: 'dec_mushroom_ring', name: 'Glowing Fairy Mushroom Ring', emoji: '🌷', w: 1, h: 1, buff: { fortunePct: 2 }, effect: '+2% Fortune' },
-  dec_birdbath_lamp:       { kind: 'decor', sprite: 'dec_birdbath_lamp', name: 'Rose-Gold Birdbath & Streetlamp', emoji: '⛲', w: 1, h: 1, buff: { luckPct: 2 }, effect: '+2% Luck' },
-  dec_wooden_bench:        { kind: 'decor', sprite: 'dec_wooden_bench', name: 'Cozy Carved Park Bench', emoji: '🪵', w: 2, h: 1, series2: true, seats: 2, buff: { comfortBonus: 30 }, effect: '+30 Comfort • 2-Chibi Seat' },
-  dec_flower_cart:         { kind: 'decor', sprite: 'dec_flower_cart', name: 'Pastel Blossom Wheel-Cart', emoji: '💐', w: 2, h: 2, series2: true, buff: { berriesPct: 2 }, effect: '+2% Star-Berries/hr' },
-  dec_boba_stand:          { kind: 'decor', sprite: 'dec_boba_stand', name: 'Strawberry-Cat Boba Tea Cart', emoji: '🧋', w: 2, h: 2, series2: true, buff: { goldPct: 2 }, effect: '+2% Village Gold/hr' },
-  dec_wishing_well:        { kind: 'decor', sprite: 'dec_wishing_well', name: 'Fairytale Stone Wishing Well', emoji: '🪣', w: 2, h: 2, series2: true, buff: { luckPct: 3 }, effect: '+3% Luck' },
-  dec_honey_beehive:       { kind: 'decor', sprite: 'dec_honey_beehive', name: 'Golden Meadow Honey Beehive', emoji: '🐝', w: 1, h: 1, series2: true, buff: { berriesPct: 2 }, effect: '+2% Star-Berries/hr' },
-  dec_cat_bakery_sign:     { kind: 'decor', sprite: 'dec_cat_bakery_sign', name: 'Croissant-Cat Bakery Board', emoji: '🥐', w: 1, h: 1, series2: true, buff: { goldPct: 1 }, effect: '+1% Patisserie & Mint Yield' },
-  dec_couple_hammock:      { kind: 'decor', sprite: 'dec_couple_hammock', name: 'Blossom-Draped Couple Hammock', emoji: '🌸', w: 2, h: 1, series2: true, seats: 2, buff: { petMoodPct: 3 }, effect: '+3% Couple Harmony & Pet Mood' },
-  dec_koi_barrel_pond:     { kind: 'decor', sprite: 'dec_koi_barrel_pond', name: 'Mini Oak-Barrel Lotus & Koi Pond', emoji: '🪷', w: 2, h: 2, series2: true, buff: { fortunePct: 3 }, effect: '+3% Fishing & Fortune Luck' },
-  dec_painter_easel:       { kind: 'decor', sprite: 'dec_painter_easel', name: "Sunlit Storybook Painter's Easel", emoji: '🎨', w: 1, h: 1, series2: true, buff: { comfortBonus: 25 }, effect: '+25 Comfort' },
-  dec_berry_wheelbarrow:   { kind: 'decor', sprite: 'dec_berry_wheelbarrow', name: 'Star-Berry Harvest Wheelbarrow', emoji: '🍓', w: 1, h: 1, series2: true, buff: { storagePct: 2 }, effect: '+2% Offline Storage Cap' },
-  dec_starlight_telescope: { kind: 'decor', sprite: 'dec_starlight_telescope', name: 'Brass Starlight Stargazer Telescope', emoji: '🔭', w: 1, h: 1, series2: true, buff: { fortunePct: 2 }, effect: '+2% Starlight Fortune' },
-  dec_owl_mailbox:         { kind: 'decor', sprite: 'dec_owl_mailbox', name: 'Sleepy Owl Postbox & Parcel Stack', emoji: '📮', w: 1, h: 1, series2: true, buff: { swiftnessPct: 2 }, effect: '+2% Swiftness' },
-  dec_sakura_drum_bridge:   { kind: 'decor', sprite: 'dec_sakura_drum_bridge', name: 'Kyoto Red-Lacquer Drum Bridge', emoji: '🌉', w: 2, h: 1, series3: true, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr' },
-  dec_bamboo_shishi_odoshi: { kind: 'decor', sprite: 'dec_bamboo_shishi_odoshi', name: 'Kyoto Bamboo Water-Spout Rockery', emoji: '🎍', w: 2, h: 2, series3: true, buff: { petMoodPct: 3 }, effect: '+3% Pet Mood & Zen Serenity' },
-  dec_sultan_bazaar_canopy: { kind: 'decor', sprite: 'dec_sultan_bazaar_canopy', name: "Silk-Draped Sultan's Oasis Tent", emoji: '🎪', w: 2, h: 2, series3: true, seats: 2, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr • 2-Chibi Lounge' },
-  dec_oasis_obelisk_fountain: { kind: 'decor', sprite: 'dec_oasis_obelisk_fountain', name: 'Golden Sun-Disc Obelisk Fountain', emoji: '☀️', w: 2, h: 2, series3: true, buff: { fortunePct: 3 }, effect: '+3% Fortune' },
-  dec_siren_shell_fountain: { kind: 'decor', sprite: 'dec_siren_shell_fountain', name: 'Atlantis Giant Clam & Harp Fountain', emoji: '🐚', w: 2, h: 2, series3: true, buff: { luckPct: 3 }, effect: '+3% Luck & Pearl Sparkle' },
-  dec_coral_crystal_arch:   { kind: 'decor', sprite: 'dec_coral_crystal_arch', name: 'Glowing Coral & Sea-Glass Archway', emoji: '🪸', w: 2, h: 1, series3: true, buff: { berriesPct: 3 }, effect: '+3% Star-Berries/hr' },
-  dec_aurora_crystal_gazebo: { kind: 'decor', sprite: 'dec_aurora_crystal_gazebo', name: 'Glacial Crystal Swan Gazebo', emoji: '🦢', w: 2, h: 2, series3: true, seats: 2, buff: { traitLuckPct: 3 }, effect: '+3% Pet Trait Roll Luck' },
-  dec_stone_arch_footbridge: { kind: 'decor', sprite: 'dec_stone_arch_footbridge', name: 'Royal Carved Stone Arch Footbridge', emoji: '🌉', w: 2, h: 2, series3: true, buff: { comfortBonus: 40 }, effect: '+40 Comfort • Brook Crossing' },
-  dec_heaven_winged_pillar:  { kind: 'decor', sprite: 'dec_heaven_winged_pillar', name: 'Celestial Winged Sun-Orb Pillar', emoji: '🏛️', w: 1, h: 1, series3: true, buff: { fortunePct: 3 }, effect: '+3% Celestial Fortune' },
-  dec_heaven_cloud_arch:     { kind: 'decor', sprite: 'dec_heaven_cloud_arch', name: 'Heavenly Winged Cloud Archway', emoji: '🪽', w: 2, h: 1, series3: true, buff: { goldPct: 3 }, effect: '+3% Village Gold/hr' },
-  dec_heaven_divine_tree:    { kind: 'decor', sprite: 'dec_heaven_divine_tree', name: 'Sacred Pearl-Blossom Heaven Tree', emoji: '🌳', w: 2, h: 2, series3: true, buff: { berriesPct: 3 }, effect: '+3% Star-Berries/hr' },
-  dec_heaven_lotus_fountain: { kind: 'decor', sprite: 'dec_heaven_lotus_fountain', name: 'Celestial Lotus & Cloud Basin', emoji: '🪷', w: 2, h: 2, series3: true, buff: { luckPct: 3 }, effect: '+3% Divine Wish Luck' },
-  dec_heaven_seraph_harp:    { kind: 'decor', sprite: 'dec_heaven_seraph_harp', name: 'Golden Seraphim Angel-Wing Lyre', emoji: '🪉', w: 1, h: 1, series3: true, buff: { petMoodPct: 3 }, effect: '+3% Seraphim Harmony & Pet Mood' },
-  dec_palm_jumeirah_island:  { kind: 'decor', sprite: 'dec_palm_jumeirah_island', name: 'Palm Jumeirah & Royal Atlantis Lagoon', emoji: '🏝️', w: 2, h: 2, series3: true, spriteScale: 1.05, buff: { goldPct: 4 }, effect: '+4% Village Gold/hr • Palm Archipelago' },
-  dec_burj_al_arab_sail:     { kind: 'decor', sprite: 'dec_burj_al_arab_sail', name: 'Burj Al Arab Golden Sail Hotel', emoji: '⛵', w: 2, h: 2, series3: true, spriteScale: 0.82, buff: { fortunePct: 4 }, effect: '+4% Royal Dubai Fortune' },
-  dec_museum_of_the_future:  { kind: 'decor', sprite: 'dec_museum_of_the_future', name: 'Dubai Museum of the Future Torus', emoji: '🪐', w: 2, h: 2, series3: true, buff: { luckPct: 4 }, effect: '+4% Future Vision Luck' },
-  dec_dubai_dallah_majlis:   { kind: 'decor', sprite: 'dec_dubai_dallah_majlis', name: 'Emirati Dallah Coffee & Falcon Majlis', emoji: '🦅', w: 2, h: 2, series3: true, seats: 2, buff: { petMoodPct: 4 }, effect: '+4% Royal Falcon Mood • 2-Chibi Majlis' },
-  dec_nookairline_museum:    { kind: 'decor', sprite: 'dec_nookairline_museum', name: 'NookAirline V1 Memory Museum & 2.5D Portals', emoji: '✈️', w: 2, h: 2, series3: true, spriteScale: 1.35, seats: 2, buff: { fortunePct: 5, luckPct: 5 }, effect: 'Enter Nook & Neen V1 Memory Museum & 2.5D Mount Fuji Portal! (+5% Couple Fortune & Luck)' },
+  dec_swing:               { kind: 'decor', sprite: 'dec_swing', name: 'Sakura Couple Swing-Bench', emoji: '🪑', w: 2, h: 2, buff: {}, seats: 2, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_picnic:              { kind: 'decor', sprite: 'dec_picnic', name: 'Strawberry Tart Picnic Mat', emoji: '🧺', w: 2, h: 2, buff: {}, seats: 3, campProp: true, effect: 'Camp Prop • Visitor Picnic buff (20 min)' },
+  dec_gramophone:          { kind: 'decor', sprite: 'dec_gramophone', name: 'Golden Gramophone Jukebox', emoji: '🎶', w: 1, h: 1, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_tent:                { kind: 'decor', sprite: 'dec_tent', name: 'Starlight Glamping Tent & Campfire', emoji: '⛺', w: 2, h: 2, buff: {}, campProp: true, effect: 'Camp Prop • Free Bread once a day' },
+  dec_cat_cushion:         { kind: 'decor', sprite: 'dec_cat_cushion', name: 'Giant Cat-Paw Cushion & Tree', emoji: '🐱', w: 1, h: 1, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_balloon_cart:        { kind: 'decor', sprite: 'dec_balloon_cart', name: 'Cotton-Candy Balloon Cart', emoji: '🎈', w: 1, h: 1, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_mushroom_ring:       { kind: 'decor', sprite: 'dec_mushroom_ring', name: 'Glowing Fairy Mushroom Ring', emoji: '🌷', w: 1, h: 1, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_birdbath_lamp:       { kind: 'decor', sprite: 'dec_birdbath_lamp', name: 'Rose-Gold Birdbath & Streetlamp', emoji: '⛲', w: 1, h: 1, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_wooden_bench:        { kind: 'decor', sprite: 'dec_wooden_bench', name: 'Cozy Carved Park Bench', emoji: '🪵', w: 2, h: 1, series2: true, seats: 2, buff: { comfortBonus: 30 }, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_flower_cart:         { kind: 'decor', sprite: 'dec_flower_cart', name: 'Pastel Blossom Wheel-Cart', emoji: '💐', w: 2, h: 2, series2: true, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_boba_stand:          { kind: 'decor', sprite: 'dec_boba_stand', name: 'Strawberry-Cat Boba Tea Cart', emoji: '🧋', w: 2, h: 2, series2: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_wishing_well:        { kind: 'decor', sprite: 'dec_wishing_well', name: 'Fairytale Stone Wishing Well', emoji: '🪣', w: 2, h: 2, series2: true, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_honey_beehive:       { kind: 'decor', sprite: 'dec_honey_beehive', name: 'Golden Meadow Honey Beehive', emoji: '🐝', w: 1, h: 1, series2: true, buff: {}, campProp: true, effect: 'Camp Prop • +1 Honey every 2h' },
+  dec_cat_bakery_sign:     { kind: 'decor', sprite: 'dec_cat_bakery_sign', name: 'Croissant-Cat Bakery Board', emoji: '🥐', w: 1, h: 1, series2: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_couple_hammock:      { kind: 'decor', sprite: 'dec_couple_hammock', name: 'Blossom-Draped Couple Hammock', emoji: '🌸', w: 2, h: 1, series2: true, seats: 2, buff: {}, campProp: true, effect: 'Camp Prop • Couple Harmony buff (30 min)' },
+  dec_koi_barrel_pond:     { kind: 'decor', sprite: 'dec_koi_barrel_pond', name: 'Mini Oak-Barrel Lotus & Koi Pond', emoji: '🪷', w: 2, h: 2, series2: true, buff: {}, campProp: true, effect: 'Camp Prop • +1 Fish every 3h' },
+  dec_painter_easel:       { kind: 'decor', sprite: 'dec_painter_easel', name: "Sunlit Storybook Painter's Easel", emoji: '🎨', w: 1, h: 1, series2: true, buff: { comfortBonus: 25 }, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_berry_wheelbarrow:   { kind: 'decor', sprite: 'dec_berry_wheelbarrow', name: 'Star-Berry Harvest Wheelbarrow', emoji: '🍓', w: 1, h: 1, series2: true, buff: {}, campProp: true, effect: 'Camp Prop • +10% Warehouse Capacity' },
+  dec_starlight_telescope: { kind: 'decor', sprite: 'dec_starlight_telescope', name: 'Brass Starlight Stargazer Telescope', emoji: '🔭', w: 1, h: 1, series2: true, buff: {}, campProp: true, effect: 'Camp Prop • Preview upcoming events' },
+  dec_owl_mailbox:         { kind: 'decor', sprite: 'dec_owl_mailbox', name: 'Sleepy Owl Postbox & Parcel Stack', emoji: '📮', w: 1, h: 1, series2: true, buff: {}, campProp: true, effect: 'Camp Prop • +1 Order Board slot' },
+  dec_sakura_drum_bridge:   { kind: 'decor', sprite: 'dec_sakura_drum_bridge', name: 'Kyoto Red-Lacquer Drum Bridge', emoji: '🌉', w: 2, h: 1, series3: true, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_bamboo_shishi_odoshi: { kind: 'decor', sprite: 'dec_bamboo_shishi_odoshi', name: 'Kyoto Bamboo Water-Spout Rockery', emoji: '🎍', w: 2, h: 2, series3: true, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_sultan_bazaar_canopy: { kind: 'decor', sprite: 'dec_sultan_bazaar_canopy', name: "Silk-Draped Sultan's Oasis Tent", emoji: '🎪', w: 2, h: 2, series3: true, seats: 2, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_oasis_obelisk_fountain: { kind: 'decor', sprite: 'dec_oasis_obelisk_fountain', name: 'Golden Sun-Disc Obelisk Fountain', emoji: '☀️', w: 2, h: 2, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_siren_shell_fountain: { kind: 'decor', sprite: 'dec_siren_shell_fountain', name: 'Atlantis Giant Clam & Harp Fountain', emoji: '🐚', w: 2, h: 2, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_coral_crystal_arch:   { kind: 'decor', sprite: 'dec_coral_crystal_arch', name: 'Glowing Coral & Sea-Glass Archway', emoji: '🪸', w: 2, h: 1, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_aurora_crystal_gazebo: { kind: 'decor', sprite: 'dec_aurora_crystal_gazebo', name: 'Glacial Crystal Swan Gazebo', emoji: '🦢', w: 2, h: 2, series3: true, seats: 2, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_stone_arch_footbridge: { kind: 'decor', sprite: 'dec_stone_arch_footbridge', name: 'Royal Carved Stone Arch Footbridge', emoji: '🌉', w: 2, h: 2, series3: true, buff: { comfortBonus: 40 }, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_heaven_winged_pillar:  { kind: 'decor', sprite: 'dec_heaven_winged_pillar', name: 'Celestial Winged Sun-Orb Pillar', emoji: '🏛️', w: 1, h: 1, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_heaven_cloud_arch:     { kind: 'decor', sprite: 'dec_heaven_cloud_arch', name: 'Heavenly Winged Cloud Archway', emoji: '🪽', w: 2, h: 1, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_heaven_divine_tree:    { kind: 'decor', sprite: 'dec_heaven_divine_tree', name: 'Sacred Pearl-Blossom Heaven Tree', emoji: '🌳', w: 2, h: 2, series3: true, buff: {}, cosmetic: true, effect: 'Cosmetic • +Comfort' },
+  dec_heaven_lotus_fountain: { kind: 'decor', sprite: 'dec_heaven_lotus_fountain', name: 'Celestial Lotus & Cloud Basin', emoji: '🪷', w: 2, h: 2, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_heaven_seraph_harp:    { kind: 'decor', sprite: 'dec_heaven_seraph_harp', name: 'Golden Seraphim Angel-Wing Lyre', emoji: '🪉', w: 1, h: 1, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_palm_jumeirah_island:  { kind: 'decor', sprite: 'dec_palm_jumeirah_island', name: 'Palm Jumeirah & Royal Atlantis Lagoon', emoji: '🏝️', w: 2, h: 2, series3: true, spriteScale: 1.05, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_burj_al_arab_sail:     { kind: 'decor', sprite: 'dec_burj_al_arab_sail', name: 'Burj Al Arab Golden Sail Hotel', emoji: '⛵', w: 2, h: 2, series3: true, spriteScale: 0.82, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_museum_of_the_future:  { kind: 'decor', sprite: 'dec_museum_of_the_future', name: 'Dubai Museum of the Future Torus', emoji: '🪐', w: 2, h: 2, series3: true, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_dubai_dallah_majlis:   { kind: 'decor', sprite: 'dec_dubai_dallah_majlis', name: 'Emirati Dallah Coffee & Falcon Majlis', emoji: '🦅', w: 2, h: 2, series3: true, seats: 2, buff: {}, cut: true, effect: 'Retired • Cosmetic • +Comfort' },
+  dec_nookairline_museum:    { kind: 'decor', sprite: 'dec_nookairline_museum', name: 'NookAirline V1 Memory Museum & 2.5D Portals', emoji: '✈️', w: 2, h: 2, series3: true, spriteScale: 1.35, seats: 2, buff: {}, protected: true, effect: 'Memory Landmark • Enter the NookAirline V1 Museum' },
 };
 // Couple Love Pavilion: not placeable — rendered at BridgeCenterX when a couple bridge is visible.
 export const LOVE_PAVILION = { sprite: 'dec_love_pavilion', name: 'Couple Love Pavilion', harmonyPct: 25 };
@@ -208,6 +234,11 @@ export const TILES = {
   road_cream:  { name: 'Cream Plaza Tiles', emoji: '🍦', sprite: 'road_cream', road: true },
   water:       { name: 'Crystal Water Canal', emoji: '💧', sprite: 'water_canal', water: true },
   bridge:      { name: 'Stone Footbridge', emoji: '🌉', bridge: true },
+  farmland:       { name: 'Farmland Soil', emoji: '🌱', sprite: 'road_farmland', farmland: true },
+  road_dirt:      { name: 'Dirt Path', emoji: '🥾', sprite: 'road_dirt', road: true },
+  road_flagstone: { name: 'Flagstone Plaza', emoji: '🏛️', sprite: 'road_flagstone', road: true },
+  boardwalk:      { name: 'Wooden Boardwalk', emoji: '🪵', sprite: 'road_boardwalk', bridge: true, road: true },
+  wildflower:     { name: 'Flower Meadow', emoji: '🌼', sprite: 'road_wildflower' },
 };
 export const ROAD_SPEED_BOOST = 1.15;      // +15% walk speed on road tiles
 export const ROAD_PATH_COST = 0.85;
@@ -217,17 +248,33 @@ export const GROUND_SKINS = {
   ground_sakura:  { name: 'Kyoto Sakura Blossom', emoji: '🌸' },
   ground_vanilla: { name: 'Sweet Vanilla Patisserie', emoji: '🍬' },
   ground_aurora:  { name: 'Starlight Aurora Sanctuary', emoji: '🌌' },
+  biome_autumn_orchard:  { name: 'Autumn Orchard', emoji: '🍂' },
+  biome_mossy_woods:     { name: 'Mossy Woods', emoji: '🌲' },
+  biome_winter_highland: { name: 'Winter Highland', emoji: '❄️' },
+  biome_rose_garden:     { name: 'Rose Garden', emoji: '🌹' },
+};
+
+export const BIOME_THEMES = {
+  biome_meadow:          { name: 'Emerald Meadow', emoji: '🌿', sprite: 'ground_classic' },
+  biome_autumn_orchard:  { name: 'Autumn Orchard', emoji: '🍂', sprite: 'biome_autumn_orchard' },
+  biome_mossy_woods:     { name: 'Mossy Woods', emoji: '🌲', sprite: 'biome_mossy_woods' },
+  biome_winter_highland: { name: 'Winter Highland', emoji: '❄️', sprite: 'biome_winter_highland' },
+  biome_rose_garden:     { name: 'Rose Garden', emoji: '🌹', sprite: 'biome_rose_garden' },
 };
 
 export const MOODS = ['auto', 'sunny', 'sakura', 'sunset', 'night'];
+export const TIME_OF_DAY = ['auto', 'dawn', 'day', 'dusk', 'night'];
+export const WEATHERS = ['clear', 'overcast', 'drizzle', 'leaf_fall', 'petal_fall', 'fireflies'];
 
 /** Cloud Territory expansion tiers (Section 2.A.2). Index 0 = base island. */
+// Stage 3: tiers are unlocked by story chapters (village.max_grid) and paid with materials + gold.
+// `castleLv` is kept (always 1) only so older client builds keep rendering the expansion card.
 export const EXPANSION_TIERS = [
-  { size: 18, castleLv: 1, gold: 0 },
-  { size: 20, castleLv: 2, gold: 2500 },
-  { size: 24, castleLv: 4, gold: 8000 },
-  { size: 28, castleLv: 7, gold: 25000 },
-  { size: 32, castleLv: 10, gold: 60000 },
+  { size: 18, castleLv: 1, gold: 0, cost: {} },
+  { size: 20, castleLv: 1, gold: 1500, cost: { plank: 30, stone: 30, gold: 1500 } },
+  { size: 24, castleLv: 1, gold: 4000, cost: { plank: 60, stone: 60, gold: 4000 } },
+  { size: 28, castleLv: 1, gold: 9000, cost: { plank: 120, stone: 120, ingot: 30, gold: 9000 } },
+  { size: 32, castleLv: 1, gold: 20000, cost: { plank: 200, stone: 200, ingot: 60, gold: 20000 } },
 ];
 
 // ---------------------------------------------------------------------------------------------

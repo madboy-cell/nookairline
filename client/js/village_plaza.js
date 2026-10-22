@@ -8,23 +8,57 @@ import {
 } from '/shared/catalog_landmarks.js';
 import {
   buildCellIndex, cellToWorld, worldToCell, validateLayout, computeComfort, comfortBonusPct, bagContents, cellsOf,
-  islandAt, islandOf, landingCells,
+  islandAt, islandOf, landingCells, bridgesOf, heartIslandOf, isHeartIsland,
 } from '/shared/village_rules.js';
+
+// Heart Isle decor → closest existing sprite (Master Plan v2 §12); keys that already have art map to themselves.
+const HEART_DECOR_SPRITES = {
+  heart_arch: 'env_arch_floral_ortho', twin_lanterns: 'env_string_lights_post', photo_booth: 'dec_heaven_cloud_arch',
+  rose_hedge: 'env_bush_roses_pink', wisteria_pergola: 'dec_couple_hammock', couple_bench: 'dec_wooden_bench',
+  dec_nookairline_museum: 'dec_nookairline_museum', wnd_ferris: 'wnd_ferris',
+};
+const HEART_GROUND = 0x8fa082;     // rose-garden ground tint
+const HEART_PATH = 0xd9a3a8;       // dusty rose path tiles
+
+/** Memory Isle look: blend every fragment toward grey (frozen Heart Isle after a split). */
+function desaturate(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>',
+      '#include <map_fragment>\n{ float g = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(g), 0.8); }');
+  };
+  mat.customProgramCacheKey = () => 'heart_desat';
+  mat.needsUpdate = true;
+}
 
 const Y = { GROUND: 0, WATER: 0.006, ROAD: 0.012, BRIDGE: 0.02, GRID: 0.03, GHOST: 0.035 };
 const SPRITE_WIDTH_PER_TILE = 1.02;
 const DECOR_WIDTH_PER_TILE = 1.05;
 const MIN_BUILDING_SPRITE_WIDTH = 1.30;
-const MOOD_TINT = {
-  sunny: [1, 1, 1], sakura: [1, 0.94, 0.97], sunset: [1, 0.84, 0.72], night: [0.56, 0.62, 0.9],
+export const MOOD_TINT = {
+  sunny:  [1, 1, 1],
+  sakura: [1, 0.94, 0.97],
+  sunset: [1, 0.84, 0.72],
+  night:  [0.56, 0.62, 0.9],
+  dawn:   [1.0, 0.92, 0.86],
+  dusk:   [0.92, 0.80, 0.88],
+  day:    [1, 1, 1],
 };
-const MOOD_SKY = {
-  sunny: ['#7cc4ff', '#cdeaff', '#ffeccc'], sakura: ['#ffc6dc', '#ffe4ef', '#fff3e6'],
-  sunset: ['#ff9a6b', '#ffc78f', '#ffe7c2'], night: ['#121a4a', '#2b3a7a', '#5b5fa0'],
+export const MOOD_SKY = {
+  sunny:  ['#7cc4ff', '#cdeaff', '#ffeccc'],
+  sakura: ['#ffc6dc', '#ffe4ef', '#fff3e6'],
+  sunset: ['#ff9a6b', '#ffc78f', '#ffe7c2'],
+  night:  ['#121a4a', '#2b3a7a', '#5b5fa0'],
+  dawn:   ['#ff9ea5', '#ffd5af', '#fff1d6'],
+  dusk:   ['#5b4b7a', '#a4688b', '#e89b7b'],
+  day:    ['#7cc4ff', '#cdeaff', '#ffeccc'],
 };
 
 export function resolveMood(mood, date = new Date()) {
-  if (mood && mood !== 'auto') return mood;
+  const m = (typeof mood === 'object' && mood !== null) ? (mood.time || mood.mood) : mood;
+  if (m && m !== 'auto') {
+    if (m === 'day') return 'sunny';
+    return m;
+  }
   const h = date.getHours();
   if (h >= 19 || h < 5) return 'night';
   if (h >= 17) return 'sunset';
@@ -73,6 +107,138 @@ function rainbowDeckTexture() {
   return rainbowTex;
 }
 
+function makeCropBadgeSprite(emoji, isReady) {
+  if (typeof document === 'undefined' || !document.createElement) return new THREE.Sprite();
+  const c = document.createElement('canvas');
+  c.width = 96; c.height = 96;
+  const g = c.getContext('2d');
+  g.shadowColor = 'rgba(0, 0, 0, 0.25)';
+  g.shadowBlur = 6;
+  g.shadowOffsetY = 2;
+  g.beginPath();
+  g.arc(48, 48, 38, 0, Math.PI * 2);
+  g.fillStyle = isReady ? '#FFF8E1' : '#E8F5E9';
+  g.fill();
+  g.shadowColor = 'transparent';
+  g.lineWidth = 4;
+  g.strokeStyle = isReady ? '#FFB300' : '#4CAF50';
+  g.stroke();
+
+  if (isReady) {
+    g.lineWidth = 2;
+    g.strokeStyle = '#FFE082';
+    g.stroke();
+  }
+
+  g.font = '36px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(emoji, 48, 50);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.72, 0.72, 1);
+  sprite.renderOrder = 22;
+  return sprite;
+}
+
+function makeReadyBadgeSprite() {
+  if (typeof document === 'undefined' || !document.createElement) return new THREE.Sprite();
+  const c = document.createElement('canvas');
+  c.width = 96; c.height = 96;
+  const g = c.getContext('2d');
+  g.shadowColor = 'rgba(255, 179, 0, 0.6)';
+  g.shadowBlur = 8;
+  g.beginPath();
+  g.arc(48, 48, 38, 0, Math.PI * 2);
+  if (typeof g.createRadialGradient === 'function') {
+    const grad = g.createRadialGradient(48, 48, 4, 48, 48, 38);
+    grad.addColorStop(0, '#FFF9C4');
+    grad.addColorStop(0.7, '#FFD54F');
+    grad.addColorStop(1, '#FFA000');
+    g.fillStyle = grad;
+  } else {
+    g.fillStyle = '#FFD54F';
+  }
+  g.fill();
+  g.shadowColor = 'transparent';
+  g.lineWidth = 3;
+  g.strokeStyle = '#FF8F00';
+  g.stroke();
+
+  g.beginPath();
+  g.arc(48, 48, 32, 0, Math.PI * 2);
+  g.lineWidth = 1.5;
+  g.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+  g.stroke();
+
+  g.font = '38px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText('✨', 48, 50);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.75, 0.75, 1);
+  sprite.renderOrder = 23;
+  return sprite;
+}
+
+const weatherTexCache = {};
+function getWeatherTexture(type) {
+  if (typeof document === 'undefined' || !document.createElement) return null;
+  if (weatherTexCache[type]) return weatherTexCache[type];
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  if (type === 'firefly') {
+    if (typeof g.createRadialGradient === 'function') {
+      const grd = g.createRadialGradient(16, 16, 2, 16, 16, 15);
+      grd.addColorStop(0, '#ffffff');
+      grd.addColorStop(0.3, '#ffff8d');
+      grd.addColorStop(0.65, 'rgba(205, 220, 57, 0.7)');
+      grd.addColorStop(1, 'rgba(205, 220, 57, 0)');
+      g.fillStyle = grd;
+    } else {
+      g.fillStyle = '#eeff41';
+    }
+    g.fillRect(0, 0, 32, 32);
+  } else if (type === 'leaf') {
+    g.fillStyle = '#ff9800';
+    g.beginPath();
+    g.ellipse(16, 16, 11, 6, Math.PI / 4, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#d84315';
+    g.beginPath();
+    g.ellipse(16, 16, 7, 3, Math.PI / 4, 0, Math.PI * 2);
+    g.fill();
+  } else if (type === 'drizzle') {
+    g.strokeStyle = '#81d4fa';
+    g.lineWidth = 2.5;
+    g.beginPath();
+    g.moveTo(22, 4);
+    g.lineTo(10, 28);
+    g.stroke();
+  } else { // petal
+    g.fillStyle = '#ff80ab';
+    g.beginPath();
+    g.ellipse(16, 16, 11, 7, -Math.PI / 6, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#ffb2dd';
+    g.beginPath();
+    g.ellipse(15, 15, 7, 4, -Math.PI / 6, 0, Math.PI * 2);
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  weatherTexCache[type] = tex;
+  return tex;
+}
+
 /** Merged quad geometry for a list of cells (one draw call per tile type). */
 function cellsGeometry(island, cells, y, uvScale = 0.5) {
   const pos = [], uv = [], idx = [];
@@ -113,6 +279,12 @@ export class VillagePlaza {
     this.leanList = [];
     this.selfId = null;
     this.mood = 'sunny';
+    this.weather = 'clear';
+    this.weatherPoints = null;
+    this.weatherGeo = null;
+    this.weatherMat = null;
+    this.weatherMode = null;
+    this.floatingBadges = [];
     this.t = 0;
     this.generation = 0;
   }
@@ -120,7 +292,7 @@ export class VillagePlaza {
   // ------------------------------------------------------------------ layout
   setLayout(wire, selfId) {
     this.selfId = selfId;
-    this.layout = { islands: wire.islands.map((i) => ({ ...i })), bridge: wire.bridge };
+    this.layout = { islands: wire.islands.map((i) => ({ ...i })), bridge: wire.bridge, bridges: wire.bridges || (wire.bridge ? [wire.bridge] : []) };
     for (const isl of this.layout.islands) buildCellIndex(isl);
     this.rebuildAll();
   }
@@ -131,6 +303,9 @@ export class VillagePlaza {
     if (!isl) return;
     isl.village = village;
     buildCellIndex(isl);
+    if (this.floatingBadges) {
+      this.floatingBadges = this.floatingBadges.filter((b) => b.userData?.owner !== owner);
+    }
     this.buildIsland(isl, draft);
   }
 
@@ -140,10 +315,14 @@ export class VillagePlaza {
     const gen = ++this.generation;
     for (const e of this.entries.values()) this.disposeGroup(e.group);
     this.entries.clear();
-    if (this.bridgeGroup) { this.disposeGroup(this.bridgeGroup); this.bridgeGroup = null; }
-    this.pickables = []; this.bubbles = []; this.water = []; this.leanList = [];
+    for (const g of this.bridgeGroups || []) this.disposeGroup(g);
+    this.bridgeGroups = [];
+    this.pickables = []; this.bubbles = []; this.water = []; this.leanList = []; this.floatingBadges = [];
+    if (this.weatherPoints && !this.root.children.includes(this.weatherPoints)) this.root.add(this.weatherPoints);
     for (const isl of this.layout.islands) this.buildIsland(isl);
-    if (this.layout.bridge) this.buildBridge(this.layout.bridge, gen);
+    // Couples: two bridges A ↔ Heart Isle ↔ B; the Love Pavilion lives on the Heart Isle (bridge-only on old 2-island layouts).
+    const hasHeart = !!heartIslandOf(this.layout);
+    for (const br of bridgesOf(this.layout)) this.buildBridge(br, { pavilion: !hasHeart });
   }
 
   disposeGroup(g) {
@@ -167,6 +346,7 @@ export class VillagePlaza {
     this.root.add(group);
     const entry = { group, island: isl };
     this.entries.set(isl.owner, entry);
+    if (isHeartIsland(isl)) { this.buildHeartIsle(group, isl); return entry; }
     const S = isl.S, v = isl.village;
 
     // ground skin + 2.5D hand-painted overhanging grass rim & faceted terracotta cliff walls
@@ -192,7 +372,7 @@ export class VillagePlaza {
       const y = def.water ? Y.WATER : def.bridge ? Y.BRIDGE : Y.ROAD;
       const mat = this.tint(new THREE.MeshBasicMaterial({ color: def.water ? 0x48b8e8 : 0xf4c78e, transparent: !!def.water, opacity: def.water ? 0.96 : 1 }));
       if (def.bridge) {
-        swatch('road_cobble').then((tex) => { mat.map = tex; this.setBase(mat, 0xffffff); mat.needsUpdate = true; });
+        swatch(def.sprite || 'road_cobble').then((tex) => { mat.map = tex; this.setBase(mat, 0xffffff); mat.needsUpdate = true; });
       } else {
         swatch(def.sprite).then((tex) => { mat.map = def.water ? tex.clone() : tex; if (def.water) mat.map.needsUpdate = true; this.setBase(mat, 0xffffff); mat.needsUpdate = true; });
       }
@@ -202,7 +382,7 @@ export class VillagePlaza {
       group.add(mesh);
 
       // 2.5D Raised Cream-Stone Road Curbs & Grass-on-Stone Overhang Tufts along road-to-grass edges
-      if (!def.water && !def.bridge && !draft) {
+      if (!def.water && !def.bridge && !def.farmland && def.road && !draft) {
         const curbMat = this.tint(new THREE.MeshBasicMaterial({ color: 0xf3e5d0 }));
         for (const [gx, gy] of cells) {
           const c = cellToWorld(isl, gx, gy);
@@ -486,10 +666,42 @@ export class VillagePlaza {
     const ghostState = draft
       ? (isInvalid ? 'bad' : (draft.selected === b.uid ? (draft.valid ? 'ok' : 'bad') : null))
       : null;
-    const mesh = this.addSprite(group, d.sprite, c.x, c.z + f.h / 2 - 0.2, width, { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type }, {
+    const spriteKey = (b.type === 'castle' && isl.village?.castle_ruins) ? 'bld_castle_ruins' : d.sprite;
+    const mesh = this.addSprite(group, spriteKey, c.x, c.z + f.h / 2 - 0.2, width, { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type }, {
       mirror: ((b.rot / 90) | 0) % 2 === 1, ghost: ghostState,
     });
     mesh.userData.footprint = { x: c.x, z: c.z, w: f.w, h: f.h };
+
+    // farm plot crop indicator
+    if (b.type === 'farm_plot' && !draft) {
+      const plot = isl.village?.plots?.[b.uid];
+      if (plot?.crop) {
+        const isReady = Number(plot.readyAt || 0) <= Date.now();
+        const badge = makeCropBadgeSprite(isReady ? '🌾✨' : '🌱', isReady);
+        badge.position.set(c.x, 0.75, c.z);
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady };
+        group.add(badge);
+        this.floatingBadges.push(badge);
+        this.pickables.push(badge);
+      }
+    }
+
+    // production ready sparkle/badge
+    if (!draft && isl.village?.production?.[b.uid]) {
+      const st = isl.village.production[b.uid];
+      const hasOutput = Object.values(st?.output || {}).some((n) => n > 0) || (st?.tools || []).length > 0;
+      if (hasOutput) {
+        const info = spriteInfo(spriteKey);
+        const bHeight = mesh.userData.height || (width * (info ? info.h / info.w : 1.1));
+        const badge = makeReadyBadgeSprite();
+        badge.position.set(c.x, bHeight * 0.8 + 0.3, c.z);
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85 };
+        group.add(badge);
+        this.floatingBadges.push(badge);
+        this.pickables.push(badge);
+      }
+    }
+
     // harvest bubble slot (own island producers + shrine)
     if (isl.owner === this.selfId && !draft && (CORE[b.type]?.produces || CORE[b.type]?.daily)) {
       const kind = CORE[b.type].produces || CORE[b.type].daily;
@@ -531,10 +743,10 @@ export class VillagePlaza {
    * - Back heart-cutout stone parapet (`bridge_rainbow_back_rail`) + Couple Love Dome (`dec_love_pavilion`)
    * - Front twin stone arches & heart-cutout parapet with pink-heart lamp pillars (`bridge_rainbow_front_arch`)
    */
-  buildBridge(br) {
+  buildBridge(br, { pavilion = true } = {}) {
     const g = new THREE.Group();
     this.root.add(g);
-    this.bridgeGroup = g;
+    (this.bridgeGroups ||= []).push(g);
     const len = br.x1 - br.x0, wid = br.z1 - br.z0, midZ = (br.z0 + br.z1) / 2;
 
     // 1. Central circular stone terrace alcove under the Love Dome
@@ -574,11 +786,62 @@ export class VillagePlaza {
     }
 
     // 4. Couple Love Dome centered in the middle of the bridge + Back heart-cutout stone parapet
-    this.addSprite(g, LOVE_PAVILION.sprite, br.cx, br.z0 - 0.18, 2.75, { kind: 'pavilion' }, { pick: false, y: -0.05 });
+    if (pavilion) this.addSprite(g, LOVE_PAVILION.sprite, br.cx, br.z0 - 0.18, 2.75, { kind: 'pavilion' }, { pick: false, y: -0.05 });
     this.addSprite(g, 'bridge_rainbow_back_rail', br.cx, br.z0 + 0.02, len + 0.65, { kind: 'arch_back' }, { pick: false, y: -0.06 });
 
     // 5. Front twin stone under-arches, heart-cutout parapet & pink-heart lamp pillars
     this.addSprite(g, 'bridge_rainbow_front_arch', br.cx, br.z1 + 0.12, len + 0.65, { kind: 'arch' }, { pick: false, y: -0.78 });
+  }
+
+  /**
+   * Heart Isle (Master Plan v2 §12): rose-garden ground, dusty-rose deck path joining both bridges, the fixed
+   * Love Pavilion + Shared Chest, and the couple's decor. A frozen (Memory) isle renders desaturated.
+   */
+  buildHeartIsle(group, isl) {
+    const S = isl.S, v = isl.village;
+    const frozen = !!v.frozen;
+    const owner = isl.owner;
+    const groundMat = this.tint(new THREE.MeshBasicMaterial({ color: HEART_GROUND }));
+    swatch(v.ground || 'biome_rose_garden').then((tex) => { groundMat.map = tex; this.setBase(groundMat, 0xffffff); groundMat.needsUpdate = true; });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(S, S).rotateX(-Math.PI / 2), groundMat);
+    const guv = ground.geometry.attributes.uv;
+    for (let i = 0; i < guv.count; i++) guv.setXY(i, guv.getX(i) * S / 4, guv.getY(i) * S / 4);
+    ground.position.set(isl.cx, Y.GROUND, 0);
+    ground.userData = { kind: 'heart_ground', owner };
+    group.add(ground);
+    this.pickables.push(ground);
+    this.buildFloatingIslandCliff(group, isl);
+
+    const pathMat = this.tint(new THREE.MeshBasicMaterial({ color: HEART_PATH }));
+    swatch('road_cobble').then((tex) => { pathMat.map = tex; this.setBase(pathMat, 0xf2b9bf); pathMat.needsUpdate = true; });
+    group.add(new THREE.Mesh(cellsGeometry(isl, v.tiles.map((t) => [t.x, t.y]), Y.ROAD, 0.5), pathMat));
+
+    // Rim roses + string lights where the deck meets each bridge
+    const ox = isl.cx - S / 2, oz = -S / 2;
+    for (const [x, z, sprite, w] of [
+      [ox + 1.2, oz + 0.2, 'env_bush_roses_pink', 1.1], [ox + S - 1.2, oz + 0.2, 'env_bush_roses_pink', 1.1],
+      [ox + 4, oz + S - 0.2, 'env_bush_roses_pink', 1.0], [ox + S - 4, oz + S - 0.2, 'env_bush_roses_pink', 1.0],
+      [ox + 0.6, oz + S / 2 + 1.6, 'env_string_lights_post', 0.8], [ox + S - 0.6, oz + S / 2 + 1.6, 'env_string_lights_post', 0.8],
+    ]) this.addSprite(group, sprite, x, z, w, { kind: 'env', owner }, { pick: false });
+
+    const list = [...v.buildings].sort((a, b) => a.y - b.y);
+    for (const b of list) {
+      const w = b.w || 1, h = b.h || 1;
+      const c = cellToWorld(isl, b.x, b.y, w, h);
+      if (b.type === 'hi_love_pavilion') {
+        this.addSprite(group, LOVE_PAVILION.sprite, c.x, c.z + h / 2 - 0.2, 4.2, { kind: 'pavilion', owner }, { pick: false });
+      } else if (b.type === 'hi_shared_chest') {
+        const chestSprite = spriteInfo('hi_shared_chest') ? 'hi_shared_chest' : 'fish_chest';
+        const m = this.addSprite(group, chestSprite, c.x, c.z + 0.3, 1.1, { kind: 'heart_chest', owner, uid: b.uid });
+        m.userData.footprint = { x: c.x, z: c.z, w, h };
+      } else {
+        const sprite = HEART_DECOR_SPRITES[b.type] || 'env_bush_roses_pink';
+        const width = Math.max(1.0, Math.max(w, h) * DECOR_WIDTH_PER_TILE);
+        const m = this.addSprite(group, sprite, c.x, c.z + h / 2 - 0.2, width, { kind: 'heart_decor', owner, uid: b.uid, type: b.type });
+        m.userData.footprint = { x: c.x, z: c.z, w, h };
+      }
+    }
+    if (frozen) group.traverse((o) => { for (const m of [].concat(o.material || [])) desaturate(m); });
   }
 
   addEditOverlay(group, isl, draft) {
@@ -629,11 +892,149 @@ export class VillagePlaza {
     const t = MOOD_TINT[this.mood] || MOOD_TINT.sunny;
     mat.color.copy(mat.userData.base || new THREE.Color(0xffffff)).multiply(new THREE.Color(t[0], t[1], t[2]));
   }
+  initWeatherSystem() {
+    if (this.weatherPoints) return;
+    const count = 60;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 30;
+      positions[i * 3 + 1] = 0.5 + Math.random() * 4.5;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+    }
+    this.weatherGeo = new THREE.BufferGeometry();
+    this.weatherGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    this.weatherMat = new THREE.PointsMaterial({
+      size: 0.36,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+      blending: THREE.NormalBlending,
+    });
+    this.weatherPoints = new THREE.Points(this.weatherGeo, this.weatherMat);
+    this.weatherPoints.visible = false;
+    this.root.add(this.weatherPoints);
+  }
+
+  updateWeatherType(weather) {
+    if (!this.weatherPoints) this.initWeatherSystem();
+    if (!weather || weather === 'clear') {
+      if (this.weatherPoints) this.weatherPoints.visible = false;
+      return;
+    }
+    if (this.weatherPoints) this.weatherPoints.visible = true;
+    let mode = 'petal';
+    let texture = null;
+    let size = 0.36;
+    let opacity = 0.85;
+
+    if (weather === 'fireflies' || weather === 'night') {
+      mode = 'firefly';
+      texture = getWeatherTexture('firefly');
+      size = 0.36;
+      opacity = 0.95;
+      if (this.weatherMat) this.weatherMat.blending = THREE.AdditiveBlending;
+    } else if (weather === 'leaf_fall' || weather === 'sunset') {
+      mode = 'leaf';
+      texture = getWeatherTexture('leaf');
+      size = 0.40;
+      opacity = 0.9;
+      if (this.weatherMat) this.weatherMat.blending = THREE.NormalBlending;
+    } else if (weather === 'drizzle' || weather === 'overcast') {
+      mode = 'drizzle';
+      texture = getWeatherTexture('drizzle');
+      size = 0.30;
+      opacity = 0.7;
+      if (this.weatherMat) this.weatherMat.blending = THREE.NormalBlending;
+    } else { // petal_fall, sakura
+      mode = 'petal';
+      texture = getWeatherTexture('petal');
+      size = 0.36;
+      opacity = 0.85;
+      if (this.weatherMat) this.weatherMat.blending = THREE.NormalBlending;
+    }
+    this.weatherMode = mode;
+    if (this.weatherMat) {
+      this.weatherMat.map = texture;
+      this.weatherMat.size = size;
+      this.weatherMat.opacity = opacity;
+      this.weatherMat.needsUpdate = true;
+    }
+  }
+
+  updateWeather(dt) {
+    if (!this.weatherPoints || !this.weatherPoints.visible || !this.weatherGeo) return;
+    const pos = this.weatherGeo.attributes.position.array;
+    const isl = this.layout?.islands?.[0];
+    const cx = isl ? isl.cx : 0;
+    const S = isl ? isl.S : 24;
+    const minX = cx - S / 2 - 2, maxX = cx + S / 2 + 2;
+    const minZ = -S / 2 - 2, maxZ = S / 2 + 2;
+    const dtf = Math.min(dt || 0.016, 0.1) * 60;
+
+    const mode = this.weatherMode;
+    for (let i = 0; i < 60; i++) {
+      const idx = i * 3;
+      if (mode === 'firefly') {
+        pos[idx] += Math.sin(this.t * 1.5 + i * 1.7) * 0.015 * dtf;
+        pos[idx + 1] += Math.cos(this.t * 2.0 + i * 2.3) * 0.01 * dtf;
+        pos[idx + 2] += Math.sin(this.t * 1.2 + i * 3.1) * 0.015 * dtf;
+        if (pos[idx + 1] < 0.4) pos[idx + 1] = 0.4 + Math.random() * 2.2;
+        if (pos[idx + 1] > 3.2) pos[idx + 1] = 1.0 + Math.random();
+      } else if (mode === 'leaf') {
+        pos[idx] += (0.018 + Math.sin(this.t * 2.5 + i) * 0.02) * dtf;
+        pos[idx + 1] -= 0.028 * dtf;
+        pos[idx + 2] += Math.cos(this.t * 2.0 + i) * 0.015 * dtf;
+        if (pos[idx + 1] < 0.05) {
+          pos[idx + 1] = 4.5 + Math.random() * 2.0;
+          pos[idx] = minX + Math.random() * (maxX - minX);
+          pos[idx + 2] = minZ + Math.random() * (maxZ - minZ);
+        }
+      } else if (mode === 'drizzle') {
+        pos[idx] -= 0.02 * dtf;
+        pos[idx + 1] -= 0.14 * dtf;
+        pos[idx + 2] += 0.01 * dtf;
+        if (pos[idx + 1] < 0.05) {
+          pos[idx + 1] = 5.0 + Math.random() * 2.0;
+          pos[idx] = minX + Math.random() * (maxX - minX);
+          pos[idx + 2] = minZ + Math.random() * (maxZ - minZ);
+        }
+      } else { // petal
+        pos[idx] += (0.02 + Math.sin(this.t * 2.0 + i) * 0.016) * dtf;
+        pos[idx + 1] -= 0.022 * dtf;
+        pos[idx + 2] += Math.cos(this.t * 1.8 + i) * 0.018 * dtf;
+        if (pos[idx + 1] < 0.05) {
+          pos[idx + 1] = 4.5 + Math.random() * 2.0;
+          pos[idx] = minX + Math.random() * (maxX - minX);
+          pos[idx + 2] = minZ + Math.random() * (maxZ - minZ);
+        }
+      }
+      if (pos[idx] > maxX) pos[idx] = minX;
+      if (pos[idx] < minX) pos[idx] = maxX;
+      if (pos[idx + 2] > maxZ) pos[idx + 2] = minZ;
+      if (pos[idx + 2] < minZ) pos[idx + 2] = maxZ;
+    }
+    this.weatherGeo.attributes.position.needsUpdate = true;
+  }
+
   setMood(mood) {
-    const m = resolveMood(mood);
+    let timeKey = 'sunny';
+    let weatherKey = null;
+    if (typeof mood === 'object' && mood !== null) {
+      timeKey = mood.time || mood.mood || 'auto';
+      weatherKey = mood.weather || null;
+    } else if (typeof mood === 'string') {
+      timeKey = mood;
+    }
+    const m = resolveMood(timeKey);
     this.mood = m;
+    this.weather = weatherKey || (
+      m === 'sakura' ? 'petal_fall' :
+      m === 'sunset' ? 'leaf_fall' :
+      m === 'night' ? 'fireflies' : 'clear'
+    );
     this.scene.background = skyTexture(m);
     for (const mat of this.tintables) this.applyTint(mat);
+    this.updateWeatherType(this.weather);
     return m;
   }
   get moodTint() { return MOOD_TINT[this.mood] || MOOD_TINT.sunny; }
@@ -641,6 +1042,7 @@ export class VillagePlaza {
   // ------------------------------------------------------------------ per-frame
   update(dt, camera, pitch) {
     this.t += dt;
+    this.updateWeather(dt);
     for (const w of this.water) if (w.material.map) { w.material.map.offset.x = this.t * 0.03; w.material.map.offset.y = Math.sin(this.t * 0.4) * 0.05; }
     const lean = -pitch;
     if (!this.leanList) {
@@ -655,6 +1057,13 @@ export class VillagePlaza {
       if (!b.visible) continue;
       const h = b.userData.height || 3;
       b.position.set(b.userData.base.x, h * Math.cos(pitch) + 0.5 + Math.sin(this.t * 3 + b.userData.base.x) * 0.12, b.userData.base.z - h * Math.sin(pitch) * 0.5);
+    }
+    for (const b of this.floatingBadges || []) {
+      const h = b.userData.height || 0.6;
+      const bx = b.userData.x ?? b.position.x;
+      const bz = b.userData.z ?? b.position.z;
+      const bob = Math.sin(this.t * 3.5 + bx * 2) * 0.08;
+      b.position.set(bx, h * Math.cos(pitch) + 0.35 + bob, bz - h * Math.sin(pitch) * 0.4);
     }
     if (this.world?.editor?.active) {
       this.world.editor.updateFloatingUi();

@@ -4310,3 +4310,16 @@ body:has(#social-switchboard-modal:not([hidden])) .couple-proximity-bar {
 }
 
 
+
+/* ============================================================================
+   SKY FRONTIER (Master Plan v2 §5.8): the frontier scene owns its own HUD (#sf-hud),
+   so hide the village-only overlays that would sit on top of it.
+   ============================================================================ */
+#hud[data-scene="SKY_FRONTIER"] #village-actions,
+#hud[data-scene="SKY_FRONTIER"] #townhall-actions,
+#hud[data-scene="SKY_FRONTIER"] #top-hud-bar,
+#hud[data-scene="SKY_FRONTIER"] #hud-couple-pill,
+#hud[data-scene="SKY_FRONTIER"] #hud-guide-pill,
+#hud[data-scene="SKY_FRONTIER"] #hud-mini-radar {
+  display: none !important;
+}

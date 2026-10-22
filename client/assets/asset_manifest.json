@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-17T12:40:32.924Z",
+  "generatedAt": "2026-10-22T18:13:56.846Z",
   "sprites": {
     "bkk_base_front": {
       "file": "chibi/bkk_base_front.png",
@@ -21286,6 +21286,384 @@
       "anchorX": 0.5,
       "anchorY": 0.25,
       "faces": "right"
+    },
+    "bld_castle_ruins": {
+      "file": "village/bld_castle_ruins.png",
+      "w": 293,
+      "h": 317,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.559
+    },
+    "bld_workshop": {
+      "file": "village/bld_workshop.png",
+      "w": 314,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.588
+    },
+    "bld_cottage": {
+      "file": "village/bld_cottage.png",
+      "w": 288,
+      "h": 288,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.651
+    },
+    "bld_farm_plot": {
+      "file": "village/bld_farm_plot.png",
+      "w": 310,
+      "h": 227,
+      "anchorX": 0.5,
+      "anchorY": 0.18,
+      "coverage": 0.575
+    },
+    "hi_shared_chest": {
+      "file": "village/hi_shared_chest.png",
+      "w": 253,
+      "h": 241,
+      "anchorX": 0.5,
+      "anchorY": 0.15,
+      "coverage": 0.697
+    },
+    "sf_outpost_goddess": {
+      "file": "village/sf_outpost_goddess.png",
+      "w": 303,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.545
+    },
+    "sf_mill_ruins": {
+      "file": "village/sf_mill_ruins.png",
+      "w": 220,
+      "h": 299,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.61
+    },
+    "sf_sky_mist_gate": {
+      "file": "village/sf_sky_mist_gate.png",
+      "w": 216,
+      "h": 292,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.705
+    },
+    "sf_hollow_outpost": {
+      "file": "village/sf_hollow_outpost.png",
+      "w": 326,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.543
+    },
+    "sf_node_wood": {
+      "file": "village/sf_node_wood.png",
+      "w": 247,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.601
+    },
+    "sf_node_stone": {
+      "file": "village/sf_node_stone.png",
+      "w": 280,
+      "h": 230,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.686
+    },
+    "sf_node_wheat": {
+      "file": "village/sf_node_wheat.png",
+      "w": 264,
+      "h": 273,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.613
+    },
+    "sf_node_herb": {
+      "file": "village/sf_node_herb.png",
+      "w": 264,
+      "h": 247,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.529
+    },
+    "sf_node_crystal": {
+      "file": "village/sf_node_crystal.png",
+      "w": 235,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.566
+    },
+    "sf_node_mithril": {
+      "file": "village/sf_node_mithril.png",
+      "w": 246,
+      "h": 283,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.656
+    },
+    "sf_prop_meadow_tree": {
+      "file": "village/sf_prop_meadow_tree.png",
+      "w": 256,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.576
+    },
+    "sf_prop_hollow_wall": {
+      "file": "village/sf_prop_hollow_wall.png",
+      "w": 247,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.678
+    },
+    "sf_prop_scarecrow": {
+      "file": "village/sf_prop_scarecrow.png",
+      "w": 256,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.541
+    },
+    "sf_mob_moss_slime": {
+      "file": "village/sf_mob_moss_slime.png",
+      "w": 193,
+      "h": 221,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.638
+    },
+    "sf_mob_thornback_boar": {
+      "file": "village/sf_mob_thornback_boar.png",
+      "w": 285,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.559
+    },
+    "sf_mob_pollen_wisp": {
+      "file": "village/sf_mob_pollen_wisp.png",
+      "w": 218,
+      "h": 260,
+      "anchorX": 0.5,
+      "anchorY": 0.15,
+      "coverage": 0.449
+    },
+    "sf_mob_crystal_beetle": {
+      "file": "village/sf_mob_crystal_beetle.png",
+      "w": 237,
+      "h": 253,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.581
+    },
+    "sf_mob_lantern_bat": {
+      "file": "village/sf_mob_lantern_bat.png",
+      "w": 325,
+      "h": 271,
+      "anchorX": 0.5,
+      "anchorY": 0.15,
+      "coverage": 0.413
+    },
+    "sf_mob_quartz_golemling": {
+      "file": "village/sf_mob_quartz_golemling.png",
+      "w": 270,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.586
+    },
+    "sf_boss_moss_golem": {
+      "file": "village/sf_boss_moss_golem.png",
+      "w": 300,
+      "h": 318,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.679
+    },
+    "sf_boss_crystal_weaver": {
+      "file": "village/sf_boss_crystal_weaver.png",
+      "w": 308,
+      "h": 312,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.43
+    },
+    "sf_prop_minecart": {
+      "file": "village/sf_prop_minecart.png",
+      "w": 307,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.487
+    },
+    "tool_pickaxe_1": {
+      "file": "village/tool_pickaxe_1.png",
+      "w": 217,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.22,
+      "coverage": 0.203
+    },
+    "tool_pickaxe_2": {
+      "file": "village/tool_pickaxe_2.png",
+      "w": 223,
+      "h": 265,
+      "anchorX": 0.5,
+      "anchorY": 0.22,
+      "coverage": 0.212
+    },
+    "tool_axe_1": {
+      "file": "village/tool_axe_1.png",
+      "w": 147,
+      "h": 248,
+      "anchorX": 0.5,
+      "anchorY": 0.22,
+      "coverage": 0.371
+    },
+    "tool_axe_2": {
+      "file": "village/tool_axe_2.png",
+      "w": 148,
+      "h": 265,
+      "anchorX": 0.5,
+      "anchorY": 0.22,
+      "coverage": 0.38
+    },
+    "tool_staff_1": {
+      "file": "village/tool_staff_1.png",
+      "w": 86,
+      "h": 269,
+      "anchorX": 0.5,
+      "anchorY": 0.3,
+      "coverage": 0.394
+    },
+    "tool_staff_2": {
+      "file": "village/tool_staff_2.png",
+      "w": 111,
+      "h": 269,
+      "anchorX": 0.5,
+      "anchorY": 0.3,
+      "coverage": 0.378
+    },
+    "sf_prop_timber_arch": {
+      "file": "village/sf_prop_timber_arch.png",
+      "w": 292,
+      "h": 269,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.457
+    },
+    "sf_prop_rope_bridge": {
+      "file": "village/sf_prop_rope_bridge.png",
+      "w": 302,
+      "h": 251,
+      "anchorX": 0.5,
+      "anchorY": 0.15,
+      "coverage": 0.448
+    },
+    "crop_berries_ready": {
+      "file": "village/crop_berries_ready.png",
+      "w": 270,
+      "h": 242,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.705
+    },
+    "road_farmland": {
+      "file": "terrain/road_farmland.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "road_dirt": {
+      "file": "terrain/road_dirt.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "road_flagstone": {
+      "file": "terrain/road_flagstone.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "road_boardwalk": {
+      "file": "terrain/road_boardwalk.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "road_wildflower": {
+      "file": "terrain/road_wildflower.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "biome_autumn_orchard": {
+      "file": "terrain/biome_autumn_orchard.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "biome_mossy_woods": {
+      "file": "terrain/biome_mossy_woods.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "biome_rose_garden": {
+      "file": "terrain/biome_rose_garden.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "terrain_hollow_floor": {
+      "file": "terrain/terrain_hollow_floor.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "biome_winter_highland": {
+      "file": "terrain/biome_winter_highland.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
     }
   },
   "atlases": {

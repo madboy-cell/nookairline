@@ -17,9 +17,12 @@ export class Database {
     this.profiles = new Map();
     this.sessions = new Map();   // token -> { userId, created }
     this.socialLinks = [];       // [{ a, b, status: 'friend'|'couple', streak }]
+    this.worldZones = new Map(); // zoneId -> { zone_id, kind, state, updated_at }
     this.dirtyProfiles = new Set();
     this.dirtySessions = new Set();
     this.deletedSessions = new Set();
+    this.dirtyZones = new Set();
+    this.deletedZones = new Set();
     this.dirtySocial = false;
     this.dirty = false;
     this.supabase = null;
@@ -34,13 +37,28 @@ export class Database {
         for (const p of raw.profiles || []) this.profiles.set(p.id, p);
         for (const [t, s] of Object.entries(raw.sessions || {})) this.sessions.set(t, s);
         this.socialLinks = raw.socialLinks || [];
+        if (Array.isArray(raw.worldZones)) {
+          for (const z of raw.worldZones) {
+            if (z && z.zone_id) this.worldZones.set(z.zone_id, z);
+          }
+        } else if (raw.worldZones && typeof raw.worldZones === 'object') {
+          for (const [id, z] of Object.entries(raw.worldZones)) {
+            const record = { zone_id: id, ...z };
+            this.worldZones.set(id, record);
+          }
+        }
       }
     }
+    const isCustomTempFile =
+      typeof this.file === 'string' &&
+      this.file !== ':memory:' &&
+      !path.resolve(this.file).endsWith(path.join('server', 'data', 'local_db.json'));
     const isTest =
       !this.file ||
       this.file === ':memory:' ||
+      isCustomTempFile ||
       process.env.NODE_ENV === 'test' ||
-      (Array.isArray(process.argv) && process.argv.some((a) => a.includes('test') || a.includes('tests/')));
+      (Array.isArray(process.argv) && process.argv.some((a) => a.includes('test') || a.includes('tests/') || a.includes('qa_')));
     const url = process.env.SUPABASE_URL || (!isTest ? DEFAULT_SUPABASE_URL : '');
     const key =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -151,6 +169,42 @@ export class Database {
     } catch (e) {
       this.log.info?.('[db] Skipping optional social_links merge:', e.message);
     }
+
+    try {
+      const zQuery = this.supabase.from('world_zones')?.select?.('zone_id, kind, state, updated_at');
+      if (zQuery) {
+        const { data: zData, error: zErr } = await zQuery;
+        if (zErr) {
+          this.log.info?.('[db] Optional world_zones table not active yet:', zErr.message);
+        } else {
+          for (const row of zData || []) {
+            if (!row?.zone_id) continue;
+            const local = this.worldZones.get(row.zone_id);
+            if (!local) {
+              this.worldZones.set(row.zone_id, {
+                zone_id: row.zone_id,
+                kind: row.kind,
+                state: row.state,
+                updated_at: row.updated_at,
+              });
+            } else {
+              const remoteTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+              const localTs = local.updated_at ? new Date(local.updated_at).getTime() : 0;
+              if (remoteTs > localTs) {
+                this.worldZones.set(row.zone_id, {
+                  zone_id: row.zone_id,
+                  kind: row.kind,
+                  state: row.state,
+                  updated_at: row.updated_at,
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      this.log.info?.('[db] Skipping optional world_zones merge:', e.message);
+    }
   }
 
   getProfile(id) { return this.profiles.get(String(id).toLowerCase()); }
@@ -185,12 +239,61 @@ export class Database {
     }
   }
 
+  getWorldZone(zoneId) {
+    if (!zoneId) return null;
+    return this.worldZones.get(zoneId) || null;
+  }
+
+  putWorldZone(zoneId, kind, state) {
+    if (!zoneId) return null;
+    const record = {
+      zone_id: zoneId,
+      kind,
+      state,
+      updated_at: new Date().toISOString(),
+    };
+    this.worldZones.set(zoneId, record);
+    this.deletedZones.delete(zoneId);
+    this.markWorldZone(zoneId);
+    return record;
+  }
+
+  markWorldZone(zoneId) {
+    if (!zoneId) return;
+    const z = this.worldZones.get(zoneId);
+    if (z) {
+      z.updated_at = new Date().toISOString();
+      this.dirtyZones.add(zoneId);
+      this.dirty = true;
+    }
+  }
+
+  listWorldZones(kind) {
+    const zones = [...this.worldZones.values()];
+    if (!kind) return zones;
+    return zones.filter((z) => z.kind === kind);
+  }
+
+  deleteWorldZone(zoneId) {
+    if (!zoneId) return false;
+    const existed = this.worldZones.delete(zoneId);
+    if (existed) {
+      this.dirtyZones.delete(zoneId);
+      this.deletedZones.add(zoneId);
+      this.dirty = true;
+    }
+    // TODO: delete from Supabase world_zones once DELETE policy is added to migration
+    return existed;
+  }
+
   getStats() {
     return {
       mode: this.supabase ? 'supabase+local' : 'local',
       profiles: this.profiles.size,
       sessions: this.sessions.size,
+      worldZones: this.worldZones.size,
       dirtyProfiles: this.dirtyProfiles.size,
+      dirtyZones: this.dirtyZones.size,
     };
   }
 
@@ -201,6 +304,7 @@ export class Database {
       profiles: [...this.profiles.values()],
       sessions: Object.fromEntries(this.sessions),
       socialLinks: this.socialLinks,
+      worldZones: [...this.worldZones.values()],
     };
   }
 
@@ -219,9 +323,13 @@ export class Database {
     const ids = [...this.dirtyProfiles];
     const sessUpserts = [...this.dirtySessions];
     const sessDeletes = [...this.deletedSessions];
+    const zoneIds = [...this.dirtyZones];
+    const zoneDeletes = [...this.deletedZones];
     this.dirtyProfiles.clear();
     this.dirtySessions.clear();
     this.deletedSessions.clear();
+    this.dirtyZones.clear();
+    this.deletedZones.clear();
     this.dirtySocial = false;
     this.dirty = false;
 
@@ -248,6 +356,41 @@ export class Database {
           batch.forEach((r) => this.dirtyProfiles.add(r.id));
           this.dirty = true;
         }
+      }
+    }
+
+    if (this.supabase && zoneIds.length) {
+      const nowIso = new Date().toISOString();
+      const rows = zoneIds
+        .map((id) => this.worldZones.get(id))
+        .filter(Boolean)
+        .map((z) => ({
+          zone_id: z.zone_id,
+          kind: z.kind,
+          state: z.state,
+          updated_at: z.updated_at || nowIso,
+        }));
+
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batch = rows.slice(i, i + BATCH_SIZE);
+        const { error } = await this.supabase.from('world_zones').upsert(batch);
+        if (error) {
+          this.log.warn?.('[db] Supabase world_zones upsert failed, will retry:', error.message);
+          batch.forEach((r) => this.dirtyZones.add(r.zone_id));
+          this.dirty = true;
+        }
+      }
+    }
+
+    if (this.supabase && zoneDeletes.length) {
+      try {
+        const { error } = await this.supabase.from('world_zones')?.delete?.()?.in?.('zone_id', zoneDeletes);
+        if (error) {
+          // TODO: Supabase world_zones DELETE policy may not be enabled yet; log and do not block
+          this.log.info?.('[db] Supabase world_zones delete skipped/failed:', error.message);
+        }
+      } catch (e) {
+        this.log.info?.('[db] Supabase world_zones delete skipped:', e.message);
       }
     }
 

@@ -32,10 +32,9 @@ function drive(mgr, clock, policy = () => null, maxMs = 3_600_000) {
   return false;
 }
 
-test('modes: Monopoly + Casino + Moon Defense + Cloud Dash playable', () => {
+test('modes: Monopoly + Casino + Cloud Dash playable', () => {
   assert.equal(MODES.monopoly.available, true);
   assert.equal(MODES.casino.available, true);
-  assert.equal(MODES.moon_bunny.available, true);
   assert.equal(MODES.cloud_dash.available, true);
   const { mgr } = harness();
   assert.notEqual(mgr.create('nook', { mode: 'cloud_dash' }).error, 'mode_locked');
@@ -303,15 +302,11 @@ test('table_set_option switches mode in-place across all 4 modes while preservin
   assert.equal(t.mode, 'monopoly');
   assert.equal(t.seats[1].ready, false);
 
-  // Switch to Moon Defense via handle('table_set_option')
-  assert.ok(mgr.handle('nook', { type: 'table_set_option', mode: 'moon_bunny' }).ok);
-  assert.equal(t.mode, 'moon_bunny');
-  assert.equal(t.seats[1].ready, true, 'non-monopoly modes auto-ready human guests');
-  assert.equal(t.seats[2].kind, 'bot', 'configured bot in seat 3 is preserved');
-
   // Switch to Grand Casino Roulette
   assert.ok(mgr.handle('nook', { type: 'table_set_option', mode: 'casino', casinoGame: 'roulette' }).ok);
   assert.equal(t.mode, 'casino');
+  assert.equal(t.seats[1].ready, true, 'non-monopoly modes auto-ready human guests');
+  assert.equal(t.seats[2].kind, 'bot', 'configured bot in seat 3 is preserved');
   assert.equal(t.options.casinoGame, 'roulette');
 
   // Switch to Cloud Dash Chaos

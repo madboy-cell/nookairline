@@ -2,7 +2,7 @@
 // client (editor preview, bubbles, collision). No I/O, no Date.now(): callers pass `now`.
 import {
   BASE_GRID, BRIDGE_GAP, COMFORT, CORE, CORE_LANDMARKS, DECOR, MAX_COPIES_PER_CORE, TILES, WONDERS,
-  GROUND_SKINS, buildingCaps, footprint, placeable,
+  GROUND_SKINS, UNCAPPED_CORE, buildingCaps, footprint, placeable,
 } from './catalog_landmarks.js';
 import { PETS, PET_FAMILIES } from './catalog_gear_pets.js';
 
@@ -31,7 +31,8 @@ export function normalizeVillage(v, now = 0) {
     if (!isInt(v.levels[k])) v.levels[k] = Math.max(1, ...v.buildings.filter((b) => b.type === k).map((b) => b.lv | 0), 1);
   }
   v.copies = v.copies || {};
-  for (const k of CORE_LANDMARKS) if (!isInt(v.copies[k])) v.copies[k] = 1;
+  // Legacy (pre-v2) saves owned one of each blueprint landmark; v2 base camps own only what they built.
+  for (const k of CORE_LANDMARKS) if (!isInt(v.copies[k])) v.copies[k] = v.v2 ? 0 : 1;
   v.wonders = v.wonders || {};
   v.decor = v.decor || {};
   v.blueprints = v.blueprints || {};
@@ -64,7 +65,7 @@ export function syncBuildingLevels(v) {
 // Cells + validation
 // ---------------------------------------------------------------------------------------------
 export function cellsOf(b) {
-  const f = footprint(b.type, b.rot);
+  const f = footprint(b.type, b.rot) || heartFootprint(b);
   const out = [];
   if (!f) return out;
   for (let y = b.y; y < b.y + f.h; y++) for (let x = b.x; x < b.x + f.w; x++) out.push([x, y]);
@@ -78,10 +79,22 @@ export function landingCells(S) {
   return out;
 }
 
+/** Farm plots allowed by the Castle (Starlight Keep) level: 6 at Lv1, +2 per level, max 24. */
+export const plotCap = (castleLv) => Math.min(24, 6 + 2 * (Math.max(1, castleLv | 0 || 1) - 1));
+export const MAX_COTTAGES = 4;
+
+/** Max constructible copies of a core building type. */
+export function maxCopies(v, type) {
+  if (type === 'castle') return 1;
+  if (type === 'farm_plot') return plotCap(v?.castle_lv);
+  if (type === 'cottage') return MAX_COTTAGES;
+  return MAX_COPIES_PER_CORE;
+}
+
 /** How many of each placeable the player owns (core copies / wonders / decor). */
 export function ownedCount(v, type) {
   if (type === 'castle') return 1;
-  if (CORE[type]) return Math.min(MAX_COPIES_PER_CORE, v.copies?.[type] ?? 1);
+  if (CORE[type]) return Math.max(0, Math.min(maxCopies(v, type), v.copies?.[type] | 0));
   if (WONDERS[type]) return v.wonders?.[type] ? 1 : 0;
   if (DECOR[type]) return v.decor?.[type] | 0;
   return 0;
@@ -92,7 +105,7 @@ export function bagContents(v, buildings = v.buildings) {
   const placed = {};
   for (const b of buildings) placed[b.type] = (placed[b.type] || 0) + 1;
   const bag = {};
-  for (const t of ['castle', ...CORE_LANDMARKS, ...Object.keys(WONDERS), ...Object.keys(DECOR)]) {
+  for (const t of ['castle', ...Object.keys(CORE).filter((k) => k !== 'castle'), ...Object.keys(WONDERS), ...Object.keys(DECOR)]) {
     const left = ownedCount(v, t) - (placed[t] || 0);
     if (left > 0) bag[t] = left;
   }
@@ -104,7 +117,7 @@ export function bagContents(v, buildings = v.buildings) {
  * layout = { buildings: [{ uid?, type, x, y, rot }], tiles: [{ x, y, t }], ground? }
  * Returns { ok: true, buildings, tiles, ground } or { ok: false, error, at? }.
  */
-export function validateLayout(v, layout, { maxTiles = 4096 } = {}) {
+export function validateLayout(v, layout, { maxTiles = 4096, heartIsle = null } = {}) {
   const S = v.grid_size;
   const L = layout || {};
   if (!Array.isArray(L.buildings) || !Array.isArray(L.tiles)) return { ok: false, error: 'bad_layout' };
@@ -119,6 +132,9 @@ export function validateLayout(v, layout, { maxTiles = 4096 } = {}) {
     const type = String(raw?.type || '');
     const d = placeable(type);
     if (!d) return { ok: false, error: 'unknown_type', at: type };
+    // Heart-Isle-only Monuments (Couple Ferris Wheel) can't sit on a personal island. `heartIsle === false`
+    // = a personal-island save (economy.saveLayout); null = legacy / seed validation (not enforced).
+    if (d.heartIsleOnly && heartIsle === false) return { ok: false, error: 'heart_isle_only', at: type };
     const rot = ROT_VALUES.includes(raw.rot) ? raw.rot : 0;
     const x = raw.x, y = raw.y;
     if (!isInt(x) || !isInt(y)) return { ok: false, error: 'bad_coords', at: type };
@@ -142,7 +158,7 @@ export function validateLayout(v, layout, { maxTiles = 4096 } = {}) {
   let coreTotal = 0, wonderTotal = 0;
   for (const [type, n] of Object.entries(counts)) {
     if (n > ownedCount(v, type)) return { ok: false, error: 'not_owned', at: type };
-    if (CORE[type] && type !== 'castle') coreTotal += n;
+    if (CORE[type] && type !== 'castle' && !UNCAPPED_CORE.includes(type)) coreTotal += n;
     if (WONDERS[type]) wonderTotal += n;
   }
   if (coreTotal > caps.core) return { ok: false, error: 'core_cap', at: caps.core };
@@ -193,6 +209,11 @@ export function computeComfort(v) {
   }
   c += Math.min(COMFORT.DECOR_CAP, decor);
   c += Math.min(COMFORT.TILE_CAP, v.tiles.length * COMFORT.TILE);
+  // Heart-Isle-only Monuments (Couple Ferris Wheel) stand on the couple's Heart Isle, not on this grid:
+  // an owned one still counts toward its owner's comfort (Master Plan v2 §12).
+  for (const [type, d] of Object.entries(WONDERS)) {
+    if (d.heartIsleOnly && v.wonders?.[type] && !v.buildings.some((b) => b.type === type)) c += COMFORT.WONDER_PER_STAR * (v.wonders[type].stars || 1);
+  }
   return c;
 }
 
@@ -223,7 +244,8 @@ export function storageCapHrs(v, profile) {
   const base = 8 + (16 * (dockLv - 1)) / 9;
   const types = placedTypes(v);
   const casino = types.has('wnd_casino_dome') ? 2 : 1;
-  const tent = types.has('dec_tent') ? DECOR.dec_tent.buff.storagePct / 100 : 0;
+  // Stage 5: decor stat buffs are gone (buff = {}), so these read 0 — kept for older callers.
+  const tent = types.has('dec_tent') ? (DECOR.dec_tent.buff?.storagePct || 0) / 100 : 0;
   return base * casino * (1 + chonkerStorageBonus(profile) + tent);
 }
 
@@ -232,17 +254,18 @@ export function yieldMultipliers(v, { now = 0, coupled = false } = {}) {
   const base = 1 + v.castle_lv * 0.02 + comfortBonusPct(computeComfort(v)) / 100
     + (coupled ? 0.25 : 0) + (now < (v.blessed_until || 0) ? 0.15 : 0);
   return {
-    gold: base + (types.has('dec_swing') ? DECOR.dec_swing.buff.goldPct / 100 : 0),
-    berries: base + (types.has('dec_picnic') ? DECOR.dec_picnic.buff.berriesPct / 100 : 0),
+    gold: base + (types.has('dec_swing') ? (DECOR.dec_swing.buff?.goldPct || 0) / 100 : 0),
+    berries: base + (types.has('dec_picnic') ? (DECOR.dec_picnic.buff?.berriesPct || 0) / 100 : 0),
     base,
   };
 }
 
+/** Stage 3: core buildings no longer print passive currency (kept for older callers: returns 0s). */
 export function productionPerHour(v) {
   const r = { gold: 0, berries: 0 };
-  for (const b of v.buildings) {
+  for (const b of v?.buildings || []) {
     const d = CORE[b.type];
-    if (d?.produces) r[d.produces] += d.perHour(v.levels?.[b.type] || 1);
+    if (d?.produces && typeof d.perHour === 'function' && r[d.produces] != null) r[d.produces] += d.perHour(v.levels?.[b.type] || 1) || 0;
   }
   return r;
 }
@@ -252,8 +275,8 @@ export function dailyDiamonds(v, now) {
   if (v.daily_claim_day === utcDay(now)) return 0;
   let d = 0;
   for (const b of v.buildings) {
-    if (CORE[b.type]?.daily === 'diamonds') d += CORE[b.type].perDay(v.levels?.[b.type] || 1);
-    if (WONDERS[b.type]?.perDay) d += WONDERS[b.type].perDay(v.wonders?.[b.type]?.stars || 1);
+    if (CORE[b.type]?.daily === 'diamonds' && typeof CORE[b.type].perDay === 'function') d += CORE[b.type].perDay(v.levels?.[b.type] || 1) || 0;
+    if (typeof WONDERS[b.type]?.perDay === 'function') d += WONDERS[b.type].perDay(v.wonders?.[b.type]?.stars || 1) || 0;
   }
   return d;
 }
@@ -269,8 +292,10 @@ export function harvestPreview(profile, now, { coupled = false } = {}) {
   const hrs = Math.min(capHrs, elapsedMs / HOUR_MS);
   const rate = productionPerHour(v);
   const mult = yieldMultipliers(v, { now, coupled });
-  const diamonds = dailyDiamonds(v, now);
-  const ready = elapsedMs >= MIN_HARVEST_MS;
+  // Stage 3 "Village Base Camp": passive harvest is retired — the village is a production base now.
+  // Gold / berries are 0 (no producers) and daily diamonds are no longer paid through Harvest All.
+  const diamonds = 0;
+  const ready = elapsedMs >= MIN_HARVEST_MS && (rate.gold > 0 || rate.berries > 0);
   return {
     elapsedMs, capHrs, hrs, full: elapsedMs / HOUR_MS >= capHrs,
     gold: ready ? Math.floor(rate.gold * hrs * mult.gold) : 0,
@@ -283,21 +308,88 @@ export function harvestPreview(profile, now, { coupled = false } = {}) {
 // Twin Sky-Islands layout (Section 21.B). Both clients share ONE world frame per instance: the
 // alphabetically-first owner's island sits at X = 0, the partner's across the 16 m bridge.
 // ---------------------------------------------------------------------------------------------
-export function instanceLayout(entries) {
-  // entries: [{ owner, village }] (1 = solo, 2 = couple)
+// Master Plan v2 §12: a couple instance is [A] — bridge — [Heart Isle 20×20] — bridge — [B]. The Heart
+// Isle is appended LAST in `islands` (kind:'heart', owner 'heart:<a|b>') so index-based callers that
+// expect islands[0]/[1] to be villages keep working; `bridge` stays the first (A ↔ Heart) span and
+// `bridges` lists both spans west → east.
+export const HEART_S = 20;
+export const HEART_PATH_ROWS = [HEART_S / 2 + BRIDGE_Z.z0, HEART_S / 2 + BRIDGE_Z.z0 + 1];   // gy 12..13 (deck strip)
+export const HEART_FIXED = Object.freeze([
+  Object.freeze({ uid: 'heart_pavilion', type: 'hi_love_pavilion', x: 8, y: 5, w: 4, h: 4 }),
+  Object.freeze({ uid: 'heart_chest', type: 'hi_shared_chest', x: 12, y: 10, w: 1, h: 1 }),
+]);
+const HEART_STEM = { x0: 9, x1: 10, y0: 9, y1: 11 };       // short rose path from the deck to the pavilion
+
+export const heartOwnerKey = (a, b) => `heart:${[String(a), String(b)].sort().join('|')}`;
+export const isHeartIsland = (isl) => !!isl && (isl.kind === 'heart' || String(isl.owner || '').startsWith('heart:'));
+
+/** Dusty-rose path cells of the Heart Isle (deck row bridge-to-bridge + stem to the pavilion). */
+export function heartPathCells() {
+  const out = [];
+  for (const gy of HEART_PATH_ROWS) for (let gx = 0; gx < HEART_S; gx++) out.push([gx, gy]);
+  for (let gy = HEART_STEM.y0; gy <= HEART_STEM.y1; gy++) for (let gx = HEART_STEM.x0; gx <= HEART_STEM.x1; gx++) out.push([gx, gy]);
+  return out;
+}
+
+/** True if a w×h rect at (x, y) hits the path, a fixed prop, or the island edge. Decor must avoid these. */
+export function heartReserved(x, y, w = 1, h = 1) {
+  if (x < 0 || y < 0 || x + w > HEART_S || y + h > HEART_S) return true;
+  const path = new Set(heartPathCells().map(([gx, gy]) => `${gx},${gy}`));
+  for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
+    if (path.has(`${xx},${yy}`)) return true;
+    for (const f of HEART_FIXED) if (xx >= f.x && xx < f.x + f.w && yy >= f.y && yy < f.y + f.h) return true;
+  }
+  return false;
+}
+
+const HEART_DECOR_FP = { dec_nookairline_museum: [2, 2], wisteria_pergola: [2, 2], photo_booth: [2, 2], wnd_ferris: [4, 4] };
+/** Heart Isle props carry their own w/h (they are not catalog placeables). */
+function heartFootprint(b) { return b?.heart && b.w > 0 && b.h > 0 ? { w: b.w, h: b.h } : null; }
+
+/** Pseudo-village for the Heart Isle so every island helper (cell index, groundAt, editor) just works. */
+export function heartVillage(isle = null, owner = 'heart:') {
+  const decor = Array.isArray(isle?.layout?.decor) ? isle.layout.decor : [];
+  const buildings = [
+    ...HEART_FIXED.map((f) => ({ ...f, rot: 0, heart: true })),
+    ...decor.map((d) => {
+      const [w, h] = HEART_DECOR_FP[d.type] || [1, 1];
+      return { uid: d.id, type: d.type, x: d.x, y: d.y, w, h, rot: 0, heart: true, placedBy: d.placedBy || null };
+    }),
+  ];
+  return {
+    kind: 'heart', owner, isleId: isle?.id || null, owners: isle?.owners || [],
+    grid_size: HEART_S, castle_lv: 1, ground: 'biome_rose_garden', mood: 'auto', comfort: 0,
+    buildings, tiles: heartPathCells().map(([x, y]) => ({ x, y, t: 'road_cobble' })),
+    levels: {}, wonders: {}, decor: {}, frozen: !!isle?.frozen,
+  };
+}
+
+export function instanceLayout(entries, { heart = null } = {}) {
+  // entries: [{ owner, village }] (1 = solo, 2 = couple). `heart` = the couple's Heart Isle doc (optional).
   const list = [...entries].sort((a, b) => (a.owner < b.owner ? -1 : 1));
   const islands = [];
   const S0 = list[0].village.grid_size;
   islands.push({ owner: list[0].owner, S: S0, cx: 0, village: list[0].village });
   let bridge = null;
+  const bridges = [];
   if (list[1]) {
     const S1 = list[1].village.grid_size;
-    const cx = S0 / 2 + BRIDGE_GAP + S1 / 2;             // PartnerCenterX = S/2 + 16 + S_partner/2
+    const hx0 = S0 / 2 + BRIDGE_GAP;                       // Heart Isle west edge
+    const hcx = hx0 + HEART_S / 2;
+    const b2x0 = hx0 + HEART_S;
+    const cx = b2x0 + BRIDGE_GAP + S1 / 2;                 // PartnerCenterX = S/2 + 8 + 20 + 8 + S_partner/2
     islands.push({ owner: list[1].owner, S: S1, cx, village: list[1].village });
-    bridge = { x0: S0 / 2, x1: S0 / 2 + BRIDGE_GAP, cx: S0 / 2 + BRIDGE_GAP / 2, ...BRIDGE_Z };
+    const owner = heartOwnerKey(list[0].owner, list[1].owner);
+    islands.push({ owner, kind: 'heart', S: HEART_S, cx: hcx, village: heartVillage(heart, owner) });
+    bridge = { x0: S0 / 2, x1: hx0, cx: S0 / 2 + BRIDGE_GAP / 2, ...BRIDGE_Z };
+    bridges.push(bridge, { x0: b2x0, x1: b2x0 + BRIDGE_GAP, cx: b2x0 + BRIDGE_GAP / 2, ...BRIDGE_Z });
   }
-  return { islands, bridge };
+  return { islands, bridge, bridges };
 }
+
+/** All bridge spans of a layout (wire layouts from older servers only carry `bridge`). */
+export const bridgesOf = (layout) => (Array.isArray(layout?.bridges) && layout.bridges.length ? layout.bridges : layout?.bridge ? [layout.bridge] : []);
+export const heartIslandOf = (layout) => (Array.isArray(layout?.islands) ? layout.islands.find(isHeartIsland) || null : null);
 
 export const islandOf = (layout, owner) => (Array.isArray(layout?.islands) ? layout.islands.find((i) => i.owner === owner) || null : null);
 
@@ -355,8 +447,8 @@ export function buildCellIndex(island) {
 }
 
 export function onBridge(layout, x, z) {
-  const b = layout.bridge;
-  return !!b && x >= b.x0 - 0.01 && x <= b.x1 + 0.01 && z >= b.z0 && z <= b.z1;
+  for (const b of bridgesOf(layout)) if (x >= b.x0 - 0.01 && x <= b.x1 + 0.01 && z >= b.z0 && z <= b.z1) return true;
+  return false;
 }
 
 /** Ground query for movement: { walkable, road, water, building, compSize } */
@@ -385,8 +477,7 @@ export function clampToArea(layout, x, z) {
     const h = i.S / 2 - 0.05;
     consider(Math.max(i.cx - h, Math.min(i.cx + h, x)), Math.max(-h, Math.min(h, z)));
   }
-  const b = layout.bridge;
-  if (b) consider(Math.max(b.x0, Math.min(b.x1, x)), Math.max(b.z0 + 0.05, Math.min(b.z1 - 0.05, z)));
+  for (const b of bridgesOf(layout)) consider(Math.max(b.x0, Math.min(b.x1, x)), Math.max(b.z0 + 0.05, Math.min(b.z1 - 0.05, z)));
   return best ? { x: best.x, z: best.z, clamped: true } : { x, z, clamped: false };
 }
 
@@ -412,7 +503,7 @@ export function nearestWalkablePos(layout, x, z, { canFly = false, radius = BODY
   if (!layout || isWalkablePos(layout, x, z, { canFly, radius, minComp: MIN_POCKET_CELLS })) return { x, z };
   const g = groundAt(layout, x, z, { canFly });
   if (g.building && g.island) {
-    const f = footprint(g.building.type, g.building.rot);
+    const f = footprint(g.building.type, g.building.rot) || heartFootprint(g.building) || { w: 1, h: 1 };
     const c = cellToWorld(g.island, g.building.x, g.building.y, f.w, f.h);
     const padX = f.w / 2 + radius + 0.16;
     const padZ = f.h / 2 + radius + 0.16;
@@ -484,7 +575,7 @@ export function findPlaced(layout, uid, x = 0, z = 0) {
   for (const isl of layout.islands) {
     const b = isl.village.buildings.find((q) => q.uid === uid);
     if (!b) continue;
-    const f = footprint(b.type, b.rot);
+    const f = footprint(b.type, b.rot) || heartFootprint(b) || { w: 1, h: 1 };
     const c = cellToWorld(isl, b.x, b.y, f.w, f.h);
     const d = Math.hypot(Math.max(0, Math.abs(x - c.x) - f.w / 2), Math.max(0, Math.abs(z - c.z) - f.h / 2));
     return { island: isl, building: b, center: c, d };
@@ -639,16 +730,24 @@ export function findWalkPath(layout, startX, startZ, goalX, goalZ, { canFly = fa
     return findIslandPath(startIsl, layout, startX, startZ, goal.x, goal.z, { canFly, radius });
   }
 
-  // Cross-island traversal via Rainbow Heart Bridge
-  if (layout.bridge && startIsl && goalIsl && startIsl.owner !== goalIsl.owner) {
-    const b = layout.bridge;
-    const bridgeMidZ = (b.z0 + b.z1) * 0.5;
-    const goingEast = goalIsl.cx > startIsl.cx;
-    const exitPt = nearestWalkablePos(layout, goingEast ? b.x0 - 0.5 : b.x1 + 0.5, bridgeMidZ, { canFly, radius });
-    const entryPt = nearestWalkablePos(layout, goingEast ? b.x1 + 0.5 : b.x0 - 0.5, bridgeMidZ, { canFly, radius });
-    const leg1 = findIslandPath(startIsl, layout, startX, startZ, exitPt.x, exitPt.z, { canFly, radius });
-    const leg2 = findIslandPath(goalIsl, layout, entryPt.x, entryPt.z, goal.x, goal.z, { canFly, radius });
-    return [...leg1, entryPt, ...leg2];
+  // Cross-island traversal via the Rainbow Heart Bridges (couples: A → Heart Isle → B, chained west → east)
+  const spans = [...bridgesOf(layout)].sort((a, b) => a.x0 - b.x0);
+  const chain = [...layout.islands].sort((a, b) => a.cx - b.cx);
+  const si = chain.indexOf(startIsl), gi = chain.indexOf(goalIsl);
+  if (spans.length && spans.length === chain.length - 1 && si >= 0 && gi >= 0 && si !== gi) {
+    const step = gi > si ? 1 : -1;
+    const out = [];
+    let cur = { x: startX, z: startZ };
+    for (let k = si; k !== gi; k += step) {
+      const b = spans[step > 0 ? k : k - 1];
+      const bridgeMidZ = (b.z0 + b.z1) * 0.5;
+      const exitPt = nearestWalkablePos(layout, step > 0 ? b.x0 - 0.5 : b.x1 + 0.5, bridgeMidZ, { canFly, radius });
+      const entryPt = nearestWalkablePos(layout, step > 0 ? b.x1 + 0.5 : b.x0 - 0.5, bridgeMidZ, { canFly, radius });
+      out.push(...findIslandPath(chain[k], layout, cur.x, cur.z, exitPt.x, exitPt.z, { canFly, radius }), entryPt);
+      cur = entryPt;
+    }
+    out.push(...findIslandPath(goalIsl, layout, cur.x, cur.z, goal.x, goal.z, { canFly, radius }));
+    return out;
   }
 
   return [goal];

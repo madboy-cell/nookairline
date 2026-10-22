@@ -78,6 +78,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Sweet Greed',
     cheatDesc: 'Monsters drop +20% extra Moon Coins inside waves.',
     cheat: Object.freeze({ coinDropBonusPct: 0.20 }),
+    ultimate: Object.freeze({
+      name: 'Sweet Burst',
+      cooldownSec: 45,
+      desc: '+30% gold & materials from kills for 10s',
+    }),
+    frontierPassive: '+30% gold & materials from kills for 10s',
   }),
   charm_clover_bell: Object.freeze({
     id: 'charm_clover_bell',
@@ -90,6 +96,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Lucky Sprout',
     cheatDesc: '+12% chance for ★1 Shop Cards to spawn already upgraded to ★★2!',
     cheat: Object.freeze({ luckyStar2BonusPct: 0.12 }),
+    ultimate: Object.freeze({
+      name: 'Lucky Ring',
+      cooldownSec: 50,
+      desc: 'Next 5 gathering swings roll rares twice',
+    }),
+    frontierPassive: 'Next 5 gathering swings roll rares twice',
   }),
   charm_ribbon_musicbox: Object.freeze({
     id: 'charm_ribbon_musicbox',
@@ -102,6 +114,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Allegro Tempo',
     cheatDesc: 'Increases Hero, Pet & Guardian Attack Speed by +18%.',
     cheat: Object.freeze({ atkSpeedBonusPct: 0.18 }),
+    ultimate: Object.freeze({
+      name: 'Allegro',
+      cooldownSec: 50,
+      desc: '+35% attack & swing speed for party in 8m for 8s',
+    }),
+    frontierPassive: '+35% attack & swing speed for party in 8m for 8s',
   }),
   charm_honeybee_lantern: Object.freeze({
     id: 'charm_honeybee_lantern',
@@ -114,6 +132,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Royal Nectar',
     cheatDesc: 'Raises Max Wave Interest Cap by +3 🪙/wave & heals Shrine +40 HP each wave.',
     cheat: Object.freeze({ interestCapBonus: 3, waveHealHp: 40 }),
+    ultimate: Object.freeze({
+      name: 'Nectar Field',
+      cooldownSec: 55,
+      desc: 'Heals players & outpost 6%/s for 6s',
+    }),
+    frontierPassive: 'Heals players & outpost 6%/s for 6s',
   }),
 
   // =========================================================================
@@ -130,6 +154,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Midnight Rewind',
     cheatDesc: 'Every 7th Guardian attack rewinds the target 4.5m backward & slows by 35%.',
     cheat: Object.freeze({ rewindEveryShots: 7, rewindDistM: 4.5, rewindSlowPct: 0.35 }),
+    ultimate: Object.freeze({
+      name: 'Midnight',
+      cooldownSec: 55,
+      desc: 'Slows enemies in 8m by 50% for 4s',
+    }),
+    frontierPassive: 'Slows enemies in 8m by 50% for 4s',
   }),
   charm_siren_pearl: Object.freeze({
     id: 'charm_siren_pearl',
@@ -142,6 +172,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Tidal Undertow',
     cheatDesc: 'Guardian attacks pull monsters toward the center S-bend & apply a 40% Slow.',
     cheat: Object.freeze({ vortexPullOnHit: true, slowOnHitPct: 0.40 }),
+    ultimate: Object.freeze({
+      name: 'Undertow',
+      cooldownSec: 60,
+      desc: 'Pulls enemies within 7m together',
+    }),
+    frontierPassive: 'Pulls enemies within 7m together',
   }),
   charm_roulette_watch: Object.freeze({
     id: 'charm_roulette_watch',
@@ -154,6 +190,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'House Edge',
     cheatDesc: '35% chance Shop Rerolls cost 0 🪙 (FREE) + Critical Hits mint +5 🪙 Coins.',
     cheat: Object.freeze({ freeRerollChance: 0.35, critBonusCoins: 5 }),
+    ultimate: Object.freeze({
+      name: 'All-In',
+      cooldownSec: 60,
+      desc: 'Next 8 gathering swings cost 0 Energy',
+    }),
+    frontierPassive: 'Next 8 gathering swings cost 0 Energy',
   }),
   charm_phantom_mirror: Object.freeze({
     id: 'charm_phantom_mirror',
@@ -166,6 +208,12 @@ export const CHARMS = Object.freeze({
     cheatTitle: 'Mirror Twin-Cast',
     cheatDesc: 'All 6 Pedestal Guardians gain a 25% chance on every shot to fire a 2nd Clone Shot!',
     cheat: Object.freeze({ doubleShotChance: 0.25 }),
+    ultimate: Object.freeze({
+      name: 'Twin Cast',
+      cooldownSec: 65,
+      desc: 'Mirrored clone copies your strikes for 6s',
+    }),
+    frontierPassive: 'Mirrored clone copies your strikes for 6s',
   }),
 
   // =========================================================================
@@ -187,6 +235,12 @@ export const CHARMS = Object.freeze({
       autoSpellCdSec: 12,
       warpCount: 3,
     }),
+    ultimate: Object.freeze({
+      name: 'Fox-Fire',
+      cooldownSec: 60,
+      desc: 'Unleashes 6 homing fox-fire bolts & reveals caches',
+    }),
+    frontierPassive: 'Unleashes 6 homing fox-fire bolts & reveals caches',
   }),
   charm_glacial_snowglobe: Object.freeze({
     id: 'charm_glacial_snowglobe',
@@ -203,6 +257,12 @@ export const CHARMS = Object.freeze({
       shatterNovaMult: 3.5,
       autoSpell: 'glacial_nova',
     }),
+    ultimate: Object.freeze({
+      name: 'Frost Nova',
+      cooldownSec: 65,
+      desc: 'Freezes enemies in 6m for 2s (+50% dmg taken)',
+    }),
+    frontierPassive: 'Freezes enemies in 6m for 2s (+50% dmg taken)',
   }),
   charm_pharaoh_ankh: Object.freeze({
     id: 'charm_pharaoh_ankh',
@@ -221,6 +281,12 @@ export const CHARMS = Object.freeze({
       sunPillarDmgMult: 4.0,
       autoSpell: 'solar_pillar',
     }),
+    ultimate: Object.freeze({
+      name: 'Sun Pillar',
+      cooldownSec: 75,
+      desc: '400% solar strike that shatters armor',
+    }),
+    frontierPassive: '400% solar strike that shatters armor',
   }),
   charm_tsukuyomi_mirror: Object.freeze({
     id: 'charm_tsukuyomi_mirror',
@@ -238,6 +304,12 @@ export const CHARMS = Object.freeze({
       autoSpellCdSec: 10,
       sleepSec: 3.5,
     }),
+    ultimate: Object.freeze({
+      name: 'Eclipse',
+      cooldownSec: 75,
+      desc: 'Stuns all enemies within 7m for 2.5s',
+    }),
+    frontierPassive: 'Stuns all enemies within 7m for 2.5s',
   }),
 
   // =========================================================================
@@ -260,6 +332,12 @@ export const CHARMS = Object.freeze({
       autoSpellCdSec: 14,
       meteorDmgMult: 9.0,
     }),
+    ultimate: Object.freeze({
+      name: 'Royal Guard',
+      cooldownSec: 80,
+      desc: 'Summons a Royal Mochi Guardian for 12s',
+    }),
+    frontierPassive: 'Summons a Royal Mochi Guardian for 12s',
   }),
   charm_golden_pinata_trophy: Object.freeze({
     id: 'charm_golden_pinata_trophy',
@@ -279,6 +357,12 @@ export const CHARMS = Object.freeze({
       pinataKillCoins: 20,
       autoSpell: 'pinata_shower',
     }),
+    ultimate: Object.freeze({
+      name: 'Jackpot',
+      cooldownSec: 80,
+      desc: 'Kills for 10s shower nearby allies with bonus loot',
+    }),
+    frontierPassive: 'Kills for 10s shower nearby allies with bonus loot',
   }),
   charm_seraphim_rose_halo: Object.freeze({
     id: 'charm_seraphim_rose_halo',
@@ -296,6 +380,12 @@ export const CHARMS = Object.freeze({
       superMythicAscendChance: 0.50,
       autoSpell: 'seraphim_blessing',
     }),
+    ultimate: Object.freeze({
+      name: 'Sanctuary',
+      cooldownSec: 85,
+      desc: 'Grants party shield & +25% damage for 6s',
+    }),
+    frontierPassive: 'Grants party shield & +25% damage for 6s',
   }),
   charm_eclipse_dragon_core: Object.freeze({
     id: 'charm_eclipse_dragon_core',
@@ -314,6 +404,12 @@ export const CHARMS = Object.freeze({
       autoSpellCdSec: 12,
       supernovaDmgMult: 10.0,
     }),
+    ultimate: Object.freeze({
+      name: 'Cataclysm',
+      cooldownSec: 90,
+      desc: 'Dragon-fire cone (250% dmg) that cracks nearby nodes',
+    }),
+    frontierPassive: 'Dragon-fire cone (250% dmg) that cracks nearby nodes',
   }),
 });
 
@@ -720,6 +816,18 @@ export function toggleCharmLockInBag(profile, { charmUid } = {}) {
   if (!target) return { ok: false, error: 'charm_not_found' };
   target.locked = !target.locked;
   return { ok: true, charmUid: target.uid, charmId: target.id, locked: target.locked };
+}
+
+/**
+ * Rolls a random Charm of exactly `tier` (grade rolled with `luck`) and adds it to the Charm Bag
+ * as an independent roll (Sky Frontier boss drops). Returns the bag entry or null for unknown tiers.
+ */
+export function grantCharmOfTier(profile, tier, rng = Math.random, luck = 0) {
+  const list = CHARMS_BY_TIER[Number(tier)];
+  if (!profile || !list || !list.length) return null;
+  const pick = list[Math.floor(rng() * list.length)] || list[0];
+  const rolled = createRolledCharm(pick.id, { luckStat: luck, rng });
+  return rolled ? addCharmToBag(profile, rolled) : null;
 }
 
 /**

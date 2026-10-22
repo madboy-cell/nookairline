@@ -2,13 +2,51 @@
 import crypto from 'node:crypto';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { normalizeVillage, validateLayout, syncBuildingLevels, computeComfort } from '../shared/village_rules.js';
-import { BASE_GRID, footprint, CORE } from '../shared/catalog_landmarks.js';
+import { BASE_GRID, footprint, CORE, EXPANSION_TIERS } from '../shared/catalog_landmarks.js';
+import { defaultStory, maxIslandSize, unlockedMonuments } from '../shared/story_rules.js';
 import { OUTFITS } from '../shared/costumes_catalog.js';
 import { ACCESSORIES, PET_IDS } from '../shared/catalog_gear_pets.js';
 import { HAIRSTYLES, HAIR_COLORS } from '../shared/hair_catalog.js';
 
 export const LINEAGES = ['bkk', 'dxb', 'boy', 'girl'];
 export const STARTER_PET = { bkk: 'pet_nyx', dxb: 'pet_ragdoll', boy: 'pet_nyx', girl: 'pet_ragdoll' }; // Screen 24 starter eggs
+
+export function defaultFrontier() {
+  return {
+    v: 1,
+    energy: { cur: 200, max: 200, lastRegenAt: 0, dailyFreeDay: -1, diamondRefillsDay: -1, diamondRefillsCount: 0, partnerGiftDay: -1 },
+    chapter: 0,
+    chapterSteps: {},
+    unlocks: { regions: ['meadow'], gates: [] },
+    toolbelt: { pickaxe: 1, axe: 1, staff: 0, main: 'pickaxe', enchants: {} },
+    ultimateCharmUid: null,
+    mealBuff: null,
+    foodPouch: [null, null, null, null],
+    warehouse: { lv: 1, items: {} },
+    pantry: { lv: 1, items: {} },
+    campCrate: { items: {}, expiresAt: 0 },
+    homeShardId: null,
+    discoveries: [],
+    claimedRewards: {},
+    stats: { nodes: 0, perfects: 0, invasions: 0, bosses: 0, mentorAssists: 0 },
+  };
+}
+
+function isPlainObject(val) {
+  return val !== null && typeof val === 'object' && !Array.isArray(val) && Object.prototype.toString.call(val) === '[object Object]';
+}
+
+export function deepFill(target, defaults) {
+  if (!isPlainObject(target) || !isPlainObject(defaults)) return target;
+  for (const [key, defaultVal] of Object.entries(defaults)) {
+    if (!(key in target) || target[key] === undefined) {
+      target[key] = structuredClone(defaultVal);
+    } else if (isPlainObject(defaultVal) && isPlainObject(target[key])) {
+      deepFill(target[key], defaultVal);
+    }
+  }
+  return target;
+}
 
 export function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   const hash = crypto.scryptSync(String(password), salt, 32).toString('hex');
@@ -32,7 +70,53 @@ function starterTiles() {
   return tiles;
 }
 
+/** Stage 3 base-camp fields on a village (idempotent). */
+export function ensureBasecampFields(v, story = null) {
+  v.v2 = true;
+  if (!v.production || typeof v.production !== 'object' || Array.isArray(v.production)) v.production = {};
+  if (!v.plots || typeof v.plots !== 'object' || Array.isArray(v.plots)) v.plots = {};
+  if (!Array.isArray(v.residents)) v.residents = [];
+  if (!Array.isArray(v.monument_unlocks)) v.monument_unlocks = [];
+  for (const m of unlockedMonuments(story)) if (!v.monument_unlocks.includes(m)) v.monument_unlocks.push(m);
+  const storyMax = maxIslandSize(story);
+  v.max_grid = Math.max(Number.isInteger(v.max_grid) ? v.max_grid : BASE_GRID, storyMax);
+  v.copies = v.copies || {};
+  return v;
+}
+
+/** "Keep everything, auto-credit": every placed core copy becomes an owned (constructed) copy. */
+export function creditPlacedCopies(v) {
+  v.copies = v.copies || {};
+  const placed = {};
+  for (const b of v.buildings || []) if (CORE[b.type] && b.type !== 'castle') placed[b.type] = (placed[b.type] || 0) + 1;
+  for (const [type, n] of Object.entries(placed)) v.copies[type] = Math.max(v.copies[type] | 0, n);
+  return v;
+}
+
+/** Stage 3 new-player island: only the Castle (as ruins) + 2 starter farm plots. */
 function starterVillage(now = Date.now()) {
+  const v = normalizeVillage({
+    v2: true,
+    grid_size: 18,
+    castle_lv: 1,
+    castle_ruins: true,
+    mood: 'auto',
+    ground: 'ground_classic',
+    levels: {},
+    copies: { farm_plot: 2 },
+    buildings: [
+      { uid: 'castle', type: 'castle', x: 7, y: 1, rot: 0 },
+      { uid: 'farm_plot_1', type: 'farm_plot', x: 3, y: 11, rot: 0 },
+      { uid: 'farm_plot_2', type: 'farm_plot', x: 5, y: 11, rot: 0 },
+    ],
+    tiles: starterTiles(),
+    last_harvest_at: now,
+  }, now);
+  return ensureBasecampFields(v);
+}
+
+/** The pre-Stage-3 starter island (5 landmarks + castle) — QA seeds and the legacy migration fallback. */
+export function legacyStarterVillage(now = Date.now()) {
   return normalizeVillage({
     grid_size: 18,
     castle_lv: 1,
@@ -58,14 +142,22 @@ export function migrateProfile(p, now = Date.now()) {
   if (Array.isArray(p.friends)) {
     p.friends = Array.from(new Set(p.friends.map((f) => (f === 'beam' ? 'neen' : f))));
   }
+  const wasV2 = !!p.village?.v2;
   const v = normalizeVillage(p.village || starterVillage(now), now);
+  // Stage 3 ownership v2: credit every placed core building BEFORE validating ownership.
+  if (!wasV2) creditPlacedCopies(v);
+  if (!p.story || typeof p.story !== 'object' || typeof p.story.chapter !== 'number') p.story = defaultStory();
+  ensureBasecampFields(v, p.story);
   for (const b of v.buildings) {
     if (b.type === 'shrine' && b.x === 10 && b.y === 10) b.x = 9;
     if (b.type === 'dock' && b.x === 18 && b.y === 19) b.y = 13;
   }
-  v.grid_size = BASE_GRID;
+  // v2 base camps keep story-unlocked expansions; legacy saves are shrunk back to the base island.
+  const keepGrid = wasV2 && EXPANSION_TIERS.some((t) => t.size === v.grid_size) && v.grid_size <= v.max_grid;
+  if (!keepGrid) v.grid_size = BASE_GRID;
+  const G = v.grid_size;
   if (Array.isArray(v.tiles)) {
-    v.tiles = v.tiles.filter((t) => t && t.x >= 0 && t.y >= 0 && t.x < BASE_GRID && t.y < BASE_GRID);
+    v.tiles = v.tiles.filter((t) => t && t.x >= 0 && t.y >= 0 && t.x < G && t.y < G);
   }
   let check = validateLayout(v, v);
   if (!check.ok) {
@@ -74,7 +166,7 @@ export function migrateProfile(p, now = Date.now()) {
     const prevCount = v.buildings.length;
     v.buildings = v.buildings.filter((b) => {
       const f = footprint(b.type, b.rot || 0);
-      const oob = !f || b.x < 0 || b.y < 0 || b.x + f.w > BASE_GRID || b.y + f.h > BASE_GRID;
+      const oob = !f || b.x < 0 || b.y < 0 || b.x + f.w > G || b.y + f.h > G;
       if (oob && !isCore(b.type)) return false;
       return true;
     });
@@ -84,9 +176,10 @@ export function migrateProfile(p, now = Date.now()) {
   }
   if (!check.ok) {
     // last resort: keep levels / ownership, restore the starter positions
-    const fresh = starterVillage(now);
+    const fresh = wasV2 ? starterVillage(now) : legacyStarterVillage(now);
     v.grid_size = fresh.grid_size;
     v.buildings = fresh.buildings; v.tiles = fresh.tiles;
+    creditPlacedCopies(v);
     check = validateLayout(v, v);
   }
   if (check.ok) { v.buildings = check.buildings; v.tiles = check.tiles; }
@@ -142,6 +235,13 @@ export function migrateProfile(p, now = Date.now()) {
   p.email = p.email || null;
   p.email_bound_at = p.email_bound_at || null;
   p.email_reward_claimed = !!p.email_reward_claimed;
+  if (!p.frontier || typeof p.frontier !== 'object' || Array.isArray(p.frontier)) {
+    p.frontier = defaultFrontier();
+  } else {
+    deepFill(p.frontier, defaultFrontier());
+  }
+  p.frontier.pantry ||= { lv: 1, items: {} };
+  if (p.orders === undefined) p.orders = null;   // order board is created lazily (basecamp_service.orderBoard)
   return p;
 }
 
@@ -219,6 +319,9 @@ function baseProfile(username, lineage, appearanceOpts = {}) {
     email: null,
     email_bound_at: null,
     email_reward_claimed: false,
+    frontier: defaultFrontier(),
+    story: defaultStory(),
+    orders: null,
     created_at: now,
     last_active_ts: now,
   };
@@ -297,7 +400,8 @@ export function seedProfiles() {
     castle_lv: 6, levels: { mint: 7, patisserie: 6, shrine: 5, nest: 4, dock: 5 },
     wonders: { wnd_ferris: { stars: 1 }, wnd_onsen: { stars: 1 } },
     decor: { dec_swing: 1, dec_picnic: 1, dec_gramophone: 1 },
-    place: [['wnd_ferris', 11, 13], ['wnd_onsen', 2, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 13], ['dec_gramophone', 10, 6]],
+    // wnd_ferris is Heart-Isle-only (Master Plan v2 §12): owned here, placed on the couple's Heart Isle.
+    place: [['wnd_onsen', 2, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 13], ['dec_gramophone', 10, 6]],
     roads: [...range(5, 10).map((x) => [x, 16]), ...range(5, 10).map((x) => [x, 17]), [5, 5], [12, 5], [10, 7], [10, 8]],
   });
 
@@ -342,7 +446,8 @@ export function seedProfiles() {
     castle_lv: 8, levels: { mint: 8, patisserie: 7, shrine: 6, nest: 6, dock: 7 },
     wonders: { wnd_ferris: { stars: 2 }, wnd_fountain: { stars: 1 }, wnd_world_tree: { stars: 1 } },
     decor: { dec_swing: 1, dec_picnic: 1, dec_tent: 1, dec_cat_cushion: 1, dec_birdbath_lamp: 1 },
-    place: [['wnd_ferris', 11, 13], ['wnd_fountain', 5, 13], ['wnd_world_tree', 1, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 10],
+    // wnd_ferris is Heart-Isle-only (Master Plan v2 §12): owned here, placed on the couple's Heart Isle.
+    place: [['wnd_fountain', 5, 13], ['wnd_world_tree', 1, 13], ['dec_swing', 11, 6], ['dec_picnic', 5, 10],
       ['dec_tent', 15, 0], ['dec_cat_cushion', 10, 6], ['dec_birdbath_lamp', 5, 6]],
     roads: [[5, 5], [12, 5], [10, 7], [10, 8], ...range(6, 10).map((x) => [x, 16]), [10, 12]],
   });
@@ -361,7 +466,7 @@ const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 /** Starter island + extra levels / owned wonders & decor / extra placements / extra road tiles. */
 function seedVillage({ castle_lv, levels, wonders, decor, place, roads }) {
   const now = Date.now();
-  const v = starterVillage(now - 2 * 3600_000);   // 2 h of production waiting so QA can harvest at once
+  const v = legacyStarterVillage(now - 2 * 3600_000);
   const heavenDecor = {
     dec_heaven_winged_pillar: 2,
     dec_heaven_cloud_arch: 2,
@@ -375,6 +480,8 @@ function seedVillage({ castle_lv, levels, wonders, decor, place, roads }) {
   const check = validateLayout(v, v);
   if (!check.ok) throw new Error(`seed village invalid: ${check.error} ${check.at ?? ''}`);
   v.buildings = check.buildings; v.tiles = check.tiles;
+  creditPlacedCopies(v);
+  ensureBasecampFields(v);
   syncBuildingLevels(v);
   v.comfort = computeComfort(v);
   return v;
@@ -630,10 +737,11 @@ export function publicProfile(p, { self = false } = {}) {
       visual_tier: pet.visual_tier || pet.stars || 1,
       nickname: pet.nickname || '',
     }));
-  if (self) return { ...rest, yard_pets };
+  if (self) return { ...rest, yard_pets, frontier: rest.frontier ?? defaultFrontier() };
   return {
     id: p.id, username: p.username, lineage: p.lineage, appearance: p.appearance, title: p.title, level: p.level, cp: p.cp,
     equipped: p.equipped, partner_id: p.partner_id, couple_streak: p.couple_streak, is_bot: !!p.is_bot, yard_pets,
+    frontier: { chapter: p.frontier?.chapter ?? 0 },
   };
 }
 
@@ -642,5 +750,8 @@ export function publicVillage(v) {
   return {
     grid_size: v.grid_size, castle_lv: v.castle_lv, ground: v.ground, mood: v.mood, comfort: v.comfort,
     buildings: v.buildings, tiles: v.tiles, levels: v.levels, wonders: v.wonders,
+    // Stage 3 base camp: visitors see crops (to water them), production timers and residents.
+    v2: !!v.v2, castle_ruins: !!v.castle_ruins, max_grid: v.max_grid ?? BASE_GRID,
+    production: v.production || {}, plots: v.plots || {}, residents: v.residents || [],
   };
 }

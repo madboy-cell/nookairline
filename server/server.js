@@ -12,11 +12,16 @@ import { WebSocketServer } from 'ws';
 import { Database } from './db.js';
 import {
   createStarterProfile, seedProfiles, hashPassword, verifyPassword, publicProfile, publicVillage, migrateProfile, upgradeSeedVillage, LINEAGES,
+  defaultFrontier,
 } from './profile_factory.js';
+import { isFrontierInstance } from '../shared/sky_frontier_rules.js';
+import { createSkyFrontierService } from './sky_frontier_service.js';
 import { recalcPlayerCP } from '../shared/progression.js';
 import { FISHING } from '../shared/catalog_landmarks.js';
 import { instanceLayout, clampToArea, spawnPoint, dockNear, findPlaced, buildCellIndex, isWalkablePos, nearestWalkablePos } from '../shared/village_rules.js';
 import * as eco from './economy_service.js';
+import { createBasecampService } from './basecamp_service.js';
+import { createHeartIsleService } from './heart_isle_service.js';
 import * as rpg from './rpg_service.js';
 // Step 4: Universal 4-Seat Table Hub + 2.5D Sky Monopoly (table_* / mono_* messages, podium payouts)
 import { createTableService } from './table_service.js';
@@ -42,7 +47,16 @@ const RPG_ACTIONS = new Set([
   // Social & Couple actions
   'social_directory', 'friend_request_send', 'friend_request_accept', 'friend_request_decline', 'friend_remove',
   'couple_propose', 'couple_accept', 'couple_decline', 'couple_break', 'couple_moment',
+  // Stage 3 "Village Base Camp" actions
+  'bc_construct', 'bc_upgrade', 'bc_enqueue', 'bc_collect', 'bc_collect_all', 'bc_plant', 'bc_water', 'bc_harvest_plot',
+  'bc_orders', 'bc_order_fill', 'bc_order_discard', 'bc_big_contribute', 'bc_story', 'bc_story_claim', 'bc_store_upgrade',
+  // Stage 5: residents / monuments / camp props
+  'bc_residents', 'bc_resident_assign', 'bc_monuments', 'bc_monument_contribute', 'bc_monument_use', 'bc_wish',
+  'bc_craft_decor', 'bc_tent_bread', 'bc_props_collect',
+  // Couples: Heart Isle + couple mailbox (server/heart_isle_service.js)
+  'hi_state', 'hi_place', 'hi_remove', 'hi_deposit', 'hi_withdraw', 'couple_send',
 ]);
+const BC_READ_ONLY = new Set(['bc_story', 'bc_orders', 'bc_residents', 'bc_monuments']);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -70,10 +84,11 @@ export const NET = {
 const USERNAME_RE = /^[a-z0-9_]{3,16}$/;
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
 
-export async function startServer({ port = Number(process.env.PORT) || 4000, dataFile, quiet = false, rng = Math.random } = {}) {
+export async function startServer({ port = Number(process.env.PORT) || 4000, dataFile, dataDir, quiet = false, rng = Math.random } = {}) {
   loadEnv();
   const log = quiet ? { info() {}, warn() {}, error: console.error } : { info: console.log, warn: console.warn, error: console.error };
-  const db = new Database(dataFile || path.join(ROOT, 'server', 'data', 'local_db.json'), { log });
+  const resolvedDataFile = dataFile || (dataDir ? path.join(dataDir, 'local_db.json') : path.join(ROOT, 'server', 'data', 'local_db.json'));
+  const db = new Database(resolvedDataFile, { log });
   await db.init();
 
   // Migrate legacy 'beam' profile to 'neen' before seeding QA accounts.
@@ -351,6 +366,22 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     }
   }
 
+  // Couples: Heart Isle (shared 20×20 isle between the twin villages) + mailbox. Decor edits rebuild the couple layout.
+  const heartIsles = createHeartIsleService({
+    db,
+    now: () => Date.now(),
+    pushProfile,
+    sendTo: (userId, msg) => send(sockets.get(userId), msg),
+    onIsleChanged: (isle) => {
+      const id = `couple:${[...isle.owners].sort().join('|')}`;
+      layouts.delete(id);
+      if (!instances.has(id) || isle.frozen) return;
+      const L = layoutFor(id);
+      const heart = L.islands.find((i) => i.kind === 'heart');
+      if (heart) broadcast(id, { type: 'village_updated', owner: heart.owner, village: heart.village, layout: layoutWire(L) });
+    },
+  });
+
   const dailyService = createDailyService({
     db,
     now: () => Date.now(),
@@ -362,6 +393,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     isOnline: (id) => (sockets.has(id) && sockets.get(id)?.readyState === 1) || !!db.getProfile(id)?.is_bot,
     getPresence: (id) => presence.get(id),
     onCoupleChanged,
+    coupleHooks: heartIsles,
   });
 
   const voiceService = createVoiceCallService({
@@ -468,13 +500,21 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   function layoutFor(instanceId) {
     let L = layouts.get(instanceId);
     if (!L) {
-      L = instanceLayout(ownersOf(instanceId).map((owner) => ({ owner, village: db.getProfile(owner).village })));
+      const owners = ownersOf(instanceId);
+      const heart = owners.length === 2 ? heartIsles.isleForCouple(owners[0], owners[1]) : null;
+      L = instanceLayout(owners.map((owner) => ({ owner, village: db.getProfile(owner).village })), { heart });
       for (const isl of L.islands) buildCellIndex(isl);
       layouts.set(instanceId, L);
     }
     return L;
   }
-  const layoutWire = (L) => ({ islands: L.islands.map((i) => ({ owner: i.owner, S: i.S, cx: i.cx, village: publicVillage(i.village) })), bridge: L.bridge });
+  const layoutWire = (L) => ({
+    islands: L.islands.map((i) => (i.kind === 'heart'
+      ? { owner: i.owner, kind: 'heart', S: i.S, cx: i.cx, village: i.village }
+      : { owner: i.owner, S: i.S, cx: i.cx, village: publicVillage(i.village) })),
+    bridge: L.bridge,
+    ...(L.bridges?.length ? { bridges: L.bridges } : {}),
+  });
 
   /** Village of `owner` changed: rebuild every instance that renders it and tell its members. */
   function villageChanged(owner) {
@@ -508,7 +548,17 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   const MUSEUM_ID = 'nook_museum';
   const isOpen36Instance = (id) => id === TOWNHALL.ID || id === MUSEUM_ID || String(id || '').startsWith('nook_museum:');
 
+  // Sky Frontier (Master Plan v2 §2/§6): frontier instances never touch village layouts.
+  const frontier = createSkyFrontierService({
+    db, instances, presence, send, broadcast, sockets,
+    isCouple, onProfileChanged: (prof) => pushProfile(prof), defaultFrontier, log,
+  });
+
+  // Stage 3 "Village Base Camp": production, plots, orders and the story board.
+  const basecamp = createBasecampService({ db, rng });
+
   function partnerCompanionFor(userId, instanceId) {
+    if (isFrontierInstance(instanceId)) return null;
     const p = db.getProfile(userId);
     if (!p || !isCouple(p)) return null;
     const partner = db.getProfile(p.partner_id);
@@ -564,20 +614,27 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         ? { kind: 'townhall', size: 36 }
         : isMuseum
           ? { kind: 'museum', size: 36, portalId }
-          : layoutWire(layoutFor(ws.instanceId)),
+          : isFrontierInstance(ws.instanceId)
+            ? frontier.layoutPayload(ws.instanceId)
+            : layoutWire(layoutFor(ws.instanceId)),
       self: s ? { x: s.x, z: s.z } : undefined,
       players: [...(instances.get(ws.instanceId) || [])].filter((id) => id !== ws.userId && presence.has(id)).map(playerState),
       partnerCompanion: partnerCompanionFor(ws.userId, ws.instanceId),
     };
   };
 
-  function switchInstance(ws, to, { force = false, spawn = null } = {}) {
+  function switchInstance(ws, to, { force = false, spawn = null, internal = false } = {}) {
     const p = db.getProfile(ws.userId);
     if (!p) return;
     let targetId;
     let spawnOwnerId = p.id;
     const toStr = String(to || 'home');
-    if (toStr === 'townhall') {
+    if (toStr === 'frontier' || isFrontierInstance(toStr)) {
+      // Region instance ids are only honoured for internal gate transfers (or held unlocks).
+      targetId = internal && isFrontierInstance(toStr) && toStr.includes('~')
+        ? toStr
+        : frontier.resolveEntry(p, toStr === 'frontier' ? null : toStr, { internal }).targetId;
+    } else if (toStr === 'townhall') {
       targetId = TOWNHALL.ID;
     } else if (toStr === 'museum' || toStr === 'nook_museum') {
       targetId = MUSEUM_ID;
@@ -611,6 +668,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         layouts.delete(oldId);
       }
       broadcast(oldId, { type: 'player_left', id: ws.userId });
+      if (isFrontierInstance(oldId)) frontier.onLeave(oldId);
     }
 
     // Join target instance
@@ -645,6 +703,15 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         Object.assign(s, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, t: now, instanceId: targetId });
       } else {
         presence.set(ws.userId, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, right: true, back: !!portalId, t: now, instanceId: targetId });
+      }
+    } else if (isFrontierInstance(targetId)) {
+      layoutPayload = frontier.layoutPayload(targetId);
+      const def = frontier.spawnFor(targetId);
+      selfPos = hasCustomSpawn ? frontier.clampMove(targetId, Number(spawn.x), Number(spawn.z)) : def;
+      if (s) {
+        Object.assign(s, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, t: now, instanceId: targetId });
+      } else {
+        presence.set(ws.userId, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: targetId });
       }
     } else {
       const L = layoutFor(targetId);
@@ -700,6 +767,8 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     let nextInstanceId = instanceFor(p);
     if (candidateId === TOWNHALL.ID || isOpen36Instance(candidateId)) {
       nextInstanceId = candidateId;
+    } else if (isFrontierInstance(candidateId) && frontier.canRejoin(p, candidateId)) {
+      nextInstanceId = candidateId;
     } else if (typeof candidateId === 'string' && candidateId.startsWith('village:')) {
       const ownerId = candidateId.slice('village:'.length);
       if (ownerId && ownerId !== p.id && !(isCouple(p) && ownerId === p.partner_id) && db.getProfile(ownerId)) {
@@ -716,6 +785,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
           layouts.delete(oldInstId);
         }
         broadcast(oldInstId, { type: 'player_left', id: p.id }, p.id);
+        if (isFrontierInstance(oldInstId)) frontier.onLeave(oldInstId);
       }
     }
     sockets.set(p.id, ws);
@@ -729,10 +799,19 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const portalId = isMuseum && String(ws.instanceId || '').startsWith('nook_museum:')
       ? String(ws.instanceId).split(':')[1]
       : null;
-    const L = (isTownHall || isMuseum) ? null : layoutFor(ws.instanceId);
+    const isFrontier = isFrontierInstance(ws.instanceId);
+    const L = (isTownHall || isMuseum || isFrontier) ? null : layoutFor(ws.instanceId);
     const canFly = !!p.equipped?.wings?.id;
     const now = Date.now();
-    if (isTownHall) {
+    if (isFrontier) {
+      if (!prev || prev.instanceId !== ws.instanceId) {
+        const sp = frontier.spawnFor(ws.instanceId);
+        presence.set(p.id, { x: sp.x, z: sp.z, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: ws.instanceId });
+      } else {
+        const c = frontier.clampMove(ws.instanceId, prev.x, prev.z);
+        prev.x = c.x; prev.z = c.z; prev.vx = 0; prev.vz = 0; prev.t = now; prev.instanceId = ws.instanceId;
+      }
+    } else if (isTownHall) {
       if (!prev || prev.instanceId !== ws.instanceId) {
         presence.set(p.id, { x: 0, z: 6, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: ws.instanceId });
       } else {
@@ -760,6 +839,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         prev.x = safe.x; prev.z = safe.z; prev.vx = 0; prev.vz = 0;
       }
     }
+    basecamp.tick(p, { force: true });   // Stage 5: residents eat + camp props accrue on join
     const offline = eco.computeOfflineGains(p, now, p.last_active_ts, { coupled: isCouple(p) });
     p.last_active_ts = now;
     db.markProfile(p.id);
@@ -767,8 +847,10 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       ? { kind: 'townhall', size: 36 }
       : isMuseum
         ? { kind: 'museum', size: 36, portalId }
-        : layoutWire(L);
-    const visitingOwner = (!isTownHall && !isMuseum && ws.instanceId.startsWith('village:'))
+        : isFrontier
+          ? frontier.layoutPayload(ws.instanceId)
+          : layoutWire(L);
+    const visitingOwner = (!isTownHall && !isMuseum && !isFrontier && ws.instanceId.startsWith('village:'))
       ? (() => {
           const ownerId = ws.instanceId.slice('village:'.length);
           return ownerId && ownerId !== p.id ? ownerId : null;
@@ -783,7 +865,8 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       layout: layoutPayload,
       ...(isTownHall ? { townhall: { id: TOWNHALL.ID, size: 36 } } : {}),
       ...(isMuseum ? { museum: { id: MUSEUM_ID, size: 36, portalId } } : {}),
-      ...(!isTownHall && !isMuseum ? { village: layoutPayload } : {}),
+      ...(isFrontier ? { frontier: layoutPayload } : {}),
+      ...(!isTownHall && !isMuseum && !isFrontier ? { village: layoutPayload } : {}),
       ...(visitingOwner ? { visitingOwner } : {}),
       serverNow: now,
       coupled: isCouple(p),
@@ -805,6 +888,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     members?.delete(ws.userId);
     if (members && !members.size && !isOpen36Instance(ws.instanceId)) { instances.delete(ws.instanceId); layouts.delete(ws.instanceId); }
     broadcast(ws.instanceId, { type: 'player_left', id: ws.userId });
+    if (isFrontierInstance(ws.instanceId)) frontier.onLeave(ws.instanceId);
     const p = db.getProfile(ws.userId);
     if (p) { p.last_active_ts = Date.now(); db.markProfile(p.id); }
     log.info(`[ws] ${ws.userId} left (${sockets.size} online)`);
@@ -821,10 +905,13 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     }
     const now = Date.now();
     const isOpen36 = isOpen36Instance(ws.instanceId);
+    const isFrontier = isFrontierInstance(ws.instanceId);
     let x, z;
     if (isOpen36) {
       x = Math.max(-18, Math.min(18, m.x));
       z = Math.max(-18, Math.min(18, m.z));
+    } else if (isFrontier) {
+      ({ x, z } = frontier.clampMove(ws.instanceId, m.x, m.z));
     } else {
       const clamped = clampToArea(layoutFor(ws.instanceId), m.x, m.z);
       x = clamped.x;
@@ -836,7 +923,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const allowed = NET.MAX_SPEED * dt + 1.2;
     const moved = Math.hypot(x - s.x, z - s.z);
     let corrected = x !== m.x || z !== m.z;
-    const L = !isOpen36 ? layoutFor(ws.instanceId) : null;
+    const L = (!isOpen36 && !isFrontier) ? layoutFor(ws.instanceId) : null;
     const p = L ? db.getProfile(ws.userId) : null;
     const canFly = !!p?.equipped?.wings?.id;
     const prevStuck = L ? !isWalkablePos(L, s.x, s.z, { canFly, radius: 0.14 }) : false;
@@ -853,6 +940,10 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const sp = Math.hypot(m.vx, m.vz), maxV = NET.MAX_SPEED;
     const vk = sp > maxV ? maxV / sp : 1;
     Object.assign(s, { x, z, vx: m.vx * vk, vz: m.vz * vk, right: !!m.right, back: !!m.back, t: now });
+    if (isFrontier && (!ws.sfVisitAt || now - ws.sfVisitAt > 500)) {
+      ws.sfVisitAt = now;
+      frontier.onPlayerMoved(db.getProfile(ws.userId), ws.instanceId, x, z);
+    }
     if (corrected) send(ws, { type: 'position_correct', x, z, zoneSeq: ws.zoneSeq });
     broadcast(ws.instanceId, { type: 'player_moved', id: ws.userId, x, z, vx: s.vx, vz: s.vz, right: s.right, back: s.back }, ws.userId);
   }
@@ -871,20 +962,25 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   function onAction(ws, m) {
     const p = db.getProfile(ws.userId);
     const now = Date.now();
-    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state' || m.type === 'social_directory' || m.type === 'couple_moment';
+    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state' || m.type === 'social_directory' || m.type === 'couple_moment' || m.type === 'hi_state' || BC_READ_ONLY.has(m.type);
     if (now - (ws.lastAction || 0) < NET.ACTION_COOLDOWN_MS && !noCooldown) {
       return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, ok: false, error: 'slow_down' });
     }
     if (!noCooldown) ws.lastAction = now;
     const coupled = isCouple(p);
+    if (m.type.startsWith('bc_')) basecamp.tick(p);   // Stage 5 lazy tick (feeding ≤ 1×/10 min, props, flags)
     switch (m.type) {
       case 'village_harvest_all': {
         const r = eco.harvestAll(p, now, { coupled, rng });
         if (r.ok) dailyService.bumpQuest(p, 'harvest');
         return reply(ws, p, m.type, m, r);
       }
-      case 'village_save_grid':
-        return reply(ws, p, m.type, m, eco.saveLayout(p, m.layout), { changed: true });
+      case 'village_save_grid': {
+        const before = basecamp.placedCounts(p.village);
+        const r = eco.saveLayout(p, m.layout);
+        if (r.ok) { r.built = basecamp.onLayoutSaved(p, before); basecamp.tick(p); }
+        return reply(ws, p, m.type, m, r, { changed: true });
+      }
       case 'village_set_mood':
         return reply(ws, p, m.type, m, eco.setMood(p, String(m.mood)), { changed: true });
       case 'village_upgrade': {
@@ -910,13 +1006,78 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       }
       case 'village_wonder_action': {
         if (m.action !== 'fountain_toss') return reply(ws, p, m.type, m, { ok: false, error: 'bad_action' });
-        if (ws.instanceId === TOWNHALL.ID || isOpen36Instance(ws.instanceId)) return reply(ws, p, m.type, m, { ok: false, error: 'not_in_village' });
+        if (ws.instanceId === TOWNHALL.ID || isOpen36Instance(ws.instanceId) || isFrontierInstance(ws.instanceId)) return reply(ws, p, m.type, m, { ok: false, error: 'not_in_village' });
         const owner = String(m.owner || p.id);
         const L = layoutFor(ws.instanceId);
         const isl = L.islands.find((i) => i.owner === owner);
         if (!isl) return reply(ws, p, m.type, m, { ok: false, error: 'not_here' });
         return reply(ws, p, m.type, m, eco.fountainToss(p, isl.village, now, rng));
       }
+      // --- Stage 3: Village Base Camp ----------------------------------------------------
+      case 'bc_construct':
+        // `type` is the WS envelope (= 'bc_construct'), so the building type travels as `building` (alias `target`).
+        return reply(ws, p, m.type, m, basecamp.construct(p, String(m.building ?? m.target ?? '')), { changed: true });
+      case 'bc_upgrade':
+        return reply(ws, p, m.type, m, basecamp.upgrade(p, String(m.building ?? m.target ?? '')), { changed: true });
+      case 'bc_enqueue':
+        return reply(ws, p, m.type, m, basecamp.enqueue(p, String(m.uid || ''), String(m.recipe || '')), { changed: true });
+      case 'bc_collect':
+        return reply(ws, p, m.type, m, basecamp.collect(p, String(m.uid || '')), { changed: true });
+      case 'bc_collect_all':
+        return reply(ws, p, m.type, m, basecamp.collectAll(p), { changed: true });
+      case 'bc_plant':
+        return reply(ws, p, m.type, m, basecamp.plant(p, String(m.uid || ''), String(m.crop || '')), { changed: true });
+      case 'bc_water': {
+        const ownerId = String(m.owner || '').trim().toLowerCase();
+        const owner = ownerId ? db.getProfile(ownerId) : null;
+        const r = owner ? basecamp.water(p, owner, String(m.uid || '')) : { ok: false, error: 'no_owner' };
+        if (r.ok) { db.markProfile(owner.id); pushProfile(owner); villageChanged(owner.id); }
+        return reply(ws, p, m.type, m, r);
+      }
+      case 'bc_harvest_plot':
+        return reply(ws, p, m.type, m, basecamp.harvestPlot(p, String(m.uid || '')), { changed: true });
+      case 'bc_orders':
+        return reply(ws, p, m.type, m, basecamp.orderBoard(p, now));
+      case 'bc_order_fill':
+        return reply(ws, p, m.type, m, basecamp.fillOrder(p, m.slot | 0));
+      case 'bc_order_discard':
+        return reply(ws, p, m.type, m, basecamp.discardOrder(p, m.slot | 0));
+      case 'bc_big_contribute': {
+        const r = basecamp.contributeBig(p, m.items && typeof m.items === 'object' ? m.items : {});
+        if (r.ok && r.rewards) {
+          for (const uid of Object.keys(r.rewards)) {
+            if (uid === p.id) continue;
+            const other = db.getProfile(uid);
+            if (other) pushProfile(other);
+          }
+        }
+        return reply(ws, p, m.type, m, r);
+      }
+      case 'bc_story':
+        return reply(ws, p, m.type, m, basecamp.storyState(p));
+      case 'bc_story_claim':
+        return reply(ws, p, m.type, m, basecamp.claimStory(p), { changed: true });
+      case 'bc_store_upgrade':
+        return reply(ws, p, m.type, m, basecamp.storeUpgrade(p, String(m.kind || '')));
+      // --- Stage 5: residents / monuments / camp props ------------------------------------
+      case 'bc_residents':
+        return reply(ws, p, m.type, m, basecamp.residentsState(p));
+      case 'bc_resident_assign':
+        return reply(ws, p, m.type, m, basecamp.assignResident(p, String(m.residentId || ''), m.building ? String(m.building) : null));
+      case 'bc_monuments':
+        return reply(ws, p, m.type, m, basecamp.monumentsState(p));
+      case 'bc_monument_contribute':
+        return reply(ws, p, m.type, m, basecamp.contributeMonument(p, String(m.monument || '')), { changed: true });
+      case 'bc_monument_use':
+        return reply(ws, p, m.type, m, basecamp.useMonument(p, String(m.monument || '')));
+      case 'bc_wish':
+        return reply(ws, p, m.type, m, basecamp.wish(p));
+      case 'bc_craft_decor':
+        return reply(ws, p, m.type, m, basecamp.craftDecor(p, String(m.decor || '')));
+      case 'bc_tent_bread':
+        return reply(ws, p, m.type, m, basecamp.tentBread(p));
+      case 'bc_props_collect':
+        return reply(ws, p, m.type, m, basecamp.collectProps(p));
       // --- Step 3: Wardrobe, Gacha, Forge & Pets -------------------------------------
       case 'wardrobe_equip': {
         const r = rpg.wardrobeEquip(p, { slot: String(m.slot), itemId: m.itemId === null ? null : m.itemId === undefined ? undefined : String(m.itemId), hide: m.hide });
@@ -996,7 +1157,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         return reply(ws, p, m.type, m, r, { changed: !!r.changed });
       }
       case 'blacksmith_forge': {
-        const r = rpg.blacksmithForge(p, { itemId: String(m.itemId), useBerries: !!m.useBerries, useScroll: !!m.useScroll }, now, rng);
+        const r = rpg.blacksmithForge(p, { itemId: String(m.itemId), useBerries: !!m.useBerries, useScroll: !!m.useScroll, useIngots: !!m.useIngots }, now, rng);
         reply(ws, p, m.type, m, r);
         if (r.ok && r.sovereign) {
           dailyService.emitCheer({ winnerId: p.id, winnerName: p.username, achievement: `forged ${r.itemId} to +10 Sovereign` });
@@ -1201,6 +1362,14 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
         return reply(ws, p, m.type, m, dailyService.coupleBreak(p, m));
       case 'couple_moment':
         return reply(ws, p, m.type, m, dailyService.coupleMoment(p, m));
+      case 'hi_state':
+        return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, serverNow: Date.now(), ...heartIsles.stateOf(p) });
+      case 'hi_place':
+      case 'hi_remove':
+      case 'hi_deposit':
+      case 'hi_withdraw':
+      case 'couple_send':
+        return reply(ws, p, m.type, m, heartIsles.handle(p, m));
       default: return null;
     }
   }
@@ -1248,6 +1417,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       }, ws.userId);
       return;
     }
+    if (isFrontierInstance(ws.instanceId)) return; // no village pickup/drop spots in the frontier
     const L = layoutFor(ws.instanceId);
     if (now - (ws.lastDrop || 0) < NET.DROP_COOLDOWN_MS) {
       const s = presence.get(ws.userId);
@@ -1311,6 +1481,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       pushProfile(p);
       return send(ws, { type: 'fishing_exchange_ok', ...res });
     }
+    if (isFrontierInstance(ws.instanceId)) return send(ws, { type: 'fishing_error', error: 'not_in_village' });
     const L = layoutFor(ws.instanceId);
     const s = presence.get(ws.userId);
     if (m.type === 'fishing_cast') {
@@ -1415,7 +1586,8 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
             const portalId = isMuseum && String(ws.instanceId || '').startsWith('nook_museum:')
               ? String(ws.instanceId).split(':')[1]
               : null;
-            const L = (isTownHall || isMuseum) ? null : layoutFor(ws.instanceId);
+            const isFrontierNow = isFrontierInstance(ws.instanceId);
+            const L = (isTownHall || isMuseum || isFrontierNow) ? null : layoutFor(ws.instanceId);
             send(ws, {
               type: 'resume_ok',
               profile: publicProfile(p, { self: true }),
@@ -1425,7 +1597,9 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
                 ? { kind: 'townhall', size: 36 }
                 : isMuseum
                   ? { kind: 'museum', size: 36, portalId }
-                  : layoutWire(L),
+                  : isFrontierNow
+                    ? frontier.layoutPayload(ws.instanceId)
+                    : layoutWire(L),
               serverNow: now,
             });
             send(ws, snapshotFor(ws));
@@ -1436,6 +1610,33 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
           case 'instance_switch':
             switchInstance(ws, m.to, { force: !!m.force, spawn: m.spawn || null });
             break;
+          case 'sf_region': {
+            const p = db.getProfile(ws.userId);
+            const r = p ? frontier.regionTransfer(ws, p, m.to) : { ok: false, error: 'no_profile' };
+            if (r.ok) switchInstance(ws, r.targetId, { force: true, spawn: r.spawn, internal: true });
+            send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, serverNow: Date.now(), ok: r.ok, error: r.error, guest: r.guest });
+            break;
+          }
+          case 'sf_strike':
+          case 'sf_state':
+          case 'sf_energy_daily':
+          case 'sf_energy_diamond':
+          case 'sf_energy_gift':
+          case 'sf_eat':
+          case 'sf_pouch_set':
+          case 'sf_crate_claim':
+          case 'sf_attack':
+          case 'sf_ultimate':
+          case 'sf_repair':
+          case 'sf_boss_start': {
+            const p = db.getProfile(ws.userId);
+            if (!p) break;
+            const r = frontier.handle(ws, p, m);
+            // sf_strike / sf_attack push via onProfileChanged when loot drops; every other sf_* pushes on ok.
+            if (r.ok) { db.markProfile(p.id); if (m.type !== 'sf_strike' && m.type !== 'sf_attack') pushProfile(p); }
+            send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, serverNow: Date.now(), ...r });
+            break;
+          }
           case 'museum_invite_partner': {
             const p = db.getProfile(ws.userId);
             if (p && isCouple(p) && p.partner_id) {
@@ -1505,9 +1706,11 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     for (const ws of wss.clients) ws.terminate();
     await new Promise((r) => wss.close(r));
     await new Promise((r) => server.close(r));
+    frontier.stopAll();
+    frontier.flushAll();
     await db.close();
   }
-  return { port: actualPort, close, db, app, tables, townHallBots };
+  return { port: actualPort, close, db, app, tables, townHallBots, frontier, presence };
 }
 
 // Run directly: `npm start`

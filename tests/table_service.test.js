@@ -197,37 +197,6 @@ test('Cloud Dash: brief disconnect & reconnect preserves human control, rewards,
   close();
 });
 
-test('Moon Defense: brief disconnect & reconnect preserves human defender, and rematch restarts siege', () => {
-  const { svc, advance, close } = setup();
-  svc.connect('nook');
-  svc.handle('nook', { type: 'table_create', mode: 'moon_bunny' });
-  const t = [...svc.mgr.tables.values()][0];
-  svc.handle('nook', { type: 'table_start' });
-  assert.equal(t.status, 'playing');
-
-  // Disconnect mid-siege
-  svc.disconnect('nook');
-  const p = t.moonDefense.players.find((x) => x.id === 'nook');
-  assert.equal(p.isBot, false, 'temporary disconnect must NOT convert defender to bot');
-  assert.equal(p.disconnected, true);
-
-  // Reconnect
-  svc.connect('nook');
-  assert.equal(p.disconnected, false);
-  assert.equal(p.isBot, false);
-  assert.ok(svc.handle('nook', { type: 'mb_move', tableId: t.id, x: 1.5, z: 2.0 }).ok);
-
-  // End siege and trigger table_rematch -> immediately starts new siege
-  t.moonDefense.bunnyHp = 0;
-  advance(500);
-  svc.tick();
-  assert.equal(t.status, 'ended');
-  assert.ok(svc.handle('nook', { type: 'table_rematch' }).ok);
-  assert.equal(t.status, 'playing', 'Moon Defense rematch immediately restarts siege');
-  assert.equal(t.moonDefense.bunnyHp, t.moonDefense.bunnyMaxHp);
-  close();
-});
-
 test('Grand Casino: lobby join replaces bot, blocks new joins once started, and brief disconnect preserves seat for rejoin', () => {
   const { svc, close } = setup();
   svc.connect('nook');

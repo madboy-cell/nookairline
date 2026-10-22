@@ -1,17 +1,24 @@
 // tests/village.test.js — Step 2 pure rules + authoritative economy (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORE, WONDERS, DECOR, FISH, footprint, lerpLv, EXPANSION_TIERS, BLUEPRINT_CARDS } from '../shared/catalog_landmarks.js';
+import { CORE, WONDERS, DECOR, FISH, footprint, EXPANSION_TIERS, BLUEPRINT_CARDS } from '../shared/catalog_landmarks.js';
 import {
-  validateLayout, computeComfort, comfortBonusPct, storageCapHrs, harvestPreview, instanceLayout, buildCellIndex,
+  validateLayout, comfortBonusPct, storageCapHrs, harvestPreview, instanceLayout, buildCellIndex, productionPerHour,
   groundAt, clampToArea, spawnPoint, dockNear, landingCells, bagContents, HOUR_MS, utcDay,
   isWalkablePos, nearestWalkablePos, cellToWorld,
 } from '../shared/village_rules.js';
 import * as eco from '../server/economy_service.js';
-import { createStarterProfile, seedProfiles, migrateProfile } from '../server/profile_factory.js';
+import { createStarterProfile, seedProfiles, migrateProfile, legacyStarterVillage } from '../server/profile_factory.js';
 
 const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; };
 const starter = () => createStarterProfile('qa_v', 'pw12', 'bkk');
+/** A pre-Stage-3 player (5 landmarks + castle) run through the v2 migration ("keep everything, auto-credit"). */
+const legacy = () => {
+  const p = starter();
+  p.village = legacyStarterVillage(Date.now());
+  delete p.village.v2;
+  return migrateProfile(p, Date.now());
+};
 const layoutOf = (v) => ({ buildings: v.buildings.map(({ uid, type, x, y, rot }) => ({ uid, type, x, y, rot })), tiles: v.tiles.map((t) => ({ ...t })), ground: v.ground });
 
 test('catalog footprints match the locked Step 2 decision', () => {
@@ -27,16 +34,32 @@ test('catalog footprints match the locked Step 2 decision', () => {
   assert.deepEqual(BLUEPRINT_CARDS.slice(1), [5, 10, 15, 20, 25, 30, 35, 40, 50]);
 });
 
-test('Lv 1 / Lv 10 yields are the documented endpoints, straight line between', () => {
-  assert.equal(CORE.mint.perHour(1), 150); assert.equal(CORE.mint.perHour(10), 1200);
-  assert.equal(CORE.patisserie.perHour(1), 20); assert.equal(CORE.patisserie.perHour(10), 120);
-  assert.equal(CORE.shrine.perDay(1), 15); assert.equal(CORE.shrine.perDay(10), 60);
-  assert.equal(CORE.mint.perHour(4), Math.floor(lerpLv(150, 1200, 4)));
+test('Stage 3: core buildings no longer print passive currency (base-camp roles instead)', () => {
+  for (const [k, d] of Object.entries(CORE)) {
+    for (const f of ['produces', 'perHour', 'daily', 'perDay', 'matchGoldPct']) assert.equal(d[f], undefined, `${k}.${f}`);
+  }
+  assert.equal(CORE.patisserie.name, 'Cat Boba Patisserie');
+  assert.equal(CORE.mint.effect, 'Refinery: Ore → Ingots');
+  assert.equal(CORE.windmill_bakery.effect, 'Mill: Wheat → Flour');
+  for (const k of ['workshop', 'cottage', 'farm_plot', 'tent']) assert.ok(CORE[k], k);
+  assert.deepEqual([CORE.workshop.w, CORE.cottage.w, CORE.farm_plot.w, CORE.tent.w], [3, 2, 2, 2]);
+  assert.ok(DECOR.dec_nookairline_museum, 'protected museum decor stays');
+  assert.deepEqual(productionPerHour(legacy().village), { gold: 0, berries: 0 });
 });
 
-test('starter island is valid and seeded villages compute comfort 4,850 / 6,660', () => {
-  const p = starter();
+test('new players start with the Castle ruins + 2 farm plots; legacy villages keep every building', () => {
+  const fresh = starter();
+  assert.ok(fresh.village.v2 && fresh.village.castle_ruins);
+  assert.deepEqual(fresh.village.buildings.map((b) => b.type), ['castle', 'farm_plot', 'farm_plot']);
+  assert.ok(validateLayout(fresh.village, layoutOf(fresh.village)).ok);
+  assert.equal(fresh.story.chapter, 0);
+  assert.equal(fresh.village.max_grid, 18);
+  assert.deepEqual(bagContents(fresh.village).mint, undefined, 'nothing constructed yet');
+  const p = legacy();
   assert.ok(validateLayout(p.village, layoutOf(p.village)).ok);
+  assert.equal(p.village.buildings.length, 6);
+  for (const k of ['mint', 'patisserie', 'shrine', 'nest', 'dock']) assert.equal(p.village.copies[k], 1, k);
+  assert.equal(p.story.chapter, 0, 'legacy players still play the story');
   assert.equal(p.village.comfort, 860);                       // castle 150 + 5×100 + 42 tiles × 5
   const [nook, beam] = seedProfiles();
   assert.equal(nook.village.comfort, 4850); assert.equal(comfortBonusPct(4850), 24);
@@ -45,7 +68,7 @@ test('starter island is valid and seeded villages compute comfort 4,850 / 6,660'
 });
 
 test('layout validation: overlap, bounds, ownership, dock water rule, bridge landing', () => {
-  const v = starter().village;
+  const v = legacy().village;
   const L = layoutOf(v);
   const castle = L.buildings.find((b) => b.type === 'castle');
   assert.equal(validateLayout(v, { ...L, buildings: L.buildings.map((b) => (b === castle ? { ...b, x: 2, y: 3 } : b)) }).error, 'overlap');
@@ -63,7 +86,7 @@ test('layout validation: overlap, bounds, ownership, dock water rule, bridge lan
   assert.equal(validateLayout(v, { ...L, tiles: [...L.tiles, { x: 7, y: 1, t: 'road_cream' }] }).error, 'tile_under_building');
 });
 
-test('storage cap: 8h at Dock Lv1 → exactly 24h at Lv10, Casino ×2, Chonker +25–50%, Tent +5%', () => {
+test('storage cap: 8h at Dock Lv1 → exactly 24h at Lv10, Casino ×2, Chonker +25–50% (Tent buff retired)', () => {
   const p = starter();
   assert.equal(storageCapHrs(p.village, p), 8);
   p.village.levels.dock = 10;
@@ -75,29 +98,21 @@ test('storage cap: 8h at Dock Lv1 → exactly 24h at Lv10, Casino ×2, Chonker +
   assert.equal(storageCapHrs(p.village, p), 12);
   p.equipped.pet = { id: 'pet_cloud_bear', stars: 1, level: 1 };
   assert.equal(storageCapHrs(p.village, p), 10);
-  const [, beam] = seedProfiles();   // Dock 7, Chonker ★2 (+37.5%), Tent (+5%)
-  assert.ok(Math.abs(storageCapHrs(beam.village, beam) - (8 + 16 * 6 / 9) * 1.425) < 1e-9);
+  const [, beam] = seedProfiles();   // Dock 7, Chonker ★2 (+37.5%); Stage 5: Tent decor has no stat buff any more
+  assert.ok(Math.abs(storageCapHrs(beam.village, beam) - (8 + 16 * 6 / 9) * 1.375) < 1e-9);
 });
 
-test('harvest: 60 s minimum, server clock, cap, multiplier, +15 EXP, daily diamonds once', () => {
-  const p = starter();
+test('Stage 3: passive Harvest All is retired — nothing accrues, profile untouched', () => {
+  const p = legacy();
   const t0 = Date.UTC(2026, 9, 15, 1, 0, 0);
   p.village.last_harvest_at = t0;
-  assert.equal(eco.harvestAll(p, t0 + 10_000).ok, true, 'shrine daily diamonds are claimable at once');
-  assert.equal(p.diamonds, 600 + 15);
-  assert.equal(eco.harvestAll(p, t0 + 20_000).error, 'not_ready');
-  const goldBefore = p.gold, expBefore = p.exp;
-  const r = eco.harvestAll(p, t0 + 2 * HOUR_MS);
-  const mult = 1 + 0.02 + comfortBonusPct(860) / 100;          // castle Lv1 + comfort +4%
-  assert.equal(r.gold, Math.floor(150 * 2 * mult));
-  assert.equal(r.berries, Math.floor(20 * 2 * mult));
-  assert.equal(r.diamonds, 0);
-  assert.equal(p.gold, goldBefore + r.gold);
-  assert.equal(p.exp, expBefore + 15);
-  // 3 days away: capped at 8 h
-  const r2 = eco.harvestAll(p, t0 + 2 * HOUR_MS + 72 * HOUR_MS);
-  assert.equal(r2.gold, Math.floor(150 * 8 * mult));
-  assert.equal(r2.diamonds, 15, 'next UTC day → shrine pays again');
+  const before = { gold: p.gold, berries: p.berries, diamonds: p.diamonds, exp: p.exp };
+  for (const t of [t0 + 10_000, t0 + 2 * HOUR_MS, t0 + 72 * HOUR_MS]) {
+    assert.equal(eco.harvestAll(p, t).error, 'nothing_to_harvest');
+    const pv = harvestPreview(p, t);
+    assert.equal(pv.gold + pv.berries + pv.diamonds, 0);
+  }
+  assert.deepEqual({ gold: p.gold, berries: p.berries, diamonds: p.diamonds, exp: p.exp }, before);
 });
 
 test('couple +25% and partner blessing +15% for 12 h; bless once per day; +50 🪙 to visitor', () => {
@@ -115,18 +130,16 @@ test('couple +25% and partner blessing +15% for 12 h; bless once per day; +50 �
   assert.equal(eco.blessPartner(mochi, neen, now).error, 'not_couple');
 });
 
-test('offline report only after >= 5 min away, same numbers as Harvest All', () => {
-  const p = starter();
+test('Stage 3: no offline "welcome back" gains any more', () => {
+  const p = legacy();
   const t0 = Date.UTC(2026, 9, 15, 1, 0, 0);
   p.village.last_harvest_at = t0;
   assert.equal(eco.computeOfflineGains(p, t0 + 4 * 60_000, t0), null);
-  const rep = eco.computeOfflineGains(p, t0 + 6 * HOUR_MS + 20 * 60_000, t0);
-  const pv = harvestPreview(p, t0 + 6 * HOUR_MS + 20 * 60_000);
-  assert.equal(rep.gold, pv.gold); assert.equal(rep.berries, pv.berries); assert.equal(rep.diamonds, 15);
+  assert.equal(eco.computeOfflineGains(p, t0 + 6 * HOUR_MS + 20 * 60_000, t0), null);
 });
 
 test('castle upgrade: 1,500 🪙 × L, landmark prerequisite, +100 EXP; blueprint upgrade uses cards', () => {
-  const p = starter();
+  const p = legacy();
   assert.equal(eco.upgradeCastle(p).error, 'not_enough_gold');        // Lv2 costs 3,000
   p.gold = 10_000;
   const r = eco.upgradeCastle(p);
@@ -140,27 +153,39 @@ test('castle upgrade: 1,500 🪙 × L, landmark prerequisite, +100 EXP; blueprin
   assert.ok(eco.upgradeCastle(p).ok === false);                        // still 6 < 7
 });
 
-test('cloud expansion: tiers need castle level + gold, coordinates shift so nothing moves', () => {
-  const p = starter();
-  assert.equal(eco.expandTerritory(p).error, 'castle_too_low');
-  p.village.castle_lv = 2; p.gold = 2500;
+test('cloud expansion: story-gated (max_grid) + planks/stone/gold, coordinates shift so nothing moves', () => {
+  const p = legacy();
+  assert.equal(eco.expandTerritory(p).error, 'story_locked');
+  p.village.max_grid = 20;                                    // Chapter 2 "Echoes Below" reward
+  p.gold = 1500;
+  assert.equal(eco.expandTerritory(p).error, 'missing_materials');
+  p.frontier.warehouse.items = { plank: 30, stone: 31 };
+  p.gold = 1499;
+  assert.equal(eco.expandTerritory(p).error, 'not_enough_gold');
+  p.gold = 1500;
   const castleBefore = p.village.buildings.find((b) => b.type === 'castle');
   const r = eco.expandTerritory(p);
   assert.ok(r.ok); assert.equal(p.village.grid_size, 20); assert.equal(p.gold, 0);
+  assert.deepEqual(p.frontier.warehouse.items, { stone: 1 });
+  assert.equal(eco.expandTerritory(p).error, 'story_locked', '24 needs Chapter 4');
   const castle = p.village.buildings.find((b) => b.type === 'castle');
   assert.deepEqual([castle.x, castle.y], [8, 2]);
   assert.ok(validateLayout(p.village, layoutOf(p.village)).ok);
   assert.ok(castleBefore);
 });
 
-test('twin sky-islands: partner island at S/2 + 8 + S/2, bridge walkable, water blocks walkers', () => {
+test('twin sky-islands: [A] — bridge — [Heart Isle 20] — bridge — [B], bridges walkable, water blocks walkers', () => {
   const [nook, neen] = seedProfiles();
   const L = instanceLayout([{ owner: 'nook', village: nook.village }, { owner: 'neen', village: neen.village }]);
   for (const i of L.islands) buildCellIndex(i);
   assert.equal(L.islands[0].owner, 'neen'); assert.equal(L.islands[0].cx, 0);
-  assert.equal(L.islands[1].cx, 26); assert.equal(L.bridge.cx, 13);
+  // Master Plan v2 §12: partner island at S/2 + 8 + 20 + 8 + S/2 (Heart Isle in the middle, appended last).
+  assert.equal(L.islands[1].cx, 54); assert.equal(L.bridge.cx, 13);
+  assert.equal(L.islands[2].kind, 'heart'); assert.equal(L.islands[2].cx, 27); assert.equal(L.islands[2].S, 20);
+  assert.deepEqual(L.bridges.map((b) => b.cx), [13, 41]);
   assert.ok(groundAt(L, 13, 3).walkable, 'bridge deck');
   assert.ok(groundAt(L, 9.4, 3).walkable && groundAt(L, 16.6, 3).walkable, 'both landings');
+  assert.ok(groundAt(L, 27, 3).walkable && groundAt(L, 41, 3).walkable, 'heart isle path + second bridge');
   assert.equal(groundAt(L, -5, 0.5).walkable, false, 'canal water');
   assert.equal(groundAt(L, -5, 0.5, { canFly: true }).walkable, true, 'wings glide over water');
   assert.equal(groundAt(L, -0.5, 0.5).walkable, true, 'footbridge');
@@ -168,8 +193,8 @@ test('twin sky-islands: partner island at S/2 + 8 + S/2, bridge walkable, water 
   assert.ok(groundAt(L, -0.5, 4).road, 'avenue is a road (+15%)');
   assert.ok(clampToArea(L, 13, -6).clamped);
   const sp = spawnPoint(L, 'nook', 'bkk');
-  assert.equal(Math.abs(sp.x - 26) < 2, true);
-  assert.ok(dockNear(L, 26 - 9 + 14.5, -9 + 11.0, 2.6), 'nook can fish from his dock');
+  assert.equal(Math.abs(sp.x - 54) < 2, true);
+  assert.ok(dockNear(L, 54 - 9 + 14.5, -9 + 11.0, 2.6), 'nook can fish from his dock');
 });
 
 test('fishing loot: free cast = pond fish only, bait unlocks koi/chest, co-op chest 13.5%', () => {
@@ -267,7 +292,7 @@ test('migrateProfile shrinks grid_size 24 to 18 and returns out-of-bounds non-co
 });
 
 test('saveLayout applies a valid move and rejects an invalid one', () => {
-  const p = starter();
+  const p = legacy();
   const L = layoutOf(p.village);
   L.buildings.find((b) => b.type === 'nest').x = 1;
   L.tiles.push({ x: 0, y: 0, t: 'road_sakura' });
