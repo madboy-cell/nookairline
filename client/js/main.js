@@ -11,15 +11,15 @@ import { RpgUI } from './gacha_forge_ui.js?v=wd6';
 import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
 
 
-import { MonopolyBridge } from './monopoly_bridge.js?v=nm18';
+import { MonopolyBridge } from './monopoly_bridge.js?v=nm20';
 import { NetRoom } from './minigames/monopoly_25d/room_client.js';
 import { TownHallScene, getTownHallConfig } from './town_hall_scene.js?v=cd44';
 import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?v=nm19';
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
-import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf4';
-import { BasecampUI } from './basecamp_ui.js?v=tos6';
+import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf5';
+import { BasecampUI } from './basecamp_ui.js?v=tos7';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
@@ -197,9 +197,11 @@ function applyFrontierLayout(layout, self) {
   if (net) net.resumeInstanceId = `frontier:${layout.shardId}~${layout.regionId}`;
 }
 
-function enterFrontier() {
+function enterFrontier(regionId = null) {
   if (!net) return;
-  net.send({ type: 'instance_switch', to: 'frontier', force: true });
+  const reg = typeof regionId === 'string' ? regionId.trim().toLowerCase() : '';
+  const to = reg && reg !== 'meadow' ? `frontier:~${reg}` : 'frontier';
+  net.send({ type: 'instance_switch', to, force: true });
 }
 
 function exitFrontier() {
@@ -1098,7 +1100,7 @@ async function startGame(profile) {
     basecampUI = new BasecampUI({
       request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile, now: serverNow,
       onEnterEdit: (placeType = null) => enterEdit(null, placeType),
-      onEnterFrontier: () => enterFrontier(),
+      onEnterFrontier: (regionId = null) => enterFrontier(regionId),
       onOpenLegacy: (pk) => buildingModal(pk, { legacy: true }),
       onEnergy: (e) => world?.frontierScene?.setEnergy?.(e),
     });

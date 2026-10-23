@@ -1,5 +1,5 @@
 // client/sw.js — cache-first for immutable vendor bundles, network-first for game code & art so re-sliced sprites land immediately.
-const VERSION = 'neora-v2-moon-sanctuary-v19';
+const VERSION = 'neora-v2-moon-sanctuary-v20';
 const CACHE_FIRST = [/^\/vendor\//];
 
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(VERSION)); });

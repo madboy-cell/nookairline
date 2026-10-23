@@ -233,6 +233,26 @@ export function createSkyFrontierService({
     return `sf_${shardSeq}`;
   }
 
+  function syncStoryUnlocks(p, fr) {
+    if (!p || !fr) return false;
+    fr.unlocks ||= { regions: ['meadow'], gates: [] };
+    fr.unlocks.regions ||= ['meadow'];
+    fr.unlocks.gates ||= [];
+    let changed = false;
+    const ch2Done = (p.story?.chapter || 0) >= 2
+      || p.story?.completed?.includes?.(1)
+      || (p.story?.progress?.c2_visit_gate_hollow || 0) >= 1;
+    if (ch2Done) {
+      if (!fr.unlocks.regions.includes('hollow')) { fr.unlocks.regions.push('hollow'); changed = true; }
+      if (!fr.unlocks.gates.includes('hollow')) { fr.unlocks.gates.push('hollow'); changed = true; }
+    }
+    if (changed) {
+      db.markProfile?.(p.id);
+      onProfileChanged(p);
+    }
+    return changed;
+  }
+
   /**
    * Resolve an `instance_switch` target. `to` = 'frontier' | 'frontier:<shardId>' | full region instance id.
    * Region instance ids are only honoured when `internal` (gate transfer) or when the player already
@@ -241,13 +261,18 @@ export function createSkyFrontierService({
   function resolveEntry(p, to, { internal = false } = {}) {
     const parsed = parseFrontierInstance(to);
     let regionId = parsed?.regionId && REGIONS[parsed.regionId] ? parsed.regionId : 'meadow';
+    const fr = ensureFrontier(p);
+    syncStoryUnlocks(p, fr);
     if (regionId !== 'meadow' && !internal) {
-      const fr = ensureFrontier(p);
-      if (!fr?.unlocks?.regions?.includes(regionId)) regionId = 'meadow';
+      const partnerProf = isCouple(p) && p.partner_id ? db.getProfile(p.partner_id) : null;
+      const partnerUnlocked = Boolean(
+        partnerProf?.frontier?.unlocks?.regions?.includes(regionId)
+        || (regionId === 'hollow' && ((partnerProf?.story?.chapter || 0) >= 2 || partnerProf?.story?.completed?.includes?.(1)))
+      );
+      if (!fr?.unlocks?.regions?.includes(regionId) && !partnerUnlocked) regionId = 'meadow';
     }
     const shardId = pickShard(p, parsed?.shardId || null);
     loadShard(shardId);
-    const fr = ensureFrontier(p);
     if (fr) { fr.homeShardId = shardId; db.markProfile?.(p.id); }
     return { targetId: regionInstanceId(shardId, regionId), shardId, regionId };
   }
@@ -302,9 +327,9 @@ export function createSkyFrontierService({
     const region = REGIONS[parsed?.regionId] || REGIONS.meadow;
     if (arrivingFrom && region.gateTo?.[arrivingFrom]) {
       const g = region.gateTo[arrivingFrom].at;
-      // step 3m inward from the gate toward the region centre
+      // step 4.4m inward from the gate toward the region centre so arrival clears the gate warp ring
       const len = Math.hypot(g.x, g.z) || 1;
-      return clampToRegion(region.id, g.x - (g.x / len) * 3, g.z - (g.z / len) * 3);
+      return clampToRegion(region.id, g.x - (g.x / len) * 4.4, g.z - (g.z / len) * 4.4);
     }
     return { x: region.spawn.x, z: region.spawn.z };
   }
@@ -344,11 +369,16 @@ export function createSkyFrontierService({
     const gate = REGIONS[fromRegion]?.gateTo?.[toRegion];
     if (!gate || !REGIONS[toRegion]) return { ok: false, error: 'no_gate' };
     const s = presence.get(p.id);
-    if (!s || Math.hypot(s.x - gate.at.x, s.z - gate.at.z) > (gate.radius || 3) + 1.5) return { ok: false, error: 'too_far' };
+    if (!s || Math.hypot(s.x - gate.at.x, s.z - gate.at.z) > (gate.radius || 3) + 2.2) return { ok: false, error: 'too_far' };
     onPlayerMoved(p, ws.instanceId, s.x, s.z);
     const fr = ensureFrontier(p);
-    const partnerUnlocked = isCouple(p) && shardOfUser(p.partner_id) === parsed.shardId
-      && !!db.getProfile(p.partner_id)?.frontier?.unlocks?.regions?.includes(gate.requires);
+    syncStoryUnlocks(p, fr);
+    const partnerProf = isCouple(p) && p.partner_id ? db.getProfile(p.partner_id) : null;
+    const partnerUnlocked = Boolean(
+      partnerProf && shardOfUser(p.partner_id) === parsed.shardId
+      && (partnerProf.frontier?.unlocks?.regions?.includes(gate.requires)
+          || (gate.requires === 'hollow' && ((partnerProf.story?.chapter || 0) >= 2 || partnerProf.story?.completed?.includes?.(1))))
+    );
     const unlocks = { regions: fr?.unlocks?.regions || [], gates: fr?.unlocks?.gates || [] };
     if (!isGateOpen(fromRegion, toRegion, unlocks, { guestOfUnlocked: partnerUnlocked })) return { ok: false, error: 'gate_locked' };
     const targetId = regionInstanceId(parsed.shardId, toRegion);
@@ -1558,7 +1588,8 @@ export function createSkyFrontierService({
     for (const step of ch.steps) {
       if (step.kind !== 'visit' || (p.story.progress?.[step.id] || 0) >= step.count) continue;
       const poi = region.pois[step.target];
-      if (poi && Math.hypot(poi.x - x, poi.z - z) <= 5.5) {
+      const visitedHollowDirectly = step.target === 'gate_hollow' && parsed?.regionId === 'hollow';
+      if (visitedHollowDirectly || (poi && Math.hypot(poi.x - x, poi.z - z) <= 5.5)) {
         if (recordEvent(p.story, { kind: 'visit', target: step.target }).length) changed = true;
         if (step.target === 'gate_hollow') {
           const fr = ensureFrontier(p);

@@ -449,7 +449,12 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
     if (rw.gold) p.gold = (p.gold || 0) + rw.gold;
     const items = rw.items && Object.keys(rw.items).length ? addItems(storesOf(p), rw.items).added : {};
     p.frontier.unlocks ||= { regions: ['meadow'], gates: [] };
+    p.frontier.unlocks.gates ||= [];
     const regions = new Set([...(p.frontier.unlocks.regions || []), ...unlockedRegions(story)]);
+    if (story.chapter >= 2 || story.completed?.includes?.(1)) {
+      regions.add('hollow');
+      if (!p.frontier.unlocks.gates.includes('hollow')) p.frontier.unlocks.gates.push('hollow');
+    }
     p.frontier.unlocks.regions = [...regions];
     for (const id of rw.residents || []) {
       if (!v.residents.some((x) => x.id === id)) v.residents.push({ id, building: null, assignedTo: null, fedUntil: 0, mood: 50 });

@@ -1502,6 +1502,10 @@ export class SkyFrontierScene {
     this.stopAutoSwing();
     this.stopAutoAttack();
     this.targetGate = null;
+    this._gatePending = false;
+    this._gateInitDisarmPending = true;
+    this._gateCooldownUntil = performance.now() + 1200;
+    this._disarmedGates = new Set();
     this.floatingTexts = [];
     if (this.floatContainerEl) {
       this.floatContainerEl.innerHTML = '';
@@ -1714,34 +1718,47 @@ export class SkyFrontierScene {
     this.outpostRing.position.set(outpostPoi.x, 0.035, outpostPoi.z);
     this.root.add(this.outpostRing);
 
-    // 5. Gate markers (2.5D hand-painted Sky Mist Gate archway + glowing ground ring)
+    // 5. Gate markers (2.5D hand-painted Sky Mist Gate archway + glowing ground ring + portal signpost)
     for (const gate of this.layout.gates || []) {
-      const radius = gate.radius || 2.5;
-      const isLocked = Boolean(gate.requires);
+      const radius = gate.radius || 2.8;
+      const unlocked = this._isGateUnlocked(gate);
       const gateGroup = new THREE.Group();
       gateGroup.position.set(gate.at.x, 0, gate.at.z);
       gateGroup.userData.gate = gate;
+      gateGroup.userData.unlocked = unlocked;
 
-      const gRingGeo = new THREE.RingGeometry(radius * 0.72, radius * 0.95, 32);
+      const gDiscGeo = new THREE.CircleGeometry(radius * 0.72, 32);
+      gDiscGeo.rotateX(-Math.PI / 2);
+      const gDiscMat = new THREE.MeshBasicMaterial({
+        color: unlocked ? 0x38BDF8 : 0x64748B,
+        transparent: true,
+        opacity: unlocked ? 0.22 : 0.10,
+        depthWrite: false,
+      });
+      const gDisc = new THREE.Mesh(gDiscGeo, gDiscMat);
+      gDisc.position.y = 0.022;
+      gateGroup.add(gDisc);
+
+      const gRingGeo = new THREE.RingGeometry(radius * 0.72, radius * 0.96, 36);
       gRingGeo.rotateX(-Math.PI / 2);
       const gRingMat = new THREE.MeshBasicMaterial({
-        color: isLocked ? 0x8899AA : 0x7CE8FF,
+        color: unlocked ? 0x7CE8FF : 0x8899AA,
         transparent: true,
-        opacity: 0.55,
+        opacity: unlocked ? 0.72 : 0.42,
         side: THREE.DoubleSide,
         depthWrite: false,
       });
       const gRing = new THREE.Mesh(gRingGeo, gRingMat);
-      gRing.position.y = 0.03;
+      gRing.position.y = 0.032;
       gateGroup.add(gRing);
 
       const gateInfo = spriteInfo('sf_sky_mist_gate');
       const gateAspect = gateInfo ? gateInfo.h / gateInfo.w : 1.35;
-      const gateW = 3.6;
+      const gateW = 3.8;
       const gatePlaneGeo = new THREE.PlaneGeometry(gateW, gateW * gateAspect);
       gatePlaneGeo.translate(0, (gateW * gateAspect) * 0.5, 0);
       const gatePlaneMat = new THREE.MeshBasicMaterial({
-        color: isLocked ? 0xAABBCC : 0xFFFFFF,
+        color: unlocked ? 0xFFFFFF : 0x9FB0C2,
         transparent: true,
         alphaTest: 0.25,
         side: THREE.DoubleSide,
@@ -1754,6 +1771,17 @@ export class SkyFrontierScene {
       const gatePlane = new THREE.Mesh(gatePlaneGeo, gatePlaneMat);
       gatePlane.rotation.x = camLean;
       gateGroup.add(gatePlane);
+
+      const labelSprite = this._makeGateLabelSprite(gate, unlocked);
+      if (labelSprite) {
+        labelSprite.position.set(0, gateW * gateAspect * 0.88 + 0.45, 0.2);
+        gateGroup.add(labelSprite);
+      }
+
+      gateGroup.userData.gRingMat = gRingMat;
+      gateGroup.userData.gDiscMat = gDiscMat;
+      gateGroup.userData.gatePlaneMat = gatePlaneMat;
+      gateGroup.userData.labelSprite = labelSprite;
 
       this.root.add(gateGroup);
       this.gateMeshes.set(gate.to || gate, gateGroup);
@@ -1885,7 +1913,25 @@ export class SkyFrontierScene {
       return { kind: 'sf_monster', monster: bestMonster };
     }
 
-    // 2. Check nodes within ~40 px
+    // 2. Check gates BEFORE resource nodes so nearby boulders/trees never block portal taps
+    let bestGate = null;
+    let bestGateDist = 56;
+    for (const gate of this.layout.gates || []) {
+      const sArch = this.world.worldToScreen(gate.at.x, 1.35, gate.at.z);
+      const sRing = this.world.worldToScreen(gate.at.x, 0.12, gate.at.z);
+      const dArch = sArch ? Math.hypot(clientX - sArch.x, clientY - sArch.y) : Infinity;
+      const dRing = sRing ? Math.hypot(clientX - sRing.x, clientY - sRing.y) : Infinity;
+      const d = Math.min(dArch, dRing);
+      if (d < bestGateDist) {
+        bestGateDist = d;
+        bestGate = gate;
+      }
+    }
+    if (bestGate) {
+      return { kind: 'sf_gate', gate: bestGate };
+    }
+
+    // 3. Check nodes within ~40 px
     let bestNode = null;
     let bestDist = 40;
     for (const node of this.layout.nodes || []) {
@@ -1901,23 +1947,76 @@ export class SkyFrontierScene {
       return { kind: 'sf_node', node: bestNode };
     }
 
-    // 3. Check gates within ~40 px
-    let bestGate = null;
-    let bestGateDist = 45;
-    for (const gate of this.layout.gates || []) {
-      const s = this.world.worldToScreen(gate.at.x, 1.0, gate.at.z);
-      if (!s) continue;
-      const d = Math.hypot(clientX - s.x, clientY - s.y);
-      if (d < bestGateDist) {
-        bestGateDist = d;
-        bestGate = gate;
-      }
-    }
-    if (bestGate) {
-      return { kind: 'sf_gate', gate: bestGate };
-    }
-
     return null;
+  }
+
+  _isGateUnlocked(gate) {
+    if (!gate?.requires) return true;
+    const prof = window.__neora?.state?.profile || this.world?.local?.profile || null;
+    if (!prof) return false;
+    const req = gate.requires;
+    if (prof.frontier?.unlocks?.regions?.includes(req)) return true;
+    if (prof.frontier?.unlocks?.gates?.includes(req)) return true;
+    if (req === 'hollow') {
+      if ((prof.story?.chapter || 0) >= 2) return true;
+      if (prof.story?.completed?.includes?.(1)) return true;
+      if ((prof.story?.progress?.c2_visit_gate_hollow || 0) >= 1) return true;
+    }
+    return false;
+  }
+
+  _makeGateLabelSprite(gate, unlocked) {
+    if (typeof document === 'undefined') return null;
+    const destName = gate?.to === 'hollow' ? 'Crystal Hollow' : gate?.to === 'meadow' ? 'Whispering Meadow' : (gate?.to || 'Portal');
+    const text = unlocked
+      ? (gate?.to === 'hollow' ? '💎 Warp: Crystal Hollow ▸' : '🌾 Warp: Whispering Meadow ▸')
+      : `🔒 ${destName} (Ch.2 Unlock)`;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 112;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Storybook pill plaque
+    const padX = 24;
+    const padY = 16;
+    const w = canvas.width - padX * 2;
+    const h = canvas.height - padY * 2;
+    const r = 38;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(padX, padY, w, h, r);
+    const grad = ctx.createLinearGradient(0, padY, 0, padY + h);
+    if (unlocked) {
+      grad.addColorStop(0, 'rgba(18, 42, 66, 0.92)');
+      grad.addColorStop(1, 'rgba(11, 25, 42, 0.95)');
+    } else {
+      grad.addColorStop(0, 'rgba(38, 34, 32, 0.88)');
+      grad.addColorStop(1, 'rgba(24, 20, 18, 0.92)');
+    }
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = unlocked ? '#67E8F9' : '#94A3B8';
+    ctx.stroke();
+
+    ctx.font = '900 28px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = unlocked ? '#ECFEFF' : '#CBD5E1';
+    ctx.shadowColor = 'rgba(0,0,0,0.65)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 1);
+    ctx.restore();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const spr = new THREE.Sprite(mat);
+    spr.scale.set(3.9, 0.85, 1);
+    spr.renderOrder = 12;
+    return spr;
   }
 
   // ------------------------------------------------------------------ Interaction
@@ -1973,17 +2072,22 @@ export class SkyFrontierScene {
 
     if (picked.kind === 'sf_gate' && picked.gate) {
       const gate = picked.gate;
+      if (this._autoChainTimer) {
+        clearTimeout(this._autoChainTimer);
+        this._autoChainTimer = null;
+      }
       this.stopAutoSwing();
       this.stopAutoAttack();
       this.targetNode = null;
       this.targetGate = gate;
+      this._disarmedGates?.delete?.(gate.to);
 
       this.world?.walkTo?.(gate.at.x, gate.at.z);
 
       const local = this.world?.local;
       if (local) {
         const dist = Math.hypot(local.x - gate.at.x, local.z - gate.at.z);
-        const rad = (gate.radius || 2) + 1;
+        const rad = (gate.radius || 2.8) + 0.9;
         if (dist <= rad) {
           this._triggerGate(gate);
         }
@@ -1992,18 +2096,49 @@ export class SkyFrontierScene {
   }
 
   async _triggerGate(gate) {
+    if (!gate || this._gatePending) return;
     this.targetGate = null;
+    this._gatePending = true;
+    this._gateCooldownUntil = performance.now() + 2200;
+
+    // Immediately flush latest local coordinates so server presence is never stale (`too_far`)
+    const local = this.world?.local;
+    if (local && this.world?.onLocalMove) {
+      const f = local.rig?.facing || { right: true, back: true };
+      this.world.onLocalMove(
+        {
+          x: +local.x.toFixed(3),
+          z: +local.z.toFixed(3),
+          vx: 0,
+          vz: 0,
+          right: Boolean(f.right ?? true),
+          back: Boolean(f.back ?? true),
+          zoneSeq: this.world.zoneSeq,
+        },
+        true
+      );
+    }
+
     try {
+      const destLabel = gate.to === 'hollow' ? '💎 Crystal Hollow' : gate.to === 'meadow' ? '🌾 Whispering Meadow' : gate.to;
       const res = await this.request('sf_region', { to: gate.to });
-      if (res && !res.ok) {
+      if (res && res.ok) {
+        this.playGatherSfx('auto_on');
+        this.toast?.(`🌀 Warping to ${destLabel}…`, 2000);
+      } else if (res && !res.ok) {
+        this._disarmedGates?.add?.(gate.to);
         if (res.error === 'gate_locked') {
-          this.toast?.("The Sky Mist won't part yet — finish the story chapter (or come with your partner)", 3500);
+          this.toast?.("🌀 The Sky Mist won't part yet — complete Chapter 2 (or enter with your partner)!", 3500);
+        } else if (res.error === 'too_far') {
+          this.world?.walkTo?.(gate.at.x, gate.at.z);
         } else {
           this.toast?.(res.error || 'The gate is locked.', 3000);
         }
       }
     } catch {
       // ignore
+    } finally {
+      this._gatePending = false;
     }
   }
 
@@ -3231,14 +3366,74 @@ export class SkyFrontierScene {
       }
     }
 
-    // 3. Gate proximity check
-    if (this.targetGate && local) {
-      const dist = Math.hypot(local.x - this.targetGate.at.x, local.z - this.targetGate.at.z);
-      const rad = (this.targetGate.radius || 2) + 1;
-      if (dist <= rad) {
-        const g = this.targetGate;
-        this.targetGate = null;
-        this._triggerGate(g);
+    // 3. Gate animation, unlock visual sync & automatic walk-into-portal proximity check
+    if (local && Array.isArray(this.layout?.gates) && this.layout.gates.length > 0) {
+      if (this._gateInitDisarmPending) {
+        this._gateInitDisarmPending = false;
+        for (const gate of this.layout.gates) {
+          const spawnDist = Math.hypot(local.x - gate.at.x, local.z - gate.at.z);
+          if (spawnDist <= (gate.radius || 3) + 1.8) {
+            this._disarmedGates?.add?.(gate.to);
+          }
+        }
+      }
+
+      const pNow = performance.now();
+      for (const gate of this.layout.gates) {
+        const gGroup = this.gateMeshes.get(gate.to || gate);
+        const unlocked = this._isGateUnlocked(gate);
+        if (gGroup) {
+          if (gGroup.userData.unlocked !== unlocked) {
+            gGroup.userData.unlocked = unlocked;
+            if (gGroup.userData.gRingMat) gGroup.userData.gRingMat.color.setHex(unlocked ? 0x7CE8FF : 0x8899AA);
+            if (gGroup.userData.gDiscMat) {
+              gGroup.userData.gDiscMat.color.setHex(unlocked ? 0x38BDF8 : 0x64748B);
+              gGroup.userData.gDiscMat.opacity = unlocked ? 0.22 : 0.10;
+            }
+            if (gGroup.userData.gatePlaneMat) gGroup.userData.gatePlaneMat.color.setHex(unlocked ? 0xFFFFFF : 0x9FB0C2);
+            if (gGroup.userData.labelSprite) {
+              gGroup.remove(gGroup.userData.labelSprite);
+              gGroup.userData.labelSprite.material?.map?.dispose?.();
+              gGroup.userData.labelSprite.material?.dispose?.();
+            }
+            const nextLbl = this._makeGateLabelSprite(gate, unlocked);
+            if (nextLbl) {
+              nextLbl.position.set(0, 4.95, 0.2);
+              gGroup.add(nextLbl);
+              gGroup.userData.labelSprite = nextLbl;
+            }
+          }
+          if (gGroup.userData.gRingMat) {
+            const pulse = 0.56 + Math.sin(this.elapsed * 3.4) * 0.22;
+            gGroup.userData.gRingMat.opacity = unlocked ? pulse : 0.40;
+          }
+          if (gGroup.userData.labelSprite) {
+            gGroup.userData.labelSprite.position.y = 4.95 + Math.sin(this.elapsed * 2.5) * 0.08;
+          }
+        }
+
+        const dist = Math.hypot(local.x - gate.at.x, local.z - gate.at.z);
+        if (this._disarmedGates?.has?.(gate.to) && dist > Math.max(3.8, (gate.radius || 3) + 0.8)) {
+          this._disarmedGates.delete(gate.to);
+        }
+
+        if (this.targetGate && this.targetGate.to === gate.to) {
+          const rad = (gate.radius || 2.8) + 0.9;
+          if (dist <= rad && !this._gatePending) {
+            this.targetGate = null;
+            this._triggerGate(gate);
+            break;
+          }
+        } else if (
+          !this.targetGate
+          && !this._gatePending
+          && pNow >= (this._gateCooldownUntil || 0)
+          && !this._disarmedGates?.has?.(gate.to)
+          && dist <= (gate.radius || 2.8)
+        ) {
+          this._triggerGate(gate);
+          break;
+        }
       }
     }
 

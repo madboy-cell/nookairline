@@ -195,17 +195,19 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
 
   open() {
     this.root.hidden = false;
-    this.room.send({ type: 'table_list', mode: this.mode });
-    if (!this.table || this.table.status === 'ended') {
-      if (this.mode === 'casino') {
-        this.room.send({ type: 'table_create', mode: 'casino', options: { casinoGame: this.casinoGame } });
-        this.onCreate?.('casino', this.casinoGame);
-      } else if (this.mode === 'cloud_dash') {
-        this.room.send({ type: 'table_create', mode: 'cloud_dash', dashMode: this.dashMode, options: { dashMode: this.dashMode } });
-        this.onCreate?.('cloud_dash', this.dashMode);
-      } else {
-        this.room.send({ type: 'table_create', mode: this.mode, matchMode: this.matchMode });
-        this.onCreate?.(this.mode, this.matchMode);
+    if (this.mode !== 'sky_frontier') {
+      this.room.send({ type: 'table_list', mode: this.mode });
+      if (!this.table || this.table.status === 'ended') {
+        if (this.mode === 'casino') {
+          this.room.send({ type: 'table_create', mode: 'casino', options: { casinoGame: this.casinoGame } });
+          this.onCreate?.('casino', this.casinoGame);
+        } else if (this.mode === 'cloud_dash') {
+          this.room.send({ type: 'table_create', mode: 'cloud_dash', dashMode: this.dashMode, options: { dashMode: this.dashMode } });
+          this.onCreate?.('cloud_dash', this.dashMode);
+        } else {
+          this.room.send({ type: 'table_create', mode: this.mode, matchMode: this.matchMode });
+          this.onCreate?.(this.mode, this.matchMode);
+        }
       }
     }
     this.render();
@@ -244,6 +246,14 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
       </button>`).join('');
 
     if (this.mode === 'sky_frontier' || this.tab === 'sky_frontier') {
+      const hollowUnlocked = Boolean(
+        prof?.frontier?.unlocks?.regions?.includes('hollow')
+        || prof?.frontier?.unlocks?.gates?.includes('hollow')
+        || (prof?.story?.chapter || 0) >= 2
+        || prof?.story?.completed?.includes?.(1)
+        || (prof?.story?.progress?.c2_visit_gate_hollow || 0) >= 1
+      );
+      const hasPartner = Boolean(prof?.partner_id);
       this.root.innerHTML = `
       <div class="hub">
         <div class="hub-head"><span>🎮 PLAY &amp; 4-SEAT TABLE HUB</span><button class="hub-x" data-act="close">✕</button></div>
@@ -258,31 +268,41 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
           </div>
 
           <div style="display:flex;flex-direction:column;gap:10px;margin:14px 0;">
-            <div class="sf-region-card" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(201,164,92,0.45);border-radius:14px;padding:12px 14px;">
+            <div class="sf-region-card" data-act="enter-frontier" data-region="meadow" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(134,239,172,0.5);border-radius:14px;padding:12px 14px;cursor:pointer;transition:transform .12s ease;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
                 <b style="font-size:13.5px;color:#86EFAC;">🌾 Whispering Meadow (Region 1)</b>
-                <span style="font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:#15803D;color:#fff;">Open</span>
+                <span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:#15803D;color:#fff;">Open</span>
               </div>
               <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
-                Open • Gather Wood, Stone, Sky Wheat &amp; Herbs • Defend the Goddess Outpost • Boss: Elder Moss Golem
+                Gather Wood, Stone, Sky Wheat &amp; Herbs • Defend the Goddess Outpost • Boss: Elder Moss Golem
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+                <button type="button" id="hub-enter-frontier" class="hub-btn gold" data-act="enter-frontier" data-region="meadow" style="padding:7px 14px;font-size:12.5px;font-weight:900;background:linear-gradient(180deg,#22C55E,#15803D);border:1.5px solid #BBF7D0;color:#FFF;cursor:pointer;border-radius:10px;">
+                  🌾 Enter Whispering Meadow ▸
+                </button>
               </div>
             </div>
 
-            <div class="sf-region-card" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(201,164,92,0.3);border-radius:14px;padding:12px 14px;">
+            <div class="sf-region-card" ${hollowUnlocked || hasPartner ? 'data-act="enter-frontier" data-region="hollow"' : ''} style="background:${hollowUnlocked ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${hollowUnlocked ? 'rgba(103,232,249,0.65)' : 'rgba(201,164,92,0.3)'};border-radius:14px;padding:12px 14px;${hollowUnlocked || hasPartner ? 'cursor:pointer;' : 'opacity:0.86;'}">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                <b style="font-size:13.5px;color:#93C5FD;">💎 Crystal Hollow (Region 2)</b>
-                <span style="font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:#1E3A8A;color:#93C5FD;">Ch 2 Unlock</span>
+                <b style="font-size:13.5px;color:${hollowUnlocked ? '#67E8F9' : '#93C5FD'};">💎 Crystal Hollow (Region 2)</b>
+                <span id="hub-hollow-badge" style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:${hollowUnlocked ? '#0E7490' : '#1E3A8A'};color:${hollowUnlocked ? '#ECFEFF' : '#93C5FD'};border:1px solid ${hollowUnlocked ? '#67E8F9' : 'transparent'};">${hollowUnlocked ? 'Open' : '🔒 Complete Ch.2'}</span>
               </div>
               <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
-                Chapter 2 Unlock (or Partner Guest) • Gather Crystal Ore, Quartz &amp; Mithril • Boss: Hollow Crystal Weaver
+                ${hollowUnlocked ? 'Unlocked! Warp directly or step through the North Sky Mist Gate • ' : 'Unlocks after Story Chapter 2 (or Partner Guest) • '}Gather Crystal Ore, Quartz &amp; Mithril • Boss: Hollow Crystal Weaver
+              </div>
+              <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+                ${hollowUnlocked
+                  ? `<button type="button" id="hub-enter-hollow" class="hub-btn gold" data-act="enter-frontier" data-region="hollow" style="padding:7px 14px;font-size:12.5px;font-weight:900;background:linear-gradient(180deg,#06B6D4,#0E7490);border:1.5px solid #A5F3FC;color:#FFF;box-shadow:0 3px 12px rgba(6,182,212,0.4);cursor:pointer;border-radius:10px;">
+                      💎 Enter Crystal Hollow ▸
+                    </button>`
+                  : hasPartner
+                    ? `<button type="button" id="hub-enter-hollow-guest" class="hub-btn" data-act="enter-frontier" data-region="hollow" style="padding:6px 12px;font-size:11.5px;font-weight:800;background:rgba(30,58,138,0.65);border:1px solid #93C5FD;color:#DBEAFE;cursor:pointer;border-radius:10px;">
+                        💞 Join Partner in Hollow ▸
+                      </button>`
+                    : `<span style="font-size:11px;font-weight:800;color:#94A3B8;">🔒 Finish Story Ch.2 to unlock</span>`}
               </div>
             </div>
-          </div>
-
-          <div style="display:flex;justify-content:center;margin-top:16px;">
-            <button type="button" id="hub-enter-frontier" class="hub-btn gold big" data-act="enter-frontier" style="width:100%;max-width:320px;padding:12px 18px;font-size:15px;font-weight:900;background:linear-gradient(180deg,#F59E0B,#B45309);border:2px solid #FDE68A;color:#FFF;box-shadow:0 4px 14px rgba(245,158,11,0.45);cursor:pointer;border-radius:12px;">
-              🏝️ Enter Sky Frontier
-            </button>
           </div>
         </div>
       </div>`;
@@ -598,9 +618,10 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
   onClick(e) {
     const el = e.target.closest('#hub-enter-frontier,[data-act],[data-tab],[data-seat],[data-join],[data-casino-game],[data-dash-mode],[data-preset-equip],[data-preset-save]');
     if (!el || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
-    if (el.id === 'hub-enter-frontier' || el.dataset.act === 'enter-frontier') {
+    if (el.id === 'hub-enter-frontier' || el.id === 'hub-enter-hollow' || el.dataset.act === 'enter-frontier') {
+      const region = el.dataset.region || el.closest('[data-region]')?.dataset?.region || 'meadow';
       this.close();
-      window.__neora?.enterFrontier?.();
+      window.__neora?.enterFrontier?.(region);
       return;
     }
     const t = this.table;

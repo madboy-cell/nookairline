@@ -858,10 +858,34 @@ export class BasecampUI {
     const inFrontier = typeof document !== 'undefined' && document.getElementById('hud')?.dataset.scene === 'SKY_FRONTIER';
     if (s.kind === 'gather' || s.kind === 'visit' || s.kind === 'defeat') {
       this.close();
+      const hollowUnlocked = Boolean(
+        p?.frontier?.unlocks?.regions?.includes('hollow')
+        || p?.frontier?.unlocks?.gates?.includes('hollow')
+        || (p?.story?.chapter || 0) >= 2
+        || p?.story?.completed?.includes?.(1)
+      );
       if (!inFrontier && this.onEnterFrontier) {
-        this.onEnterFrontier();
-        setTimeout(() => this.toast(this._frontierStepCompass(s), 3600), 450);
+        const wantHollow = s.target === 'crystal_ore' && hollowUnlocked;
+        this.onEnterFrontier(wantHollow ? 'hollow' : null);
+        setTimeout(() => {
+          this.toast(
+            wantHollow
+              ? '💎 Warped to Crystal Hollow — strike glowing Crystal Ore veins!'
+              : this._frontierStepCompass(s),
+            3600
+          );
+        }, 450);
         return;
+      }
+      if (inFrontier && typeof window !== 'undefined') {
+        const curRegion = window.__neora?.world?.frontierScene?.layout?.regionId || 'meadow';
+        if (curRegion === 'meadow' && (s.target === 'gate_hollow' || s.target === 'crystal_ore')) {
+          window.__neora?.world?.walkTo?.(0, -32);
+        } else if (curRegion === 'meadow' && s.target === 'outpost') {
+          window.__neora?.world?.walkTo?.(0, 4);
+        } else if (curRegion === 'meadow' && (s.target === 'wheat' || s.target === 'sky_wheat')) {
+          window.__neora?.world?.walkTo?.(20, 12);
+        }
       }
       this.toast(this._frontierStepCompass(s), 3400);
       return;

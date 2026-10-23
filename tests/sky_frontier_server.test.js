@@ -246,6 +246,35 @@ test('Sky Frontier server WebSocket integration (shard routing, clamp, gate lock
 
       const joinBroadcast = await c1.waitFor((m) => m.type === 'player_joined' && m.player?.id === 'leo');
       assert.equal(joinBroadcast.player.id, 'leo');
+
+      // 8. After completing Chapter 2 (story.chapter >= 2), player can enter Crystal Hollow both via Play Hub and via gate warp
+      const leoProf = srv.db.getProfile('leo');
+      leoProf.story = { chapter: 2, progress: {}, completed: [0, 1], claimed: [0, 1] };
+      srv.db.markProfile('leo');
+
+      // 8a. Direct Play Hub entry (`frontier:~hollow`) lands in hollow and completes c2_visit_gate_hollow
+      c2.send({ type: 'instance_switch', to: 'frontier:~hollow', force: true });
+      const hollowDirect = await c2.waitFor((m) => m.type === 'instance_snapshot' && m.layout?.regionId === 'hollow');
+      assert.equal(hollowDirect.layout.regionId, 'hollow');
+      assert.ok(hollowDirect.instanceId.endsWith('~hollow'));
+      assert.equal(srv.db.getProfile('leo').story.progress.c2_visit_gate_hollow, 1);
+
+      // 8b. Return through hollow's south gate (0, 30) -> meadow, then step through meadow's north gate (0, -32) -> hollow
+      c2.send({ type: 'instance_switch', to: 'frontier:~hollow', force: true, spawn: { x: 0, z: 30 } });
+      await c2.waitFor((m) => m.type === 'instance_snapshot' && m.self?.z === 30);
+      c2.send({ type: 'sf_region', to: 'meadow' });
+      const backToMeadow = await c2.waitFor((m) => m.type === 'instance_snapshot' && m.layout?.regionId === 'meadow');
+      assert.equal(backToMeadow.layout.regionId, 'meadow');
+      assert.ok(backToMeadow.self.z > -28.5, `Arrival from hollow should clear gate ring (got z=${backToMeadow.self.z})`);
+
+      c2.send({ type: 'instance_switch', to: 'frontier', force: true, spawn: { x: 0, z: -31.5 } });
+      await c2.waitFor((m) => m.type === 'instance_snapshot' && m.self?.z === -31.5);
+      c2.send({ type: 'sf_region', to: 'hollow' });
+      const warpRes = await c2.waitFor((m) => m.type === 'action_result' && m.action === 'sf_region');
+      assert.equal(warpRes.ok, true);
+      const hollowViaGate = await c2.waitFor((m) => m.type === 'instance_snapshot' && m.layout?.regionId === 'hollow');
+      assert.equal(hollowViaGate.layout.regionId, 'hollow');
+      assert.ok(hollowViaGate.self.z < 26.5, `Arrival in hollow should clear return gate ring (got z=${hollowViaGate.self.z})`);
     });
   } finally {
     for (const ws of openSockets) {

@@ -10,7 +10,7 @@
 import { MonopolyBoard, tokenModules } from './minigames/monopoly_25d/board_scene.js';
 import { MonopolyHud } from './minigames/monopoly_25d/hud.js';
 import { sfx } from './minigames/monopoly_25d/sfx.js';
-import { TableHub } from './table_hub.js?v=nm18';
+import { TableHub } from './table_hub.js?v=nm20';
 import { legalActions, scoreboard } from '/shared/monopoly_engine.js';
 import { TILES, MONO, rentFor, wrap } from '/shared/monopoly_rules.js';
 
