@@ -74,6 +74,9 @@ const HUD_STYLE = `
   align-items: flex-start;
   gap: 6px;
   flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-right: 6px;
   pointer-events: none;
 }
 
@@ -81,6 +84,7 @@ const HUD_STYLE = `
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex-shrink: 0;
   pointer-events: none;
 }
 
@@ -166,15 +170,17 @@ const HUD_STYLE = `
 .sf-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: #E9DCC0;
   border: 2px solid #3B2A20;
   border-radius: 16px;
-  padding: 4px 10px;
+  padding: 4px 9px;
   height: 34px;
+  min-width: 0;
+  overflow: hidden;
   color: #3B2A20;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 11.5px;
   white-space: nowrap;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
@@ -182,11 +188,14 @@ const HUD_STYLE = `
 
 .sf-chip-region {
   color: #3B2A20;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sf-chip-players {
   color: #6E5339;
   font-size: 11px;
+  flex-shrink: 0;
 }
 
 .sf-partner-pill {
@@ -225,10 +234,11 @@ const HUD_STYLE = `
   align-items: center;
   justify-content: center;
   gap: 4px;
+  flex-shrink: 0;
   background: #E9DCC0;
   border: 2px solid #3B2A20;
   border-radius: 16px;
-  padding: 4px 12px;
+  padding: 4px 11px;
   height: 34px;
   color: #3B2A20;
   font-weight: 800;
@@ -776,6 +786,287 @@ const HUD_STYLE = `
     transform: translateX(-50%) translateY(-26px) scale(0.9);
   }
 }
+
+/* --- Storybook Astrolabe Mini-Map & Interactive Expedition Map Modal --- */
+.sf-minimap-btn {
+  position: absolute;
+  top: max(108px, calc(env(safe-area-inset-top, 12px) + 96px));
+  right: 12px;
+  width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 26;
+  transition: transform 0.14s ease, filter 0.14s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sf-minimap-btn:hover {
+  transform: scale(1.05);
+}
+
+.sf-minimap-btn:active {
+  transform: scale(0.95);
+}
+
+.sf-minimap-canvas {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2.5px solid #DFB15B;
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1.5px rgba(255, 240, 195, 0.38);
+  display: block;
+}
+
+.sf-minimap-pill {
+  margin-top: -8px;
+  background: linear-gradient(180deg, #F6E7C8 0%, #DFC699 100%);
+  border: 1.5px solid #3B2A20;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #3B2A20;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+body:has(.bc-modal-backdrop:not([hidden])) .sf-minimap-btn,
+body:has(#rpg-ui:not([hidden])) .sf-minimap-btn,
+body:has(.hub-wrap:not([hidden])) .sf-minimap-btn,
+body:has(#sf-map-modal:not([hidden])) .sf-minimap-btn {
+  display: none !important;
+}
+
+.sf-chip {
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+
+.sf-chip:active {
+  transform: scale(0.96);
+}
+
+.sf-map-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 10, 8, 0.68);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  z-index: 260;
+  pointer-events: auto;
+}
+
+.sf-map-modal[hidden] {
+  display: none !important;
+}
+
+.sf-map-card {
+  width: min(94vw, 410px);
+  max-height: min(86vh, 760px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #F7ECD5 0%, #EAD7B3 100%);
+  border: 3px solid #4A321F;
+  border-radius: 22px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  padding: 12px 14px 14px;
+  color: #3B2A20;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.sf-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sf-map-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #3B2A20;
+  letter-spacing: 0.2px;
+}
+
+.sf-map-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #4A321F;
+  background: #E5CFA6;
+  color: #3B2A20;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sf-map-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.sf-map-tab {
+  padding: 6px 8px;
+  border-radius: 11px;
+  border: 1.5px solid #B5925B;
+  background: rgba(255, 251, 240, 0.65);
+  color: #5C3D24;
+  font-size: 11.5px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.sf-map-tab.active {
+  background: linear-gradient(180deg, #3B2A20 0%, #261A13 100%);
+  border-color: #DFB15B;
+  color: #FFE7A3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.sf-map-tab.locked {
+  opacity: 0.68;
+}
+
+.sf-bigmap-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, #231914 0%, #17100C 100%);
+  border: 2.5px solid #8A6236;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+.sf-bigmap-canvas {
+  width: 100%;
+  max-width: 248px;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  cursor: crosshair;
+  display: block;
+  touch-action: manipulation;
+}
+
+.sf-bigmap-hint {
+  margin-top: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #E7D5B4;
+  text-align: center;
+}
+
+.sf-map-sec-label {
+  margin: 10px 0 5px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #6B4423;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sf-map-poi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sf-map-poi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 252, 244, 0.92);
+  border: 1.5px solid #D4B075;
+  border-radius: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.sf-map-poi-row:hover {
+  background: #FFFDF7;
+}
+
+.sf-map-poi-row:active {
+  transform: scale(0.99);
+}
+
+.sf-map-poi-ico {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sf-map-poi-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sf-map-poi-name {
+  font-size: 12px;
+  font-weight: 900;
+  color: #342011;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sf-map-poi-sub {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #7A5330;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sf-map-poi-btns {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.sf-map-btn {
+  padding: 5px 9px;
+  border-radius: 9px;
+  border: 1.5px solid #9A6B28;
+  background: linear-gradient(180deg, #FCD34D 0%, #D97706 100%);
+  color: #2A1606;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sf-map-btn.warp {
+  border-color: #0E7490;
+  background: linear-gradient(180deg, #38BDF8 0%, #0284C7 100%);
+  color: #FFFFFF;
+}
 `;
 
 export class SkyFrontierScene {
@@ -806,6 +1097,9 @@ export class SkyFrontierScene {
     // Auto-swing state (gathering)
     this.targetNode = null;
     this.targetGate = null;
+    this._navTarget = null;
+    this._minimapAccum = 0;
+    this.mapModalOpen = false;
     this.isSwinging = false;
     this.swingTimer = 0;
     this.inBeatWindow = false;
@@ -981,6 +1275,13 @@ export class SkyFrontierScene {
           <button type="button" class="sf-btn-home" id="sf-btn-home">🏠 Home</button>
         </div>
 
+        <button type="button" class="sf-minimap-btn" id="sf-minimap-btn" aria-label="Open Expedition Map">
+          <canvas class="sf-minimap-canvas" id="sf-minimap-canvas" width="144" height="144"></canvas>
+          <span class="sf-minimap-pill" id="sf-minimap-pill">🗺️ Map</span>
+        </button>
+
+        <div class="sf-map-modal" id="sf-map-modal" hidden></div>
+
         <div class="sf-top-center">
           <div class="sf-invasion-banner" id="sf-invasion-banner" style="display: none;">
             <span class="sf-invasion-title" id="sf-invasion-title">⚠️ INVASION IMMINENT</span>
@@ -1051,7 +1352,13 @@ export class SkyFrontierScene {
     this.hpBarTextEl = hud.querySelector('#sf-hp-bar-text');
     this.regionNameEl = hud.querySelector('#sf-chip-region');
     this.playersEl = hud.querySelector('#sf-chip-players');
+    this.chipEl = hud.querySelector('#sf-chip');
     this.homeBtnEl = hud.querySelector('#sf-btn-home');
+    this.minimapBtnEl = hud.querySelector('#sf-minimap-btn');
+    this.minimapCanvasEl = hud.querySelector('#sf-minimap-canvas');
+    this.minimapCtx = this.minimapCanvasEl?.getContext?.('2d') || null;
+    this.minimapPillEl = hud.querySelector('#sf-minimap-pill');
+    this.mapModalEl = hud.querySelector('#sf-map-modal');
     this.floatContainerEl = hud.querySelector('#sf-floating-container');
 
     this.partnerPillEl = hud.querySelector('#sf-partner-pill');
@@ -1093,6 +1400,26 @@ export class SkyFrontierScene {
           this.onExit();
         }
       };
+    }
+
+    if (this.minimapBtnEl) {
+      this.minimapBtnEl.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openMapModal();
+      };
+    }
+
+    if (this.chipEl) {
+      this.chipEl.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openMapModal();
+      };
+    }
+
+    if (this.mapModalEl) {
+      this.mapModalEl.addEventListener('click', (e) => this._onMapModalClick(e));
     }
 
     if (this.partnerPillEl) {
@@ -1833,6 +2160,9 @@ export class SkyFrontierScene {
     this._syncRuneButtonState();
     this.updateHud();
     this.updateUltimateCharm();
+    this._navTarget = null;
+    this.closeMapModal();
+    this._drawMiniMap();
   }
 
   exit() {
@@ -1850,6 +2180,8 @@ export class SkyFrontierScene {
     this.targetGate = null;
     this.targetNode = null;
     this.targetMonster = null;
+    this._navTarget = null;
+    this.closeMapModal();
     this.activeBoss = null;
     this.invasionState = null;
 
@@ -2022,6 +2354,7 @@ export class SkyFrontierScene {
   // ------------------------------------------------------------------ Interaction
   interact(picked) {
     if (!picked || !this.active) return;
+    this._navTarget = null;
 
     if (picked.kind === 'sf_monster' && picked.monster) {
       this.stopAutoSwing();
@@ -3523,7 +3856,7 @@ export class SkyFrontierScene {
     }
 
     // 5a. Smart Auto-Defense when Auto is ON and an aggroed monster is right on top of the player (while not actively swinging at a node)
-    if (this.autoGatherEnabled && !this.targetMonster && !this.isSwinging && local) {
+    if (this.autoGatherEnabled && !this.targetMonster && !this.isSwinging && !this._navTarget && local) {
       let closestThreat = null;
       let closestThreatDist = 2.35;
       for (const mon of this.activeMonsters.values()) {
@@ -3540,7 +3873,37 @@ export class SkyFrontierScene {
       }
     }
 
-    // 5a-2. 3D Animated Target Reticle Ring under current targetNode or targetMonster
+    // 5a-1. Mini-Map Navigation Waypoint tracking & arrival
+    if (this._navTarget && local) {
+      const joy = this.world?.input?.joy;
+      if (joy && Math.hypot(joy.x || 0, joy.y || 0) > 0.18) {
+        this._navTarget = null;
+      } else {
+        const tap = this.world?.input?.tapTarget;
+        if (tap && Math.hypot(tap.x - this._navTarget.x, tap.z - this._navTarget.z) > 2.2) {
+          this._navTarget = null;
+        } else {
+          const navDist = Math.hypot(local.x - this._navTarget.x, local.z - this._navTarget.z);
+          if (navDist <= 2.35) {
+            const arrived = this._navTarget;
+            this._navTarget = null;
+            if (!arrived.isGate) {
+              this.world?.fx?.emit?.('fx_stardust', local.x, 0.3, local.z, 8, {
+                speed: 1.0,
+                up: 0.9,
+                size: 0.22,
+                life: 0.5,
+              });
+              if (this.autoGatherEnabled && (this.energy?.cur || 0) >= 2 && !this.targetNode && !this.targetMonster) {
+                this.findAndWalkToNextNode();
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 5a-2. 3D Animated Target Reticle Ring under current targetNode, targetMonster, or _navTarget
     if (this.targetRing) {
       if (this.targetMonster) {
         const mon = this.activeMonsters.get(this.targetMonster.id) || this.targetMonster;
@@ -3564,8 +3927,28 @@ export class SkyFrontierScene {
         if (this.targetRing.userData.innerMesh) {
           this.targetRing.userData.innerMesh.rotation.z = -this.elapsed * 1.4;
         }
+      } else if (this._navTarget) {
+        this.targetRing.visible = true;
+        this.targetRing.position.set(this._navTarget.x, 0.04, this._navTarget.z);
+        const pulse = 1.25 * (1 + Math.sin(this.elapsed * 6.0) * 0.1);
+        this.targetRing.scale.set(pulse, 1, pulse);
+        this.targetRing.userData.outerMat?.color.setHex(0x38BDF8);
+        this.targetRing.userData.innerMat?.color.setHex(0xE0F2FE);
+        if (this.targetRing.userData.innerMesh) {
+          this.targetRing.userData.innerMesh.rotation.z = this.elapsed * 1.6;
+        }
       } else {
         this.targetRing.visible = false;
+      }
+    }
+
+    // 5a-3. Live Mini-Map & Open Expedition Map Canvas (~15 Hz)
+    this._minimapAccum = (this._minimapAccum || 0) + dt;
+    if (this._minimapAccum >= 0.066) {
+      this._minimapAccum = 0;
+      this._drawMiniMap();
+      if (this.mapModalOpen) {
+        this._drawBigMap();
       }
     }
 
@@ -4141,6 +4524,665 @@ export class SkyFrontierScene {
         item.mat.color.copy(item.baseColor);
       }
     }
+  }
+
+  // ------------------------------------------------------------------ Mini-Map & Expedition Map Navigation
+  _getRegionPois() {
+    const isHollow = String(this.layout?.regionId || '').toLowerCase().includes('hollow');
+    const pois = this.layout?.pois || {};
+    const hollowUnlocked = this._isGateUnlocked({ requires: 'hollow' });
+    if (isHollow) {
+      return [
+        { id: 'outpost', icon: '🗽', label: 'Hollow Outpost', sub: 'Safe Camp & Statue Repair', x: pois.outpost?.x ?? 0, z: pois.outpost?.z ?? 6, color: '#FDE047', short: 'Outpost' },
+        { id: 'quartz', icon: '🔮', label: 'Violet Quartz Cavern', sub: 'Crystal Ore & Tier-2 Quartz', x: pois.quartz?.x ?? -20, z: pois.quartz?.z ?? 0, color: '#C084FC', short: 'Quartz' },
+        { id: 'mithril', icon: '⚒️', label: 'Mithril Deep Vein', sub: 'Crystal Ore & Tier-2 Mithril', x: pois.mithril?.x ?? 20, z: pois.mithril?.z ?? -10, color: '#818CF8', short: 'Mithril' },
+        { id: 'boss', icon: '👑', label: 'Weaver Boss Sanctum', sub: 'Herbs & Crystal Weaver Boss', x: pois.boss?.x ?? 0, z: pois.boss?.z ?? -26, color: '#FB7185', short: 'Boss' },
+        { id: 'gate_meadow', icon: '🌀', label: 'Gate: Whispering Meadow', sub: 'Portal Warp → Region 1', x: pois.gate_meadow?.x ?? 0, z: pois.gate_meadow?.z ?? 30, color: '#86EFAC', short: 'Meadow Gate', isGate: true, gateTo: 'meadow', unlocked: true },
+      ];
+    }
+    return [
+      { id: 'outpost', icon: '🗽', label: 'Goddess Outpost', sub: 'Safe Camp & Statue Repair', x: pois.outpost?.x ?? 0, z: pois.outpost?.z ?? 4, color: '#FDE047', short: 'Outpost' },
+      { id: 'grove', icon: '🌲', label: 'Whispering Grove', sub: 'Wood & Dewdrop Herbs', x: pois.grove?.x ?? -22, z: pois.grove?.z ?? 8, color: '#4ADE80', short: 'Grove' },
+      { id: 'wheat', icon: '🌾', label: 'Windmill & Wheat', sub: 'Sky Wheat & Herbs', x: pois.wheat?.x ?? 20, z: pois.wheat?.z ?? 12, color: '#FACC15', short: 'Wheat' },
+      { id: 'grotto', icon: '💎', label: 'Crystal Grotto', sub: 'Starter Crystal Ore Veins', x: pois.grotto?.x ?? 24, z: pois.grotto?.z ?? -14, color: '#38BDF8', short: 'Grotto' },
+      { id: 'golem', icon: '👑', label: 'Moss Golem Arena', sub: 'Stone & Elder Moss Golem Boss', x: pois.golem?.x ?? -20, z: pois.golem?.z ?? -18, color: '#FB7185', short: 'Boss' },
+      {
+        id: 'gate_hollow',
+        icon: '🌀',
+        label: 'Gate: Crystal Hollow',
+        sub: hollowUnlocked ? 'Open Portal → Region 2' : '🔒 Unlocks after Story Ch.2',
+        x: pois.gate_hollow?.x ?? 0,
+        z: pois.gate_hollow?.z ?? -32,
+        color: hollowUnlocked ? '#67E8F9' : '#94A3B8',
+        short: 'Hollow Gate',
+        isGate: true,
+        gateTo: 'hollow',
+        unlocked: hollowUnlocked,
+      },
+    ];
+  }
+
+  navigateTo(x, z, opts = {}) {
+    if (!this.active || !this.world) return;
+    this.closeMapModal();
+    if (this._autoChainTimer) {
+      clearTimeout(this._autoChainTimer);
+      this._autoChainTimer = null;
+    }
+    this.stopAutoSwing();
+    this.stopAutoAttack();
+    this.targetNode = null;
+
+    if (opts.gateTo) {
+      const gate = (this.layout?.gates || []).find((g) => g.to === opts.gateTo) || {
+        to: opts.gateTo,
+        at: { x, z },
+        radius: 2.8,
+      };
+      this.targetGate = gate;
+      this._disarmedGates?.delete?.(gate.to);
+      this._navTarget = { x: gate.at.x, z: gate.at.z, label: opts.label || 'Sky Mist Gate', isGate: true };
+      this.world.walkTo?.(gate.at.x, gate.at.z);
+      const local = this.world.local;
+      if (local && Math.hypot(local.x - gate.at.x, local.z - gate.at.z) <= (gate.radius || 2.8) + 0.9) {
+        this._triggerGate(gate);
+      } else {
+        this.toast?.(`🧭 Walking to ${opts.label || 'Sky Mist Gate'}…`, 1900);
+      }
+      return;
+    }
+
+    this.targetGate = null;
+    const clamped = this.clampWalkable(Number(x) || 0, Number(z) || 0);
+    this._navTarget = { x: clamped.x, z: clamped.z, label: opts.label || 'Waypoint', isGate: false };
+    this.world.walkTo?.(clamped.x, clamped.z);
+    this.world.fx?.emit?.('fx_stardust', clamped.x, 0.25, clamped.z, 6, {
+      speed: 0.9,
+      up: 0.85,
+      size: 0.2,
+      life: 0.45,
+    });
+    if (opts.label) {
+      this.toast?.(`🧭 Navigating to ${opts.label}…`, 1900);
+    }
+  }
+
+  openMapModal() {
+    if (!this.active || !this.mapModalEl) return;
+    this.mapModalOpen = true;
+    this.playGatherSfx('auto_on');
+    this._renderMapModalHtml();
+    this.mapModalEl.hidden = false;
+    this._drawBigMap();
+  }
+
+  closeMapModal() {
+    this.mapModalOpen = false;
+    if (this.mapModalEl) {
+      this.mapModalEl.hidden = true;
+    }
+    this._bigMapCanvasEl = null;
+    this._bigMapCtx = null;
+  }
+
+  _renderMapModalHtml() {
+    if (!this.mapModalEl) return;
+    const isHollow = String(this.layout?.regionId || '').toLowerCase().includes('hollow');
+    const hollowUnlocked = this._isGateUnlocked({ requires: 'hollow' });
+    const local = this.world?.local;
+    const lx = local?.x ?? 0;
+    const lz = local?.z ?? 0;
+    const pois = this._getRegionPois();
+
+    const poiRows = pois
+      .map((poi) => {
+        const dist = Math.round(Math.hypot(poi.x - lx, poi.z - lz));
+        const warpBtn = poi.isGate && poi.unlocked
+          ? `<button type="button" class="sf-map-btn warp" data-sf-warp="${poi.gateTo}">⚡ Warp</button>`
+          : '';
+        return `
+          <div class="sf-map-poi-row" data-sf-walk-x="${poi.x}" data-sf-walk-z="${poi.z}" data-sf-label="${poi.label}" ${poi.isGate ? `data-sf-gate="${poi.gateTo}"` : ''}>
+            <span class="sf-map-poi-ico">${poi.icon}</span>
+            <div class="sf-map-poi-meta">
+              <div class="sf-map-poi-name">${poi.label}</div>
+              <div class="sf-map-poi-sub">${poi.sub} • ${dist}m</div>
+            </div>
+            <div class="sf-map-poi-btns">
+              ${warpBtn}
+              <button type="button" class="sf-map-btn" data-sf-walk-x="${poi.x}" data-sf-walk-z="${poi.z}" data-sf-label="${poi.label}" ${poi.isGate ? `data-sf-gate="${poi.gateTo}"` : ''}>🚶 Walk</button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    const prof = window.__neora?.state?.profile || local?.profile || {};
+    const partnerId = prof.partner_id;
+    const remotes = Array.from(this.world?.remotes?.values?.() || []);
+    const playerSection = remotes.length
+      ? `
+        <div class="sf-map-sec-label">👥 Adventurers in Region (${remotes.length})</div>
+        <div class="sf-map-poi-list">
+          ${remotes
+            .map((r) => {
+              const rx = r.smooth?.x ?? r.data?.x ?? r.x ?? 0;
+              const rz = r.smooth?.z ?? r.data?.z ?? r.z ?? 0;
+              const d = Math.round(Math.hypot(rx - lx, rz - lz));
+              const isPartner = partnerId && String(r.id).toLowerCase() === String(partnerId).toLowerCase();
+              const name = r.data?.username || r.id || 'Adventurer';
+              return `
+                <div class="sf-map-poi-row" data-sf-walk-x="${rx.toFixed(1)}" data-sf-walk-z="${rz.toFixed(1)}" data-sf-label="${name}">
+                  <span class="sf-map-poi-ico">${isPartner ? '💞' : '🧑'}</span>
+                  <div class="sf-map-poi-meta">
+                    <div class="sf-map-poi-name">${name}${isPartner ? ' (Partner)' : ''}</div>
+                    <div class="sf-map-poi-sub">${isPartner ? '+25% Couple Sync within 10m' : 'Co-op Shardmate'} • ${d}m</div>
+                  </div>
+                  <div class="sf-map-poi-btns">
+                    <button type="button" class="sf-map-btn" data-sf-walk-x="${rx.toFixed(1)}" data-sf-walk-z="${rz.toFixed(1)}" data-sf-label="${name}">🚶 Join</button>
+                  </div>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      `
+      : '';
+
+    this.mapModalEl.innerHTML = `
+      <div class="sf-map-card" role="dialog" aria-label="Sky Frontier Expedition Map">
+        <div class="sf-map-head">
+          <span class="sf-map-title">🗺️ ${isHollow ? 'Crystal Hollow' : 'Whispering Meadow'} Map</span>
+          <button type="button" class="sf-map-close" data-sf-map-close="1" aria-label="Close">✕</button>
+        </div>
+        <div class="sf-map-tabs">
+          <button type="button" class="sf-map-tab ${!isHollow ? 'active' : ''}" data-sf-region-tab="meadow">
+            🌾 Whispering Meadow
+          </button>
+          <button type="button" class="sf-map-tab ${isHollow ? 'active' : ''} ${!hollowUnlocked ? 'locked' : ''}" data-sf-region-tab="hollow">
+            💎 Crystal Hollow ${hollowUnlocked ? '' : '🔒'}
+          </button>
+        </div>
+        <div class="sf-bigmap-wrap">
+          <canvas class="sf-bigmap-canvas" id="sf-bigmap-canvas" width="560" height="560"></canvas>
+          <div class="sf-bigmap-hint">👆 Tap anywhere on the map or pick a landmark below to navigate!</div>
+        </div>
+        <div class="sf-map-sec-label">🧭 Landmarks &amp; Portals</div>
+        <div class="sf-map-poi-list">${poiRows}</div>
+        ${playerSection}
+      </div>
+    `;
+
+    this._bigMapCanvasEl = this.mapModalEl.querySelector('#sf-bigmap-canvas');
+    this._bigMapCtx = this._bigMapCanvasEl?.getContext?.('2d') || null;
+  }
+
+  _onMapModalClick(e) {
+    if (e.target === this.mapModalEl || e.target.closest('[data-sf-map-close]')) {
+      e.preventDefault();
+      this.closeMapModal();
+      return;
+    }
+
+    const canvas = e.target.closest('#sf-bigmap-canvas');
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const pad = 16 * (rect.width / 280);
+      const inner = Math.max(1, rect.width - pad * 2);
+      const u = Math.max(0, Math.min(1, (e.clientX - rect.left - pad) / inner));
+      const v = Math.max(0, Math.min(1, (e.clientY - rect.top - pad) / inner));
+      const hs = this.halfSize || 36;
+      const wx = (u * 2 - 1) * hs;
+      const wz = (v * 2 - 1) * hs;
+
+      const pois = this._getRegionPois();
+      let hitPoi = null;
+      let hitDist = 5.2;
+      for (const poi of pois) {
+        const d = Math.hypot(wx - poi.x, wz - poi.z);
+        if (d < hitDist) {
+          hitDist = d;
+          hitPoi = poi;
+        }
+      }
+      if (hitPoi) {
+        this.navigateTo(hitPoi.x, hitPoi.z, {
+          label: `${hitPoi.icon} ${hitPoi.label}`,
+          gateTo: hitPoi.isGate ? hitPoi.gateTo : null,
+        });
+      } else {
+        this.navigateTo(wx, wz, {
+          label: `📍 Map Pin (${Math.round(wx)}, ${Math.round(wz)})`,
+        });
+      }
+      return;
+    }
+
+    const warpBtn = e.target.closest('[data-sf-warp]');
+    if (warpBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const region = warpBtn.dataset.sfWarp;
+      this.closeMapModal();
+      window.__neora?.enterFrontier?.(region);
+      return;
+    }
+
+    const regionTab = e.target.closest('[data-sf-region-tab]');
+    if (regionTab) {
+      e.preventDefault();
+      const targetReg = regionTab.dataset.sfRegionTab;
+      const curHollow = String(this.layout?.regionId || '').toLowerCase().includes('hollow');
+      const curReg = curHollow ? 'hollow' : 'meadow';
+      if (targetReg === curReg) return;
+      if (targetReg === 'hollow' && !this._isGateUnlocked({ requires: 'hollow' })) {
+        this.toast?.('🔒 Complete Story Chapter 2 to unlock Crystal Hollow!', 2800);
+        return;
+      }
+      this.closeMapModal();
+      window.__neora?.enterFrontier?.(targetReg);
+      return;
+    }
+
+    const walkRow = e.target.closest('[data-sf-walk-x][data-sf-walk-z]');
+    if (walkRow) {
+      e.preventDefault();
+      const wx = parseFloat(walkRow.dataset.sfWalkX);
+      const wz = parseFloat(walkRow.dataset.sfWalkZ);
+      const label = walkRow.dataset.sfLabel || 'Landmark';
+      const gateTo = walkRow.dataset.sfGate || null;
+      this.navigateTo(wx, wz, { label, gateTo });
+    }
+  }
+
+  _getNodeDotColor(type) {
+    switch (type) {
+      case 'tree': return '#4ADE80';
+      case 'boulder': return '#CBD5E1';
+      case 'wheat': return '#FACC15';
+      case 'herb': return '#34D399';
+      case 'crystal': return '#38BDF8';
+      case 'quartz': return '#C084FC';
+      case 'mithril': return '#818CF8';
+      default: return '#FDE68A';
+    }
+  }
+
+  _getActiveRoutePoint() {
+    if (this._navTarget) return this._navTarget;
+    if (this.targetGate?.at) return { x: this.targetGate.at.x, z: this.targetGate.at.z };
+    if (this.targetNode) return { x: this.targetNode.x, z: this.targetNode.z };
+    if (this.targetMonster) return { x: this.targetMonster.x, z: this.targetMonster.z };
+    const tap = this.world?.input?.tapTarget;
+    if (tap && Number.isFinite(tap.x) && Number.isFinite(tap.z)) return { x: tap.x, z: tap.z };
+    return null;
+  }
+
+  _drawMiniMap() {
+    const ctx = this.minimapCtx;
+    if (!ctx || !this.active || !this.layout) return;
+    const S = 144;
+    const cx = S / 2;
+    const cy = S / 2;
+    const R = 66;
+    const hs = this.halfSize || 36;
+    const scale = (R - 10) / hs;
+    const isHollow = String(this.layout?.regionId || '').toLowerCase().includes('hollow');
+    const now = Date.now() + (this.world?.serverOffset || 0);
+
+    ctx.clearRect(0, 0, S, S);
+    ctx.save();
+
+    // 1. Storybook Astrolabe Dial Background
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    const grd = ctx.createRadialGradient(cx, cy, 8, cx, cy, R);
+    if (isHollow) {
+      grd.addColorStop(0, 'rgba(28, 58, 72, 0.94)');
+      grd.addColorStop(0.75, 'rgba(16, 36, 48, 0.96)');
+      grd.addColorStop(1, 'rgba(10, 22, 30, 0.98)');
+    } else {
+      grd.addColorStop(0, 'rgba(62, 86, 46, 0.94)');
+      grd.addColorStop(0.75, 'rgba(40, 58, 32, 0.96)');
+      grd.addColorStop(1, 'rgba(24, 36, 20, 0.98)');
+    }
+    ctx.fillStyle = grd;
+    ctx.fill();
+    ctx.clip();
+
+    // Subtle compass rings & crosshairs
+    ctx.strokeStyle = 'rgba(235, 200, 120, 0.16)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.52, 0, Math.PI * 2);
+    ctx.moveTo(cx, cy - R);
+    ctx.lineTo(cx, cy + R);
+    ctx.moveTo(cx - R, cy);
+    ctx.lineTo(cx + R, cy);
+    ctx.stroke();
+
+    // Dirt roads in Meadow
+    if (!isHollow) {
+      ctx.strokeStyle = 'rgba(210, 174, 122, 0.38)';
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + 0 * scale, cy + 28 * scale);
+      ctx.lineTo(cx + 0 * scale, cy - 32 * scale);
+      ctx.moveTo(cx + 0 * scale, cy + 4 * scale);
+      ctx.lineTo(cx + 20 * scale, cy + 12 * scale);
+      ctx.moveTo(cx + 0 * scale, cy + 4 * scale);
+      ctx.lineTo(cx - 22 * scale, cy + 8 * scale);
+      ctx.stroke();
+    }
+
+    // 2. Resource nodes
+    for (const node of this.layout.nodes || []) {
+      const depleted = Boolean(node.depletedUntil && node.depletedUntil > now);
+      const px = cx + node.x * scale;
+      const py = cy + node.z * scale;
+      ctx.fillStyle = depleted ? 'rgba(148, 163, 184, 0.25)' : this._getNodeDotColor(node.type);
+      ctx.globalAlpha = depleted ? 0.45 : 0.82;
+      ctx.beginPath();
+      ctx.arc(px, py, depleted ? 1.5 : 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 3. Monsters
+    for (const mon of this.activeMonsters.values()) {
+      if (!mon || mon.hp <= 0) continue;
+      const px = cx + mon.x * scale;
+      const py = cy + mon.z * scale;
+      ctx.fillStyle = mon.isBoss ? '#FB7185' : '#F87171';
+      ctx.beginPath();
+      ctx.arc(px, py, mon.isBoss ? 4.5 : 2.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Key Landmarks (Outpost Star & Portal Ring)
+    const pois = this._getRegionPois();
+    for (const poi of pois) {
+      const px = cx + poi.x * scale;
+      const py = cy + poi.z * scale;
+      if (poi.isGate) {
+        ctx.strokeStyle = poi.unlocked ? '#67E8F9' : '#94A3B8';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(px, py, 5.2, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (poi.id === 'outpost') {
+        ctx.fillStyle = '#FDE047';
+        ctx.beginPath();
+        ctx.arc(px, py, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 5. Co-op Shardmates
+    const local = this.world?.local;
+    const partnerId = local?.profile?.partner_id;
+    for (const r of this.world?.remotes?.values?.() || []) {
+      const rx = r.smooth?.x ?? r.data?.x ?? r.x ?? 0;
+      const rz = r.smooth?.z ?? r.data?.z ?? r.z ?? 0;
+      const px = cx + rx * scale;
+      const py = cy + rz * scale;
+      const isPartner = partnerId && String(r.id).toLowerCase() === String(partnerId).toLowerCase();
+      ctx.fillStyle = isPartner ? '#F472B6' : '#60A5FA';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(px, py, isPartner ? 4.2 : 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 6. Active Navigation Route Line + Local Player Arrow
+    if (local) {
+      const lx = cx + local.x * scale;
+      const lz = cy + local.z * scale;
+      const route = this._getActiveRoutePoint();
+      if (route && Math.hypot(route.x - local.x, route.z - local.z) > 1.8) {
+        const tx = cx + route.x * scale;
+        const tz = cy + route.z * scale;
+        ctx.save();
+        ctx.strokeStyle = '#FDE047';
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(lx, lz);
+        ctx.lineTo(tx, tz);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(tx, tz, 4.2 + Math.sin(this.elapsed * 6) * 1.1, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      const vx = local.mover?.vx || 0;
+      const vz = local.mover?.vz || 0;
+      const heading = Math.hypot(vx, vz) > 0.12
+        ? Math.atan2(vz, vx)
+        : (local.rig?.facing?.back ? -Math.PI / 2 : Math.PI / 2);
+
+      ctx.save();
+      ctx.translate(lx, lz);
+      ctx.rotate(heading + Math.PI / 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#B45309';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -6.5);
+      ctx.lineTo(4.8, 5.2);
+      ctx.lineTo(0, 2.5);
+      ctx.lineTo(-4.8, 5.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 7. Cardinal N badge
+    ctx.font = '900 11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#FDE047';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = 3;
+    ctx.fillText('N', cx, 5);
+    ctx.restore();
+
+    if (this.minimapPillEl) {
+      if (this._navTarget) {
+        const rem = local ? Math.max(0, Math.round(Math.hypot(this._navTarget.x - local.x, this._navTarget.z - local.z))) : 0;
+        this.minimapPillEl.textContent = `🧭 ${rem}m`;
+      } else {
+        this.minimapPillEl.textContent = '🗺️ Map';
+      }
+    }
+  }
+
+  _drawBigMap() {
+    const ctx = this._bigMapCtx;
+    if (!ctx || !this.active || !this.layout) return;
+    const S = 280;
+    const pad = 16;
+    const inner = S - pad * 2;
+    const cx = S / 2;
+    const cy = S / 2;
+    const hs = this.halfSize || 36;
+    const scale = (inner / 2) / hs;
+    const isHollow = String(this.layout?.regionId || '').toLowerCase().includes('hollow');
+    const now = Date.now() + (this.world?.serverOffset || 0);
+
+    ctx.clearRect(0, 0, S * 2, S * 2);
+    ctx.save();
+    ctx.scale(2, 2);
+
+    // 1. Illustrated Map Square
+    ctx.beginPath();
+    ctx.roundRect(pad - 6, pad - 6, inner + 12, inner + 12, 14);
+    const grd = ctx.createRadialGradient(cx, cy, 16, cx, cy, inner * 0.72);
+    if (isHollow) {
+      grd.addColorStop(0, '#224759');
+      grd.addColorStop(1, '#102430');
+    } else {
+      grd.addColorStop(0, '#4E6F3A');
+      grd.addColorStop(1, '#2D4322');
+    }
+    ctx.fillStyle = grd;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(235, 198, 122, 0.55)';
+    ctx.stroke();
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255, 244, 214, 0.10)';
+    ctx.lineWidth = 1;
+    for (let g = -2; g <= 2; g++) {
+      const off = (g / 3) * (inner / 2);
+      ctx.beginPath();
+      ctx.moveTo(cx + off, pad);
+      ctx.lineTo(cx + off, S - pad);
+      ctx.moveTo(pad, cy + off);
+      ctx.lineTo(S - pad, cy + off);
+      ctx.stroke();
+    }
+
+    // Meadow Country Roads
+    if (!isHollow) {
+      ctx.strokeStyle = 'rgba(218, 181, 128, 0.48)';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 28 * scale);
+      ctx.lineTo(cx, cy - 32 * scale);
+      ctx.moveTo(cx, cy + 4 * scale);
+      ctx.lineTo(cx + 20 * scale, cy + 12 * scale);
+      ctx.moveTo(cx, cy + 4 * scale);
+      ctx.lineTo(cx - 22 * scale, cy + 8 * scale);
+      ctx.stroke();
+    }
+
+    // 2. Resource Nodes
+    for (const node of this.layout.nodes || []) {
+      const depleted = Boolean(node.depletedUntil && node.depletedUntil > now);
+      const px = cx + node.x * scale;
+      const py = cy + node.z * scale;
+      ctx.fillStyle = depleted ? 'rgba(148,163,184,0.28)' : this._getNodeDotColor(node.type);
+      ctx.beginPath();
+      ctx.arc(px, py, depleted ? 2.2 : 3.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. Monsters
+    for (const mon of this.activeMonsters.values()) {
+      if (!mon || mon.hp <= 0) continue;
+      const px = cx + mon.x * scale;
+      const py = cy + mon.z * scale;
+      ctx.fillStyle = mon.isBoss ? '#FB7185' : '#F87171';
+      ctx.beginPath();
+      ctx.arc(px, py, mon.isBoss ? 6.5 : 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Route line
+    const local = this.world?.local;
+    if (local) {
+      const lx = cx + local.x * scale;
+      const lz = cy + local.z * scale;
+      const route = this._getActiveRoutePoint();
+      if (route && Math.hypot(route.x - local.x, route.z - local.z) > 1.8) {
+        const tx = cx + route.x * scale;
+        const tz = cy + route.z * scale;
+        ctx.save();
+        ctx.strokeStyle = '#FDE047';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(lx, lz);
+        ctx.lineTo(tx, tz);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 5. Landmark Pins & Labels
+    const pois = this._getRegionPois();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const poi of pois) {
+      const px = cx + poi.x * scale;
+      const py = cy + poi.z * scale;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+      ctx.strokeStyle = poi.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(px, py, 9.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(poi.icon, px, py + 0.5);
+
+      ctx.font = '800 9.5px system-ui, sans-serif';
+      ctx.fillStyle = '#FFFBEB';
+      ctx.shadowColor = 'rgba(0,0,0,0.92)';
+      ctx.shadowBlur = 4;
+      const labelY = py < 36 ? py + 16 : py - 15;
+      ctx.fillText(poi.short, px, labelY);
+      ctx.shadowBlur = 0;
+    }
+
+    // 6. Co-op Shardmates
+    const partnerId = local?.profile?.partner_id;
+    for (const r of this.world?.remotes?.values?.() || []) {
+      const rx = r.smooth?.x ?? r.data?.x ?? r.x ?? 0;
+      const rz = r.smooth?.z ?? r.data?.z ?? r.z ?? 0;
+      const px = cx + rx * scale;
+      const py = cy + rz * scale;
+      const isPartner = partnerId && String(r.id).toLowerCase() === String(partnerId).toLowerCase();
+      ctx.fillStyle = isPartner ? '#F472B6' : '#60A5FA';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(px, py, 5.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 7. Local Player ("YOU") Arrow
+    if (local) {
+      const lx = cx + local.x * scale;
+      const lz = cy + local.z * scale;
+      const vx = local.mover?.vx || 0;
+      const vz = local.mover?.vz || 0;
+      const heading = Math.hypot(vx, vz) > 0.12
+        ? Math.atan2(vz, vx)
+        : (local.rig?.facing?.back ? -Math.PI / 2 : Math.PI / 2);
+
+      ctx.save();
+      ctx.translate(lx, lz);
+      ctx.rotate(heading + Math.PI / 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(0, -9);
+      ctx.lineTo(6.5, 7);
+      ctx.lineTo(0, 3.5);
+      ctx.lineTo(-6.5, 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.restore();
   }
 
   dispose() {

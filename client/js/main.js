@@ -18,7 +18,7 @@ import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
-import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf5';
+import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf6';
 import { BasecampUI } from './basecamp_ui.js?v=tos7';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
