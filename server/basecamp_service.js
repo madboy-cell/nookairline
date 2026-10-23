@@ -336,6 +336,9 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
     const r = prodHarvest(plot, storesOf(p), clock());
     if (!r.ok) return r;
     recordStory(p, { kind: 'harvest', target: crop, amount: 1 });
+    for (const [k, n] of Object.entries(r.items || {})) {
+      if (n > 0) recordStory(p, { kind: 'gather', target: k, amount: n });
+    }
     return { ok: true, uid, crop, items: r.items };
   }
 

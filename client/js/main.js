@@ -5,7 +5,7 @@ import { WorldEngine } from './world_engine.js?v=sf1';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
 import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
-import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=tos2';
+import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=tos3';
 import { DockFishing } from './minigames/dock_fishing.js';
 import { RpgUI } from './gacha_forge_ui.js?v=wd6';
 import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
@@ -19,7 +19,7 @@ import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
 import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf1';
-import { BasecampUI } from './basecamp_ui.js?v=tos2';
+import { BasecampUI } from './basecamp_ui.js?v=tos3';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
@@ -115,6 +115,17 @@ function renderHud(p) {
   tickVillage();
 }
 
+function villageBadgeState(v, now) {
+  if (!v) return '';
+  const plotBits = Object.entries(v.plots || {}).map(([u, pl]) => `${u}:${pl?.crop || ''}:${pl?.crop ? (Number(pl.readyAt || 0) <= now ? 'R' : 'G') : 'E'}`);
+  const prodBits = Object.entries(v.production || {}).map(([u, st]) => {
+    const out = Object.values(st?.output || {}).some((n) => n > 0) || (st?.tools || []).length > 0 || (st?.queue || []).some((j) => Number(j?.doneAt || 0) <= now);
+    const run = (st?.queue || []).some((j) => Number(j?.doneAt || 0) > now);
+    return `${u}:${out ? 'R' : run ? 'W' : 'I'}`;
+  });
+  return `${plotBits.join(',')}|${prodBits.join(',')}`;
+}
+
 /** Keep the renderer's copy of MY island = my authoritative profile.village (full data, incl. bag). */
 function syncSelfVillage() {
   const p = S.profile;
@@ -122,7 +133,7 @@ function syncSelfVillage() {
   const isl = islandOf(world.layout, p.id);
   if (!isl) return;
   const v = p.village;
-  const key = JSON.stringify([v.grid_size, v.castle_lv, v.ground, v.buildings, v.tiles, v.levels, v.wonders]);
+  const key = JSON.stringify([v.grid_size, v.castle_lv, !!v.castle_ruins, v.ground, v.buildings, v.tiles, v.levels, v.wonders, villageBadgeState(v, serverNow())]);
   if (key !== S.layoutKey || isl.S !== v.grid_size) {
     S.layoutKey = key;
     world.plaza.setVillage(p.id, v);
@@ -281,6 +292,8 @@ function runGuideAction() {
 
 function tickVillage() {
   const p = S.profile;
+  syncSelfVillage();
+  basecampUI?._refreshHud?.();
   updateGuidePill();
   if (!p?.village || !world?.layout || world.layout?.kind === 'townhall' || !Array.isArray(world.layout?.islands)) return;
   const hasOwnIsland = !!islandOf(world.layout, p.id);
@@ -293,11 +306,14 @@ function tickVillage() {
     if ($('act-edit')) $('act-edit').hidden = false;
     if ($('act-mood')) $('act-mood').hidden = false;
     const pv = harvestPreview(p, serverNow(), { coupled: S.coupled });
-    const any = pv.gold + pv.berries + pv.diamonds > 0;
-    btn.hidden = !(pv.ready && any);   // Stage 3: passive harvest retired — only show when something is actually ready
-    btn.disabled = !pv.ready || !any;
-    btn.classList.toggle('ready', pv.ready && any);
+    const anyPassive = pv.ready && (pv.gold + pv.berries + pv.diamonds > 0);
+    const bcReady = basecampUI?.getReadySummary?.(p);
+    const anyReady = anyPassive || !!bcReady?.anyReady;
+    btn.hidden = !anyReady;
+    btn.disabled = !anyReady;
+    btn.classList.toggle('ready', anyReady);
     const bits = [];
+    if (bcReady?.anyReady && bcReady.labelHtml) bits.push(bcReady.labelHtml);
     if (pv.gold) bits.push(`${fmt(pv.gold)} <img class="inline-curr-ico" src="/assets/ui/icon_gold.png" alt="">`);
     if (pv.berries) bits.push(`${fmt(pv.berries)} <img class="inline-curr-ico" src="/assets/ui/icon_berry.png" alt="">`);
     if (pv.diamonds) bits.push(`${pv.diamonds} <img class="inline-curr-ico" src="/assets/ui/icon_diamond.png" alt="">`);
@@ -332,6 +348,12 @@ function tickVillage() {
 
 // ------------------------------------------------------------------ actions
 async function harvestAll() {
+  const bcReady = basecampUI?.getReadySummary?.(S.profile);
+  if (bcReady?.anyReady) {
+    await basecampUI.collectAllReady(S.profile);
+    tickVillage();
+    return;
+  }
   const r = await request('village_harvest_all');
   if (!r.ok) { toast(`🍓 ${humanError(r.error)}`); return; }
   const bits = [];
@@ -1203,6 +1225,7 @@ async function startGame(profile) {
 
   net?.close();
   net = new Net();
+  if (window.__neora) window.__neora.net = net;
 
   // Route incoming socket messages to CasinoUI + MoonDefenseUI + VoiceCallClient first
   const origEmit = net.emit.bind(net);

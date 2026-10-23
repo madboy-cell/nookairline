@@ -713,6 +713,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
       } else {
         presence.set(ws.userId, { x: selfPos.x, z: selfPos.z, vx: 0, vz: 0, right: true, back: false, t: now, instanceId: targetId });
       }
+      frontier.onPlayerMoved(p, targetId, selfPos.x, selfPos.z);
     } else {
       const L = layoutFor(targetId);
       layoutPayload = layoutWire(L);
@@ -940,7 +941,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
     const sp = Math.hypot(m.vx, m.vz), maxV = NET.MAX_SPEED;
     const vk = sp > maxV ? maxV / sp : 1;
     Object.assign(s, { x, z, vx: m.vx * vk, vz: m.vz * vk, right: !!m.right, back: !!m.back, t: now });
-    if (isFrontier && (!ws.sfVisitAt || now - ws.sfVisitAt > 500)) {
+    if (isFrontier) {
       ws.sfVisitAt = now;
       frontier.onPlayerMoved(db.getProfile(ws.userId), ws.instanceId, x, z);
     }
@@ -962,7 +963,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
   function onAction(ws, m) {
     const p = db.getProfile(ws.userId);
     const now = Date.now();
-    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state' || m.type === 'social_directory' || m.type === 'couple_moment' || m.type === 'hi_state' || BC_READ_ONLY.has(m.type);
+    const noCooldown = m.type === 'fishing_reel_complete' || m.type === 'pet_online_tick' || m.type === 'pet_set_poses' || m.type === 'hall_list' || m.type === 'passport_state' || m.type === 'social_directory' || m.type === 'couple_moment' || m.type === 'hi_state' || m.type.startsWith('bc_') || BC_READ_ONLY.has(m.type);
     if (now - (ws.lastAction || 0) < NET.ACTION_COOLDOWN_MS && !noCooldown) {
       return send(ws, { type: 'action_result', action: m.type, reqId: m.reqId ?? null, ok: false, error: 'slow_down' });
     }

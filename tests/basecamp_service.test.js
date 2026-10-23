@@ -344,3 +344,21 @@ test('WS: bc_story / bc_construct round-trip through the action path', async () 
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test('active chapter build steps unlock construction during the chapter + harvestPlot records gather events', () => {
+  const { clock, bc, mk } = setup();
+  const p = mk('pioneer_prog');
+  // At chapter 1 (Smoke on the Wind), windmill_bakery and patisserie are build steps so they must be constructable
+  atChapter(p, 1);
+  items(p).wood = 100;
+  items(p).stone = 100;
+  p.gold = 10000;
+  assert.ok(bc.construct(p, 'windmill_bakery').ok, 'windmill_bakery constructable during chapter 1');
+  assert.ok(bc.construct(p, 'patisserie').ok, 'patisserie constructable during chapter 1');
+  // Harvesting sky_wheat on a farm plot also counts toward c1_gather_sky_wheat (gather: sky_wheat)
+  assert.ok(bc.plant(p, 'farm_plot_1', 'sky_wheat').ok);
+  clock.t += 121_000;
+  const h = bc.harvestPlot(p, 'farm_plot_1');
+  assert.ok(h.ok);
+  assert.equal(p.story.progress.c1_gather_sky_wheat, 4);
+});

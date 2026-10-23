@@ -83,8 +83,8 @@ export const CORE = {
     effect: 'Base camp shelter & campfire',
   },
 };
-/** Base-camp utility buildings: excluded from the Castle `core` building cap. */
-export const UNCAPPED_CORE = ['farm_plot', 'tent', 'cottage'];
+/** Base-camp utility & story buildings: excluded from the Castle `core` 5-landmark cap. */
+export const UNCAPPED_CORE = ['farm_plot', 'tent', 'cottage', 'workshop', 'windmill_bakery', 'owl_post_office', 'flower_greenhouse'];
 export const CORE_LANDMARKS = ['mint', 'shrine', 'patisserie', 'nest', 'dock']; // the 5 blueprint landmarks
 
 /** Blueprint cards needed to go from Lv L to L+1 (index = L). Section 2.B. */

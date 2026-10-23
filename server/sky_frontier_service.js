@@ -345,6 +345,7 @@ export function createSkyFrontierService({
     if (!gate || !REGIONS[toRegion]) return { ok: false, error: 'no_gate' };
     const s = presence.get(p.id);
     if (!s || Math.hypot(s.x - gate.at.x, s.z - gate.at.z) > (gate.radius || 3) + 1.5) return { ok: false, error: 'too_far' };
+    onPlayerMoved(p, ws.instanceId, s.x, s.z);
     const fr = ensureFrontier(p);
     const partnerUnlocked = isCouple(p) && shardOfUser(p.partner_id) === parsed.shardId
       && !!db.getProfile(p.partner_id)?.frontier?.unlocks?.regions?.includes(gate.requires);
@@ -1502,8 +1503,18 @@ export function createSkyFrontierService({
     for (const step of ch.steps) {
       if (step.kind !== 'visit' || (p.story.progress?.[step.id] || 0) >= step.count) continue;
       const poi = region.pois[step.target];
-      if (poi && Math.hypot(poi.x - x, poi.z - z) <= 4.5) {
+      if (poi && Math.hypot(poi.x - x, poi.z - z) <= 5.5) {
         if (recordEvent(p.story, { kind: 'visit', target: step.target }).length) changed = true;
+        if (step.target === 'gate_hollow') {
+          const fr = ensureFrontier(p);
+          if (fr) {
+            fr.unlocks ||= { regions: ['meadow'], gates: [] };
+            fr.unlocks.gates ||= [];
+            if (!fr.unlocks.gates.includes('hollow')) { fr.unlocks.gates.push('hollow'); changed = true; }
+            fr.unlocks.regions ||= ['meadow'];
+            if (!fr.unlocks.regions.includes('hollow')) { fr.unlocks.regions.push('hollow'); changed = true; }
+          }
+        }
       }
     }
     if (changed) { db.markProfile?.(p.id); onProfileChanged(p); }

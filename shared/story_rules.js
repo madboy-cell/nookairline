@@ -324,6 +324,10 @@ export function unlockedMonuments(story) {
  */
 export function unlockedForVillage(story, village) {
   const set = new Set(unlockedBuildings(story));
+  const activeCh = CHAPTERS.find((c) => c.id === story?.chapter);
+  for (const s of activeCh?.steps || []) {
+    if (s.kind === 'build' && s.target) set.add(s.target);
+  }
   for (const [type, n] of Object.entries(village?.copies || {})) if ((n | 0) > 0) set.add(type);
   for (const b of village?.buildings || []) if (b?.type) set.add(b.type);
   return [...set];

@@ -677,25 +677,36 @@ export class VillagePlaza {
       const plot = isl.village?.plots?.[b.uid];
       if (plot?.crop) {
         const isReady = Number(plot.readyAt || 0) <= Date.now();
-        const badge = makeCropBadgeSprite(isReady ? '🌾✨' : '🌱', isReady);
+        const badge = makeCropBadgeSprite(isReady ? '🌾✨' : '⏳', isReady);
         badge.position.set(c.x, 0.75, c.z);
         badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady };
+        group.add(badge);
+        this.floatingBadges.push(badge);
+        this.pickables.push(badge);
+      } else if (isl.owner === this.selfId) {
+        const badge = makeCropBadgeSprite('🌱', false);
+        badge.position.set(c.x, 0.75, c.z);
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady: false };
         group.add(badge);
         this.floatingBadges.push(badge);
         this.pickables.push(badge);
       }
     }
 
-    // production ready sparkle/badge
+    // production ready/working sparkle/badge
     if (!draft && isl.village?.production?.[b.uid]) {
       const st = isl.village.production[b.uid];
-      const hasOutput = Object.values(st?.output || {}).some((n) => n > 0) || (st?.tools || []).length > 0;
-      if (hasOutput) {
+      const now = Date.now();
+      const hasOutput = Object.values(st?.output || {}).some((n) => n > 0)
+        || (st?.tools || []).length > 0
+        || (st?.queue || []).some((j) => Number(j?.doneAt || 0) <= now);
+      const isWorking = !hasOutput && (st?.queue || []).some((j) => Number(j?.doneAt || 0) > now);
+      if (hasOutput || isWorking) {
         const info = spriteInfo(spriteKey);
         const bHeight = mesh.userData.height || (width * (info ? info.h / info.w : 1.1));
-        const badge = makeReadyBadgeSprite();
+        const badge = hasOutput ? makeReadyBadgeSprite() : makeCropBadgeSprite('⏳', false);
         badge.position.set(c.x, bHeight * 0.8 + 0.3, c.z);
-        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85 };
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85, isReady: hasOutput };
         group.add(badge);
         this.floatingBadges.push(badge);
         this.pickables.push(badge);
