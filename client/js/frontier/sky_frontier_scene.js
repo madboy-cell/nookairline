@@ -573,8 +573,44 @@ const HUD_STYLE = `
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
+  gap: 5px;
   pointer-events: auto;
+}
+
+.sf-target-pills {
+  display: flex;
+  gap: 4px;
+  background: rgba(36, 24, 18, 0.84);
+  border: 1.5px solid #C9A45C;
+  border-radius: 14px;
+  padding: 3px 5px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.sf-target-pill {
+  border: 1.5px solid transparent;
+  background: rgba(244, 234, 214, 0.14);
+  color: #F4EAD6;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.sf-target-pill.on {
+  background: linear-gradient(180deg, #F6DC9A, #C9A45C);
+  color: #3B2A20;
+  border-color: #FFF3A8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.sf-target-pill:active {
+  transform: scale(0.92);
 }
 
 .sf-rune-btn {
@@ -596,8 +632,10 @@ const HUD_STYLE = `
   transition: transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-.sf-rune-btn:active {
+.sf-rune-btn:active,
+.sf-rune-btn.sf-held {
   transform: scale(0.93);
+  border-color: #E8B85A;
 }
 
 .sf-rune-svg {
@@ -613,6 +651,14 @@ const HUD_STYLE = `
   fill: none;
   stroke: rgba(59, 42, 32, 0.22);
   stroke-width: 4;
+}
+
+.sf-rune-sweetspot {
+  fill: none;
+  stroke: rgba(250, 204, 21, 0.42);
+  stroke-width: 6;
+  stroke-dasharray: 110 264;
+  stroke-dashoffset: -153;
 }
 
 .sf-rune-ring {
@@ -721,6 +767,12 @@ export class SkyFrontierScene {
     this.swingTimer = 0;
     this.inBeatWindow = false;
     this.nextStrikePerfect = false;
+    this.runeHeld = false;
+    this.preferredTargetType = 'auto';
+    this._lastGatheredNodeType = null;
+    this._localPerfectStreak = 0;
+    this._autoChainTimer = null;
+    this.audioCtx = null;
 
     // Combat state
     this.activeMonsters = new Map(); // id -> monsterData
@@ -924,16 +976,24 @@ export class SkyFrontierScene {
             </button>
           </div>
 
-          <div class="sf-rune-wrapper" id="sf-rune-wrapper" style="display: none;">
-            <div class="sf-rarity-boost-pill" id="sf-rarity-boost">🎲 Rare Chance: 38%</div>
+          <div class="sf-rune-wrapper" id="sf-rune-wrapper">
+            <div class="sf-target-pills" id="sf-target-pills" role="group" aria-label="Gather Target">
+              <button type="button" class="sf-target-pill on" data-sf-target="auto">✨ Auto</button>
+              <button type="button" class="sf-target-pill" data-sf-target="tree">🪵</button>
+              <button type="button" class="sf-target-pill" data-sf-target="boulder">🪨</button>
+              <button type="button" class="sf-target-pill" data-sf-target="wheat">🌾</button>
+              <button type="button" class="sf-target-pill" data-sf-target="herb">🌿</button>
+            </div>
+            <div class="sf-rarity-boost-pill" id="sf-rarity-boost">✨ Tap or Hold to Gather</div>
             <div class="sf-rune-flash" id="sf-rune-flash">PERFECT!</div>
-            <button type="button" class="sf-rune-btn" id="sf-rune-btn" aria-label="Strike">
+            <button type="button" class="sf-rune-btn" id="sf-rune-btn" aria-label="Gather & Strike">
               <svg class="sf-rune-svg" viewBox="0 0 100 100">
                 <circle class="sf-rune-track" cx="50" cy="50" r="42" />
+                <circle class="sf-rune-sweetspot" cx="50" cy="50" r="42" />
                 <circle class="sf-rune-ring" id="sf-rune-ring" cx="50" cy="50" r="42" />
               </svg>
-              <span class="sf-rune-icon">⚒️</span>
-              <span class="sf-rune-label">STRIKE</span>
+              <span class="sf-rune-icon" id="sf-rune-icon">⚒️</span>
+              <span class="sf-rune-label" id="sf-rune-label">GATHER</span>
             </button>
           </div>
         </div>
@@ -971,9 +1031,12 @@ export class SkyFrontierScene {
     this.ultCdOverlayEl = hud.querySelector('#sf-ult-cd-overlay');
 
     this.runeWrapperEl = hud.querySelector('#sf-rune-wrapper');
+    this.targetPillsEl = hud.querySelector('#sf-target-pills');
     this.rarityBoostEl = hud.querySelector('#sf-rarity-boost');
     this.runeBtnEl = hud.querySelector('#sf-rune-btn');
     this.runeRingEl = hud.querySelector('#sf-rune-ring');
+    this.runeIconEl = hud.querySelector('#sf-rune-icon');
+    this.runeLabelEl = hud.querySelector('#sf-rune-label');
     this.runeFlashEl = hud.querySelector('#sf-rune-flash');
 
     if (this.homeBtnEl) {
@@ -986,13 +1049,38 @@ export class SkyFrontierScene {
       };
     }
 
-    if (this.runeBtnEl) {
-      const handleTap = (e) => {
+    if (this.targetPillsEl) {
+      this.targetPillsEl.addEventListener('pointerdown', (e) => {
+        const pill = e.target.closest('[data-sf-target]');
+        if (!pill) return;
         e.preventDefault();
         e.stopPropagation();
+        const type = pill.dataset.sfTarget || 'auto';
+        this.preferredTargetType = type;
+        this.targetPillsEl.querySelectorAll('[data-sf-target]').forEach((el) => {
+          el.classList.toggle('on', el.dataset.sfTarget === type);
+        });
+        this._syncRuneButtonState();
+        this.findAndWalkToNextNode(type, { playSfx: true });
+      });
+    }
+
+    if (this.runeBtnEl) {
+      const handleDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.runeHeld = true;
+        this.runeBtnEl.classList.add('sf-held');
         this.onRuneTap();
       };
-      this.runeBtnEl.addEventListener('pointerdown', handleTap);
+      const handleUp = () => {
+        this.runeHeld = false;
+        this.runeBtnEl?.classList.remove('sf-held');
+      };
+      this.runeBtnEl.addEventListener('pointerdown', handleDown);
+      this.runeBtnEl.addEventListener('pointerup', handleUp);
+      this.runeBtnEl.addEventListener('pointercancel', handleUp);
+      this.runeBtnEl.addEventListener('pointerleave', handleUp);
     }
 
     if (this.ultBtnEl) {
@@ -1023,11 +1111,136 @@ export class SkyFrontierScene {
     this.hudEl.style.display = this.active ? 'block' : 'none';
   }
 
-  onRuneTap() {
-    if (this.inBeatWindow) {
-      this.nextStrikePerfect = true;
-      this.flashPerfect();
+  _renderTargetPills(isHollow) {
+    if (!this.targetPillsEl) return;
+    const pills = isHollow
+      ? [
+          { id: 'auto', label: '✨ Auto' },
+          { id: 'crystal', label: '💎' },
+          { id: 'mithril', label: '🔮' },
+          { id: 'boulder', label: '🪨' },
+        ]
+      : [
+          { id: 'auto', label: '✨ Auto' },
+          { id: 'tree', label: '🪵' },
+          { id: 'boulder', label: '🪨' },
+          { id: 'wheat', label: '🌾' },
+          { id: 'herb', label: '🌿' },
+        ];
+    if (!pills.some((p) => p.id === this.preferredTargetType)) {
+      this.preferredTargetType = 'auto';
     }
+    this.targetPillsEl.innerHTML = pills
+      .map(
+        (p) =>
+          `<button type="button" class="sf-target-pill ${
+            p.id === this.preferredTargetType ? 'on' : ''
+          }" data-sf-target="${p.id}">${p.label}</button>`
+      )
+      .join('');
+  }
+
+  _syncRuneButtonState() {
+    const NODE_ICONS = {
+      tree: '🪵',
+      boulder: '🪨',
+      wheat: '🌾',
+      herb: '🌿',
+      crystal: '💎',
+      quartz: '💎',
+      mithril: '🔮',
+    };
+    if (this.targetNode) {
+      const icon = NODE_ICONS[this.targetNode.type] || '⚒️';
+      if (this.runeIconEl) this.runeIconEl.textContent = icon;
+      if (this.runeLabelEl) this.runeLabelEl.textContent = this.isSwinging ? 'HOLD/TAP' : 'WALKING';
+    } else {
+      const icon =
+        this.preferredTargetType !== 'auto'
+          ? NODE_ICONS[this.preferredTargetType] || '⚒️'
+          : '⚒️';
+      if (this.runeIconEl) this.runeIconEl.textContent = icon;
+      if (this.runeLabelEl) this.runeLabelEl.textContent = 'GATHER';
+      if (this.rarityBoostEl) {
+        this.rarityBoostEl.textContent = '✨ Tap or Hold to Gather';
+      }
+      this._updateRuneRing(0, false);
+    }
+  }
+
+  findAndWalkToNextNode(preferredType = null, { playSfx = false } = {}) {
+    if (!this.active || !this.layout?.nodes?.length) return false;
+    const local = this.world?.local;
+    const px = local?.x ?? 0;
+    const pz = local?.z ?? 0;
+    const now = Date.now() + (this.world?.serverOffset || 0);
+    const toolbelt = local?.profile?.frontier?.toolbelt || {};
+
+    const targetType = preferredType || this.preferredTargetType || 'auto';
+    const available = (this.layout.nodes || []).filter((n) => {
+      if (n.depletedUntil && n.depletedUntil > now) return false;
+      const def = NODE_TYPES[n.type];
+      if (def) {
+        const myTier = Number(toolbelt[def.tool]) || 1;
+        if (myTier < (Number(def.minTier) || 1)) return false;
+      }
+      return true;
+    });
+
+    if (available.length === 0) {
+      this.toast?.('🌱 All nearby nodes are regrowing — just a moment!', 1800);
+      return false;
+    }
+
+    let candidates = available;
+    if (targetType && targetType !== 'auto') {
+      const matching = available.filter(
+        (n) => n.type === targetType || (targetType === 'crystal' && n.type === 'quartz')
+      );
+      if (matching.length > 0) {
+        candidates = matching;
+      }
+    } else if (this._lastGatheredNodeType) {
+      const sameType = available.filter((n) => n.type === this._lastGatheredNodeType);
+      if (sameType.length > 0) {
+        candidates = sameType;
+      }
+    }
+
+    let bestNode = null;
+    let bestDist = Infinity;
+    for (const n of candidates) {
+      const d = Math.hypot(n.x - px, n.z - pz);
+      if (d < bestDist) {
+        bestDist = d;
+        bestNode = n;
+      }
+    }
+
+    if (!bestNode) return false;
+    if (playSfx) {
+      this.playGatherSfx('step_target');
+    }
+    this.interact({ kind: 'sf_node', node: bestNode });
+    return true;
+  }
+
+  onRuneTap() {
+    if (!this.targetNode) {
+      this.findAndWalkToNextNode(this.preferredTargetType, { playSfx: true });
+      return;
+    }
+    if (this.inBeatWindow && !this.nextStrikePerfect) {
+      this.triggerPerfectLock();
+    }
+  }
+
+  triggerPerfectLock() {
+    if (this.nextStrikePerfect) return;
+    this.nextStrikePerfect = true;
+    this._localPerfectStreak = (this._localPerfectStreak || 0) + 1;
+    this.flashPerfect();
+    this.playGatherSfx('perfect', this._localPerfectStreak);
   }
 
   flashPerfect() {
@@ -1035,6 +1248,108 @@ export class SkyFrontierScene {
     this.runeFlashEl.classList.remove('sf-flash-anim');
     void this.runeFlashEl.offsetWidth;
     this.runeFlashEl.classList.add('sf-flash-anim');
+  }
+
+  playGatherSfx(type, streak = 1) {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioCtx();
+      }
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+      const ctx = this.audioCtx;
+      const now = ctx.currentTime;
+
+      if (type === 'step_target') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.09);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'hit_axe') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(195, now);
+        osc.frequency.exponentialRampToValueAtTime(95, now + 0.09);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'hit_pickaxe') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(980, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      } else if (type === 'hit_staff') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(580, now);
+        osc.frequency.exponentialRampToValueAtTime(780, now + 0.1);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      } else if (type === 'perfect') {
+        const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
+        const baseFreq = scale[Math.min(scale.length - 1, Math.max(0, (streak || 1) - 1))];
+        [baseFreq, baseFreq * 1.25].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.055);
+          gain.gain.setValueAtTime(0.13, now + i * 0.055);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.055);
+          osc.stop(now + i * 0.055 + 0.22);
+        });
+      } else if (type === 'break_common' || type === 'break_rare' || type === 'break_epic') {
+        const notes =
+          type === 'break_epic'
+            ? [523.25, 659.25, 783.99, 1046.5, 1318.5]
+            : type === 'break_rare'
+            ? [523.25, 659.25, 783.99, 1046.5]
+            : [440, 554.37, 659.25];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+          gain.gain.setValueAtTime(0.14, now + idx * 0.065);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.26);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.065);
+          osc.stop(now + idx * 0.065 + 0.26);
+        });
+      }
+    } catch {
+      // Ignore WebAudio restrictions
+    }
   }
 
   // ------------------------------------------------------------------ Scene Lifecycle
@@ -1339,11 +1654,21 @@ export class SkyFrontierScene {
     if (this.hudEl) {
       this.hudEl.style.display = 'block';
     }
+    this._renderTargetPills(isHollow);
+    if (this.runeWrapperEl) {
+      this.runeWrapperEl.style.display = 'flex';
+    }
+    this._syncRuneButtonState();
     this.updateHud();
     this.updateUltimateCharm();
   }
 
   exit() {
+    if (this._autoChainTimer) {
+      clearTimeout(this._autoChainTimer);
+      this._autoChainTimer = null;
+    }
+    this.runeHeld = false;
     this.active = false;
     this.root.visible = false;
     this.stopAutoSwing();
@@ -1454,21 +1779,28 @@ export class SkyFrontierScene {
 
     if (picked.kind === 'sf_node' && picked.node) {
       const node = picked.node;
+      if (this._autoChainTimer) {
+        clearTimeout(this._autoChainTimer);
+        this._autoChainTimer = null;
+      }
       this.stopAutoAttack();
       this.targetGate = null;
 
       const now = Date.now() + (this.world?.serverOffset || 0);
       if (node.depletedUntil && node.depletedUntil > now) {
-        this.toast?.('🌱 This resource is depleted. It will respawn soon.', 2000);
+        this.toast?.('🌱 This resource is depleted. Finding another nearby!', 1800);
+        this.findAndWalkToNextNode(node.type, { playSfx: true });
         return;
       }
 
       this.targetNode = node;
+      this._lastGatheredNodeType = node.type;
       this.world?.walkTo?.(node.x, node.z + 1.2);
 
       if (this.runeWrapperEl) {
         this.runeWrapperEl.style.display = 'flex';
       }
+      this._syncRuneButtonState();
 
       const local = this.world?.local;
       if (local) {
@@ -1522,9 +1854,14 @@ export class SkyFrontierScene {
     this.swingTimer = 0;
     this.inBeatWindow = false;
     this.nextStrikePerfect = false;
+    this._localPerfectStreak = 0;
     if (this.runeWrapperEl) {
       this.runeWrapperEl.style.display = 'flex';
     }
+    if (this.rarityBoostEl) {
+      this.rarityBoostEl.textContent = '🎲 Rare+ Chance: 38%';
+    }
+    this._syncRuneButtonState();
   }
 
   stopAutoSwing() {
@@ -1536,13 +1873,12 @@ export class SkyFrontierScene {
     this.swingTimer = 0;
     this.inBeatWindow = false;
     this.nextStrikePerfect = false;
+    this._localPerfectStreak = 0;
     this.targetNode = null;
-    if (this.runeWrapperEl) {
-      this.runeWrapperEl.style.display = 'none';
-    }
     if (this.runeBtnEl) {
       this.runeBtnEl.classList.remove('sf-beat-active');
     }
+    this._syncRuneButtonState();
   }
 
   async executeStrike() {
@@ -2043,6 +2379,8 @@ export class SkyFrontierScene {
       }
 
       const toolIcon = typeDef.tool === 'axe' ? '🪓' : typeDef.tool === 'staff' ? '✨' : '⛏️';
+      const sfxKind = typeDef.tool === 'axe' ? 'hit_axe' : typeDef.tool === 'staff' ? 'hit_staff' : 'hit_pickaxe';
+      this.playGatherSfx(sfxKind);
       if (m.perfect) {
         this.showFloatingText(
           `⚡ PERFECT! ×1.5 (+${Math.max(12, rareBoostPct)}% Rare ⬆️)`,
@@ -2082,11 +2420,9 @@ export class SkyFrontierScene {
       node.depletedUntil = m.depletedUntil;
     }
 
-    if (this.targetNode && String(this.targetNode.id) === nodeId) {
+    const wasMyTarget = Boolean(this.targetNode && String(this.targetNode.id) === nodeId);
+    if (wasMyTarget) {
       this.stopAutoSwing();
-    }
-    if (this.rarityBoostEl) {
-      this.rarityBoostEl.textContent = '🎲 Rare+ Chance: 38%';
     }
 
     const mesh = this.nodeMeshes.get(nodeId);
@@ -2122,6 +2458,7 @@ export class SkyFrontierScene {
       let extraClass = '';
 
       if (rarity.id === 'epic') {
+        this.playGatherSfx('break_epic');
         prefix = `${rarity.badge || '🌟'} EPIC JACKPOT (${rarity.mult}×)!  `;
         extraClass = 'sf-float-epic';
         this._showUltRingVfx(node.x, node.z, 4.8, 0xFACC15);
@@ -2133,6 +2470,7 @@ export class SkyFrontierScene {
         });
         this.toast?.(`🌟 EPIC JACKPOT HARVEST! ${parts.join('  ')}`, 3500);
       } else if (rarity.id === 'rare') {
+        this.playGatherSfx('break_rare');
         prefix = `${rarity.badge || '🔵'} RARE VEIN (${rarity.mult}×)!  `;
         extraClass = 'sf-float-rare';
         this._showUltRingVfx(node.x, node.z, 3.2, 0x38BDF8);
@@ -2143,6 +2481,7 @@ export class SkyFrontierScene {
           life: 0.6,
         });
       } else if (rarity.id === 'uncommon') {
+        this.playGatherSfx('break_common');
         prefix = `${rarity.badge || '🟢'} FINE HARVEST (${rarity.mult}×)!  `;
         extraClass = 'sf-float-uncommon';
         this.world?.fx?.emit?.('fx_star', node.x, 1.0, node.z, 8, {
@@ -2151,9 +2490,26 @@ export class SkyFrontierScene {
           size: 0.2,
           life: 0.5,
         });
+      } else {
+        this.playGatherSfx('break_common');
       }
 
       this.showFloatingText(`${prefix}${parts.join('  ')}`, node.x, node.z, extraClass);
+    }
+
+    // 1-Thumb Auto-Chain: if the player was harvesting this node and still has energy,
+    // automatically walk to the next nearest node after a brief celebratory beat!
+    if ((wasMyTarget || parts.length > 0) && this.active && (this.energy?.cur || 0) >= 2) {
+      if (this._autoChainTimer) clearTimeout(this._autoChainTimer);
+      const nextPref =
+        this.preferredTargetType && this.preferredTargetType !== 'auto'
+          ? this.preferredTargetType
+          : node?.type || 'auto';
+      this._autoChainTimer = setTimeout(() => {
+        this._autoChainTimer = null;
+        if (!this.active || this.targetNode || this.targetMonster || this.targetGate) return;
+        this.findAndWalkToNextNode(nextPref);
+      }, 420);
     }
   }
 
@@ -2354,7 +2710,10 @@ export class SkyFrontierScene {
           this.swingTimer += dt * 1000;
           const progress = Math.min(1, this.swingTimer / swingDuration);
 
-          this.inBeatWindow = progress >= 0.75;
+          this.inBeatWindow = progress >= 0.58;
+          if (this.inBeatWindow && this.runeHeld && !this.nextStrikePerfect) {
+            this.triggerPerfectLock();
+          }
           this._updateRuneRing(progress, this.inBeatWindow);
 
           if (this.swingTimer >= swingDuration) {

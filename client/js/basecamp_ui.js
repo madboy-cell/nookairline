@@ -557,16 +557,53 @@ export class BasecampUI {
     return { anyReady, readyPlotUids, readyProdUids, labelHtml: labelBits.join(' · ') };
   }
 
+  playPopSfx(kind = 'harvest') {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this._audioCtx) this._audioCtx = new AudioCtx();
+      if (this._audioCtx.state === 'suspended') this._audioCtx.resume();
+      const ctx = this._audioCtx;
+      const now = ctx.currentTime;
+      const notes =
+        kind === 'plant'
+          ? [392.0, 523.25]
+          : kind === 'collect'
+          ? [523.25, 659.25, 783.99]
+          : [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.055);
+        gain.gain.setValueAtTime(0.11, now + idx * 0.055);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.055);
+        osc.stop(now + idx * 0.055 + 0.22);
+      });
+    } catch {
+      // ignore WebAudio restrictions
+    }
+  }
+
   async collectAllReady(p = this._p()) {
     const { readyPlotUids, readyProdUids } = this.getReadySummary(p);
     const totalItems = {};
     const tools = [];
+    let replantedCount = 0;
     for (const uid of readyPlotUids) {
-      const crop = p?.village?.plots?.[uid]?.crop;
+      const crop = p?.village?.plots?.[uid]?.crop || this._lastCropByUid.get(uid) || 'sky_wheat';
       if (crop) this._lastCropByUid.set(uid, crop);
       const r = await this._req('bc_harvest_plot', { uid }, '🌾');
       if (r.ok) {
         for (const [k, n] of Object.entries(r.items || {})) totalItems[k] = (totalItems[k] || 0) + n;
+        if (crop && CROPS[crop]) {
+          const pl = await this._req('bc_plant', { uid, crop }, '🌱');
+          if (pl.ok) replantedCount += 1;
+        }
       }
     }
     for (const uid of readyProdUids) {
@@ -577,7 +614,11 @@ export class BasecampUI {
       }
     }
     const bits = [itemsLine(totalItems), ...tools].filter(Boolean);
-    if (bits.length) this.toast(`✨ Collected ${bits.join(' ')}!`, 2800);
+    if (bits.length) {
+      this.playPopSfx('harvest');
+      const replantSuffix = replantedCount > 0 ? ` & auto-replanted ${replantedCount} plot${replantedCount > 1 ? 's' : ''} 🌱` : '';
+      this.toast(`✨ Collected ${bits.join(' ')}${replantSuffix}!`, 2800);
+    }
   }
 
   // ---------------------------------------------------------------------------------- 1. Story
@@ -1195,6 +1236,7 @@ export class BasecampUI {
     this._lastRecipeByUid.set(uid, recipe);
     const r = await this._req('bc_enqueue', { uid, recipe }, '⏳');
     if (!r.ok) return r;
+    this.playPopSfx('plant');
     const rc = recipeOf(recipe);
     const ms = Math.round(rc.ms / (r.speedMult > 0 ? r.speedMult : 1));
     this.toast(`⏳ Queued ${recipeIcon(rc)} ${recipeName(rc)} — ready in ${fmtDur(ms)}`, 2200);
@@ -1204,6 +1246,7 @@ export class BasecampUI {
   async _collect(uid) {
     const r = await this._req('bc_collect', { uid }, '📦');
     if (!r.ok) return r;
+    this.playPopSfx('collect');
     const bits = [itemsLine(r.collected)];
     for (const t of r.tools || []) bits.push(`${TOOL_ICON[t.kind] || '🛠️'} ${t.kind} T${t.tier}!`);
     const bonus = itemsLine(r.bonus);
@@ -1217,6 +1260,7 @@ export class BasecampUI {
     this._lastRecipeByUid.set(uid, recipe);
     const c = await this._req('bc_collect', { uid }, '📦');
     if (!c.ok) return;
+    this.playPopSfx('harvest');
     const e = await this._req('bc_enqueue', { uid, recipe }, '⏳');
     const rc = recipeOf(recipe);
     const cTxt = itemsLine(c.collected);
@@ -1326,7 +1370,10 @@ export class BasecampUI {
   async _plant(uid, crop) {
     this._lastCropByUid.set(uid, crop);
     const r = await this._req('bc_plant', { uid, crop }, '🌱');
-    if (r.ok) this.toast(`🌱 Planted ${matOf(crop).emoji} ${matOf(crop).name} — ready in ${fmtDur(CROPS[crop].ms)}`, 2400);
+    if (r.ok) {
+      this.playPopSfx('plant');
+      this.toast(`🌱 Planted ${matOf(crop).emoji} ${matOf(crop).name} — ready in ${fmtDur(CROPS[crop].ms)}`, 2400);
+    }
     return r;
   }
 
@@ -1342,6 +1389,7 @@ export class BasecampUI {
       else break;
     }
     if (planted > 0) {
+      this.playPopSfx('plant');
       this.toast(`🌱 Planted ${matOf(crop).emoji} ${matOf(crop).name} on ${planted} plot${planted > 1 ? 's' : ''} — ready in ${fmtDur(CROPS[crop].ms)}!`, 2600);
     }
   }
@@ -1350,7 +1398,10 @@ export class BasecampUI {
     const curCrop = this._p()?.village?.plots?.[uid]?.crop;
     if (curCrop) this._lastCropByUid.set(uid, curCrop);
     const r = await this._req('bc_harvest_plot', { uid }, '🌾');
-    if (r.ok) this.toast(`🌾 Harvested ${itemsLine(r.items)}`, 2400);
+    if (r.ok) {
+      this.playPopSfx('harvest');
+      this.toast(`🌾 Harvested ${itemsLine(r.items)}`, 2400);
+    }
     return r;
   }
 
@@ -1359,6 +1410,7 @@ export class BasecampUI {
     this._lastCropByUid.set(uid, cropId);
     const h = await this._req('bc_harvest_plot', { uid }, '🌾');
     if (!h.ok) return;
+    this.playPopSfx('harvest');
     const pl = await this._req('bc_plant', { uid, crop: cropId }, '🌱');
     if (pl.ok) {
       this.toast(`🌾 Harvested ${itemsLine(h.items)} & replanted ${matOf(cropId).emoji} ${matOf(cropId).name}!`, 2600);
@@ -1384,6 +1436,7 @@ export class BasecampUI {
         if (pl.ok) replanted += 1;
       }
     }
+    this.playPopSfx('harvest');
     this.toast(`🌾🔄 Harvested ${itemsLine(totals)} & replanted ${replanted} plot${replanted !== 1 ? 's' : ''}!`, 2800);
   }
 
