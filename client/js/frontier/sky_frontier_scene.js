@@ -628,32 +628,28 @@ const HUD_STYLE = `
 .sf-target-pills {
   display: flex;
   gap: 4px;
-  background: rgba(36, 24, 18, 0.84);
-  border: 1.5px solid #C9A45C;
-  border-radius: 14px;
-  padding: 3px 5px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(6px);
 }
 
 .sf-target-pill {
-  border: 1.5px solid transparent;
-  background: rgba(244, 234, 214, 0.14);
+  border: 1.5px solid rgba(201, 164, 92, 0.75);
+  background: rgba(36, 24, 18, 0.86);
   color: #F4EAD6;
-  border-radius: 10px;
-  padding: 2px 6px;
-  font-size: 11px;
-  font-weight: 800;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 900;
   cursor: pointer;
   line-height: 1.2;
-  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .sf-target-pill.on {
   background: linear-gradient(180deg, #F6DC9A, #C9A45C);
   color: #3B2A20;
   border-color: #FFF3A8;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 12px rgba(232, 184, 90, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .sf-target-pill:active {
@@ -815,6 +811,7 @@ export class SkyFrontierScene {
     this.inBeatWindow = false;
     this.nextStrikePerfect = false;
     this.runeHeld = false;
+    this.autoGatherEnabled = false;
     this.preferredTargetType = 'auto';
     this._lastGatheredNodeType = null;
     this._localPerfectStreak = 0;
@@ -1027,15 +1024,10 @@ export class SkyFrontierScene {
 
           <div class="sf-rune-wrapper" id="sf-rune-wrapper">
             <button type="button" class="sf-partner-pill" id="sf-partner-pill"></button>
-            <div class="sf-target-pills" id="sf-target-pills" role="group" aria-label="Gather Target">
-              <button type="button" class="sf-target-pill on" data-sf-target="auto">✨ Auto</button>
-              <button type="button" class="sf-target-pill" data-sf-target="tree">🪵</button>
-              <button type="button" class="sf-target-pill" data-sf-target="boulder">🪨</button>
-              <button type="button" class="sf-target-pill" data-sf-target="wheat">🌾</button>
-              <button type="button" class="sf-target-pill" data-sf-target="herb">🌿</button>
-              <button type="button" class="sf-target-pill" data-sf-target="monster">⚔️</button>
+            <div class="sf-target-pills" id="sf-target-pills" role="group" aria-label="Auto Gather Toggle">
+              <button type="button" class="sf-target-pill" id="sf-auto-toggle" data-sf-target="auto" aria-pressed="false">✨ Auto: OFF</button>
             </div>
-            <div class="sf-rarity-boost-pill" id="sf-rarity-boost">✨ Tap or Hold to Gather</div>
+            <div class="sf-rarity-boost-pill" id="sf-rarity-boost">✨ Tap Node or Auto to Gather</div>
             <div class="sf-rune-flash" id="sf-rune-flash">PERFECT!</div>
             <button type="button" class="sf-rune-btn" id="sf-rune-btn" aria-label="Gather & Strike">
               <svg class="sf-rune-svg" viewBox="0 0 100 100">
@@ -1084,6 +1076,7 @@ export class SkyFrontierScene {
 
     this.runeWrapperEl = hud.querySelector('#sf-rune-wrapper');
     this.targetPillsEl = hud.querySelector('#sf-target-pills');
+    this.autoToggleEl = hud.querySelector('#sf-auto-toggle');
     this.rarityBoostEl = hud.querySelector('#sf-rarity-boost');
     this.runeBtnEl = hud.querySelector('#sf-rune-btn');
     this.runeRingEl = hud.querySelector('#sf-rune-ring');
@@ -1111,21 +1104,11 @@ export class SkyFrontierScene {
 
     if (this.targetPillsEl) {
       this.targetPillsEl.addEventListener('pointerdown', (e) => {
-        const pill = e.target.closest('[data-sf-target]');
+        const pill = e.target.closest('[data-sf-target], #sf-auto-toggle');
         if (!pill) return;
         e.preventDefault();
         e.stopPropagation();
-        const type = pill.dataset.sfTarget || 'auto';
-        this.preferredTargetType = type;
-        this.targetPillsEl.querySelectorAll('[data-sf-target]').forEach((el) => {
-          el.classList.toggle('on', el.dataset.sfTarget === type);
-        });
-        this._syncRuneButtonState();
-        if (type === 'monster') {
-          this.findAndAttackNextMonster({ playSfx: true });
-        } else {
-          this.findAndWalkToNextNode(type, { playSfx: true });
-        }
+        this.setAutoGather(!this.autoGatherEnabled, { playSfx: true });
       });
     }
 
@@ -1175,35 +1158,45 @@ export class SkyFrontierScene {
     this.hudEl.style.display = this.active ? 'block' : 'none';
   }
 
-  _renderTargetPills(isHollow) {
+  _renderTargetPills() {
     if (!this.targetPillsEl) return;
-    const pills = isHollow
-      ? [
-          { id: 'auto', label: '✨ Auto' },
-          { id: 'crystal', label: '💎' },
-          { id: 'mithril', label: '🔮' },
-          { id: 'boulder', label: '🪨' },
-          { id: 'monster', label: '⚔️' },
-        ]
-      : [
-          { id: 'auto', label: '✨ Auto' },
-          { id: 'tree', label: '🪵' },
-          { id: 'boulder', label: '🪨' },
-          { id: 'wheat', label: '🌾' },
-          { id: 'herb', label: '🌿' },
-          { id: 'monster', label: '⚔️' },
-        ];
-    if (!pills.some((p) => p.id === this.preferredTargetType)) {
-      this.preferredTargetType = 'auto';
+    const isOn = Boolean(this.autoGatherEnabled);
+    this.targetPillsEl.innerHTML = `<button type="button" class="sf-target-pill ${
+      isOn ? 'on' : ''
+    }" id="sf-auto-toggle" data-sf-target="auto" aria-pressed="${isOn ? 'true' : 'false'}">${
+      isOn ? '✨ Auto: ON' : '✨ Auto: OFF'
+    }</button>`;
+    this.autoToggleEl = this.targetPillsEl.querySelector('#sf-auto-toggle');
+  }
+
+  setAutoGather(enabled, { playSfx = false } = {}) {
+    this.autoGatherEnabled = Boolean(enabled);
+    if (this._autoChainTimer) {
+      clearTimeout(this._autoChainTimer);
+      this._autoChainTimer = null;
     }
-    this.targetPillsEl.innerHTML = pills
-      .map(
-        (p) =>
-          `<button type="button" class="sf-target-pill ${
-            p.id === this.preferredTargetType ? 'on' : ''
-          }" data-sf-target="${p.id}">${p.label}</button>`
-      )
-      .join('');
+    this._renderTargetPills();
+    if (this.autoGatherEnabled) {
+      if (!this.targetNode && !this.targetMonster) {
+        this.findAndWalkToNextNode(null, { playSfx });
+      } else if (playSfx) {
+        this.playGatherSfx('step_target');
+      }
+    } else {
+      // Stop completely when Auto is toggled OFF, even if currently harvesting a tree or walking to one
+      this.stopAutoSwing();
+      this.stopAutoAttack();
+      this.targetGate = null;
+      const local = this.world?.local;
+      if (local && this.world?.walkTo) {
+        this.world.walkTo(local.x, local.z);
+      }
+      if (this.world?.input) {
+        this.world.input.tapTarget = null;
+      }
+    }
+    this._syncRuneButtonState();
+    return this.autoGatherEnabled;
   }
 
   _syncRuneButtonState() {
@@ -1222,26 +1215,21 @@ export class SkyFrontierScene {
       if (this.runeIconEl) this.runeIconEl.textContent = '⚔️';
       if (this.runeLabelEl) this.runeLabelEl.textContent = this.isAttacking ? 'HOLD/TAP' : 'HUNTING';
       if (this.rarityBoostEl) {
-        this.rarityBoostEl.textContent = `${streakTxt}⚔️ Auto-Hunting Monster`;
+        this.rarityBoostEl.textContent = `${streakTxt}⚔️ Fighting Monster`;
       }
     } else if (this.targetNode) {
       const icon = NODE_ICONS[this.targetNode.type] || '⚒️';
       if (this.runeIconEl) this.runeIconEl.textContent = icon;
       if (this.runeLabelEl) this.runeLabelEl.textContent = this.isSwinging ? 'HOLD/TAP' : 'WALKING';
     } else {
-      const icon =
-        this.preferredTargetType !== 'auto'
-          ? NODE_ICONS[this.preferredTargetType] || '⚒️'
-          : '⚒️';
-      if (this.runeIconEl) this.runeIconEl.textContent = icon;
+      if (this.runeIconEl) this.runeIconEl.textContent = '⚒️';
       if (this.runeLabelEl) {
-        this.runeLabelEl.textContent = this.preferredTargetType === 'monster' ? 'HUNT' : 'GATHER';
+        this.runeLabelEl.textContent = 'GATHER';
       }
       if (this.rarityBoostEl) {
-        this.rarityBoostEl.textContent =
-          this.preferredTargetType === 'monster'
-            ? `${streakTxt}⚔️ Tap to Auto-Hunt`
-            : `${streakTxt}✨ Tap or Hold to Gather`;
+        this.rarityBoostEl.textContent = this.autoGatherEnabled
+          ? `${streakTxt}✨ Auto: Harvesting Closest`
+          : `${streakTxt}✨ Tap Node or Auto to Gather`;
       }
       this._updateRuneRing(0, false);
     }
@@ -1255,7 +1243,6 @@ export class SkyFrontierScene {
     const now = Date.now() + (this.world?.serverOffset || 0);
     const toolbelt = local?.profile?.frontier?.toolbelt || {};
 
-    const targetType = preferredType || this.preferredTargetType || 'auto';
     const available = (this.layout.nodes || []).filter((n) => {
       if (n.depletedUntil && n.depletedUntil > now) return false;
       const def = NODE_TYPES[n.type];
@@ -1272,17 +1259,12 @@ export class SkyFrontierScene {
     }
 
     let candidates = available;
-    if (targetType && targetType !== 'auto') {
+    if (preferredType && preferredType !== 'auto') {
       const matching = available.filter(
-        (n) => n.type === targetType || (targetType === 'crystal' && n.type === 'quartz')
+        (n) => n.type === preferredType || (preferredType === 'crystal' && n.type === 'quartz')
       );
       if (matching.length > 0) {
         candidates = matching;
-      }
-    } else if (this._lastGatheredNodeType) {
-      const sameType = available.filter((n) => n.type === this._lastGatheredNodeType);
-      if (sameType.length > 0) {
-        candidates = sameType;
       }
     }
 
@@ -1382,12 +1364,8 @@ export class SkyFrontierScene {
   }
 
   onRuneTap() {
-    if (this.preferredTargetType === 'monster' && !this.targetMonster) {
-      this.findAndAttackNextMonster({ playSfx: true });
-      return;
-    }
     if (!this.targetNode && !this.targetMonster) {
-      this.findAndWalkToNextNode(this.preferredTargetType, { playSfx: true });
+      this.findAndWalkToNextNode(null, { playSfx: true });
       return;
     }
     if (this.inBeatWindow && !this.nextStrikePerfect) {
@@ -1519,6 +1497,7 @@ export class SkyFrontierScene {
     this.active = true;
 
     // Reset interaction & state
+    this.autoGatherEnabled = false;
     this.stopAutoSwing();
     this.stopAutoAttack();
     this.targetGate = null;
@@ -1828,11 +1807,13 @@ export class SkyFrontierScene {
       clearTimeout(this._autoChainTimer);
       this._autoChainTimer = null;
     }
+    this.autoGatherEnabled = false;
     this.runeHeld = false;
     this.active = false;
     this.root.visible = false;
     this.stopAutoSwing();
     this.stopAutoAttack();
+    this._renderTargetPills();
     this.targetGate = null;
     this.targetNode = null;
     this.targetMonster = null;
@@ -1957,8 +1938,12 @@ export class SkyFrontierScene {
 
       const now = Date.now() + (this.world?.serverOffset || 0);
       if (node.depletedUntil && node.depletedUntil > now) {
-        this.toast?.('🌱 This resource is depleted. Finding another nearby!', 1800);
-        this.findAndWalkToNextNode(node.type, { playSfx: true });
+        if (this.autoGatherEnabled) {
+          this.toast?.('🌱 This resource is depleted. Finding another nearby!', 1800);
+          this.findAndWalkToNextNode(null, { playSfx: true });
+        } else {
+          this.toast?.('🌱 This resource is regrowing — try another nearby!', 1800);
+        }
         return;
       }
 
@@ -2091,7 +2076,7 @@ export class SkyFrontierScene {
       if (!res.ok) {
         if (res.error === 'no_energy') {
           this.toast?.('⚡ Out of Energy! Rest or eat to recover.', 2800);
-          this.stopAutoSwing();
+          this.setAutoGather(false);
         } else if (res.error === 'tool_tier') {
           this.toast?.('🔨 Your tool tier is too low for this resource.', 2800);
           this.stopAutoSwing();
@@ -2410,13 +2395,13 @@ export class SkyFrontierScene {
       this._syncRuneButtonState();
     }
 
-    // 1-Thumb Auto-Chain Monster Hunting:
-    if ((wasMyTarget || (hasMyDrops && this.preferredTargetType === 'monster')) && this.active) {
+    // If Auto is toggled ON and the monster we were fighting dies, resume harvesting closest resource node
+    if (this.autoGatherEnabled && wasMyTarget && this.active && (this.energy?.cur || 0) >= 2) {
       if (this._autoChainTimer) clearTimeout(this._autoChainTimer);
       this._autoChainTimer = setTimeout(() => {
         this._autoChainTimer = null;
-        if (!this.active || this.targetMonster || this.targetNode || this.targetGate) return;
-        this.findAndAttackNextMonster();
+        if (!this.active || !this.autoGatherEnabled || this.targetMonster || this.targetNode || this.targetGate) return;
+        this.findAndWalkToNextNode();
       }, 380);
     }
   }
@@ -2688,7 +2673,7 @@ export class SkyFrontierScene {
     const node = (this.layout?.nodes || []).find((n) => String(n.id) === nodeId);
     if (node) {
       node.hp = 0;
-      node.depletedUntil = m.depletedUntil;
+      node.depletedUntil = m.depletedUntil || (Date.now() + (this.world?.serverOffset || 0) + 10000);
     }
 
     const wasMyTarget = Boolean(this.targetNode && String(this.targetNode.id) === nodeId);
@@ -2777,18 +2762,13 @@ export class SkyFrontierScene {
       this._syncRuneButtonState();
     }
 
-    // 1-Thumb Auto-Chain: if the player was harvesting this node and still has energy,
-    // automatically walk to the next nearest node after a brief celebratory beat!
-    if ((wasMyTarget || parts.length > 0) && this.active && (this.energy?.cur || 0) >= 2) {
+    // 1-Thumb Auto-Chain: ONLY when Auto is toggled ON, walk to the next closest node after harvest!
+    if (this.autoGatherEnabled && (wasMyTarget || parts.length > 0) && this.active && (this.energy?.cur || 0) >= 2) {
       if (this._autoChainTimer) clearTimeout(this._autoChainTimer);
-      const nextPref =
-        this.preferredTargetType && this.preferredTargetType !== 'auto'
-          ? this.preferredTargetType
-          : node?.type || 'auto';
       this._autoChainTimer = setTimeout(() => {
         this._autoChainTimer = null;
-        if (!this.active || this.targetNode || this.targetMonster || this.targetGate) return;
-        this.findAndWalkToNextNode(nextPref);
+        if (!this.active || !this.autoGatherEnabled || this.targetNode || this.targetMonster || this.targetGate) return;
+        this.findAndWalkToNextNode();
       }, 420);
     }
   }
@@ -3106,6 +3086,14 @@ export class SkyFrontierScene {
 
       if (isDepleted) {
         this.stopAutoSwing();
+        if (this.autoGatherEnabled && (this.energy?.cur || 0) >= 2 && !this._autoChainTimer) {
+          this._autoChainTimer = setTimeout(() => {
+            this._autoChainTimer = null;
+            if (this.active && this.autoGatherEnabled && !this.targetNode && !this.targetMonster && !this.targetGate) {
+              this.findAndWalkToNextNode();
+            }
+          }, 350);
+        }
       } else if (!this.isSwinging) {
         const tap = this.world?.input?.tapTarget;
         if (tap && Math.hypot(tap.x - this.targetNode.x, tap.z - (this.targetNode.z + 1.2)) > 1.5) {
