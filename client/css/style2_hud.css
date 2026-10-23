@@ -310,9 +310,13 @@ html, body {
 #rotate-overlay { display: none; position: absolute; inset: 0; z-index: 50; background: #2b1c10f2; color: #fff; font: 800 20px var(--font); align-items: center; justify-content: center; text-align: center; }
 @media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) { #rotate-overlay { display: flex; } }
 .toast {
-  position: absolute; left: 50%; top: calc(var(--safe-top, 0px) + 114px); z-index: 40; transform: translate(-50%, -8px); opacity: 0; pointer-events: none;
-  padding: 9px 16px; border-radius: 999px; background: linear-gradient(180deg, rgba(58, 36, 21, 0.96), rgba(34, 19, 9, 0.98)); color: #fff8e8; font-weight: 900; font-size: 13px;
-  border: 2px solid #e5ad3b; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); transition: opacity .22s, transform .22s; max-width: 88%; text-align: center;
+  position: absolute; left: 50%; top: calc(var(--safe-top, 0px) + 114px); z-index: 400; transform: translate(-50%, -8px); opacity: 0; pointer-events: none;
+  padding: 8px 15px; border-radius: 999px; background: linear-gradient(180deg, rgba(58, 36, 21, 0.96), rgba(34, 19, 9, 0.98)); color: #fff8e8; font-weight: 900; font-size: 12.5px;
+  border: 2px solid #e5ad3b; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); transition: opacity .2s, transform .2s, top .2s; max-width: 88%; text-align: center;
+}
+#app:has(.bc-overlay:not([hidden]), .modal-wrap:not([hidden]), .rpg-wrap:not([hidden])) .toast,
+body:has(.bc-overlay:not([hidden])) .toast {
+  top: calc(var(--safe-top, 0px) + 12px);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .name-tag { font: 800 26px var(--font); }

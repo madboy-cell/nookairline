@@ -349,20 +349,37 @@ function tickVillage() {
 // ------------------------------------------------------------------ actions
 async function harvestAll() {
   const bcReady = basecampUI?.getReadySummary?.(S.profile);
+  const pv = S.profile ? harvestPreview(S.profile, serverNow(), { coupled: S.coupled }) : null;
+  const anyPassive = Boolean(pv?.ready && (pv.gold + pv.berries + pv.diamonds > 0));
   if (bcReady?.anyReady) {
     await basecampUI.collectAllReady(S.profile);
+    if (!anyPassive) {
+      tickVillage();
+      return;
+    }
+  }
+  const r = await request('village_harvest_all');
+  if (!r.ok) {
+    if (!bcReady?.anyReady) toast(`🍓 ${humanError(r.error)}`);
     tickVillage();
     return;
   }
-  const r = await request('village_harvest_all');
-  if (!r.ok) { toast(`🍓 ${humanError(r.error)}`); return; }
   const bits = [];
   if (r.gold) bits.push(`+${fmt(r.gold)} 🪙`);
   if (r.berries) bits.push(`+${fmt(r.berries)} 🍓`);
   if (r.diamonds) bits.push(`+${r.diamonds} 💎`);
   toast(`${r.jackpot ? '🌟 DOUBLE JACKPOT! ' : '✨ '}${bits.join('  ')}  • +${r.exp} EXP${r.levelsGained ? `  🎉 LEVEL UP! +${50 * r.levelsGained} 💎` : ''}`, 2600);
-  for (const b of world.plaza.bubbles) if (b.visible) world.fx.emit(b.userData.res === 'gold' ? 'fx_star' : b.userData.res === 'diamonds' ? 'fx_stardust' : 'fx_heart', b.position.x, b.position.y, b.position.z, 8, { speed: 2, up: 2.2, size: 0.3, life: 0.8, gravity: 2 });
+  const L = world.local;
+  for (const b of world.plaza.bubbles) {
+    if (!b.visible) continue;
+    const fxName = b.userData.res === 'gold' ? 'fx_star' : b.userData.res === 'diamonds' ? 'fx_stardust' : 'fx_heart';
+    world.fx.emit(fxName, b.position.x, b.position.y, b.position.z, 8, { speed: 2, up: 2.2, size: 0.3, life: 0.8, gravity: 2 });
+    if (L && world.fx.emitTo) {
+      world.fx.emitTo(fxName, b.position.x, b.position.y, b.position.z, L.x, 0.8, L.z, 6, { time: 0.5, arc: 1.25, size: 0.24, stagger: 0.03 });
+    }
+  }
   world.plaza.setBubbles(null);
+  tickVillage();
 }
 
 async function setMoodTo(next) {

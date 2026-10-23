@@ -4320,6 +4320,11 @@ body:has(#social-switchboard-modal:not([hidden])) .couple-proximity-bar {
 #hud[data-scene="SKY_FRONTIER"] #top-hud-bar,
 #hud[data-scene="SKY_FRONTIER"] #hud-couple-pill,
 #hud[data-scene="SKY_FRONTIER"] #hud-guide-pill,
-#hud[data-scene="SKY_FRONTIER"] #hud-mini-radar {
+#hud[data-scene="SKY_FRONTIER"] #hud-mini-radar,
+#hud[data-scene="SKY_FRONTIER"] #landmark-prompt,
+#hud[data-scene="SKY_FRONTIER"] .wayfinder-edge-pill,
+#hud[data-scene="SKY_FRONTIER"] #quick-move-ui,
+#hud[data-scene="SKY_FRONTIER"] #fishing-panel,
+#app:has(#hud[data-scene="SKY_FRONTIER"]) #couple-proximity-bar {
   display: none !important;
 }

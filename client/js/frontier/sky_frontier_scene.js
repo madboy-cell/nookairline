@@ -514,9 +514,9 @@ const HUD_STYLE = `
   bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
   right: 16px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 12px;
   pointer-events: none;
   z-index: 26;
 }
@@ -1068,6 +1068,7 @@ export class SkyFrontierScene {
     this.repairBtnEl = hud.querySelector('#sf-repair-btn');
     this.bossBtnEl = hud.querySelector('#sf-boss-btn');
 
+    this.ultWrapperEl = hud.querySelector('#sf-ult-wrapper');
     this.ultBtnEl = hud.querySelector('#sf-ult-btn');
     this.ultRingEl = hud.querySelector('#sf-ult-ring');
     this.ultIconEl = hud.querySelector('#sf-ult-icon');
@@ -1765,6 +1766,10 @@ export class SkyFrontierScene {
       this.nodeMeshes.set(String(node.id), mesh);
     }
 
+    // 6b. 3D Animated Target Reticle Ring & Ambient Floating World Particles
+    this._buildTargetReticle();
+    this._buildAmbientParticles(isHollow);
+
     // 7. Initialize combat snapshots from layout
     if (Array.isArray(this.layout.monsters)) {
       this.onMonsters({ m: this.layout.monsters });
@@ -2106,7 +2111,7 @@ export class SkyFrontierScene {
     }
     this.targetMonster = monster;
     this.isAttacking = true;
-    this.attackTimer = 0;
+    this.attackTimer = (this.attackCooldownMs || 650) * 0.85;
     this.inBeatWindow = false;
     this.nextStrikePerfect = false;
     this._syncRuneButtonState();
@@ -2157,11 +2162,13 @@ export class SkyFrontierScene {
     const swing = mainTool === 'axe' ? 'chop_swing' : mainTool === 'staff' ? 'staff_cast' : 'mine_swing';
     const tier = local?.profile?.frontier?.toolbelt?.[mainTool] || 1;
     const rig = local?.rig;
+    rig?.facing?.set?.(dx >= 0, dz < -0.35);
     if (rig?.setHeldTool && this._heldTool !== `${mainTool}:${tier}`) {
       rig.setHeldTool(mainTool, tier);
       this._heldTool = `${mainTool}:${tier}`;
     }
     rig?.triggerAttack?.(swing, { dur: 0.45 });
+    this.playGatherSfx(mainTool === 'axe' ? 'hit_axe' : mainTool === 'staff' ? 'hit_staff' : 'hit_pickaxe');
 
     try {
       const res = await this.request('sf_attack', { targetId, facing });
@@ -2190,12 +2197,14 @@ export class SkyFrontierScene {
   updateUltimateCharm() {
     const charm = this.world?.local?.profile?.equipped?.charm;
     if (!charm) {
+      if (this.ultWrapperEl) this.ultWrapperEl.style.display = 'none';
       if (this.ultBtnEl) this.ultBtnEl.style.opacity = '0.45';
       if (this.ultIconEl) this.ultIconEl.textContent = '✨';
       if (this.ultLabelEl) this.ultLabelEl.textContent = 'NO CHARM';
       return;
     }
 
+    if (this.ultWrapperEl) this.ultWrapperEl.style.display = 'flex';
     if (this.ultBtnEl) this.ultBtnEl.style.opacity = '1.0';
     const def = CHARMS[charm.id] || (charm.uid && CHARMS[charm.uid]);
     if (this.ultIconEl) this.ultIconEl.textContent = def?.icon || '✨';
@@ -2389,6 +2398,15 @@ export class SkyFrontierScene {
         if (coupleSync) {
           this._showUltRingVfx(mon.x, mon.z, 3.0, 0xF472B6);
         }
+        this.punchCamera(0.08, 0.18);
+        const local = this.world?.local;
+        if (local && this.world?.fx?.emitTo) {
+          this.world.fx.emitTo('fx_star', mon.x, 0.9, mon.z, local.x, 0.9, local.z, 8, {
+            arc: 1.4,
+            dur: 0.46,
+            size: 0.24,
+          });
+        }
         this.showFloatingText(`${prefix}${parts.join('  ')}`, mon.x, mon.z, coupleSync ? 'sf-float-rare' : '');
         this.spawnLootMagnets(m.drops[localId], mon.x, mon.z);
       }
@@ -2429,6 +2447,7 @@ export class SkyFrontierScene {
           mon.squashTimer = crit ? 0.30 : 0.24;
           mon.hitFlashTimer = 0.16;
           mon.hitDir = (m.facing?.x ?? 1) >= 0 ? -1 : 1;
+          if (crit) this.punchCamera(0.075, 0.16);
           const text = crit ? `💥 ${dealt}!` : `-${dealt}`;
           this.showFloatingText(text, mon.x, mon.z, crit ? 'sf-float-perfect' : 'sf-float-hit');
           this.world?.fx?.emit?.('fx_star', mon.x, 0.9, mon.z, crit ? 9 : 4, {
@@ -2456,6 +2475,13 @@ export class SkyFrontierScene {
 
   onPlayerHp(m) {
     if (m && m.id === this.world?.local?.id) {
+      const prevHp = Number(this.playerHp?.hp ?? m.hp);
+      const nextHp = Number(m.hp ?? prevHp);
+      const local = this.world?.local;
+      if (local && nextHp < prevHp - 0.5) {
+        const lost = Math.max(1, Math.round(prevHp - nextHp));
+        this.showFloatingText(`💔 -${lost}`, local.x, local.z, 'sf-float-hit');
+      }
       this.playerHp = { hp: m.hp, maxHp: m.maxHp, shield: m.shield || 0 };
       this.updatePlayerHpBar();
     }
@@ -2638,6 +2664,7 @@ export class SkyFrontierScene {
       const sfxKind = typeDef.tool === 'axe' ? 'hit_axe' : typeDef.tool === 'staff' ? 'hit_staff' : 'hit_pickaxe';
       this.playGatherSfx(sfxKind);
       if (m.perfect) {
+        this.punchCamera(0.055, 0.14);
         this.showFloatingText(
           `⚡ PERFECT! ×1.5 (+${Math.max(12, rareBoostPct)}% Rare ⬆️)`,
           mesh.position.x,
@@ -2757,6 +2784,15 @@ export class SkyFrontierScene {
       }
 
       this.showFloatingText(`${prefix}${parts.join('  ')}`, node.x, node.z, extraClass);
+      this.punchCamera(rarity.id === 'epic' ? 0.11 : rarity.id === 'rare' ? 0.085 : 0.06, 0.20);
+      const local = this.world?.local;
+      if (local && this.world?.fx?.emitTo) {
+        this.world.fx.emitTo('fx_star', node.x, 1.0, node.z, local.x, 0.9, local.z, 9, {
+          arc: 1.5,
+          dur: 0.48,
+          size: rarity.id === 'epic' ? 0.28 : 0.23,
+        });
+      }
       const mergedLoot = { ...(userShare || {}), ...(m.rares?.[localId] || {}) };
       this.spawnLootMagnets(mergedLoot, node.x, node.z);
       this._syncRuneButtonState();
@@ -2837,6 +2873,98 @@ export class SkyFrontierScene {
     }
   }
 
+  punchCamera(intensity = 0.075, dur = 0.16) {
+    this._camShakeIntensity = Math.max(this._camShakeIntensity || 0, intensity);
+    this._camShakeTimer = Math.max(this._camShakeTimer || 0, dur);
+  }
+
+  _buildTargetReticle() {
+    const group = new THREE.Group();
+    const outerGeo = new THREE.RingGeometry(0.95, 1.14, 32);
+    outerGeo.rotateX(-Math.PI / 2);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0xFFD54F,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+    group.add(outerMesh);
+
+    const innerGeo = new THREE.RingGeometry(0.62, 0.72, 6);
+    innerGeo.rotateX(-Math.PI / 2);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0xFFF9C4,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+    group.add(innerMesh);
+
+    group.position.set(0, 0.04, 0);
+    group.visible = false;
+    group.userData = { outerMat, innerMat, innerMesh };
+    this.targetRing = group;
+    this.root.add(group);
+  }
+
+  _buildAmbientParticles(isHollow) {
+    const count = 64;
+    const positions = new Float32Array(count * 3);
+    const hs = (this.halfSize || 36) - 2;
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() * 2 - 1) * hs;
+      positions[i * 3 + 1] = 0.35 + Math.random() * 2.8;
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * hs;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    let tex = null;
+    if (typeof document !== 'undefined' && document.createElement) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 32;
+      const g = c.getContext('2d');
+      if (typeof g.createRadialGradient === 'function') {
+        const grd = g.createRadialGradient(16, 16, 1, 16, 16, 15);
+        if (isHollow) {
+          grd.addColorStop(0, '#FFFFFF');
+          grd.addColorStop(0.35, '#6FE0F0');
+          grd.addColorStop(0.7, 'rgba(156, 123, 224, 0.65)');
+          grd.addColorStop(1, 'rgba(111, 224, 240, 0)');
+        } else {
+          grd.addColorStop(0, '#FFFFFF');
+          grd.addColorStop(0.35, '#FFE885');
+          grd.addColorStop(0.7, 'rgba(240, 184, 72, 0.65)');
+          grd.addColorStop(1, 'rgba(240, 184, 72, 0)');
+        }
+        g.fillStyle = grd;
+      } else {
+        g.fillStyle = isHollow ? '#6FE0F0' : '#FFE885';
+      }
+      g.fillRect(0, 0, 32, 32);
+      tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+    }
+
+    const mat = new THREE.PointsMaterial({
+      map: tex,
+      color: isHollow ? 0x9EEFFF : 0xFFF2A6,
+      size: isHollow ? 0.34 : 0.28,
+      transparent: true,
+      opacity: isHollow ? 0.82 : 0.72,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.ambientGeo = geo;
+    this.ambientMat = mat;
+    this.ambientPoints = new THREE.Points(geo, mat);
+    this.root.add(this.ambientPoints);
+  }
+
   // ------------------------------------------------------------------ Energy & HP HUD
   setEnergy(energy) {
     if (energy && typeof energy === 'object') {
@@ -2889,6 +3017,41 @@ export class SkyFrontierScene {
 
     const now = Date.now() + (this.world?.serverOffset || 0);
     const local = this.world?.local;
+
+    // 0. Camera micro-punch & ambient world particles
+    if (this._camShakeTimer > 0) {
+      this._camShakeTimer = Math.max(0, this._camShakeTimer - dt);
+      const s = (this._camShakeTimer / 0.18) * (this._camShakeIntensity || 0.07);
+      this.root.position.x = (Math.random() - 0.5) * s * 2;
+      this.root.position.z = (Math.random() - 0.5) * s * 2;
+    } else if (this.root.position.x !== 0 || this.root.position.z !== 0) {
+      this.root.position.set(0, 0, 0);
+      this._camShakeIntensity = 0;
+    }
+
+    if (this.ambientGeo) {
+      const pos = this.ambientGeo.attributes.position.array;
+      const hs = (this.halfSize || 36) - 2;
+      const dtf = Math.min(dt || 0.016, 0.1) * 60;
+      for (let i = 0; i < 64; i++) {
+        const idx = i * 3;
+        pos[idx] += Math.sin(this.elapsed * 1.1 + i * 1.7) * 0.014 * dtf;
+        pos[idx + 1] += Math.cos(this.elapsed * 1.5 + i * 2.3) * 0.008 * dtf;
+        pos[idx + 2] += Math.cos(this.elapsed * 0.9 + i * 1.3) * 0.014 * dtf;
+        if (pos[idx + 1] < 0.25) pos[idx + 1] = 2.6;
+        if (pos[idx + 1] > 3.2) pos[idx + 1] = 0.4;
+        if (pos[idx] > hs) pos[idx] = -hs;
+        if (pos[idx] < -hs) pos[idx] = hs;
+        if (pos[idx + 2] > hs) pos[idx + 2] = -hs;
+        if (pos[idx + 2] < -hs) pos[idx + 2] = hs;
+      }
+      this.ambientGeo.attributes.position.needsUpdate = true;
+    }
+
+    if (this.outpostRing) {
+      const pulse = 1 + Math.sin(this.elapsed * 2.8) * 0.035;
+      this.outpostRing.scale.set(pulse, pulse, 1);
+    }
 
     // 1. Grounded node breeze sway, directional hit recoil, squash-stretch, and regrowth pop
     for (const [id, mesh] of this.nodeMeshes.entries()) {
@@ -3161,6 +3324,53 @@ export class SkyFrontierScene {
             this.executeAttack();
           }
         }
+      }
+    }
+
+    // 5a. Smart Auto-Defense when Auto is ON and an aggroed monster is right on top of the player (while not actively swinging at a node)
+    if (this.autoGatherEnabled && !this.targetMonster && !this.isSwinging && local) {
+      let closestThreat = null;
+      let closestThreatDist = 2.35;
+      for (const mon of this.activeMonsters.values()) {
+        if (!mon || mon.hp <= 0) continue;
+        const d = Math.hypot(mon.x - local.x, mon.z - local.z);
+        if (d < closestThreatDist) {
+          closestThreatDist = d;
+          closestThreat = mon;
+        }
+      }
+      if (closestThreat) {
+        this.targetNode = null;
+        this.startAutoAttack(closestThreat);
+      }
+    }
+
+    // 5a-2. 3D Animated Target Reticle Ring under current targetNode or targetMonster
+    if (this.targetRing) {
+      if (this.targetMonster) {
+        const mon = this.activeMonsters.get(this.targetMonster.id) || this.targetMonster;
+        this.targetRing.visible = true;
+        this.targetRing.position.set(mon.x, 0.04, mon.z);
+        const baseR = mon.isBoss ? 2.1 : 1.05;
+        const pulse = baseR * (1 + Math.sin(this.elapsed * 7.5) * 0.08);
+        this.targetRing.scale.set(pulse, 1, pulse);
+        this.targetRing.userData.outerMat?.color.setHex(0xFF5252);
+        this.targetRing.userData.innerMat?.color.setHex(0xFFCDD2);
+        if (this.targetRing.userData.innerMesh) {
+          this.targetRing.userData.innerMesh.rotation.z = this.elapsed * 1.8;
+        }
+      } else if (this.targetNode) {
+        this.targetRing.visible = true;
+        this.targetRing.position.set(this.targetNode.x, 0.04, this.targetNode.z);
+        const pulse = 1.12 * (1 + Math.sin(this.elapsed * 5.5) * 0.07);
+        this.targetRing.scale.set(pulse, 1, pulse);
+        this.targetRing.userData.outerMat?.color.setHex(this.inBeatWindow ? 0xFFF176 : 0xFFD54F);
+        this.targetRing.userData.innerMat?.color.setHex(0xFFF9C4);
+        if (this.targetRing.userData.innerMesh) {
+          this.targetRing.userData.innerMesh.rotation.z = -this.elapsed * 1.4;
+        }
+      } else {
+        this.targetRing.visible = false;
       }
     }
 

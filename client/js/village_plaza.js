@@ -144,7 +144,7 @@ function makeCropBadgeSprite(emoji, isReady) {
   return sprite;
 }
 
-function makeReadyBadgeSprite() {
+function makeReadyBadgeSprite(emoji = '✨') {
   if (typeof document === 'undefined' || !document.createElement) return new THREE.Sprite();
   const c = document.createElement('canvas');
   c.width = 96; c.height = 96;
@@ -174,10 +174,10 @@ function makeReadyBadgeSprite() {
   g.strokeStyle = 'rgba(255, 255, 255, 0.7)';
   g.stroke();
 
-  g.font = '38px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  g.font = '36px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText('✨', 48, 50);
+  g.fillText(emoji || '✨', 48, 50);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -672,13 +672,35 @@ export class VillagePlaza {
     });
     mesh.userData.footprint = { x: c.x, z: c.z, w: f.w, h: f.h };
 
-    // farm plot crop indicator
+    // farm plot crop indicator + 3D crop foliage overlay
     if (b.type === 'farm_plot' && !draft) {
       const plot = isl.village?.plots?.[b.uid];
       if (plot?.crop) {
         const isReady = Number(plot.readyAt || 0) <= Date.now();
         mesh.userData.animMode = isReady ? 'ready' : 'growing';
-        const badge = makeCropBadgeSprite(isReady ? '🌾✨' : '⏳', isReady);
+        const cropSpriteKey = plot.crop === 'berries_crop'
+          ? 'crop_berries_ready'
+          : plot.crop === 'herb'
+          ? 'sf_node_herb'
+          : 'sf_node_wheat';
+        const cropOverlay = this.addSprite(
+          group,
+          cropSpriteKey,
+          c.x,
+          c.z + 0.08,
+          isReady ? 0.88 : 0.56,
+          { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type },
+          { pick: false, y: 0.14 }
+        );
+        cropOverlay.userData.animMode = isReady ? 'ready' : 'growing';
+        const readyEmoji = plot.crop === 'berries_crop'
+          ? '🍓✨'
+          : plot.crop === 'herb'
+          ? '🌿✨'
+          : plot.crop === 'golden_wheat'
+          ? '🌟🌾'
+          : '🌾✨';
+        const badge = makeCropBadgeSprite(isReady ? readyEmoji : '⏳', isReady);
         badge.position.set(c.x, 0.75, c.z);
         badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady, baseScale: badge.scale.x };
         group.add(badge);
@@ -706,7 +728,15 @@ export class VillagePlaza {
         mesh.userData.animMode = isWorking ? 'working' : 'ready';
         const info = spriteInfo(spriteKey);
         const bHeight = mesh.userData.height || (width * (info ? info.h / info.w : 1.1));
-        const badge = hasOutput ? makeReadyBadgeSprite() : makeCropBadgeSprite('⏳', false);
+        const bldReadyIcon = {
+          windmill_bakery: '🌾✨',
+          patisserie: '🥐✨',
+          mint: '🪙✨',
+          workshop: '🪵✨',
+          flower_greenhouse: '🧪✨',
+          wnd_tea_pavilion: '🍵✨',
+        }[b.type] || '✨';
+        const badge = hasOutput ? makeReadyBadgeSprite(bldReadyIcon) : makeCropBadgeSprite('⏳', false);
         badge.position.set(c.x, bHeight * 0.8 + 0.3, c.z);
         badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85, isReady: hasOutput, baseScale: badge.scale.x };
         group.add(badge);
@@ -933,7 +963,15 @@ export class VillagePlaza {
   updateWeatherType(weather) {
     if (!this.weatherPoints) this.initWeatherSystem();
     if (!weather || weather === 'clear') {
-      if (this.weatherPoints) this.weatherPoints.visible = false;
+      if (this.weatherPoints) this.weatherPoints.visible = true;
+      this.weatherMode = 'firefly';
+      if (this.weatherMat) {
+        this.weatherMat.map = getWeatherTexture('firefly');
+        this.weatherMat.size = 0.24;
+        this.weatherMat.opacity = 0.55;
+        this.weatherMat.blending = THREE.AdditiveBlending;
+        this.weatherMat.needsUpdate = true;
+      }
       return;
     }
     if (this.weatherPoints) this.weatherPoints.visible = true;
@@ -1069,7 +1107,14 @@ export class VillagePlaza {
       if (!o.userData?.lean) continue;
       o.rotation.x = lean;
       const mode = o.userData.animMode;
-      if (mode === 'working' && o.userData.baseScaleX && o.userData.baseScaleY) {
+      if (o.userData.harvestPopTimer > 0) {
+        o.userData.harvestPopTimer = Math.max(0, o.userData.harvestPopTimer - dt);
+        const p = o.userData.harvestPopTimer / 0.42;
+        const bounce = Math.sin(p * Math.PI * 2) * 0.14 * p;
+        if (o.userData.baseScaleX && o.userData.baseScaleY) {
+          o.scale.set(o.userData.baseScaleX * (1 - bounce * 0.6), o.userData.baseScaleY * (1 + bounce), 1);
+        }
+      } else if (mode === 'working' && o.userData.baseScaleX && o.userData.baseScaleY) {
         const chug = Math.sin(this.t * 6.5 + o.position.x * 1.3) * 0.026;
         o.scale.set(o.userData.baseScaleX * (1 + chug), o.userData.baseScaleY * (1 - chug), 1);
         o.rotation.z = Math.sin(this.t * 3.25 + o.position.z) * 0.014;
@@ -1110,6 +1155,29 @@ export class VillagePlaza {
     for (const b of this.bubbles) {
       const r = b.userData.res;
       b.visible = !!pv && pv.ready && ((r === 'gold' && pv.gold > 0) || (r === 'berries' && pv.berries > 0) || (r === 'diamonds' && pv.diamonds > 0));
+    }
+  }
+
+  /** Trigger a 3D squash-bounce and ballistic star stream from a harvested/collected building to the player's Chibi. */
+  celebrateBuildingHarvest(uid) {
+    if (!uid) return;
+    let found = null;
+    for (const o of this.pickables) {
+      if (o.userData?.kind === 'building' && o.userData?.uid === uid && o.userData?.lean) {
+        o.userData.harvestPopTimer = 0.42;
+        found = o;
+      }
+    }
+    if (!found) return;
+    const bx = found.position.x;
+    const bz = found.position.z;
+    const fx = this.world?.fx;
+    const local = this.world?.local;
+    if (fx?.emit) {
+      fx.emit('fx_star', bx, 0.9, bz, 8, { speed: 1.4, up: 1.8, size: 0.28, life: 0.55 });
+    }
+    if (fx?.emitTo && local) {
+      fx.emitTo('fx_star', bx, 1.0, bz, local.x, 0.85, local.z, 7, { arc: 1.5, dur: 0.48, size: 0.25 });
     }
   }
 

@@ -233,10 +233,31 @@ const STYLE = `
   box-shadow: inset 0 0 0 1.5px #C9A45C, 0 3px 8px rgba(0,0,0,.4); font-size: 22px; display: flex; align-items: center; justify-content: center;
   padding: 0; cursor: pointer; touch-action: manipulation; -webkit-touch-callout: none; }
 .bc-sf-slot.empty { color: #8a6f4c; font: 900 18px system-ui; background: rgba(233,220,192,.72); }
+.bc-sf-slot[hidden], .bc-sf-edit[hidden] { display: none !important; }
 .bc-sf-slot.zero { filter: grayscale(.85); opacity: .7; }
 .bc-sf-slot b { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: #3B2A20; color: #FFE27A;
   border: 1.5px solid #C9A45C; font: 900 10px/15px system-ui; padding: 0 3px; text-align: center; }
 .bc-sf-edit { width: 46px; height: 24px; border-radius: 10px; border: 2px solid #3B2A20; background: #C9A45C; color: #3B2A20; font: 900 10px system-ui; cursor: pointer; padding: 0; }
+.bc-crop-actions { display: flex; gap: 6px; margin-top: 7px; }
+.bc-crop-actions .bc-btn { flex: 1; text-align: center; }
+.bc-loot-pop {
+  position: fixed; z-index: 420; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  background: linear-gradient(180deg, #FFFDF7, #F4EAD6);
+  border: 2px solid #3B2A20; color: #2f5a1a;
+  font: 900 13px system-ui, -apple-system, sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.32), inset 0 0 0 1.5px #C9A45C;
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0;
+  animation: bcLootArc 1.05s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+}
+@keyframes bcLootArc {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.45); }
+  22% { opacity: 1; transform: translate(calc(-50% + var(--dx, 0px) * 0.45), calc(-50% + var(--dy, -60px) * 0.45)) scale(1.14); }
+  75% { opacity: 1; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -110px))) scale(1.0); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px) * 1.15), calc(-50% + var(--dy, -155px))) scale(0.75); }
+}
 .bc-sf-quest {
   display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 14px;
   background: linear-gradient(180deg, rgba(59, 42, 32, 0.92), rgba(38, 25, 18, 0.95));
@@ -606,6 +627,41 @@ export class BasecampUI {
     }
   }
 
+  spawnLootBurst(items = {}, extraPills = [], buildingUid = null) {
+    if (typeof document === 'undefined') return;
+    if (buildingUid) {
+      try {
+        window.__neora?.world?.plaza?.celebrateBuildingHarvest?.(buildingUid);
+      } catch {
+        // ignore
+      }
+    }
+    const pills = [];
+    for (const [k, n] of Object.entries(items || {})) {
+      if (n > 0) pills.push(`${matOf(k).emoji} +${fmtN(n)}`);
+    }
+    for (const ep of extraPills || []) {
+      if (ep) pills.push(ep);
+    }
+    if (!pills.length) return;
+    const cx = window.innerWidth * 0.5;
+    const cy = window.innerHeight * (this.isOpen() ? 0.54 : 0.62);
+    pills.slice(0, 6).forEach((text, i) => {
+      const el = document.createElement('div');
+      el.className = 'bc-loot-pop';
+      el.textContent = text;
+      const spread = (i - (Math.min(pills.length, 6) - 1) / 2) * 54;
+      const jitterX = (Math.random() - 0.5) * 20;
+      el.style.left = `${cx + spread * 0.35}px`;
+      el.style.top = `${cy}px`;
+      el.style.setProperty('--dx', `${Math.round(spread + jitterX)}px`);
+      el.style.setProperty('--dy', `${Math.round(-95 - i * 14 - Math.random() * 20)}px`);
+      el.style.animationDelay = `${i * 55}ms`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200 + i * 60);
+    });
+  }
+
   async collectAllReady(p = this._p()) {
     const { readyPlotUids, readyProdUids } = this.getReadySummary(p);
     const totalItems = {};
@@ -616,6 +672,7 @@ export class BasecampUI {
       if (crop) this._lastCropByUid.set(uid, crop);
       const r = await this._req('bc_harvest_plot', { uid }, '🌾');
       if (r.ok) {
+        try { window.__neora?.world?.plaza?.celebrateBuildingHarvest?.(uid); } catch {}
         for (const [k, n] of Object.entries(r.items || {})) totalItems[k] = (totalItems[k] || 0) + n;
         if (crop && CROPS[crop]) {
           const pl = await this._req('bc_plant', { uid, crop }, '🌱');
@@ -626,6 +683,7 @@ export class BasecampUI {
     for (const uid of readyProdUids) {
       const r = await this._req('bc_collect', { uid }, '📦');
       if (r.ok) {
+        try { window.__neora?.world?.plaza?.celebrateBuildingHarvest?.(uid); } catch {}
         for (const [k, n] of Object.entries(r.collected || {})) totalItems[k] = (totalItems[k] || 0) + n;
         for (const t of r.tools || []) tools.push(`${TOOL_ICON[t.kind] || '🛠️'} ${t.kind} T${t.tier}`);
       }
@@ -633,6 +691,7 @@ export class BasecampUI {
     const bits = [itemsLine(totalItems), ...tools].filter(Boolean);
     if (bits.length) {
       this.playPopSfx('harvest');
+      this.spawnLootBurst(totalItems, tools);
       const replantSuffix = replantedCount > 0 ? ` & auto-replanted ${replantedCount} plot${replantedCount > 1 ? 's' : ''} 🌱` : '';
       this.toast(`✨ Collected ${bits.join(' ')}${replantSuffix}!`, 2800);
     }
@@ -927,12 +986,18 @@ export class BasecampUI {
   async _claimStory(ch) {
     const r = await this._req('bc_story_claim', {}, '📜');
     if (!r.ok) return;
+    this.playPopSfx('harvest');
     const bits = [];
-    if (r.gold) bits.push(`+${fmtN(r.gold)} 🪙`);
+    const extraPills = [];
+    if (r.gold) {
+      bits.push(`+${fmtN(r.gold)} 🪙`);
+      extraPills.push(`🪙 +${fmtN(r.gold)}`);
+    }
     const itemTxt = itemsLine(r.items);
     if (itemTxt) bits.push(itemTxt);
     const unlocked = (r.unlockBuildings || []).filter((b) => b !== 'castle').map((b) => `${coreOf(b).emoji} ${coreOf(b).name}`);
     if (unlocked.length) bits.push(`Unlocked ${unlocked.join(', ')}`);
+    this.spawnLootBurst(r.items || {}, extraPills);
     this.toast(`🎉 Chapter "${ch.title}" complete! ${bits.join(' • ')}`, 4200);
   }
 
@@ -1232,7 +1297,8 @@ export class BasecampUI {
       }
 
       body += `<div class="bc-card${lockedLv ? ' bc-dim' : ''}"><div class="bc-row"><span class="bc-big-ico">${recipeIcon(rc)}</span><div class="bc-grow">
-          <div class="bc-title">${esc(recipeName(rc))} <span class="bc-sub">→ ${outTxt} · ⏱ ${fmtDur(rc.ms)}</span></div>
+          <div class="bc-title">${esc(recipeName(rc))}</div>
+          <div class="bc-sub">→ ${outTxt} · ⏱ ${fmtDur(rc.ms)}</div>
           <div class="bc-chips">${mine ? this._costChips(rc.inputs, p) : `<span class="bc-chip">${itemsLine(rc.inputs)}</span>`}</div>
         </div>
         <button type="button" class="bc-btn ${useCollectAndQueue ? 'green' : ''}" ${disabled ? 'disabled' : ''} ${this._act(() => useCollectAndQueue ? this._collectAndEnqueue(view.uid, rid) : this._enqueue(view.uid, rid))}>${label}</button>
@@ -1240,9 +1306,9 @@ export class BasecampUI {
     }
     let foot = '';
     if (mine) {
-      foot += `<button type="button" class="bc-btn green" ${anyReady ? '' : 'disabled'} ${this._act(() => this._collect(view.uid))}>📦 Collect</button>`;
-      if (anyReady && lastRc && lv >= (lastRc.minLv || 1)) {
-        foot += `<button type="button" class="bc-btn" ${canRestartLast ? '' : 'disabled'} ${this._act(() => this._collectAndRestart(view.uid, lastRecipeId))}>🔄 Collect &amp; Restart</button>`;
+      const readyProdCount = (v.buildings || []).filter((b) => b.type !== 'farm_plot' && this._buildingProductionReady(v.production?.[b.uid], now)).length;
+      if (readyProdCount > 1) {
+        foot += `<button type="button" class="bc-btn green" ${this._act(() => this._collectAll())}>📦 Collect All (${readyProdCount})</button>`;
       }
       if (this.onOpenLegacy) foot += `<button type="button" class="bc-btn plain" ${this._act(() => { const pk = { owner: view.owner, uid: view.uid }; this.close(); this.onOpenLegacy(pk); })}>⚙️ Move / Bag</button>`;
     }
@@ -1264,8 +1330,9 @@ export class BasecampUI {
     const r = await this._req('bc_collect', { uid }, '📦');
     if (!r.ok) return r;
     this.playPopSfx('collect');
-    const bits = [itemsLine(r.collected)];
-    for (const t of r.tools || []) bits.push(`${TOOL_ICON[t.kind] || '🛠️'} ${t.kind} T${t.tier}!`);
+    const toolPills = (r.tools || []).map((t) => `${TOOL_ICON[t.kind] || '🛠️'} ${t.kind} T${t.tier}!`);
+    this.spawnLootBurst(r.collected || {}, toolPills, uid);
+    const bits = [itemsLine(r.collected), ...toolPills];
     const bonus = itemsLine(r.bonus);
     if (bonus) bits.push(`(✨ staff bonus ${bonus})`);
     const left = itemsLine(r.leftover);
@@ -1278,6 +1345,8 @@ export class BasecampUI {
     const c = await this._req('bc_collect', { uid }, '📦');
     if (!c.ok) return;
     this.playPopSfx('harvest');
+    const toolPills = (c.tools || []).map((t) => `${TOOL_ICON[t.kind] || '🛠️'} ${t.kind} T${t.tier}!`);
+    this.spawnLootBurst(c.collected || {}, toolPills, uid);
     const e = await this._req('bc_enqueue', { uid, recipe }, '⏳');
     const rc = recipeOf(recipe);
     const cTxt = itemsLine(c.collected);
@@ -1340,15 +1409,20 @@ export class BasecampUI {
           const seed = c.plant || {};
           const free = !Object.keys(seed).length;
           const ok = this._canAfford(seed, p);
-          body += `<div class="bc-card"><div class="bc-row"><span class="bc-big-ico">${matOf(cid).emoji}</span><div class="bc-grow">
-              <div class="bc-title">${esc(matOf(cid).name)} <span class="bc-sub">⏱ ${fmtDur(c.ms)} · yields ${itemsLine(c.yield)}</span></div>
-              <div class="bc-chips">${free ? '<span class="bc-chip ok">🌱 Free seeds</span>' : this._costChips(seed, p)}</div>
+          body += `<div class="bc-card">
+            <div class="bc-row">
+              <span class="bc-big-ico">${matOf(cid).emoji}</span>
+              <div class="bc-grow">
+                <div class="bc-title">${esc(matOf(cid).name)}</div>
+                <div class="bc-sub">⏱ ${fmtDur(c.ms)} · yields ${itemsLine(c.yield)}</div>
+              </div>
+              <div class="bc-chips" style="margin:0">${free ? '<span class="bc-chip ok">🌱 Free</span>' : this._costChips(seed, p)}</div>
             </div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <div class="bc-crop-actions">
               <button type="button" class="bc-btn green" ${ok ? '' : 'disabled'} ${this._act(() => this._plant(view.uid, cid))}>🌱 Plant</button>
               ${emptyPlots.length > 1 ? `<button type="button" class="bc-btn" ${ok ? '' : 'disabled'} ${this._act(() => this._plantAllEmpty(cid))}>🌱 Plant All (${emptyPlots.length})</button>` : ''}
             </div>
-          </div></div>`;
+          </div>`;
         }
       }
     } else {
@@ -1356,24 +1430,26 @@ export class BasecampUI {
       const m = matOf(plot.crop);
       const isReady = plot.readyAt <= now;
       const canReplant = this._canAfford(c.plant || {}, p);
-      body += `<div class="bc-card${isReady ? ' bc-done' : ''}"><div class="bc-row" style="flex-wrap:wrap;gap:8px"><span class="bc-big-ico">${m.emoji}</span><div class="bc-grow">
-        <div class="bc-title">${esc(m.name)} ${isReady ? '<span class="bc-tag">Ready!</span>' : ''}</div>
-        ${isReady ? `<div class="bc-sub">Yields ${itemsLine(c.yield)}</div>` : this._bar(plot.plantedAt || (plot.readyAt - c.ms), plot.readyAt, 'Growing')}
-        <div class="bc-sub">${plot.wateredBy ? `💧 Watered by ${esc(plot.wateredBy === true ? 'a friend' : plot.wateredBy)} (−25% time)` : '💧 Not watered yet — friends can speed it up'}</div>
-      </div>
-      ${mine && isReady ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button type="button" class="bc-btn green" ${this._act(() => this._harvestPlot(view.uid))}>🌾 Harvest</button>
-        <button type="button" class="bc-btn" ${canReplant ? '' : 'disabled'} ${this._act(() => this._harvestAndReplant(view.uid, plot.crop))}>🔄 Harvest &amp; Replant</button>
-      </div>` : ''}
-      </div></div>`;
+      body += `<div class="bc-card${isReady ? ' bc-done' : ''}">
+        <div class="bc-row">
+          <span class="bc-big-ico">${m.emoji}</span>
+          <div class="bc-grow">
+            <div class="bc-title">${esc(m.name)} ${isReady ? '<span class="bc-tag">Ready!</span>' : ''}</div>
+            ${isReady ? `<div class="bc-sub">Yields ${itemsLine(c.yield)}</div>` : this._bar(plot.plantedAt || (plot.readyAt - c.ms), plot.readyAt, 'Growing')}
+            <div class="bc-sub">${plot.wateredBy ? `💧 Watered by ${esc(plot.wateredBy === true ? 'a friend' : plot.wateredBy)} (−25% time)` : '💧 Not watered yet — friends can speed it up'}</div>
+          </div>
+        </div>
+        ${mine && isReady ? `<div class="bc-crop-actions">
+          <button type="button" class="bc-btn green" ${this._act(() => this._harvestPlot(view.uid))}>🌾 Harvest</button>
+          <button type="button" class="bc-btn" ${canReplant ? '' : 'disabled'} ${this._act(() => this._harvestAndReplant(view.uid, plot.crop))}>🔄 Harvest &amp; Replant</button>
+        </div>` : ''}
+      </div>`;
       if (!isReady) this._edgeAt = Math.min(this._edgeAt, plot.readyAt);
       if (mine) {
-        foot = `<button type="button" class="bc-btn green" ${isReady ? '' : 'disabled'} ${this._act(() => this._harvestPlot(view.uid))}>${isReady ? '🌾 Harvest' : '⏳ Growing…'}</button>`;
-        if (isReady) {
-          foot += `<button type="button" class="bc-btn" ${canReplant ? '' : 'disabled'} ${this._act(() => this._harvestAndReplant(view.uid, plot.crop))}>🔄 Harvest &amp; Replant</button>`;
-          if (readyPlots.length > 1) {
-            foot += `<button type="button" class="bc-btn" ${this._act(() => this._harvestAndReplantAll())}>🌾🔄 All (${readyPlots.length})</button>`;
-          }
+        if (!isReady) {
+          foot = `<button type="button" class="bc-btn green" disabled>⏳ Growing…</button>`;
+        } else if (readyPlots.length > 1) {
+          foot = `<button type="button" class="bc-btn green" ${this._act(() => this._harvestAndReplantAll())}>🌾🔄 All (${readyPlots.length})</button>`;
         }
       } else if (!isReady) {
         const unwateredPlots = allPlots.filter((b) => {
@@ -1388,7 +1464,7 @@ export class BasecampUI {
     }
     if (!mine && !plot.crop) foot = '';
     if (mine && this.onOpenLegacy) foot += `<button type="button" class="bc-btn plain" ${this._act(() => { const pk = { owner: view.owner, uid: view.uid }; this.close(); this.onOpenLegacy(pk); })}>⚙️ Move</button>`;
-    return { title: `🌾 Farm Plot${mine ? '' : ` · ${view.owner}`}`, body, foot, small: true };
+    return { title: `🌾 Farm Plot${mine ? '' : ` · ${view.owner}`}`, body, foot };
   }
 
   async _plant(uid, crop) {
@@ -1424,6 +1500,7 @@ export class BasecampUI {
     const r = await this._req('bc_harvest_plot', { uid }, '🌾');
     if (r.ok) {
       this.playPopSfx('harvest');
+      this.spawnLootBurst(r.items || {}, [], uid);
       this.toast(`🌾 Harvested ${itemsLine(r.items)}`, 2400);
     }
     return r;
@@ -1435,6 +1512,7 @@ export class BasecampUI {
     const h = await this._req('bc_harvest_plot', { uid }, '🌾');
     if (!h.ok) return;
     this.playPopSfx('harvest');
+    this.spawnLootBurst(h.items || {}, [], uid);
     const pl = await this._req('bc_plant', { uid, crop: cropId }, '🌱');
     if (pl.ok) {
       this.toast(`🌾 Harvested ${itemsLine(h.items)} & replanted ${matOf(cropId).emoji} ${matOf(cropId).name}!`, 2600);
@@ -1455,12 +1533,14 @@ export class BasecampUI {
       this._lastCropByUid.set(b.uid, cropId);
       const h = await this._req('bc_harvest_plot', { uid: b.uid }, '🌾');
       if (h.ok) {
+        try { window.__neora?.world?.plaza?.celebrateBuildingHarvest?.(b.uid); } catch {}
         for (const [k, n] of Object.entries(h.items || {})) totals[k] = (totals[k] || 0) + n;
         const pl = await this._req('bc_plant', { uid: b.uid, crop: cropId }, '🌱');
         if (pl.ok) replanted += 1;
       }
     }
     this.playPopSfx('harvest');
+    this.spawnLootBurst(totals);
     this.toast(`🌾🔄 Harvested ${itemsLine(totals)} & replanted ${replanted} plot${replanted !== 1 ? 's' : ''}!`, 2800);
   }
 
@@ -1735,6 +1815,12 @@ export class BasecampUI {
     const r = await this._req('bc_order_fill', { slot }, '📋');
     if (!r.ok) return;
     if (r.board) this.board = r.board;
+    this.playPopSfx('harvest');
+    const extraPills = [];
+    if (r.gold) extraPills.push(`🪙 +${fmtN(r.gold)}`);
+    if (r.xp) extraPills.push(`✨ +${fmtN(r.xp)} XP`);
+    if (r.levelsGained) extraPills.push('🎉 LEVEL UP!');
+    this.spawnLootBurst(r.extra || {}, extraPills);
     this.toast(`📋 Delivered to ${o.npc || 'a villager'}! +${fmtN(r.gold)} 🪙 +${fmtN(r.xp)} XP${r.levelsGained ? ' 🎉 LEVEL UP!' : ''}`, 2800);
     this.render({ keepScroll: true });
   }
@@ -1824,14 +1910,28 @@ export class BasecampUI {
     const p = this._p();
     const fr = p?.frontier || {};
     const pouch = Array.isArray(fr.foodPouch) ? fr.foodPouch : [null, null, null, null];
+    let shownEmptySlot = false;
+    let filledCount = 0;
     this._sf.slots.forEach((el, i) => {
       const id = pouch[i] || null;
       const n = id ? this._have(id, p) : 0;
+      if (id) {
+        filledCount += 1;
+        el.hidden = false;
+      } else if (!shownEmptySlot) {
+        shownEmptySlot = true;
+        el.hidden = false;
+      } else {
+        el.hidden = true;
+      }
       el.classList.toggle('empty', !id);
       el.classList.toggle('zero', !!id && n <= 0);
-      el.innerHTML = id ? `${matOf(id).emoji}<b>${n}</b>` : '+';
-      el.title = id ? `${matOf(id).name} (+${FOOD[id]?.energy || 0} ⚡) — tap to eat, hold to change` : 'Tap to choose a food';
+      el.innerHTML = id ? `${matOf(id).emoji}<b>${n}</b>` : '🍞<b>+</b>';
+      el.title = id ? `${matOf(id).name} (+${FOOD[id]?.energy || 0} ⚡) — tap to eat, hold to change` : 'Tap to equip food in your pouch';
     });
+    if (this._sf.edit) {
+      this._sf.edit.hidden = filledCount === 0;
+    }
     this._renderBuff();
     if (this._sf.quest) {
       const q = this.getQuestGuide(p);
@@ -1887,7 +1987,7 @@ export class BasecampUI {
     edit.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.open('pouch', { slot: 0 }); };
     pouch.appendChild(edit);
     hud.appendChild(pouch);
-    this._sf = { plus, buff, quest, pouch, slots };
+    this._sf = { plus, buff, quest, pouch, slots, edit };
   }
 
   _bindSlot(el, i) {
