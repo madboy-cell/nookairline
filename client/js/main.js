@@ -5,7 +5,7 @@ import { WorldEngine } from './world_engine.js?v=sf1';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
 import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
-import { GridEditor, humanError, resolveMood } from './village_plaza.js';
+import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=tos2';
 import { DockFishing } from './minigames/dock_fishing.js';
 import { RpgUI } from './gacha_forge_ui.js?v=wd6';
 import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
@@ -19,7 +19,7 @@ import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
 import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf1';
-import { BasecampUI } from './basecamp_ui.js?v=bc1';
+import { BasecampUI } from './basecamp_ui.js?v=tos2';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
@@ -180,6 +180,7 @@ function applyFrontierLayout(layout, self) {
   world.serverOffset = S.serverOffset || 0;
   world.setFrontierMode(true, layout);
   if (S.profile?.frontier?.energy) world.frontierScene?.setEnergy?.(S.profile.frontier.energy);
+  basecampUI?._renderFrontier?.();
   if (self && world.local) world.setLocalPosition(self.x, self.z);
   // resume into the same shard/region after a reconnect (server re-validates room + unlocks)
   if (net) net.resumeInstanceId = `frontier:${layout.shardId}~${layout.regionId}`;
@@ -213,11 +214,22 @@ function updateGuidePill() {
   if (!pill || !txt || !cta || !p || !world) return;
 
   if (world.layout?.kind === 'townhall') {
+    pill.classList.remove('quest-ready');
     currentGuideAction = 'sky_frontier';
     txt.textContent = '🏝️ Sky Frontier: Gather, craft & defend the Meadow!';
     cta.textContent = 'Explore ▸';
     return;
   }
+
+  const q = basecampUI?.getQuestGuide?.(p);
+  if (q?.active) {
+    currentGuideAction = 'story_quest';
+    pill.classList.toggle('quest-ready', !!q.complete);
+    txt.textContent = q.text;
+    cta.textContent = q.cta;
+    return;
+  }
+  pill.classList.remove('quest-ready');
 
   const pv = p.village ? harvestPreview(p, serverNow(), { coupled: S.coupled }) : null;
   const harvestReady = pv && pv.ready && (pv.gold + pv.berries + pv.diamonds > 0);
@@ -245,7 +257,9 @@ function updateGuidePill() {
 }
 
 function runGuideAction() {
-  if (currentGuideAction === 'harvest') {
+  if (currentGuideAction === 'story_quest') {
+    basecampUI?.getQuestGuide?.(S.profile)?.run?.();
+  } else if (currentGuideAction === 'harvest') {
     harvestAll();
   } else if (currentGuideAction === 'pet_gift') {
     world?.onPetTap?.();
@@ -959,12 +973,12 @@ function enterQuickMove(uid) {
   editor.open({ quickUid: uid });
 }
 
-function enterEdit(selectUid = null) {
+function enterEdit(selectUid = null, placeType = null) {
   closeModal();
   if (!editor) return;
   $('hud').dataset.scene = 'VILLAGE_EDIT';
   world.setEditMode(true);
-  editor.open({ selectUid });
+  editor.open({ selectUid, placeType });
 }
 
 function enterNookMuseum(portalId = null) {
@@ -1044,7 +1058,8 @@ async function startGame(profile) {
     rpg = new RpgUI({ request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile });
     basecampUI = new BasecampUI({
       request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile, now: serverNow,
-      onEnterEdit: () => enterEdit(),
+      onEnterEdit: (placeType = null) => enterEdit(null, placeType),
+      onEnterFrontier: () => enterFrontier(),
       onOpenLegacy: (pk) => buildingModal(pk, { legacy: true }),
       onEnergy: (e) => world?.frontierScene?.setEnergy?.(e),
     });

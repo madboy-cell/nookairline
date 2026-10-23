@@ -76,6 +76,21 @@ const SPRITE_SHEETS = [
       { name: 'crop_berries_ready',  anchorY: 0.10, minIslandRatio: 0.02 },
     ],
   },
+  {
+    src: 'art_src/sheet_tos_story_buildings_v2.jpg',
+    pack: 'village',
+    cells: [
+      { name: 'bld_castle',            anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'dec_tent',              anchorY: 0.14, minIslandRatio: 0.005 },
+      { name: 'bld_windmill_bakery',   anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'bld_patisserie',        anchorY: 0.12, cropTopFrac: 0.04, minIslandRatio: 0.02 },
+      { name: 'bld_owl_post_office',   anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'bld_mint',              anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'bld_flower_greenhouse', anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'bld_nest',              anchorY: 0.12, minIslandRatio: 0.005 },
+      { name: 'wnd_onsen',             anchorY: 0.12, minIslandRatio: 0.005 },
+    ],
+  },
 ];
 
 const TERRAIN_CELLS = [

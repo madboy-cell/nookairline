@@ -1361,7 +1361,7 @@ export class GridEditor {
     return { ...this.base, buildings: this.draft.buildings, tiles, ground: this.draft.ground };
   }
 
-  open({ quickUid = null, selectUid = null } = {}) {
+  open({ quickUid = null, selectUid = null, placeType = null } = {}) {
     const v = this.village;
     this.base = JSON.parse(JSON.stringify(v));
     this.draft = { buildings: v.buildings.map(({ uid, type, x, y, rot }) => ({ uid, type, x, y, rot })), tiles: v.tiles.map((t) => ({ ...t })), ground: v.ground };
@@ -1373,6 +1373,13 @@ export class GridEditor {
     this.$('ed-drawer')?.classList.remove('collapsed');
     if (this.$('ed-drawer-collapse')) this.$('ed-drawer-collapse').textContent = '▾';
     this.setMode('drag');
+    if (placeType && bagContents(this.draftVillage(), this.draft.buildings)[placeType] > 0) {
+      if (CORE[placeType]) this.tab = 'buildings';
+      else if (WONDERS[placeType]) this.tab = 'wonders';
+      else if (DECOR[placeType]) this.tab = 'decor';
+      this.placeFromBag(placeType);
+      return;
+    }
     if (this.selected) this.focusOnBuilding(this.selected);
     this.refresh();
   }

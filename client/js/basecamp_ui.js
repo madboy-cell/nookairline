@@ -237,16 +237,29 @@ const STYLE = `
 .bc-sf-slot b { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: #3B2A20; color: #FFE27A;
   border: 1.5px solid #C9A45C; font: 900 10px/15px system-ui; padding: 0 3px; text-align: center; }
 .bc-sf-edit { width: 46px; height: 24px; border-radius: 10px; border: 2px solid #3B2A20; background: #C9A45C; color: #3B2A20; font: 900 10px system-ui; cursor: pointer; padding: 0; }
+.bc-sf-quest {
+  display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 14px;
+  background: linear-gradient(180deg, rgba(59, 42, 32, 0.92), rgba(38, 25, 18, 0.95));
+  border: 2px solid #C9A45C; color: #F4EAD6; font: 800 11px system-ui;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4); cursor: pointer; pointer-events: auto;
+  max-width: min(92vw, 350px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bc-sf-quest.on { display: inline-flex; }
+.bc-sf-quest.ready {
+  background: linear-gradient(180deg, #4b7c2c, #2f5418); border-color: #b8e49a; color: #fff;
+  animation: bcPulse 1.4s ease-in-out infinite;
+}
 `;
 
 export class BasecampUI {
-  constructor({ request, toast, getProfile, humanError, now, onEnterEdit, onEnergy, onOpenLegacy } = {}) {
+  constructor({ request, toast, getProfile, humanError, now, onEnterEdit, onEnterFrontier, onEnergy, onOpenLegacy } = {}) {
     this.request = request;
     this.toast = toast || (() => {});
     this.getProfile = getProfile || (() => null);
     this.humanError = humanError || ((e) => e);
     this.now = typeof now === 'function' ? now : () => Date.now();
     this.onEnterEdit = onEnterEdit || null;
+    this.onEnterFrontier = onEnterFrontier || null;
     this.onEnergy = onEnergy || null;
     this.onOpenLegacy = onOpenLegacy || null;
     this.profile = null;
@@ -510,6 +523,169 @@ export class BasecampUI {
   }
 
   // ---------------------------------------------------------------------------------- 1. Story
+  getQuestGuide(p = this._p()) {
+    const story = this._story(p);
+    const v = p?.village || {};
+    const ch = CHAPTERS.find((c) => c.id === story.chapter) || null;
+    if (!ch) return { active: false, complete: false, chapter: null };
+    const steps = currentSteps(story);
+    const complete = steps.length > 0 && steps.every((s) => s.done);
+    if (complete) {
+      return {
+        active: true,
+        complete: true,
+        chapter: ch,
+        text: `🎉 Ch.${ch.id + 1}: "${ch.title}" Ready! Claim Rewards`,
+        cta: 'Claim 🎁',
+        frontierText: `🎉 Ch.${ch.id + 1}: ${ch.title} Complete! Tap to Claim 🎁`,
+        run: () => this.open('story'),
+      };
+    }
+    const placedCounts = {};
+    for (const b of v.buildings || []) placedCounts[b.type] = (placedCounts[b.type] || 0) + 1;
+    const unplacedBuildStep = steps.find(
+      (s) => !s.done && s.kind === 'build' && (v.copies?.[s.target] || 0) > (placedCounts[s.target] || 0)
+    );
+    if (unplacedBuildStep) {
+      const bName = coreOf(unplacedBuildStep.target).name;
+      return {
+        active: true,
+        complete: false,
+        chapter: ch,
+        text: `📦 Place ${bName} on your Island!`,
+        cta: 'Place 🛠️',
+        frontierText: `🏠 Return to Village to place ${bName}`,
+        run: () => this._runStepAction(unplacedBuildStep, p),
+      };
+    }
+    const nextStep = steps.find((s) => !s.done) || steps[0];
+    const shortBits = steps.map((s) => {
+      const ico = s.done ? '✅' : (s.kind === 'gather' ? matOf(s.target).emoji : STEP_ICON[s.kind] || '•');
+      const lbl = s.kind === 'gather' ? matOf(s.target).name : s.text.replace(/^Visit (the )?|^Build |^Craft |^Harvest |^Defeat /, '').replace(/\s*\(.*\)$/, '');
+      return `${ico} ${lbl} ${s.have}/${s.count}`;
+    });
+    const frontierText = `📜 Ch.${ch.id + 1}: ${shortBits.join(' · ')}`;
+    const actMeta = this._stepActionMeta(nextStep, p);
+    return {
+      active: true,
+      complete: false,
+      chapter: ch,
+      text: `📜 Ch.${ch.id + 1}: ${actMeta.bannerText}`,
+      cta: actMeta.ctaLabel,
+      frontierText,
+      run: () => this._runStepAction(nextStep, p),
+    };
+  }
+
+  _stepActionMeta(s, p = this._p()) {
+    const v = p?.village || {};
+    const placedCounts = {};
+    for (const b of v.buildings || []) placedCounts[b.type] = (placedCounts[b.type] || 0) + 1;
+    const inFrontier = typeof document !== 'undefined' && document.getElementById('hud')?.dataset.scene === 'SKY_FRONTIER';
+    if (s.kind === 'build') {
+      const unplaced = (v.copies?.[s.target] || 0) > (placedCounts[s.target] || 0);
+      const bName = coreOf(s.target).name;
+      if (unplaced) {
+        return { btnLabel: '🛠️ Place', ctaLabel: 'Place 🛠️', bannerText: `Place ${bName} from Bag`, note: '📦 Constructed in Bag — tap Place to drop it on your island!' };
+      }
+      return { btnLabel: '🔨 Build', ctaLabel: 'Build 🔨', bannerText: `Build ${bName} (${s.have}/${s.count})`, note: null };
+    }
+    if (s.kind === 'craft') {
+      const rc = Object.values(RECIPES).find((r) => r.outputs?.[s.target]);
+      const bType = rc?.building;
+      const placedBld = bType ? (v.buildings || []).find((b) => b.type === bType) : null;
+      const unplacedBld = bType && !placedBld && (v.copies?.[bType] || 0) > 0;
+      return {
+        btnLabel: placedBld ? '⚒️ Craft' : unplacedBld ? '🛠️ Place' : '🔨 Build',
+        ctaLabel: placedBld ? 'Craft ⚒️' : unplacedBld ? 'Place 🛠️' : 'Build 🔨',
+        bannerText: `${s.text} (${s.have}/${s.count})`,
+        note: null,
+      };
+    }
+    if (s.kind === 'harvest') {
+      return { btnLabel: '🌾 Farm', ctaLabel: 'Farm 🌾', bannerText: `${s.text} (${s.have}/${s.count})`, note: null };
+    }
+    if (s.kind === 'deliver_orders') {
+      return { btnLabel: '📋 Orders', ctaLabel: 'Orders 📋', bannerText: `${s.text} (${s.have}/${s.count})`, note: null };
+    }
+    if (s.kind === 'visit') {
+      return { btnLabel: inFrontier ? '🧭 Hint' : '🏝️ Go', ctaLabel: 'Explore 🏝️', bannerText: s.text.replace(/\s*\(.*\)$/, ''), note: null };
+    }
+    if (s.kind === 'defeat') {
+      return { btnLabel: inFrontier ? '⚔️ Hint' : '⚔️ Go', ctaLabel: 'Battle ⚔️', bannerText: s.text, note: null };
+    }
+    return { btnLabel: inFrontier ? '🏝️ Hint' : '🏝️ Go', ctaLabel: 'Gather 🏝️', bannerText: `${s.text} (${s.have}/${s.count})`, note: null };
+  }
+
+  _frontierStepCompass(s) {
+    if (!s) return '🧭 Explore the Sky Frontier!';
+    if (s.target === 'outpost') return '🗽 Walk to the Goddess Outpost statue at the center of camp (0, 0)!';
+    if (s.target === 'wheat' || s.target === 'sky_wheat') return '🌾 Head South-East to the Overgrown Windmill Ruins & Wheat Field!';
+    if (s.target === 'gate_hollow') return '🌀 Head North-East to the swirling Sky Mist Gate!';
+    if (s.target === 'crystal_ore') return '💎 Enter Crystal Hollow via the Sky Mist Gate or Region Switcher to mine Crystal Ore!';
+    if (s.target === 'elder_moss_golem') return '⚔️ Head North in Whispering Meadow to summon & defeat the Elder Moss Golem!';
+    return `🏝️ Strike ${matOf(s.target).name} nodes in the Sky Frontier — hit the golden rhythm ring for Rare+ bonus drops!`;
+  }
+
+  _runStepAction(s, p = this._p()) {
+    if (!s) return;
+    const v = p?.village || {};
+    const inFrontier = typeof document !== 'undefined' && document.getElementById('hud')?.dataset.scene === 'SKY_FRONTIER';
+    if (s.kind === 'gather' || s.kind === 'visit' || s.kind === 'defeat') {
+      this.close();
+      if (!inFrontier && this.onEnterFrontier) {
+        this.onEnterFrontier();
+        setTimeout(() => this.toast(this._frontierStepCompass(s), 3600), 450);
+        return;
+      }
+      this.toast(this._frontierStepCompass(s), 3400);
+      return;
+    }
+    if (s.kind === 'build') {
+      const placed = (v.buildings || []).filter((b) => b.type === s.target).length;
+      if ((v.copies?.[s.target] || 0) > placed && this.onEnterEdit) {
+        this.close();
+        this.onEnterEdit(s.target);
+        return;
+      }
+      this.open('build');
+      return;
+    }
+    if (s.kind === 'craft') {
+      const rc = Object.values(RECIPES).find((r) => r.outputs?.[s.target]);
+      const bType = rc?.building;
+      const placedBld = bType ? (v.buildings || []).find((b) => b.type === bType) : null;
+      if (placedBld) {
+        this.openBuilding({ owner: p.id, uid: placedBld.uid, type: placedBld.type, village: v });
+        return;
+      }
+      if (bType && (v.copies?.[bType] || 0) > 0 && this.onEnterEdit) {
+        this.close();
+        this.onEnterEdit(bType);
+        return;
+      }
+      this.open('build');
+      return;
+    }
+    if (s.kind === 'harvest') {
+      const plot = (v.buildings || []).find((b) => b.type === 'farm_plot');
+      if (plot) {
+        this.openBuilding({ owner: p.id, uid: plot.uid, type: 'farm_plot', village: v });
+        return;
+      }
+      if ((v.copies?.farm_plot || 0) > 0 && this.onEnterEdit) {
+        this.close();
+        this.onEnterEdit('farm_plot');
+        return;
+      }
+      this.open('build');
+      return;
+    }
+    if (s.kind === 'deliver_orders') {
+      this._onHudButton('orders');
+    }
+  }
+
   _viewStory(p) {
     const story = this._story(p);
     const idx = CHAPTERS.findIndex((c) => c.id === story.chapter);
@@ -527,10 +703,13 @@ export class BasecampUI {
     body += '<div class="bc-steps">';
     for (const s of steps) {
       const pct = Math.min(100, Math.round((s.have / Math.max(1, s.count)) * 100));
+      const actMeta = !s.done ? this._stepActionMeta(s, p) : null;
       body += `<div class="bc-card${s.done ? ' bc-done' : ''}"><div class="bc-row">
         <span class="bc-check">${s.done ? '✅' : STEP_ICON[s.kind] || '•'}</span>
         <div class="bc-grow"><div class="bc-title">${esc(s.text)}</div>
+        ${actMeta?.note ? `<div class="bc-sub" style="color:#2f5a1a;font-weight:800;">${esc(actMeta.note)}</div>` : ''}
         <div class="bc-bar${s.done ? ' ok' : ''}"><i style="width:${pct}%"></i><b>${fmtN(s.have)} / ${fmtN(s.count)}${s.done ? ' ✓' : ''}</b></div></div>
+        ${actMeta ? `<button type="button" class="bc-btn" style="padding:5px 9px;font-size:11px;" ${this._act(() => this._runStepAction(s, p))}>${actMeta.btnLabel}</button>` : ''}
       </div></div>`;
     }
     body += '</div>';
@@ -615,9 +794,10 @@ export class BasecampUI {
     for (const b of v.buildings || []) placed[b.type] = (placed[b.type] || 0) + 1;
     let body = '';
     if (this.justBuilt) {
-      const d = coreOf(this.justBuilt);
+      const builtType = this.justBuilt;
+      const d = coreOf(builtType);
       body += `<div class="bc-note good">✅ ${d.emoji} <b>${esc(d.name)}</b> is ready in your Bag. Open <b>🛠️ Edit Grid</b> and place it from the Bag tab.
-        ${this.onEnterEdit ? `<div style="margin-top:6px"><button type="button" class="bc-btn green" ${this._act(() => { this.close(); this.onEnterEdit(); })}>🛠️ Place it now</button></div>` : ''}</div>`;
+        ${this.onEnterEdit ? `<div style="margin-top:6px"><button type="button" class="bc-btn green" ${this._act(() => { this.close(); this.onEnterEdit(builtType); })}>🛠️ Place it now</button></div>` : ''}</div>`;
     }
     // Castle (Starlight Keep)
     const cLv = v.castle_lv || 1;
@@ -652,6 +832,11 @@ export class BasecampUI {
         </div>
         <button type="button" class="bc-btn green" ${full || !this._canAfford(cost, p) ? 'disabled' : ''} ${this._act(() => this._construct(type))}>${full ? 'Max' : have ? '+ Copy' : 'Construct'}</button>
       </div>`;
+      if (have > (placed[type] || 0) && this.onEnterEdit) {
+        const unplacedCnt = have - (placed[type] || 0);
+        body += `<div class="bc-row" style="margin-top:6px"><div class="bc-grow"><div class="bc-sub" style="color:#2f5a1a;font-weight:800;">📦 ${unplacedCnt} unplaced in Bag — place on your island to activate!</div></div>
+          <button type="button" class="bc-btn green" ${this._act(() => { this.close(); this.onEnterEdit(type); })}>🛠️ Place</button></div>`;
+      }
       if (have > 0 && type !== 'farm_plot' && type !== 'tent') {
         const uc = upgradeCost(type, lv);
         body += lv >= MAX_CORE_LV
@@ -1210,6 +1395,15 @@ export class BasecampUI {
       el.title = id ? `${matOf(id).name} (+${FOOD[id]?.energy || 0} ⚡) — tap to eat, hold to change` : 'Tap to choose a food';
     });
     this._renderBuff();
+    if (this._sf.quest) {
+      const q = this.getQuestGuide(p);
+      this._sf.quest.classList.toggle('on', !!q.active);
+      this._sf.quest.classList.toggle('ready', !!q.complete);
+      if (q.active) {
+        this._sf.quest.textContent = q.frontierText || q.text;
+        this._sf.quest.title = 'Tap to open Story Board 📜';
+      }
+    }
   }
 
   _mountFrontier(hud) {
@@ -1228,6 +1422,13 @@ export class BasecampUI {
     buff.className = 'bc-sf-buff';
     buff.id = 'bc-sf-buff';
     topLeft.appendChild(buff);
+    const quest = document.createElement('button');
+    quest.type = 'button';
+    quest.className = 'bc-sf-quest';
+    quest.id = 'bc-sf-quest';
+    quest.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.open('story'); };
+    const topCenter = hud.querySelector('.sf-top-center');
+    if (topCenter) topCenter.prepend(quest); else hud.appendChild(quest);
     const pouch = document.createElement('div');
     pouch.className = 'bc-sf-pouch';
     pouch.id = 'bc-sf-pouch';
@@ -1248,7 +1449,7 @@ export class BasecampUI {
     edit.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.open('pouch', { slot: 0 }); };
     pouch.appendChild(edit);
     hud.appendChild(pouch);
-    this._sf = { plus, buff, pouch, slots };
+    this._sf = { plus, buff, quest, pouch, slots };
   }
 
   _bindSlot(el, i) {

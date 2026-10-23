@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T18:13:56.846Z",
+  "generatedAt": "2026-10-23T04:10:40.802Z",
   "sprites": {
     "bkk_base_front": {
       "file": "chibi/bkk_base_front.png",
@@ -193,27 +193,27 @@
     },
     "bld_castle": {
       "file": "village/bld_castle.png",
-      "w": 378,
-      "h": 410,
+      "w": 305,
+      "h": 324,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.519
+      "anchorY": 0.12,
+      "coverage": 0.68
     },
     "bld_mint": {
       "file": "village/bld_mint.png",
-      "w": 403,
-      "h": 372,
+      "w": 313,
+      "h": 306,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.676
+      "anchorY": 0.12,
+      "coverage": 0.626
     },
     "bld_patisserie": {
       "file": "village/bld_patisserie.png",
-      "w": 319,
-      "h": 387,
+      "w": 307,
+      "h": 315,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.508
+      "anchorY": 0.12,
+      "coverage": 0.609
     },
     "bld_shrine": {
       "file": "village/bld_shrine.png",
@@ -225,11 +225,11 @@
     },
     "bld_nest": {
       "file": "village/bld_nest.png",
-      "w": 368,
-      "h": 328,
+      "w": 265,
+      "h": 278,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.639
+      "anchorY": 0.12,
+      "coverage": 0.678
     },
     "bld_dock": {
       "file": "village/bld_dock.png",
@@ -241,11 +241,11 @@
     },
     "wnd_onsen": {
       "file": "village/wnd_onsen.png",
-      "w": 425,
-      "h": 353,
+      "w": 317,
+      "h": 302,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.663
+      "anchorY": 0.12,
+      "coverage": 0.556
     },
     "wnd_ferris": {
       "file": "village/wnd_ferris.png",
@@ -313,11 +313,11 @@
     },
     "dec_tent": {
       "file": "village/dec_tent.png",
-      "w": 338,
-      "h": 332,
+      "w": 302,
+      "h": 286,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.544
+      "anchorY": 0.14,
+      "coverage": 0.408
     },
     "dec_cat_cushion": {
       "file": "village/dec_cat_cushion.png",
@@ -545,27 +545,27 @@
     },
     "bld_windmill_bakery": {
       "file": "village/bld_windmill_bakery.png",
-      "w": 365,
-      "h": 384,
+      "w": 302,
+      "h": 317,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.589
+      "anchorY": 0.12,
+      "coverage": 0.596
     },
     "bld_flower_greenhouse": {
       "file": "village/bld_flower_greenhouse.png",
-      "w": 378,
-      "h": 373,
+      "w": 310,
+      "h": 303,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.583
+      "anchorY": 0.12,
+      "coverage": 0.619
     },
     "bld_owl_post_office": {
       "file": "village/bld_owl_post_office.png",
-      "w": 335,
-      "h": 380,
+      "w": 292,
+      "h": 329,
       "anchorX": 0.5,
-      "anchorY": 0,
-      "coverage": 0.6
+      "anchorY": 0.12,
+      "coverage": 0.615
     },
     "bld_starlight_lighthouse": {
       "file": "village/bld_starlight_lighthouse.png",
