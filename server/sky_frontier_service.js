@@ -494,9 +494,41 @@ export function createSkyFrontierService({
       baseDrop: type.drop || {},
       fortuneMult: harvestRarity.mult || 1,
     });
+    const coupleResonanceUsers = [];
     for (const uid of qualifying) {
       const prof = db.getProfile(uid);
       const pf = prof && ensureFrontier(prof);
+      // Co-Op Personal Loot Floor: when 2+ players break a node together, each qualifying player
+      // receives at least the full solo base drop * rarity mult (so co-op is never a split penalty!).
+      if (qualifying.length > 1 && shares[uid]) {
+        for (const [matId, baseAmt] of Object.entries(type.drop || {})) {
+          const soloFloor = Math.floor((baseAmt || 0) * (harvestRarity.mult || 1));
+          if ((shares[uid][matId] || 0) < soloFloor) {
+            shares[uid][matId] = soloFloor;
+          }
+        }
+      }
+      // 💞 Couple Resonance: if your bound partner also hit the node OR is within 10m in the same region,
+      // grant +25% bonus yield (min +1 per material) and +25% Rare drop luck!
+      let hasCoupleResonance = false;
+      if (prof && isCouple(prof) && prof.partner_id) {
+        if (qualifying.includes(prof.partner_id)) {
+          hasCoupleResonance = true;
+        } else {
+          const instMembers = instances.get(ws.instanceId);
+          const partPres = presence.get(prof.partner_id);
+          if (instMembers?.has(prof.partner_id) && partPres) {
+            const dist = Math.hypot((partPres.x || 0) - node.x, (partPres.z || 0) - node.z);
+            if (dist <= 10.5) hasCoupleResonance = true;
+          }
+        }
+      }
+      if (hasCoupleResonance && shares[uid]) {
+        coupleResonanceUsers.push(uid);
+        for (const [matId, n] of Object.entries(shares[uid])) {
+          if (n > 0) shares[uid][matId] = n + Math.max(1, Math.floor(n * 0.25));
+        }
+      }
       const buff = pf && activeMealBuff(pf, t);
       if (buff && (buff.id === 'yield' || buff.id === 'yield_plus')) {
         const playerShares = shares[uid];
@@ -521,7 +553,8 @@ export function createSkyFrontierService({
     const luckByUser = {};
     for (const uid of qualifying) {
       const prof = db.getProfile(uid);
-      luckByUser[uid] = (skyFrontierMods(statsOf(prof))?.rareFindMult || 1) * (1 + perfectCount * 0.12);
+      const coupleLuckMult = coupleResonanceUsers.includes(uid) ? 1.25 : 1.0;
+      luckByUser[uid] = (skyFrontierMods(statsOf(prof))?.rareFindMult || 1) * (1 + perfectCount * 0.12) * coupleLuckMult;
     }
     const rares = type.rare ? rollRares(type.rare, qualifying, rng, luckByUser) : {};
     if (reroll && type.rare && qualifying.includes(p.id) && !(rares[p.id] && Object.keys(rares[p.id]).length)) {
@@ -577,6 +610,7 @@ export function createSkyFrontierService({
       shares,
       rares,
       qualifying,
+      coupleResonanceUsers,
       rarity: rarityPayload,
     });
     return {
@@ -588,6 +622,7 @@ export function createSkyFrontierService({
       energy: fr.energy,
       share: shares[p.id] || {},
       rare: rares[p.id] || null,
+      coupleResonance: coupleResonanceUsers.includes(p.id),
       rarity: rarityPayload,
     };
   }
@@ -815,11 +850,31 @@ export function createSkyFrontierService({
     let shares = {};
     if (hitters.length === 1) shares = { [hitters[0]]: { ...drop } };
     else if (hitters.length > 1) shares = splitLoot({ hits: m.hits, baseDrop: drop, fortuneMult: 1 }).shares;
+    const coupleResonanceUsers = [];
     for (const [uid, items] of Object.entries(shares)) {
       const prof = db.getProfile?.(uid);
       if (!prof) continue;
-      const mult = lootMult(sh, uid, t);
-      if (mult !== 1) for (const k of Object.keys(items)) items[k] = Math.max(items[k], Math.round(items[k] * mult));
+      if (hitters.length > 1) {
+        for (const [k, baseAmt] of Object.entries(drop)) {
+          if ((items[k] || 0) < (baseAmt || 0)) items[k] = baseAmt || 0;
+        }
+      }
+      let hasCoupleResonance = false;
+      if (isCouple(prof) && prof.partner_id) {
+        if (hitters.includes(prof.partner_id)) {
+          hasCoupleResonance = true;
+        } else {
+          const instMembers = instances.get(inst);
+          const partPres = presence.get(prof.partner_id);
+          if (instMembers?.has(prof.partner_id) && partPres) {
+            const dist = Math.hypot((partPres.x || 0) - m.x, (partPres.z || 0) - m.z);
+            if (dist <= 12.0) hasCoupleResonance = true;
+          }
+        }
+      }
+      const mult = lootMult(sh, uid, t) * (hasCoupleResonance ? 1.25 : 1.0);
+      if (hasCoupleResonance) coupleResonanceUsers.push(uid);
+      if (mult !== 1) for (const k of Object.keys(items)) items[k] = Math.max(items[k] + (hasCoupleResonance ? 1 : 0), Math.round(items[k] * mult));
       grant(prof, items);
       const pf = ensureFrontier(prof);
       if (pf) { pf.stats ||= {}; pf.stats.kills = (pf.stats.kills || 0) + 1; }
@@ -827,7 +882,7 @@ export function createSkyFrontierService({
       recordEvent(prof.story, { kind: 'defeat', target: m.type });
       onProfileChanged(prof);
     }
-    broadcast(inst, { type: 'sf_monster_dead', id: m.id, regionId: m.regionId, monsterType: m.type, by: killerId || null, drops: shares });
+    broadcast(inst, { type: 'sf_monster_dead', id: m.id, regionId: m.regionId, monsterType: m.type, by: killerId || null, drops: shares, coupleResonanceUsers });
   }
 
   // ---- players ----------------------------------------------------------------------------------

@@ -667,3 +667,40 @@ test('strike break solo with yield_plus buff increases drop share by +35% (min +
   assert.equal(res.share.wood, 8);
   assert.equal(p.frontier.warehouse.items.wood, 8);
 });
+
+test('co-op personal loot floor & couple resonance (+25% yield when partner is nearby or co-striking)', () => {
+  const env = createFakeEnv(40_000_000);
+  const shardId = 'sf_couple_sync';
+  const instanceId = `frontier:${shardId}~meadow`;
+  const ws = { instanceId };
+
+  env.instances.set(instanceId, new Set(['p_ava', 'p_leo']));
+
+  const pAva = { id: 'p_ava', partner_id: 'p_leo', frontier: defaultFrontier() };
+  pAva.frontier.toolbelt.axe = 1;
+  const pLeo = { id: 'p_leo', partner_id: 'p_ava', frontier: defaultFrontier() };
+  pLeo.frontier.toolbelt.axe = 1;
+  env.profiles.set('p_ava', pAva);
+  env.profiles.set('p_leo', pLeo);
+
+  const sh = env.service.loadShard(shardId);
+  const treeNode = regionNodes('meadow').find((n) => n.type === 'tree');
+  assert.ok(treeNode);
+
+  // Position both partners right at the tree
+  env.presence.set('p_ava', { x: treeNode.x, z: treeNode.z });
+  env.presence.set('p_leo', { x: treeNode.x + 1.0, z: treeNode.z });
+
+  sh.durable.nodes[treeNode.id] = { hp: 2, depletedUntil: 0 };
+  env.setTime(40_000_000);
+  env.service.strike(ws, pAva, { nodeId: treeNode.id });
+  env.setTime(40_001_000);
+  const breakRes = env.service.strike(ws, pLeo, { nodeId: treeNode.id });
+
+  assert.equal(breakRes.ok, true);
+  assert.equal(breakRes.broke, true);
+  assert.equal(breakRes.coupleResonance, true, 'Bound couple striking together should trigger coupleResonance');
+  // Solo base drop is 6 wood; with Co-Op Personal Loot Floor (6) + Couple Resonance (+25% = +1), each gets at least 7 wood!
+  assert.ok(pAva.frontier.warehouse.items.wood >= 7, `Expected p_ava wood >= 7, got ${pAva.frontier.warehouse.items.wood}`);
+  assert.ok(pLeo.frontier.warehouse.items.wood >= 7, `Expected p_leo wood >= 7, got ${pLeo.frontier.warehouse.items.wood}`);
+});

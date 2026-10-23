@@ -540,7 +540,10 @@ export class WorldEngine {
   upsertRemote(p) {
     let r = this.remotes.get(p.id);
     if (!r) {
-      const partnerTag = this.local && p.partner_id === this.local.id ? `💞 Lv. ${p.level}` : `Lv. ${p.level}`;
+      const isMyPartner = Boolean(
+        this.local && (p.partner_id === this.local.id || this.local.profile?.partner_id === p.id)
+      );
+      const partnerTag = isMyPartner ? `💞 Lv. ${p.level || 1}` : `Lv. ${p.level || 1}`;
       const rig = new ChibiRig({ lineage: p.lineage, appearance: p.appearance, name: p.username, sub: partnerTag, wings: this.wingsFor(p) });
       this.hookTurnPuff(rig, () => this.remotes.get(p.id)?.data?.equipped);
       this.scene.add(rig.ROOT);

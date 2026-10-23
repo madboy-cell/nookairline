@@ -189,6 +189,36 @@ const HUD_STYLE = `
   font-size: 11px;
 }
 
+.sf-partner-pill {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+  background: rgba(46, 24, 34, 0.88);
+  border: 1.5px solid #F472B6;
+  border-radius: 14px;
+  padding: 4px 10px;
+  color: #FCE7F3;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  white-space: nowrap;
+  transition: transform 0.08s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sf-partner-pill.sf-sync-active {
+  background: linear-gradient(90deg, rgba(131, 24, 67, 0.92), rgba(113, 63, 18, 0.92));
+  border-color: #FDE047;
+  color: #FEF08A;
+  box-shadow: 0 0 12px rgba(244, 114, 182, 0.55), 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.sf-partner-pill:active {
+  transform: scale(0.94);
+}
+
 /* Home button */
 .sf-btn-home {
   display: flex;
@@ -977,12 +1007,14 @@ export class SkyFrontierScene {
           </div>
 
           <div class="sf-rune-wrapper" id="sf-rune-wrapper">
+            <button type="button" class="sf-partner-pill" id="sf-partner-pill"></button>
             <div class="sf-target-pills" id="sf-target-pills" role="group" aria-label="Gather Target">
               <button type="button" class="sf-target-pill on" data-sf-target="auto">✨ Auto</button>
               <button type="button" class="sf-target-pill" data-sf-target="tree">🪵</button>
               <button type="button" class="sf-target-pill" data-sf-target="boulder">🪨</button>
               <button type="button" class="sf-target-pill" data-sf-target="wheat">🌾</button>
               <button type="button" class="sf-target-pill" data-sf-target="herb">🌿</button>
+              <button type="button" class="sf-target-pill" data-sf-target="monster">⚔️</button>
             </div>
             <div class="sf-rarity-boost-pill" id="sf-rarity-boost">✨ Tap or Hold to Gather</div>
             <div class="sf-rune-flash" id="sf-rune-flash">PERFECT!</div>
@@ -1011,6 +1043,7 @@ export class SkyFrontierScene {
     this.homeBtnEl = hud.querySelector('#sf-btn-home');
     this.floatContainerEl = hud.querySelector('#sf-floating-container');
 
+    this.partnerPillEl = hud.querySelector('#sf-partner-pill');
     this.invasionBannerEl = hud.querySelector('#sf-invasion-banner');
     this.invasionTitleEl = hud.querySelector('#sf-invasion-title');
     this.invasionSubEl = hud.querySelector('#sf-invasion-sub');
@@ -1049,6 +1082,14 @@ export class SkyFrontierScene {
       };
     }
 
+    if (this.partnerPillEl) {
+      this.partnerPillEl.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.followPartner();
+      };
+    }
+
     if (this.targetPillsEl) {
       this.targetPillsEl.addEventListener('pointerdown', (e) => {
         const pill = e.target.closest('[data-sf-target]');
@@ -1061,7 +1102,11 @@ export class SkyFrontierScene {
           el.classList.toggle('on', el.dataset.sfTarget === type);
         });
         this._syncRuneButtonState();
-        this.findAndWalkToNextNode(type, { playSfx: true });
+        if (type === 'monster') {
+          this.findAndAttackNextMonster({ playSfx: true });
+        } else {
+          this.findAndWalkToNextNode(type, { playSfx: true });
+        }
       });
     }
 
@@ -1119,6 +1164,7 @@ export class SkyFrontierScene {
           { id: 'crystal', label: '💎' },
           { id: 'mithril', label: '🔮' },
           { id: 'boulder', label: '🪨' },
+          { id: 'monster', label: '⚔️' },
         ]
       : [
           { id: 'auto', label: '✨ Auto' },
@@ -1126,6 +1172,7 @@ export class SkyFrontierScene {
           { id: 'boulder', label: '🪨' },
           { id: 'wheat', label: '🌾' },
           { id: 'herb', label: '🌿' },
+          { id: 'monster', label: '⚔️' },
         ];
     if (!pills.some((p) => p.id === this.preferredTargetType)) {
       this.preferredTargetType = 'auto';
@@ -1149,8 +1196,16 @@ export class SkyFrontierScene {
       crystal: '💎',
       quartz: '💎',
       mithril: '🔮',
+      monster: '⚔️',
     };
-    if (this.targetNode) {
+    const streakTxt = (this._feverStreak || 0) >= 2 ? `🔥 Fever ×${this._feverStreak} • ` : '';
+    if (this.targetMonster) {
+      if (this.runeIconEl) this.runeIconEl.textContent = '⚔️';
+      if (this.runeLabelEl) this.runeLabelEl.textContent = this.isAttacking ? 'HOLD/TAP' : 'HUNTING';
+      if (this.rarityBoostEl) {
+        this.rarityBoostEl.textContent = `${streakTxt}⚔️ Auto-Hunting Monster`;
+      }
+    } else if (this.targetNode) {
       const icon = NODE_ICONS[this.targetNode.type] || '⚒️';
       if (this.runeIconEl) this.runeIconEl.textContent = icon;
       if (this.runeLabelEl) this.runeLabelEl.textContent = this.isSwinging ? 'HOLD/TAP' : 'WALKING';
@@ -1160,9 +1215,14 @@ export class SkyFrontierScene {
           ? NODE_ICONS[this.preferredTargetType] || '⚒️'
           : '⚒️';
       if (this.runeIconEl) this.runeIconEl.textContent = icon;
-      if (this.runeLabelEl) this.runeLabelEl.textContent = 'GATHER';
+      if (this.runeLabelEl) {
+        this.runeLabelEl.textContent = this.preferredTargetType === 'monster' ? 'HUNT' : 'GATHER';
+      }
       if (this.rarityBoostEl) {
-        this.rarityBoostEl.textContent = '✨ Tap or Hold to Gather';
+        this.rarityBoostEl.textContent =
+          this.preferredTargetType === 'monster'
+            ? `${streakTxt}⚔️ Tap to Auto-Hunt`
+            : `${streakTxt}✨ Tap or Hold to Gather`;
       }
       this._updateRuneRing(0, false);
     }
@@ -1225,8 +1285,89 @@ export class SkyFrontierScene {
     return true;
   }
 
+  findAndAttackNextMonster({ playSfx = false } = {}) {
+    if (!this.active) return false;
+    const local = this.world?.local;
+    const px = local?.x ?? 0;
+    const pz = local?.z ?? 0;
+    const monsters = Array.from(this.activeMonsters.values()).filter((m) => m && m.hp > 0);
+    if (monsters.length === 0) {
+      this.toast?.('⚔️ Area clear! More monsters will spawn soon.', 1800);
+      return false;
+    }
+    let bestMon = null;
+    let bestDist = Infinity;
+    for (const m of monsters) {
+      const d = Math.hypot(m.x - px, m.z - pz) - (m.isBoss ? 8 : 0);
+      if (d < bestDist) {
+        bestDist = d;
+        bestMon = m;
+      }
+    }
+    if (!bestMon) return false;
+    if (playSfx) {
+      this.playGatherSfx('step_target');
+    }
+    this.interact({ kind: 'sf_monster', monster: bestMon });
+    return true;
+  }
+
+  followPartner() {
+    if (!this.active || !this.world) return false;
+    const partnerEnt =
+      this.world.getPartnerEntity?.() ||
+      Array.from(this.world.remotes?.values?.() || [])[0] ||
+      null;
+    if (!partnerEnt) return false;
+    const ax = partnerEnt.smooth?.x ?? partnerEnt.x ?? 0;
+    const az = partnerEnt.smooth?.z ?? partnerEnt.z ?? 0;
+    this.playGatherSfx('step_target');
+
+    // Check if ally is right next to a monster or resource node so we immediately co-op with them!
+    let nearMonster = null;
+    let nearMonsterDist = 5.0;
+    for (const m of this.activeMonsters.values()) {
+      if (m.hp <= 0) continue;
+      const d = Math.hypot(m.x - ax, m.z - az);
+      if (d < nearMonsterDist) {
+        nearMonsterDist = d;
+        nearMonster = m;
+      }
+    }
+    if (nearMonster) {
+      this.toast?.(`💞 Teaming up with ${partnerEnt.id || 'ally'} vs monster!`, 2000);
+      this.interact({ kind: 'sf_monster', monster: nearMonster });
+      return true;
+    }
+
+    const now = Date.now() + (this.world?.serverOffset || 0);
+    let nearNode = null;
+    let nearNodeDist = 4.5;
+    for (const n of this.layout?.nodes || []) {
+      if (n.depletedUntil && n.depletedUntil > now) continue;
+      const d = Math.hypot(n.x - ax, n.z - az);
+      if (d < nearNodeDist) {
+        nearNodeDist = d;
+        nearNode = n;
+      }
+    }
+    if (nearNode) {
+      this.toast?.(`💞 Joining ${partnerEnt.id || 'ally'} for Co-Op Harvest (+25% Sync)!`, 2200);
+      this.interact({ kind: 'sf_node', node: nearNode });
+      return true;
+    }
+
+    this.toast?.(`🧭 Walking to ${partnerEnt.id || 'ally'}!`, 1800);
+    this.world.walkTo?.(ax + 0.8, az + 0.8);
+    return true;
+  }
+
   onRuneTap() {
-    if (!this.targetNode) {
+    if (this.preferredTargetType === 'monster' && !this.targetMonster) {
+      this.findAndAttackNextMonster({ playSfx: true });
+      return;
+    }
+    if (!this.targetNode && !this.targetMonster) {
       this.findAndWalkToNextNode(this.preferredTargetType, { playSfx: true });
       return;
     }
@@ -1859,7 +2000,8 @@ export class SkyFrontierScene {
       this.runeWrapperEl.style.display = 'flex';
     }
     if (this.rarityBoostEl) {
-      this.rarityBoostEl.textContent = '🎲 Rare+ Chance: 38%';
+      const streakTxt = (this._feverStreak || 0) >= 2 ? `🔥 Fever ×${this._feverStreak} • ` : '';
+      this.rarityBoostEl.textContent = `${streakTxt}🎲 Rare+ Chance: 38%`;
     }
     this._syncRuneButtonState();
   }
@@ -1928,9 +2070,16 @@ export class SkyFrontierScene {
 
   // ------------------------------------------------------------------ Combat Auto-Attack Loop
   startAutoAttack(monster) {
+    if (this._autoChainTimer) {
+      clearTimeout(this._autoChainTimer);
+      this._autoChainTimer = null;
+    }
     this.targetMonster = monster;
     this.isAttacking = true;
     this.attackTimer = 0;
+    this.inBeatWindow = false;
+    this.nextStrikePerfect = false;
+    this._syncRuneButtonState();
 
     const local = this.world?.local;
     const mainTool = local?.profile?.frontier?.toolbelt?.main || 'pickaxe';
@@ -1951,10 +2100,16 @@ export class SkyFrontierScene {
     this.isAttacking = false;
     this.targetMonster = null;
     this.attackTimer = 0;
+    this.inBeatWindow = false;
+    this.nextStrikePerfect = false;
     if (this._heldTool) {
       this.world?.local?.rig?.setHeldTool?.(null);
       this._heldTool = null;
     }
+    if (this.runeBtnEl) {
+      this.runeBtnEl.classList.remove('sf-beat-active');
+    }
+    this._syncRuneButtonState();
   }
 
   async executeAttack() {
@@ -2165,8 +2320,9 @@ export class SkyFrontierScene {
   onMonsterDead(m) {
     if (!m || !m.id) return;
     const mon = this.activeMonsters.get(m.id);
+    const wasMyTarget = Boolean(this.targetMonster && this.targetMonster.id === m.id);
     if (mon) {
-      if (this.targetMonster && this.targetMonster.id === m.id) {
+      if (wasMyTarget) {
         this.stopAutoAttack();
       }
       this._showDeathPuff(mon.x, mon.z, mon.isBoss);
@@ -2176,14 +2332,33 @@ export class SkyFrontierScene {
     }
 
     const localId = this.world?.local?.id;
-    if (m.drops && localId && m.drops[localId]) {
+    const hasMyDrops = Boolean(m.drops && localId && m.drops[localId]);
+    if (hasMyDrops) {
+      this._feverStreak = (this._feverStreak || 0) + 1;
+      const coupleSync = Array.isArray(m.coupleResonanceUsers) && m.coupleResonanceUsers.includes(localId);
+      this.playGatherSfx(coupleSync ? 'break_rare' : 'break_common');
       const parts = [];
       for (const [mat, count] of Object.entries(m.drops[localId])) {
         if (count > 0) parts.push(`+${count} ${EMOJI_MAP[mat] || '📦'}`);
       }
       if (parts.length && mon) {
-        this.showFloatingText(parts.join('  '), mon.x, mon.z);
+        const prefix = coupleSync ? '💞 COUPLE SYNC (+25%)!  ' : '';
+        if (coupleSync) {
+          this._showUltRingVfx(mon.x, mon.z, 3.0, 0xF472B6);
+        }
+        this.showFloatingText(`${prefix}${parts.join('  ')}`, mon.x, mon.z, coupleSync ? 'sf-float-rare' : '');
       }
+      this._syncRuneButtonState();
+    }
+
+    // 1-Thumb Auto-Chain Monster Hunting:
+    if ((wasMyTarget || (hasMyDrops && this.preferredTargetType === 'monster')) && this.active) {
+      if (this._autoChainTimer) clearTimeout(this._autoChainTimer);
+      this._autoChainTimer = setTimeout(() => {
+        this._autoChainTimer = null;
+        if (!this.active || this.targetMonster || this.targetNode || this.targetGate) return;
+        this.findAndAttackNextMonster();
+      }, 380);
     }
   }
 
@@ -2453,13 +2628,19 @@ export class SkyFrontierScene {
     }
 
     if (parts.length > 0 && node) {
+      this._feverStreak = (this._feverStreak || 0) + 1;
+      const coupleSync = Array.isArray(m.coupleResonanceUsers) && m.coupleResonanceUsers.includes(localId);
       const rarity = m.rarity || { id: 'common', badge: '⚪', label: 'Harvest', mult: 1 };
-      let prefix = '';
-      let extraClass = '';
+      let prefix = coupleSync ? '💞 COUPLE SYNC (+25%)!  ' : '';
+      let extraClass = coupleSync ? 'sf-float-rare' : '';
+
+      if (coupleSync) {
+        this._showUltRingVfx(node.x, node.z, 3.6, 0xF472B6);
+      }
 
       if (rarity.id === 'epic') {
         this.playGatherSfx('break_epic');
-        prefix = `${rarity.badge || '🌟'} EPIC JACKPOT (${rarity.mult}×)!  `;
+        prefix += `${rarity.badge || '🌟'} EPIC JACKPOT (${rarity.mult}×)!  `;
         extraClass = 'sf-float-epic';
         this._showUltRingVfx(node.x, node.z, 4.8, 0xFACC15);
         this.world?.fx?.emit?.('fx_star', node.x, 1.2, node.z, 18, {
@@ -2471,7 +2652,7 @@ export class SkyFrontierScene {
         this.toast?.(`🌟 EPIC JACKPOT HARVEST! ${parts.join('  ')}`, 3500);
       } else if (rarity.id === 'rare') {
         this.playGatherSfx('break_rare');
-        prefix = `${rarity.badge || '🔵'} RARE VEIN (${rarity.mult}×)!  `;
+        prefix += `${rarity.badge || '🔵'} RARE VEIN (${rarity.mult}×)!  `;
         extraClass = 'sf-float-rare';
         this._showUltRingVfx(node.x, node.z, 3.2, 0x38BDF8);
         this.world?.fx?.emit?.('fx_star', node.x, 1.1, node.z, 12, {
@@ -2482,7 +2663,7 @@ export class SkyFrontierScene {
         });
       } else if (rarity.id === 'uncommon') {
         this.playGatherSfx('break_common');
-        prefix = `${rarity.badge || '🟢'} FINE HARVEST (${rarity.mult}×)!  `;
+        prefix += `${rarity.badge || '🟢'} FINE HARVEST (${rarity.mult}×)!  `;
         extraClass = 'sf-float-uncommon';
         this.world?.fx?.emit?.('fx_star', node.x, 1.0, node.z, 8, {
           speed: 0.85,
@@ -2491,10 +2672,11 @@ export class SkyFrontierScene {
           life: 0.5,
         });
       } else {
-        this.playGatherSfx('break_common');
+        this.playGatherSfx(coupleSync ? 'break_rare' : 'break_common');
       }
 
       this.showFloatingText(`${prefix}${parts.join('  ')}`, node.x, node.z, extraClass);
+      this._syncRuneButtonState();
     }
 
     // 1-Thumb Auto-Chain: if the player was harvesting this node and still has energy,
@@ -2733,17 +2915,66 @@ export class SkyFrontierScene {
         const dist = Math.hypot(local.x - mon.x, local.z - mon.z);
         const mainTool = local?.profile?.frontier?.toolbelt?.main || 'pickaxe';
         const range = mainTool === 'staff' ? 6.0 : 1.5;
+        const tap = this.world?.input?.tapTarget;
 
-        if (dist > range + 3.0) {
+        if (tap && Math.hypot(tap.x - mon.x, tap.z - mon.z) > range + 2.5) {
           this.stopAutoAttack();
-        } else if (dist <= range + 0.3) {
+        } else if (dist > range + 0.35) {
+          const dx = mon.x - local.x;
+          const dz = mon.z - local.z;
+          const d = Math.hypot(dx, dz) || 1;
+          const targetWalkX = mon.x - (dx / d) * Math.min(range * 0.85, 1.2);
+          const targetWalkZ = mon.z - (dz / d) * Math.min(range * 0.85, 1.2);
+          if (!tap || Math.hypot(tap.x - targetWalkX, tap.z - targetWalkZ) > 0.6) {
+            this.world?.walkTo?.(targetWalkX, targetWalkZ);
+          }
+          this._updateRuneRing(0, false);
+        } else {
           const cd = this.attackCooldownMs || 650;
           this.attackTimer += dt * 1000;
+          const progress = Math.min(1, this.attackTimer / cd);
+          this.inBeatWindow = progress >= 0.58;
+          if (this.inBeatWindow && this.runeHeld && !this.nextStrikePerfect) {
+            this.triggerPerfectLock();
+          }
+          this._updateRuneRing(progress, this.inBeatWindow);
           if (this.attackTimer >= cd) {
             this.attackTimer = 0;
+            this.nextStrikePerfect = false;
             this.executeAttack();
           }
         }
+      }
+    }
+
+    // 5b. Live Partner & Co-Op Radar Pill
+    if (this.partnerPillEl && local) {
+      const partnerId = local.profile?.partner_id;
+      const partnerEnt =
+        this.world?.getPartnerEntity?.() ||
+        Array.from(this.world?.remotes?.values?.() || [])[0] ||
+        null;
+      if (partnerEnt) {
+        const isPartner =
+          Boolean(partnerId) &&
+          String(partnerEnt.id || '').toLowerCase() === String(partnerId).toLowerCase();
+        const ax = partnerEnt.smooth?.x ?? partnerEnt.x ?? 0;
+        const az = partnerEnt.smooth?.z ?? partnerEnt.z ?? 0;
+        const dist = Math.round(Math.hypot(ax - local.x, az - local.z));
+        const inSync = dist <= 10;
+        this.partnerPillEl.style.display = 'inline-flex';
+        this.partnerPillEl.classList.toggle('sf-sync-active', inSync);
+        if (inSync) {
+          this.partnerPillEl.textContent = isPartner
+            ? `💞 Partner Sync Active (+25% Loot!)`
+            : `🤝 Co-Op Sync (${partnerEnt.id}) · Full Loot!`;
+        } else {
+          this.partnerPillEl.textContent = isPartner
+            ? `🧭 Partner (${dist}m) · Tap to Join`
+            : `🤝 Ally ${partnerEnt.id} (${dist}m) · Tap to Join`;
+        }
+      } else {
+        this.partnerPillEl.style.display = 'none';
       }
     }
 

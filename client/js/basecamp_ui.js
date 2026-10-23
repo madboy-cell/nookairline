@@ -1359,7 +1359,14 @@ export class BasecampUI {
           }
         }
       } else if (!isReady) {
+        const unwateredPlots = allPlots.filter((b) => {
+          const pl = v.plots?.[b.uid];
+          return pl?.crop && Number(pl.readyAt || 0) > now && !pl.wateredBy;
+        });
         foot = `<button type="button" class="bc-btn green" ${plot.wateredBy ? 'disabled' : ''} ${this._act(() => this._water(view.owner, view.uid))}>${plot.wateredBy ? '💧 Already watered' : '💧 Water (−25% time)'}</button>`;
+        if (unwateredPlots.length > 1) {
+          foot += `<button type="button" class="bc-btn" ${this._act(() => this._waterAll(view.owner, unwateredPlots))}>💧 Water All (${unwateredPlots.length})</button>`;
+        }
       }
     }
     if (!mine && !plot.crop) foot = '';
@@ -1443,11 +1450,29 @@ export class BasecampUI {
   async _water(owner, uid) {
     const r = await this._req('bc_water', { owner, uid }, '💧');
     if (!r.ok) return;
+    this.playPopSfx('harvest');
     this.toast(`💧 You watered ${owner}'s crops — 25% faster!`, 2400);
     // reflect it locally until the next village_updated / layout arrives
     const plot = this.view?.village?.plots?.[uid];
     if (plot) { plot.wateredBy = this._p()?.id || true; if (Number.isFinite(r.readyAt)) plot.readyAt = r.readyAt; }
     this.render({ keepScroll: true });
+  }
+
+  async _waterAll(owner, plots) {
+    let watered = 0;
+    for (const b of plots || []) {
+      const r = await this._req('bc_water', { owner, uid: b.uid }, '💧');
+      if (r.ok) {
+        watered += 1;
+        const plot = this.view?.village?.plots?.[b.uid];
+        if (plot) { plot.wateredBy = this._p()?.id || true; if (Number.isFinite(r.readyAt)) plot.readyAt = r.readyAt; }
+      }
+    }
+    if (watered > 0) {
+      this.playPopSfx('harvest');
+      this.toast(`💧 Watered ${watered} of ${owner}'s plots — 25% faster!`, 2600);
+      this.render({ keepScroll: true });
+    }
   }
 
   // ---------------------------------------------------------------------------------- 2b. Craft (camp props + decor)

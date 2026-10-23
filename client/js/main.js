@@ -1,7 +1,7 @@
 // client/js/main.js — boot: gate → sign-in → world + realtime session.
 // Step 2: village HUD (Harvest All + bubbles, Edit Grid, mood, couple blessing, Wonder actions),
 // building / upgrade / Cloud Territory / Welcome-Back modals, Finger Pick-Up & Drop and Dock fishing.
-import { WorldEngine } from './world_engine.js?v=sf1';
+import { WorldEngine } from './world_engine.js?v=sf2';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
 import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
@@ -18,8 +18,8 @@ import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
-import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf2';
-import { BasecampUI } from './basecamp_ui.js?v=tos4';
+import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf3';
+import { BasecampUI } from './basecamp_ui.js?v=tos5';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
