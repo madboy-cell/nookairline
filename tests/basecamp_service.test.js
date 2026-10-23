@@ -362,3 +362,48 @@ test('active chapter build steps unlock construction during the chapter + harves
   assert.ok(h.ok);
   assert.equal(p.story.progress.c1_gather_sky_wheat, 4);
 });
+
+test('full 300/300 warehouse never deadlocks collecting produced Ingots/Planks, auto-collects on upgrade, and supports quick-sell', () => {
+  const { clock, bc, mk } = setup();
+  const p = mk('full_bag_crafter');
+  atChapter(p, 2);
+  p.village.copies.mint = 1;
+  p.village.copies.workshop = 1;
+  place(p, 'mint', 'mint_1', 12, 11);
+  place(p, 'workshop', 'ws_1', 10, 11);
+
+  // Stock exact inputs for 5 ingots (15 crystal_ore) + 10 planks (30 wood), queue 3 ingots + 3 planks first
+  Object.assign(items(p), { crystal_ore: 9, wood: 9, plank: 7, ingot: 2 });
+  for (let i = 0; i < 3; i++) {
+    assert.ok(bc.enqueue(p, 'mint_1', 'ingot').ok);
+    assert.ok(bc.enqueue(p, 'ws_1', 'plank').ok);
+  }
+  // Now simulate player filling Warehouse to 300/300 while Mint & Workshop are producing!
+  items(p).stone = 291; // 7 plank + 2 ingot + 291 stone = 300/300 FULL!
+  clock.t += 600_000;
+
+  // 1. Direct collect on Mint when Warehouse is 300/300 MUST succeed (soft-overflow for crafted items!)
+  const cMint = bc.collect(p, 'mint_1');
+  assert.equal(cMint.ok, true, 'Collecting produced Ingots must succeed even when Warehouse is 300/300');
+  assert.deepEqual(cMint.collected, { ingot: 3 });
+  assert.equal(items(p).ingot, 5);
+
+  // 2. storeUpgrade('warehouse') when Workshop STILL has 3 ready Planks uncollected auto-collects & upgrades!
+  const upg = bc.storeUpgrade(p, 'warehouse');
+  assert.equal(upg.ok, true, 'Warehouse upgrade should auto-collect ready Planks and succeed');
+  assert.equal(upg.lv, 2);
+  assert.deepEqual(upg.autoCollected, { plank: 3 });
+  assert.equal(items(p).plank ?? 0, 0);
+  assert.equal(items(p).ingot ?? 0, 0);
+
+  // 3. Quick-sell excess raw items frees storage and grants Gold; rare items are protected
+  items(p).boss_core_moss = 1;
+  assert.equal(bc.storeUpgrade(p, 'sell:boss_core_moss:1').error, 'cannot_sell_rare');
+  const goldBefore = p.gold;
+  const sellRes = bc.storeUpgrade(p, 'sell:stone:10');
+  assert.equal(sellRes.ok, true);
+  assert.equal(sellRes.qty, 10);
+  assert.equal(sellRes.goldGained, 20);
+  assert.equal(p.gold, goldBefore + 20);
+  assert.equal(items(p).stone, 281);
+});

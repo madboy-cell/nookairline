@@ -279,7 +279,7 @@ export function canAdd(stores, items) {
   };
 }
 
-export function addItems(stores, items) {
+export function addItems(stores, items, { allowOverflow = false } = {}) {
   const added = {};
   const overflow = {};
   if (!items || Object.keys(items).length === 0) {
@@ -306,7 +306,11 @@ export function addItems(stores, items) {
     const targetStore = stores[kind];
 
     let canFit = 0;
-    if (kind === 'pantry') {
+    if (allowOverflow) {
+      const stackMax = Number(MATERIALS[id]?.stack) || 999;
+      const curStack = Number(targetStore.items[id]) || 0;
+      canFit = Math.max(0, Math.min(count, stackMax - curStack));
+    } else if (kind === 'pantry') {
       canFit = Math.min(count, pantryFree);
       pantryFree -= canFit;
     } else {
@@ -448,10 +452,10 @@ export function settle(state, now) {
   return settledCount;
 }
 
-export function collect(state, stores, now) {
+export function collect(state, stores, now, opts = {}) {
   settle(state, now);
   const toAdd = { ...(state.output || {}) };
-  const { added, overflow } = addItems(stores, toAdd);
+  const { added, overflow } = addItems(stores, toAdd, opts);
   state.output = { ...overflow };
 
   const tools = state.tools ? [...state.tools] : [];
@@ -514,7 +518,7 @@ export function water(plot, byUserId, now, ownerId = plot?.ownerId) {
   return { ok: true };
 }
 
-export function harvest(plot, stores, now) {
+export function harvest(plot, stores, now, opts = {}) {
   if (!plot || !plot.crop) return { ok: false, error: 'empty' };
   if (plot.readyAt > now) return { ok: false, error: 'not_ready' };
 
@@ -523,7 +527,7 @@ export function harvest(plot, stores, now) {
   const yieldItems = cropDef ? { ...cropDef.yield } : {};
 
   if (stores) {
-    addItems(stores, yieldItems);
+    addItems(stores, yieldItems, opts);
   }
 
   plot.crop = null;

@@ -5,9 +5,9 @@
 // Self-contained: injects its own stylesheet and DOM. Every server action goes through the
 // `request(type, payload)` callback (resolves with the action_result); the authoritative profile
 // arrives through `onProfile(profile)` (called by main.js on auth_ok / profile_update).
-import { MATERIALS, FOOD } from '/shared/materials_catalog.js';
+import { MATERIALS, FOOD, materialTier } from '/shared/materials_catalog.js';
 import {
-  RECIPES, PRODUCTION_BUILDINGS, CROPS, storeCap, storeOf, storeUsed, storeUpgradeCost, queueSlots,
+  RECIPES, PRODUCTION_BUILDINGS, CROPS, storeCap, warehouseCapOf, storeOf, storeUsed, storeUpgradeCost, queueSlots,
 } from '/shared/production_rules.js';
 import { CHAPTERS, currentSteps, isChapterComplete, unlockedBuildings, unlockedForVillage } from '/shared/story_rules.js';
 import { CORE, MAX_CORE_LV, DECOR, WONDERS } from '/shared/catalog_landmarks.js';
@@ -125,6 +125,262 @@ const BC_ERR = Object.freeze({
   retired: 'this Wonder was retired',
   locked_monument: 'locked — progress the Story',
   monuments_are_built: 'Monuments are built in the Base Camp now',
+  cannot_sell_rare: 'rare boss cores & relics cannot be sold',
+  bad_item: 'unknown material',
+});
+
+const SELL_UNIT_GOLD = Object.freeze({ raw: 2, refined: 8, goods: 12 });
+
+const BUILDING_UNLOCK_CHAPTER = Object.freeze({
+  farm_plot: 1,
+  tent: 1,
+  windmill_bakery: 2,
+  patisserie: 2,
+  owl_post_office: 2,
+  mint: 3,
+  workshop: 3,
+  flower_greenhouse: 4,
+  cottage: 4,
+  nest: 5,
+});
+
+const ITEM_GUIDE = Object.freeze({
+  // Raw materials
+  wood: {
+    desc: 'Sturdy timber gathered from frontier trees. Essential for crafting Planks and constructing village buildings.',
+    sources: [
+      { icon: '🌲', title: 'Whispering Meadow — Whispering Grove', detail: 'Chop Meadow Trees with Woodcutter Axe T1+ (6× Wood per node).', region: 'meadow' },
+    ],
+    uses: 'Craft Planks at the Workshop, build Farm Plots, Tent, Windmill, Mint & Workshop.',
+  },
+  stone: {
+    desc: 'Solid granite quarried from frontier boulders. Used for foundations and smelting Crystal Glass.',
+    sources: [
+      { icon: '🪨', title: 'Whispering Meadow — Outpost & Golem Arena', detail: 'Mine Stone Boulders with Iron Pickaxe T1+ (6× Stone per node).', region: 'meadow' },
+    ],
+    uses: 'Construct Mint, Workshop, Windmill & Cottages, or smelt Crystal Glass at the Mint.',
+  },
+  crystal_ore: {
+    desc: 'Raw luminescent ore mined from crystal veins. Smelted into Ingots and Crystal Glass at the Mint.',
+    sources: [
+      { icon: '💎', title: 'Whispering Meadow — Crystal Grotto (East)', detail: 'Mine starter Crystal Veins with Pickaxe T1+ (4× Crystal Ore) or bonus drops from Stone Boulders.', region: 'meadow' },
+      { icon: '🔮', title: 'Crystal Hollow — Cavern Veins', detail: 'Mine rich Crystal, Violet Quartz & Mithril veins (4×–8× Crystal Ore; unlocks after Story Ch. 2).', region: 'hollow' },
+    ],
+    uses: 'Smelt Ingots (3× Crystal Ore → 1× Ingot) and Crystal Glass at the Mint.',
+  },
+  sky_wheat: {
+    desc: 'Sun-ripened golden grain. Milled into Flour at the Windmill Bakery and requested on the Order Board.',
+    sources: [
+      { icon: '🌾', title: 'Village Farm Plot', detail: 'Plant for FREE on any Farm Plot (2m → 4× Sky Wheat).', farm: true },
+      { icon: '🏝️', title: 'Whispering Meadow — Windmill & Wheat', detail: 'Harvest wild Sky Wheat patches East of the Outpost (5× Sky Wheat).', region: 'meadow' },
+    ],
+    uses: 'Mill Flour at the Windmill Bakery and fill Villager Orders.',
+  },
+  herb_seed: {
+    desc: 'Wild medicinal seeds gathered from Dewdrop Herb bushes.',
+    sources: [
+      { icon: '🌱', title: 'Whispering Meadow & Crystal Hollow', detail: 'Gather Dewdrop Herb bushes in the Grove or Boss Sanctum (3× Herb Seed).', region: 'meadow' },
+    ],
+    uses: 'Plant on Farm Plots (1× Seed → 3× Herb) or refine at the Flower Greenhouse.',
+  },
+  honey: {
+    desc: 'Sweet wildflower nectar prized by bakers and tea brewers.',
+    sources: [
+      { icon: '🌲', title: 'Whispering Meadow — Trees & Wheat', detail: '18% bonus drop & Uncommon+ jackpot from Meadow Trees and Sky Wheat.', region: 'meadow' },
+      { icon: '🐝', title: 'Honey Beehive (Camp Prop)', detail: 'Craft in Build → Craft and place on your island for passive Honey.' },
+    ],
+    uses: 'Bake Honey Buns & Golden Croissants at the Patisserie, or brew Matcha Tea.',
+  },
+  fish: {
+    desc: 'Fresh sky-pond catch used in hearty savory pies.',
+    sources: [
+      { icon: '🎣', title: 'Village Dock & Heart Isle Fishing', detail: 'Cast your rod at any fishing dock (Minnow +1, Crab +2, Koi +3 Fish).' },
+      { icon: '🐟', title: 'Koi Barrel Pond (Camp Prop)', detail: 'Craft in Build → Craft and place on your island for passive Fish.' },
+    ],
+    uses: 'Bake Fish Pie (+80 ⚡ Energy & +20% Yield buff) at the Patisserie.',
+  },
+  feather: {
+    desc: 'Soft wind-plume dropped by forest canopies and wisps.',
+    sources: [
+      { icon: '🌲', title: 'Whispering Meadow — Trees & Wisps', detail: 'Bonus drop from Meadow Trees & Pollen Wisps.', region: 'meadow' },
+      { icon: '🏃', title: 'Sky Parkour', detail: 'Rewarded from Sky Parkour finish crates.' },
+    ],
+    uses: 'Spin Thread at the Workshop and craft cozy Camp Decor.',
+  },
+  cloud_silk: {
+    desc: 'Silvery gossamer strand woven into fine Thread.',
+    sources: [
+      { icon: '🌿', title: 'Sky Frontier — Herb Bushes & Cavern Mobs', detail: 'Bonus drop from Dewdrop Herb bushes & Crystal Hollow monsters.', region: 'meadow' },
+      { icon: '🏃', title: 'Sky Parkour', detail: 'Rewarded from Sky Parkour finish crates.' },
+    ],
+    uses: 'Spin Thread at the Workshop and craft Decor.',
+  },
+  monster_gel: {
+    desc: 'Bouncy alchemical jelly dropped by frontier slimes.',
+    sources: [
+      { icon: '⚔️', title: 'Whispering Meadow — Monsters', detail: 'Defeat Moss Slimes & roaming frontier creatures.', region: 'meadow' },
+    ],
+    uses: 'Alchemical crafting, camp props, or sell excess in Storage for Gold.',
+  },
+  monster_fang: {
+    desc: 'Sharp ivory trophy dropped by fierce frontier beasts.',
+    sources: [
+      { icon: '⚔️', title: 'Sky Frontier — Boars & Cavern Beasts', detail: 'Defeat Thornback Boars, Lantern Bats & Crystal Beetles.', region: 'meadow' },
+    ],
+    uses: 'Crafting trophies, camp props, or sell excess in Storage for Gold.',
+  },
+  golden_wheat: {
+    desc: 'Rare sun-blessed grain that bakes into royal pastries.',
+    sources: [
+      { icon: '🌾', title: 'Whispering Meadow — Sky Wheat Jackpot', detail: '18% bonus & Rare+ jackpot when harvesting wild Sky Wheat.', region: 'meadow' },
+      { icon: '🌱', title: 'Village Farm Plot', detail: 'Plant 1× Golden Wheat to harvest 3× Golden Wheat (1h).', farm: true },
+    ],
+    uses: 'Bake Golden Croissants (+150 ⚡ Energy & +35% Yield) at Patisserie Lv.3+.',
+  },
+  berries_crop: {
+    desc: 'Juicy ruby Star-Berries used in tarts, boba tea, potions, and pet treats.',
+    sources: [
+      { icon: '🍓', title: 'Village Farm Plot', detail: 'Plant for FREE on any Farm Plot (10m → 5× Berries Crop).', farm: true },
+      { icon: '🌿', title: 'Whispering Meadow — Herb Bushes', detail: '18% bonus drop when gathering Dewdrop Herbs.', region: 'meadow' },
+    ],
+    uses: 'Craft Berry Tart, Boba Tea, Small Potions, Pet Treats & fill Villager Orders.',
+  },
+
+  // Refined materials
+  plank: {
+    desc: 'Refined carpentry board sawn from raw Wood. Essential for Warehouse & Pantry upgrades, Starlight Keep, and village buildings.',
+    sources: [
+      { icon: '🪚', title: 'Workshop (Village Base Camp)', detail: 'Crafted from 3× Wood → 1× Plank (1m). Unlocks in Story Ch. 3: Echoes Below.' },
+      { icon: '🎲', title: 'Monopoly Mini-Game', detail: 'Merchant Crate reward (1st: +6, 2nd: +4, finish: +2 Planks).' },
+    ],
+    uses: 'Upgrade Warehouse & Pantry, upgrade buildings, build Owl Post Office, Cottages, Pet Nest & Tier-2 Tools.',
+  },
+  ingot: {
+    desc: 'Refined metal bar smelted from Crystal Ore. Required to upgrade your Warehouse & Pantry, upgrade Lv.3+ buildings, and forge Tier-2 tools!',
+    sources: [
+      { icon: '🔥', title: 'Mint (Village Base Camp)', detail: 'Smelted from 3× Crystal Ore → 1× Ingot (3m). Construct the Mint in Story Ch. 3: Echoes Below!' },
+      { icon: '💎', title: 'Crystal Hollow & Crystal Grotto', detail: 'Bonus jackpot drop from Mithril Deep Veins (+2–5), Violet Quartz (+1), and Meadow Crystal Grotto (Rare+ +1–2).', region: 'hollow' },
+      { icon: '🎣', title: 'Fishing & Monopoly Mini-Games', detail: 'Fishing Sunken Chests (+2 Ingot) & Monopoly Merchant Crates (1st: +3, 2nd: +2).' },
+    ],
+    uses: 'Upgrade Warehouse & Pantry capacity, forge Pickaxe T2 & Axe T2 at Workshop Lv.2, Repair Kits & Monuments.',
+  },
+  crystal_glass: {
+    desc: 'Clear enchanted glass fused from Stone and Crystal Ore.',
+    sources: [
+      { icon: '🔥', title: 'Mint (Village Base Camp)', detail: 'Smelted from 4× Stone + 1× Crystal Ore → 1× Crystal Glass (5m).' },
+      { icon: '💎', title: 'Sky Frontier — Crystal & Quartz Veins', detail: '12%–15% bonus drop & Uncommon+ jackpots when mining Crystal or Quartz.', region: 'meadow' },
+    ],
+    uses: 'Construct Flower Greenhouse, forge Starlight Staff T2, and build Monuments.',
+  },
+  flour: {
+    desc: 'Finely ground Sky Wheat flour ready for the Patisserie.',
+    sources: [
+      { icon: '🌾', title: 'Windmill Bakery (Village Base Camp)', detail: 'Milled from 3× Sky Wheat → 1× Flour (1m). Unlocks in Story Ch. 2.' },
+      { icon: '🎲', title: 'Monopoly Mini-Game', detail: 'Merchant Crate reward (+2 to +4 Flour).' },
+    ],
+    uses: 'Bake Bread, Honey Buns, Fish Pies & Berry Tarts at the Patisserie.',
+  },
+  herb: {
+    desc: 'Fragrant cured Dewdrop Herb used in teas, potions, staffs, and repair kits.',
+    sources: [
+      { icon: '🌾', title: 'Village Farm Plot', detail: 'Plant 1× Herb Seed → harvest 3× Herb (20m).', farm: true },
+      { icon: '🌺', title: 'Flower Greenhouse (Village Base Camp)', detail: 'Refined from 2× Herb Seed → 1× Herb (5m). Unlocks in Story Ch. 4.' },
+    ],
+    uses: 'Craft Boba Tea, Matcha Tea, Small Potions, Repair Kits, Pet Treats & Staffs.',
+  },
+  thread: {
+    desc: 'Strong sky-spun yarn woven from Feathers and Cloud Silk.',
+    sources: [
+      { icon: '🧵', title: 'Workshop (Village Base Camp)', detail: 'Spun from 2× Feather + 1× Cloud Silk → 1× Thread (4m).' },
+    ],
+    uses: 'Craft cozy Camp Props, Cosmetic Decor & fill Villager Orders.',
+  },
+
+  // Goods (Pantry)
+  bread: {
+    desc: 'Warm crusty loaf (+30 ⚡ Energy). Stored in the Pantry and eaten by Village Residents.',
+    sources: [
+      { icon: '🥐', title: 'Patisserie (Village Base Camp)', detail: 'Baked from 2× Flour → 1× Bread (2m).' },
+      { icon: '⛺', title: 'Tent & Campfire', detail: 'Claim 1× Free Bread every day from your placed Tent.' },
+    ],
+    uses: 'Equip in your Sky Frontier Food Pouch (+30 ⚡) or keep in Pantry to feed Residents.',
+  },
+  honey_bun: {
+    desc: 'Glazed sweet bun (+50 ⚡ Energy + Regen buff for 30m). Stored in the Pantry.',
+    sources: [{ icon: '🥐', title: 'Patisserie', detail: 'Baked from 1× Flour + 1× Honey → 1× Honey Bun (4m).' }],
+    uses: 'Restores +50 ⚡ Energy, buffs Energy regen, and feeds Village Residents.',
+  },
+  fish_pie: {
+    desc: 'Hearty golden crust pie (+80 ⚡ Energy + 20% Gather Yield for 30m). Stored in the Pantry.',
+    sources: [{ icon: '🥧', title: 'Patisserie', detail: 'Baked from 2× Flour + 1× Fish → 1× Fish Pie (8m).' }],
+    uses: 'Big +80 ⚡ Frontier meal with +20% gather yield boost.',
+  },
+  berry_tart: {
+    desc: 'Sparkling Star-Berry tart (+40 ⚡ Energy + Party Boost for 30m). Stored in the Pantry.',
+    sources: [{ icon: '🧁', title: 'Patisserie', detail: 'Baked from 1× Flour + 3× Berries Crop → 1× Berry Tart (6m).' }],
+    uses: 'Co-op Frontier party meal, Villager Orders & Resident food.',
+  },
+  boba_tea: {
+    desc: 'Refreshing berry-herb milk tea (+20 ⚡ Energy + Swift Steps speed buff for 30m).',
+    sources: [{ icon: '🧋', title: 'Patisserie', detail: 'Brewed from 2× Berries Crop + 1× Herb → 1× Boba Tea (3m).' }],
+    uses: 'Boosts movement speed in Sky Frontier & fills Villager Orders.',
+  },
+  golden_croissant: {
+    desc: 'Masterwork flaky pastry (+150 ⚡ Energy + 35% Gather Yield for 30m).',
+    sources: [{ icon: '🥐', title: 'Patisserie Lv. 3+', detail: 'Baked from 2× Golden Wheat + 1× Honey → 1× Golden Croissant (20m).' }],
+    uses: 'Top-tier Frontier feast (+150 ⚡) & high-reward Villager Orders.',
+  },
+  potion_small: {
+    desc: 'Soothing herbal tonic brewed in the Flower Greenhouse. Stored in the Pantry.',
+    sources: [{ icon: '🌺', title: 'Flower Greenhouse', detail: 'Brewed from 2× Herb + 1× Berries Crop → 1× Small Potion (6m).' }],
+    uses: 'Story Chapter 4 quest, Villager Orders & frontier recovery.',
+  },
+  repair_kit: {
+    desc: 'Sturdy toolkit of Planks, Ingots, and Herbs used to restore ancient frontier statues and shrines.',
+    sources: [{ icon: '🌺', title: 'Flower Greenhouse', detail: 'Crafted from 1× Herb + 2× Plank + 1× Ingot → 1× Repair Kit (10m).' }],
+    uses: 'Repair Sky Frontier Goddess Outposts & complete Story Chapter 5.',
+  },
+  pet_treat: {
+    desc: 'Crunchy berry-herb biscuit adored by companion pets.',
+    sources: [{ icon: '🌺', title: 'Flower Greenhouse', detail: 'Baked from 1× Herb + 2× Berries Crop → 1× Pet Treat (4m).' }],
+    uses: 'Pamper pets & fill Villager Orders.',
+  },
+  matcha_tea: {
+    desc: 'Serene whisked green tea (+20 ⚡ Energy + Tea Spirit buff).',
+    sources: [{ icon: '🍵', title: 'Matcha Tea House Monument', detail: 'Brewed from 3× Herb + 1× Honey → 1× Matcha Tea (5m).' }],
+    uses: 'Sky Frontier Food Pouch buff & high-quality Resident meal.',
+  },
+
+  // Rare materials & cores
+  ancient_gear: {
+    desc: 'Pre-calamity clockwork relic. Required for Warehouse & Pantry Lv. 3+ upgrades and grand Monuments.',
+    sources: [
+      { icon: '💎', title: 'Sky Frontier — Boulders, Crystal, Quartz & Mithril', detail: 'Rare drop (2%–4%) & Epic Jackpot bonus when hitting PERFECT! strikes on stone/crystal nodes.', region: 'hollow' },
+      { icon: '🎣', title: 'Fishing Sunken Chest & Fountain of Wishes', detail: '10% bonus inside Sunken Chests and daily Fountain of Wishes.' },
+    ],
+    uses: 'Upgrade Warehouse & Pantry (Lv. 2 → 3+) and construct Monuments.',
+  },
+  starlight_essence: {
+    desc: 'Condensed celestial shimmer crystallized in deep caverns.',
+    sources: [
+      { icon: '✨', title: 'Crystal Hollow & Epic Harvest Jackpots', detail: 'Drops from Mithril/Quartz jackpots, Frontier Bosses, and the Fountain of Wishes.', region: 'hollow' },
+    ],
+    uses: 'High-stage Monuments and enchanted crafting.',
+  },
+  boss_core_moss: {
+    desc: 'Heartstone of the ancient forest guardian.',
+    sources: [
+      { icon: '👑', title: 'Whispering Meadow — Moss Golem Arena', detail: 'Summon & defeat the Elder Moss Golem boss in North-West Meadow (-20, -18).', region: 'meadow' },
+    ],
+    uses: 'Constructing Monuments & completing Story Chapter 5.',
+  },
+  boss_core_weaver: {
+    desc: 'Prismatic core of the deep cavern guardian.',
+    sources: [
+      { icon: '👑', title: 'Crystal Hollow — Weaver Boss Sanctum', detail: 'Summon & defeat the Hollow Crystal Weaver boss in North Crystal Hollow (0, -26).', region: 'hollow' },
+    ],
+    uses: 'High-tier Monuments & endgame upgrades.',
+  },
 });
 
 const TOOL_ICON = { pickaxe: '⛏️', axe: '🪓', staff: '🪄' };
@@ -270,6 +526,48 @@ const STYLE = `
   background: linear-gradient(180deg, #4b7c2c, #2f5418); border-color: #b8e49a; color: #fff;
   animation: bcPulse 1.4s ease-in-out infinite;
 }
+.bc-chip-item {
+  cursor: pointer;
+  appearance: none;
+  font-family: inherit;
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+.bc-chip-item:hover { filter: brightness(0.97); }
+.bc-chip-item:active { transform: scale(0.95); }
+.bc-chip-q { font-style: normal; font-size: 10px; opacity: 0.72; margin-left: 1px; }
+.bc-cell[data-bc-item], .bc-big-ico[data-bc-item] {
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.bc-cell[data-bc-item]:hover { border-color: #8a6f4c; box-shadow: 0 2px 6px rgba(59,42,32,0.16); }
+.bc-cell[data-bc-item]:active, .bc-big-ico[data-bc-item]:active { transform: scale(0.94); }
+.bc-item-backdrop {
+  position: absolute; inset: 0; z-index: 55;
+  background: rgba(20, 12, 6, 0.62); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 12px;
+}
+.bc-item-backdrop[hidden] { display: none !important; }
+.bc-item-card {
+  width: 100%; max-width: 356px; max-height: 82vh; display: flex; flex-direction: column;
+  background: #E9DCC0; color: #3B2A20; border: 3px solid #3B2A20; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 0 0 2px #C9A45C inset, 0 14px 36px rgba(0,0,0,0.58);
+  font: 600 12.5px system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bc-item-body { overflow-y: auto; padding: 10px 12px 12px; -webkit-overflow-scrolling: touch; }
+.bc-item-hero {
+  display: flex; align-items: center; gap: 10px; background: #F4EAD6;
+  border: 2px solid #b99f74; border-radius: 13px; padding: 9px 10px; margin-bottom: 8px;
+}
+.bc-item-avatar {
+  width: 50px; height: 50px; border-radius: 14px; background: #fffaf0; border: 2px solid #C9A45C;
+  display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(201,164,92,0.2);
+}
+.bc-item-src {
+  display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px;
+  background: #F4EAD6; border: 1.5px solid #cdb88f; border-radius: 11px; margin-bottom: 6px;
+}
+.bc-item-src-ico { font-size: 20px; line-height: 1.15; flex-shrink: 0; margin-top: 1px; }
 `;
 
 export class BasecampUI {
@@ -295,6 +593,9 @@ export class BasecampUI {
     this._edgeAt = Infinity;     // next timestamp at which the open view must re-render
     this._lastRecipeByUid = new Map();
     this._lastCropByUid = new Map();
+    this.itemDetailId = null;
+    this._itemHistory = [];
+    this._itemActs = new Map();
     this._injectStyle();
     this._buildOverlay();
     this._timer = setInterval(() => this._tick(), 1000);
@@ -315,15 +616,55 @@ export class BasecampUI {
     ov.hidden = true;
     ov.innerHTML = `<section class="bc-sheet" role="dialog" aria-modal="true">
       <header class="bc-head"><h3 class="bc-h">—</h3><button type="button" class="bc-x" aria-label="Close">✕</button></header>
-      <div class="bc-body"></div><footer class="bc-foot"></footer></section>`;
+      <div class="bc-body"></div><footer class="bc-foot"></footer></section>
+      <div class="bc-item-backdrop" hidden></div>`;
     this.overlay = ov;
     this.sheetEl = ov.querySelector('.bc-sheet');
     this.titleEl = ov.querySelector('.bc-h');
     this.bodyEl = ov.querySelector('.bc-body');
     this.footEl = ov.querySelector('.bc-foot');
+    this.itemBackdropEl = ov.querySelector('.bc-item-backdrop');
     ov.querySelector('.bc-x').onclick = () => this.close();
     ov.addEventListener('click', (e) => {
       if (e.target === ov) { this.close(); return; }
+      if (e.target === this.itemBackdropEl || e.target.closest?.('[data-bc-item-close]')) {
+        e.preventDefault();
+        this.closeItemDetail();
+        return;
+      }
+      const backBtn = e.target.closest?.('[data-bc-item-back]');
+      if (backBtn && ov.contains(backBtn)) {
+        e.preventDefault();
+        const prev = this._itemHistory.pop();
+        if (prev) {
+          this.itemDetailId = prev;
+          this._renderItemDetail();
+        } else {
+          this.closeItemDetail();
+        }
+        return;
+      }
+      const iActBtn = e.target.closest?.('[data-bc-item-act]');
+      if (iActBtn && ov.contains(iActBtn)) {
+        e.preventDefault();
+        const fn = this._itemActs.get(iActBtn.dataset.bcItemAct);
+        if (fn && !iActBtn.disabled && !this._busy) {
+          this._busy = true;
+          iActBtn.disabled = true;
+          Promise.resolve(fn()).catch((err) => console.warn('[basecamp item]', err)).finally(() => {
+            this._busy = false;
+            if (iActBtn.isConnected) iActBtn.disabled = false;
+          });
+        }
+        return;
+      }
+      const itemEl = e.target.closest?.('[data-bc-item]');
+      if (itemEl && ov.contains(itemEl)) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openItemDetail(itemEl.dataset.bcItem);
+        return;
+      }
       const btn = e.target.closest?.('[data-bc]');
       if (btn && ov.contains(btn)) this._run(btn);
     });
@@ -389,8 +730,12 @@ export class BasecampUI {
     return Object.entries(cost || {}).map(([k, n]) => {
       const have = this._have(k, p);
       const ico = k === 'gold' ? '🪙' : k === 'diamonds' ? '💎' : matOf(k).emoji;
-      const label = k === 'gold' || k === 'diamonds' ? `${fmtN(n)}` : `${fmtN(have)}/${fmtN(n)}`;
-      return `<span class="bc-chip ${have >= n ? 'ok' : 'bad'}" title="${esc(k === 'gold' ? 'Gold' : matOf(k).name)}">${ico} ${label}</span>`;
+      if (k === 'gold' || k === 'diamonds' || !MATERIALS[k]) {
+        const label = k === 'gold' || k === 'diamonds' ? `${fmtN(n)}` : `${fmtN(have)}/${fmtN(n)}`;
+        return `<span class="bc-chip ${have >= n ? 'ok' : 'bad'}" title="${esc(k === 'gold' ? 'Gold' : matOf(k).name)}">${ico} ${label}</span>`;
+      }
+      const mName = matOf(k).name;
+      return `<button type="button" class="bc-chip bc-chip-item ${have >= n ? 'ok' : 'bad'}" data-bc-item="${esc(k)}" title="Tap for ${esc(mName)} details &amp; where to find/craft">${ico} ${esc(mName)} ${fmtN(have)}/${fmtN(n)} <i class="bc-chip-q">ⓘ</i></button>`;
     }).join('');
   }
   _story(p = this._p()) {
@@ -412,11 +757,13 @@ export class BasecampUI {
     this._refreshHud();
     this._renderFrontier();
     if (this.view && !this.overlay.hidden) this.render({ keepScroll: true });
+    if (this.itemDetailId && this.itemBackdropEl && !this.itemBackdropEl.hidden) this._renderItemDetail();
   }
 
   isOpen() { return !!this.view && !this.overlay.hidden; }
 
   open(kind, args = {}) {
+    this.closeItemDetail();
     this.view = { kind, ...args };
     const sfHud = document.getElementById('sf-hud');
     const inFrontier = document.getElementById('hud')?.dataset.scene === 'SKY_FRONTIER' && sfHud;
@@ -428,6 +775,7 @@ export class BasecampUI {
   }
 
   close() {
+    this.closeItemDetail();
     this.view = null;
     this.overlay.hidden = true;
     this._acts.clear();
@@ -1247,7 +1595,7 @@ export class BasecampUI {
     if (anyReady) {
       body += `<div class="bc-card bc-done">
         <div class="bc-title" style="color:#2f5a1a">✨ Production Complete!</div>
-        <div class="bc-chips" style="margin-top:4px">${Object.entries(ready).filter(([, n]) => n > 0).map(([k, n]) => `<span class="bc-chip ok">${matOf(k).emoji} ${esc(matOf(k).name)} ×${n}</span>`).join('')}${readyTools.map((t) => `<span class="bc-chip ok">${TOOL_ICON[t.kind] || '🛠️'} ${esc(t.kind)} T${t.tier}</span>`).join('')}</div>
+        <div class="bc-chips" style="margin-top:4px">${Object.entries(ready).filter(([, n]) => n > 0).map(([k, n]) => `<button type="button" class="bc-chip bc-chip-item ok" data-bc-item="${esc(k)}">${matOf(k).emoji} ${esc(matOf(k).name)} ×${n} <i class="bc-chip-q">ⓘ</i></button>`).join('')}${readyTools.map((t) => `<span class="bc-chip ok">${TOOL_ICON[t.kind] || '🛠️'} ${esc(t.kind)} T${t.tier}</span>`).join('')}</div>
         ${mine ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
           <button type="button" class="bc-btn green" style="flex:1" ${this._act(() => this._collect(view.uid))}>📦 Collect Now</button>
           ${lastRc && lv >= (lastRc.minLv || 1) ? `<button type="button" class="bc-btn" style="flex:1" ${canRestartLast ? '' : 'disabled'} title="${canRestartLast ? `Collect and immediately queue ${recipeName(lastRc)}` : 'Need more ingredients to restart'}" ${this._act(() => this._collectAndRestart(view.uid, lastRecipeId))}>🔄 Collect &amp; Restart ${recipeIcon(lastRc)}</button>` : ''}
@@ -1320,7 +1668,8 @@ export class BasecampUI {
         }
       }
 
-      body += `<div class="bc-card${lockedLv ? ' bc-dim' : ''}"><div class="bc-row"><span class="bc-big-ico">${recipeIcon(rc)}</span><div class="bc-grow">
+      const outMatId = !rc.tool ? Object.keys(rc.outputs || {})[0] : null;
+      body += `<div class="bc-card${lockedLv ? ' bc-dim' : ''}"><div class="bc-row"><span class="bc-big-ico"${outMatId && MATERIALS[outMatId] ? ` data-bc-item="${esc(outMatId)}" title="Tap for ${esc(matOf(outMatId).name)} details"` : ''}>${recipeIcon(rc)}</span><div class="bc-grow">
           <div class="bc-title">${esc(recipeName(rc))}</div>
           <div class="bc-sub">→ ${outTxt} · ⏱ ${fmtDur(rc.ms)}</div>
           <div class="bc-chips">${mine ? this._costChips(rc.inputs, p) : `<span class="bc-chip">${itemsLine(rc.inputs)}</span>`}</div>
@@ -1812,7 +2161,7 @@ export class BasecampUI {
       body += `<div class="bc-card${big.complete ? ' bc-done' : ''}">
         <div class="bc-chips">${Object.entries(items).map(([k, n]) => {
           const f = Math.min(n, fulfilled[k] || 0);
-          return `<span class="bc-chip ${f >= n ? 'ok' : ''}">${matOf(k).emoji} ${f}/${n}${f < n ? ` · have ${this._have(k, p)}` : ' ✓'}</span>`;
+          return `<button type="button" class="bc-chip bc-chip-item ${f >= n ? 'ok' : ''}" data-bc-item="${esc(k)}">${matOf(k).emoji} ${esc(matOf(k).name)} ${f}/${n}${f < n ? ` · have ${this._have(k, p)}` : ' ✓'} <i class="bc-chip-q">ⓘ</i></button>`;
         }).join('')}</div>
         <div class="bc-bar${big.complete ? ' ok' : ''}"><i style="width:${total ? Math.round((doneU / total) * 100) : 0}%"></i><b>${doneU}/${total}</b></div>
         <div class="bc-chips"><span class="bc-chip brass">🪙 ${fmtN(big.gold)}</span><span class="bc-chip brass">✨ ${fmtN(big.xp)} XP</span><span class="bc-chip">👥 ${Object.keys(big.contributors || {}).length} helpers</span></div>
@@ -1866,26 +2215,60 @@ export class BasecampUI {
     this.render({ keepScroll: true });
   }
 
-  // ---------------------------------------------------------------------------------- 6. Storage
+  // ---------------------------------------------------------------------------------- 6. Storage & Item Encyclopedia
+  _readyOutputsMap(p = this._p()) {
+    const v = p?.village || {};
+    const now = this.now();
+    const placedSet = new Set((v.buildings || []).map((b) => b.uid));
+    const out = {};
+    for (const [uid, st] of Object.entries(v.production || {})) {
+      if (!placedSet.has(uid) || !st) continue;
+      for (const [k, n] of Object.entries(st.output || {})) if (n > 0) out[k] = (out[k] || 0) + n;
+      for (const job of st.queue || []) {
+        if (!(Number(job?.doneAt || 0) <= now)) continue;
+        const rc = recipeOf(job.recipe);
+        for (const [k, n] of Object.entries(rc?.outputs || {})) if (n > 0) out[k] = (out[k] || 0) + n;
+      }
+    }
+    return out;
+  }
+
   _viewStorage(p) {
     const stores = this._stores(p);
     const fr = p?.frontier || {};
-    let body = '';
+    const readyMap = this._readyOutputsMap(p);
+    const readyEntries = Object.entries(readyMap).filter(([, n]) => n > 0);
+    let body = `<div class="bc-note" style="margin-top:0">👆 Tap any item or cost pill (like <b>🪙 Ingot</b> or <b>🪵 Plank</b>) to see where to craft/find it or sell excess for 🪙 Gold!</div>`;
+    if (readyEntries.length) {
+      body += `<div class="bc-card bc-done">
+        <div class="bc-row">
+          <div class="bc-grow">
+            <div class="bc-title" style="color:#2f5a1a">✨ Finished in your buildings!</div>
+            <div class="bc-chips">${readyEntries.map(([k, n]) => `<button type="button" class="bc-chip bc-chip-item ok" data-bc-item="${esc(k)}">${matOf(k).emoji} ${esc(matOf(k).name)} ×${n} <i class="bc-chip-q">ⓘ</i></button>`).join('')}</div>
+          </div>
+          <button type="button" class="bc-btn green" ${this._act(() => this._collectAll())}>📦 Collect</button>
+        </div>
+      </div>`;
+    }
     for (const kind of ['warehouse', 'pantry']) {
       const st = stores[kind];
       const lv = st.lv || 1;
-      const cap = storeCap(kind, lv);
+      const cap = kind === 'warehouse' ? warehouseCapOf(st) : storeCap(kind, lv);
+      const nextCap = kind === 'warehouse' ? warehouseCapOf({ ...st, lv: lv + 1 }) : storeCap(kind, lv + 1);
       const used = storeUsed(st);
       const pct = Math.min(100, Math.round((used / Math.max(1, cap)) * 100));
       const entries = Object.entries(st.items || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
       const cost = storeUpgradeCost(kind, lv);
+      const canNow = this._canAfford(cost, p);
+      const canWithReady = !canNow && Object.entries(cost).every(([k, need]) => (this._have(k, p) + (readyMap[k] || 0)) >= need);
       body += `<div class="bc-sec">${kind === 'warehouse' ? '🏚️ Warehouse' : '🧺 Pantry'}<small>Lv. ${lv}</small></div>
         <div class="bc-card"><div class="bc-bar${pct >= 100 ? '' : ' ok'}"><i style="width:${pct}%;${pct >= 90 ? 'background:linear-gradient(90deg,#c4523d,#f2b3a3)' : ''}"></i><b>${fmtN(used)} / ${fmtN(cap)}</b></div>
-        ${entries.length ? `<div class="bc-grid" style="margin-top:7px">${entries.map(([k, n]) => `<div class="bc-cell" title="${esc(matOf(k).name)}"><span class="e">${matOf(k).emoji}</span>${fmtN(n)}<span class="n">${esc(matOf(k).name)}</span></div>`).join('')}</div>`
+        ${used >= cap ? `<div class="bc-sub" style="margin-top:5px;color:#9a2a17;font-weight:700;">📦 Storage full for raw gathering — crafted items (Ingot, Plank, Food) can STILL be collected! Tap any item below to sell excess for 🪙 Gold.</div>` : ''}
+        ${entries.length ? `<div class="bc-grid" style="margin-top:7px">${entries.map(([k, n]) => `<div class="bc-cell" role="button" tabindex="0" data-bc-item="${esc(k)}" title="Tap for ${esc(matOf(k).name)} details"><span class="e">${matOf(k).emoji}</span>${fmtN(n)}<span class="n">${esc(matOf(k).name)}</span></div>`).join('')}</div>`
           : `<div class="bc-sub" style="margin-top:6px">${kind === 'warehouse' ? 'Empty — gather materials in the Sky Frontier.' : 'Empty — cook food in the Patisserie.'}</div>`}
         ${lv >= MAX_STORE_LV ? '<div class="bc-sub" style="margin-top:6px">👑 Max level</div>'
-          : `<div class="bc-row" style="margin-top:7px"><div class="bc-grow"><div class="bc-sub">⬆️ Lv. ${lv + 1}: ${fmtN(storeCap(kind, lv + 1))} capacity</div><div class="bc-chips">${this._costChips(cost, p)}</div></div>
-             <button type="button" class="bc-btn" ${this._canAfford(cost, p) ? '' : 'disabled'} ${this._act(() => this._storeUpgrade(kind))}>Upgrade</button></div>`}
+          : `<div class="bc-row" style="margin-top:7px"><div class="bc-grow"><div class="bc-sub">⬆️ Lv. ${lv + 1}: ${fmtN(nextCap)} capacity</div><div class="bc-chips">${this._costChips(cost, p)}</div></div>
+             <button type="button" class="bc-btn ${canNow || canWithReady ? 'green' : ''}" ${canNow || canWithReady ? '' : 'disabled'} ${this._act(() => this._storeUpgrade(kind))}>${canWithReady ? '📦 Collect & Upgrade' : 'Upgrade'}</button></div>`}
         </div>`;
     }
     const crate = fr.campCrate || { items: {}, expiresAt: 0 };
@@ -1894,7 +2277,7 @@ export class BasecampUI {
       const now = this.now();
       body += `<div class="bc-sec">📦 Camp Crate<small>${crate.expiresAt > now ? `<span data-until="${crate.expiresAt}" data-label="expires in">expires in ${fmtDur(crate.expiresAt - now)}</span>` : ''}</small></div>
         <div class="bc-card"><div class="bc-sub">Overflow from full storage waits here for 24h.</div>
-        <div class="bc-grid" style="margin-top:6px">${crateItems.map(([k, n]) => `<div class="bc-cell"><span class="e">${matOf(k).emoji}</span>${fmtN(n)}<span class="n">${esc(matOf(k).name)}</span></div>`).join('')}</div>
+        <div class="bc-grid" style="margin-top:6px">${crateItems.map(([k, n]) => `<div class="bc-cell" role="button" tabindex="0" data-bc-item="${esc(k)}"><span class="e">${matOf(k).emoji}</span>${fmtN(n)}<span class="n">${esc(matOf(k).name)}</span></div>`).join('')}</div>
         <div class="bc-row" style="margin-top:7px;justify-content:flex-end"><button type="button" class="bc-btn green" ${this._act(() => this._crateClaim())}>📥 Move into storage</button></div></div>`;
     }
     const tb = fr.toolbelt;
@@ -1907,7 +2290,217 @@ export class BasecampUI {
 
   async _storeUpgrade(kind) {
     const r = await this._req('bc_store_upgrade', { kind }, '⬆️');
-    if (r.ok) this.toast(`⬆️ ${kind === 'warehouse' ? 'Warehouse' : 'Pantry'} is now Lv. ${r.lv} (${fmtN(storeCap(kind, r.lv))} capacity)`, 2600);
+    if (r.ok) {
+      this.playPopSfx('harvest');
+      const stores = this._stores();
+      const cap = kind === 'warehouse' ? warehouseCapOf({ ...stores.warehouse, lv: r.lv }) : storeCap(kind, r.lv);
+      const autoTxt = r.autoCollected && Object.keys(r.autoCollected).length ? ` (auto-collected ${itemsLine(r.autoCollected)})` : '';
+      this.toast(`⬆️ ${kind === 'warehouse' ? 'Warehouse' : 'Pantry'} is now Lv. ${r.lv} (${fmtN(cap)} capacity)${autoTxt}!`, 2800);
+    }
+  }
+
+  _itemAct(fn) {
+    const id = String(++this._actSeq);
+    this._itemActs.set(id, fn);
+    return `data-bc-item-act="${id}"`;
+  }
+
+  openItemDetail(itemId) {
+    const id = String(itemId || '').trim();
+    if (!MATERIALS[id] || !this.itemBackdropEl) return;
+    if (this.itemDetailId && this.itemDetailId !== id && !this.itemBackdropEl.hidden) {
+      this._itemHistory.push(this.itemDetailId);
+    } else if (this.itemBackdropEl.hidden) {
+      this._itemHistory = [];
+    }
+    this.itemDetailId = id;
+    this.playPopSfx('plant');
+    this._renderItemDetail();
+    this.itemBackdropEl.hidden = false;
+  }
+
+  closeItemDetail() {
+    this.itemDetailId = null;
+    this._itemHistory = [];
+    this._itemActs.clear();
+    if (this.itemBackdropEl) {
+      this.itemBackdropEl.hidden = true;
+      this.itemBackdropEl.innerHTML = '';
+    }
+  }
+
+  async _sellItem(itemId, qty) {
+    const r = await this._req('bc_store_upgrade', { kind: `sell:${itemId}:${qty}` }, '🪙');
+    if (!r.ok) return;
+    this.playPopSfx('collect');
+    this.spawnLootBurst({}, [`🪙 +${fmtN(r.goldGained || 0)}`]);
+    this.toast(`🪙 Sold ${matOf(itemId).emoji} ${matOf(itemId).name} ×${fmtN(r.qty || qty)} for +${fmtN(r.goldGained || 0)} Gold!`, 2400);
+    if (this.view && !this.overlay.hidden) this.render({ keepScroll: true });
+    if (this.itemDetailId) this._renderItemDetail();
+  }
+
+  _renderItemDetail() {
+    if (!this.itemBackdropEl || !this.itemDetailId) return;
+    this._itemActs.clear();
+    const id = this.itemDetailId;
+    const mat = matOf(id);
+    const tier = materialTier(id) || 'raw';
+    const tierLabel = tier === 'refined' ? 'Refined Material' : tier === 'goods' ? 'Crafted Goods' : tier === 'rare' ? 'Rare Relic' : 'Raw Material';
+    const storeKind = storeOf(id);
+    const storeName = storeKind === 'pantry' ? '🧺 Pantry' : '🏚️ Warehouse';
+    const p = this._p();
+    const v = p?.village || {};
+    const now = this.now();
+    const have = this._have(id, p);
+    const readyMap = this._readyOutputsMap(p);
+    const readyCnt = readyMap[id] || 0;
+    const guide = ITEM_GUIDE[id] || {
+      desc: `${mat.name} stored in your ${storeKind === 'pantry' ? 'Pantry' : 'Warehouse'}.`,
+      sources: [],
+      uses: 'Village crafting, upgrades & orders.',
+    };
+    const foodInfo = FOOD[id];
+
+    // Find crafting recipe (if any)
+    const craftRc = Object.values(RECIPES).find((r) => r.outputs?.[id])
+      || Object.values(EXTRA_RECIPES).find((r) => r.outputs?.[id])
+      || null;
+
+    let craftHtml = '';
+    if (craftRc) {
+      const bType = craftRc.building;
+      const bDef = placeDef(bType);
+      const unlockCh = BUILDING_UNLOCK_CHAPTER[bType] || null;
+      const story = this._story(p);
+      const unlockedList = unlockedForVillage(story, v);
+      const isBldUnlocked = EXTRA_BUILDINGS[bType]
+        ? Boolean((v.monuments?.[bType]?.stage | 0) >= 1 || v.wonders?.[bType])
+        : unlockedList.includes(bType);
+      const ownedCopies = EXTRA_BUILDINGS[bType] ? (v.wonders?.[bType] ? 1 : 0) : (v.copies?.[bType] | 0);
+      const placedBlds = (v.buildings || []).filter((b) => b.type === bType);
+      const readyBld = placedBlds.find((b) => this._buildingProductionReady(v.production?.[b.uid], now));
+      const outQty = craftRc.outputs?.[id] || 1;
+
+      let actionBtn = '';
+      if (readyBld && readyCnt > 0) {
+        actionBtn = `<button type="button" class="bc-btn green" style="width:100%;margin-top:7px" ${this._itemAct(async () => { await this._collect(readyBld.uid); })}>📦 Collect Ready ${esc(mat.name)} (×${readyCnt}) Now!</button>`;
+      } else if (placedBlds[0]) {
+        actionBtn = `<button type="button" class="bc-btn green" style="width:100%;margin-top:7px" ${this._itemAct(() => { this.closeItemDetail(); this.openBuilding({ owner: p.id, uid: placedBlds[0].uid, type: bType, village: v }); })}>${bDef.emoji} Open ${esc(bDef.name)} to Craft</button>`;
+      } else if (ownedCopies > 0 && this.onEnterEdit) {
+        actionBtn = `<button type="button" class="bc-btn green" style="width:100%;margin-top:7px" ${this._itemAct(() => { this.close(); this.onEnterEdit(bType); })}>🛠️ Place ${esc(bDef.name)} from Bag</button>`;
+      } else if (isBldUnlocked) {
+        actionBtn = `<button type="button" class="bc-btn" style="width:100%;margin-top:7px" ${this._itemAct(() => { this.closeItemDetail(); this.open('build', { tab: 'build' }); })}>🔨 Construct ${esc(bDef.name)} in Build Menu</button>`;
+      } else {
+        actionBtn = `<button type="button" class="bc-btn plain" style="width:100%;margin-top:7px" ${this._itemAct(() => { this.closeItemDetail(); this.open('story'); })}>📜 Unlocks in Story${unlockCh ? ` Ch. ${unlockCh}` : ''} — View Story Board</button>`;
+      }
+
+      craftHtml = `
+        <div class="bc-sec">⚒️ How to Craft</div>
+        <div class="bc-card">
+          <div class="bc-row">
+            <span class="bc-big-ico">${bDef.emoji}</span>
+            <div class="bc-grow">
+              <div class="bc-title">Made at ${esc(bDef.name)}${unlockCh ? ` <span class="bc-sub">(Story Ch. ${unlockCh})</span>` : ''}</div>
+              <div class="bc-sub">⏱ ${fmtDur(craftRc.ms)} → produces <b>${mat.emoji} ${esc(mat.name)} ×${outQty}</b></div>
+              <div class="bc-chips">${this._costChips(craftRc.inputs, p)}</div>
+            </div>
+          </div>
+          ${actionBtn}
+        </div>
+      `;
+    }
+
+    // Where to find / gather section
+    const hollowUnlocked = Boolean(
+      p?.frontier?.unlocks?.regions?.includes('hollow')
+      || p?.frontier?.unlocks?.gates?.includes('hollow')
+      || (p?.story?.chapter || 0) >= 2
+      || p?.story?.completed?.includes?.(1)
+    );
+    const sources = guide.sources || [];
+    const frontierSrc = sources.find((s) => s.region === 'hollow' && hollowUnlocked)
+      || sources.find((s) => s.region === 'meadow')
+      || sources.find((s) => s.region);
+    const farmSrc = sources.find((s) => s.farm);
+    const placedPlots = (v.buildings || []).filter((b) => b.type === 'farm_plot');
+
+    let gatherBtns = '';
+    if (farmSrc && placedPlots[0]) {
+      gatherBtns += `<button type="button" class="bc-btn green" style="flex:1" ${this._itemAct(() => { this.closeItemDetail(); this.openBuilding({ owner: p.id, uid: placedPlots[0].uid, type: 'farm_plot', village: v }); })}>🌾 Open Farm Plot</button>`;
+    }
+    if (frontierSrc && this.onEnterFrontier) {
+      const targetRegion = frontierSrc.region === 'hollow' && hollowUnlocked ? 'hollow' : 'meadow';
+      const regName = targetRegion === 'hollow' ? 'Crystal Hollow' : 'Whispering Meadow';
+      gatherBtns += `<button type="button" class="bc-btn" style="flex:1" ${this._itemAct(() => { this.close(); this.onEnterFrontier(targetRegion); })}>🗺️ Go to ${regName}</button>`;
+    }
+
+    const sourcesHtml = sources.length
+      ? `
+        <div class="bc-sec">🗺️ Where to Find</div>
+        ${sources.map((s) => `
+          <div class="bc-item-src">
+            <span class="bc-item-src-ico">${s.icon}</span>
+            <div class="bc-grow">
+              <div class="bc-title" style="font-size:12px">${esc(s.title)}</div>
+              <div class="bc-sub">${esc(s.detail)}</div>
+            </div>
+          </div>
+        `).join('')}
+        ${gatherBtns ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${gatherBtns}</div>` : ''}
+      `
+      : '';
+
+    // Sell excess section (for non-rare owned items)
+    let sellHtml = '';
+    if (have > 0 && tier !== 'rare') {
+      const unitGold = SELL_UNIT_GOLD[tier] || 2;
+      const halfQty = Math.max(1, Math.floor(have / 2));
+      sellHtml = `
+        <div class="bc-sec">🪙 Free Storage Space<small>${unitGold} 🪙 each</small></div>
+        <div class="bc-card">
+          <div class="bc-sub" style="margin-bottom:6px">Need room in your ${storeKind === 'pantry' ? 'Pantry' : 'Warehouse'}? Sell excess ${esc(mat.name)} for Gold:</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="bc-btn plain" style="flex:1" ${this._itemAct(() => this._sellItem(id, 1))}>Sell ×1 (+${unitGold} 🪙)</button>
+            ${have >= 10 ? `<button type="button" class="bc-btn plain" style="flex:1" ${this._itemAct(() => this._sellItem(id, 10))}>Sell ×10 (+${unitGold * 10} 🪙)</button>` : ''}
+            ${have >= 4 ? `<button type="button" class="bc-btn" style="flex:1" ${this._itemAct(() => this._sellItem(id, halfQty))}>Sell ×${halfQty} (+${fmtN(unitGold * halfQty)} 🪙)</button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    const backBtnHtml = this._itemHistory.length > 0
+      ? `<button type="button" class="bc-btn plain" style="padding:3px 8px;font-size:11px" data-bc-item-back="1">← Back</button>`
+      : '';
+
+    this.itemBackdropEl.innerHTML = `
+      <div class="bc-item-card" role="dialog" aria-label="${esc(mat.name)} Item Guide">
+        <header class="bc-head">
+          ${backBtnHtml}
+          <h3>${mat.emoji} ${esc(mat.name)}</h3>
+          <button type="button" class="bc-x" data-bc-item-close="1" aria-label="Close">✕</button>
+        </header>
+        <div class="bc-item-body">
+          <div class="bc-item-hero">
+            <div class="bc-item-avatar">${mat.emoji}</div>
+            <div class="bc-grow">
+              <div class="bc-title" style="font-size:14.5px">${esc(mat.name)}</div>
+              <div class="bc-sub">${esc(tierLabel)} • ${storeName}</div>
+              <div class="bc-chips" style="margin-top:5px">
+                <span class="bc-chip ${have > 0 ? 'ok' : ''}">📦 Owned: ${fmtN(have)}</span>
+                ${readyCnt > 0 ? `<span class="bc-chip ok">✨ +${fmtN(readyCnt)} Ready!</span>` : ''}
+                ${foodInfo ? `<span class="bc-chip brass">⚡ +${foodInfo.energy} Energy</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="bc-note" style="margin-top:0">${esc(guide.desc)}</div>
+          ${craftHtml}
+          ${sourcesHtml}
+          <div class="bc-sec">🔨 Used For</div>
+          <div class="bc-card"><div class="bc-sub" style="color:#3B2A20;font-weight:600">${esc(guide.uses)}</div></div>
+          ${sellHtml}
+        </div>
+      </div>
+    `;
   }
 
   async _crateClaim() {

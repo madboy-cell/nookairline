@@ -5,9 +5,10 @@
 // Every method takes the profile(s) it mutates and returns a small `{ ok, ... }` result object;
 // the server persists (db.markProfile) and pushes the profile on ok. `now` / `rng` are injectable.
 import { CORE, MAX_CORE_LV, DECOR } from '../shared/catalog_landmarks.js';
+import { MATERIALS, materialTier } from '../shared/materials_catalog.js';
 import { maxCopies, plotCap, utcDay, syncBuildingLevels, computeComfort } from '../shared/village_rules.js';
 import {
-  RECIPES, PRODUCTION_BUILDINGS, CROPS, addItems, hasItems, takeItems, canAdd, storeUpgradeCost, queueSlots,
+  RECIPES, PRODUCTION_BUILDINGS, CROPS, addItems, hasItems, takeItems, canAdd, storeOf, storeUpgradeCost, queueSlots,
   enqueue as prodEnqueue, collect as prodCollect, createProductionState, createPlot,
   plant as prodPlant, water as prodWater, harvest as prodHarvest,
 } from '../shared/production_rules.js';
@@ -46,6 +47,7 @@ export const BUILD_COSTS = Object.freeze({
 });
 export const DEFAULT_BUILD_COST = Object.freeze({ plank: 30, ingot: 10 });
 export const MAX_STORE_LV = 10;
+export const SELL_UNIT_GOLD = Object.freeze({ raw: 2, refined: 8, goods: 12 });
 
 /** Material + gold cost to construct copy #`copyIndex` (0-based) of `type`. Copies after the first cost ×2. */
 export function buildCost(type, copyIndex = 0) {
@@ -266,7 +268,9 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
     if (!state) return fail('nothing_to_collect');
     const t = clock();
     const bonus = presettle(v, placedBuilding(v, uid), state, t);
-    const r = prodCollect(state, storesOf(p), t);
+    // Crafted goods already consumed raw materials on enqueue; allow soft-overflow on collection
+    // so finished Ingots/Planks are never deadlocked behind a full 300/300 Warehouse.
+    const r = prodCollect(state, storesOf(p), t, { allowOverflow: true });
     const tb = (p.frontier.toolbelt ||= { pickaxe: 1, axe: 1, staff: 0, main: 'pickaxe', enchants: {} });
     const tools = [];
     for (const t of r.tools || []) {
@@ -333,7 +337,7 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
     const plot = plotFor(p, uid);
     if (!plot) return fail('not_plot');
     const crop = plot.crop;
-    const r = prodHarvest(plot, storesOf(p), clock());
+    const r = prodHarvest(plot, storesOf(p), clock(), { allowOverflow: true });
     if (!r.ok) return r;
     recordStory(p, { kind: 'harvest', target: crop, amount: 1 });
     for (const [k, n] of Object.entries(r.items || {})) {
@@ -479,19 +483,73 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
   }
 
   // ------------------------------------------------------------------------------------------
-  // Warehouse / pantry
+  // Warehouse / pantry + quick-sell excess items
   // ------------------------------------------------------------------------------------------
+  function previewReadyOutputs(p) {
+    const v = ensureVillage(p);
+    const t = clock();
+    const out = {};
+    for (const uid of Object.keys(v.production || {})) {
+      if (!placedBuilding(v, uid)) continue;
+      const st = v.production[uid];
+      if (!st) continue;
+      for (const [k, n] of Object.entries(st.output || {})) if (n > 0) out[k] = (out[k] || 0) + n;
+      for (const job of st.queue || []) {
+        if (!(job.doneAt <= t)) continue;
+        const rec = recipeDef(job.recipe);
+        for (const [k, n] of Object.entries(rec?.outputs || {})) if (n > 0) out[k] = (out[k] || 0) + n;
+      }
+    }
+    return out;
+  }
+
+  function sellItem(p, itemId, qty = 1) {
+    itemId = String(itemId || '').trim();
+    if (!MATERIALS[itemId]) return fail('bad_item');
+    const tier = materialTier(itemId);
+    if (tier === 'rare') return fail('cannot_sell_rare');
+    const stores = storesOf(p);
+    const kind = storeOf(itemId);
+    const have = stores[kind]?.items?.[itemId] | 0;
+    if (have <= 0) return fail('missing_items');
+    const n = Math.min(have, Math.max(1, Math.floor(Number(qty) || 1)));
+    takeItems(stores, { [itemId]: n });
+    const unitGold = SELL_UNIT_GOLD[tier] || 2;
+    const goldGained = n * unitGold;
+    p.gold = (p.gold || 0) + goldGained;
+    return { ok: true, action: 'sell', itemId, qty: n, goldGained, gold: p.gold };
+  }
+
   function storeUpgrade(p, kind) {
+    const raw = String(kind || '');
+    if (raw.startsWith('sell:')) {
+      const [, itemId, rawQty] = raw.split(':');
+      return sellItem(p, itemId, Number(rawQty) || 1);
+    }
     if (kind !== 'warehouse' && kind !== 'pantry') return fail('bad_store');
     const stores = storesOf(p);
     const lv = stores[kind].lv || 1;
     if (lv >= MAX_STORE_LV) return fail('max_level');
     const cost = storeUpgradeCost(kind, lv);
-    const chk = canPay(p, cost);
+    let chk = canPay(p, cost);
+    let autoCollected = null;
+    if (!chk.ok && chk.error === 'missing_materials') {
+      const ready = previewReadyOutputs(p);
+      const canCoverWithReady = Object.entries(cost).every(([k, need]) => {
+        if (k === 'gold') return (p.gold || 0) >= need;
+        const cur = stores[storeOf(k)]?.items?.[k] | 0;
+        return cur + (ready[k] || 0) >= need;
+      });
+      if (canCoverWithReady && Object.keys(ready).length > 0) {
+        const cRes = collectAll(p);
+        if (cRes.ok) autoCollected = cRes.collected;
+        chk = canPay(p, cost);
+      }
+    }
     if (!chk.ok) return chk;
     payCost(p, cost);
     stores[kind].lv = lv + 1;
-    return { ok: true, kind, lv: lv + 1, cost };
+    return { ok: true, kind, lv: lv + 1, cost, ...(autoCollected ? { autoCollected } : {}) };
   }
 
   /** village_save_grid hook: story 'build' events for every type whose placed count increased. */
@@ -740,7 +798,7 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
     plant, water, harvestPlot,
     orderBoard, fillOrder, discardOrder, contributeBig,
     storyState, claimStory, recordStory,
-    storeUpgrade, onLayoutSaved, placedCounts,
+    storeUpgrade, sellItem, onLayoutSaved, placedCounts,
     tick, residentsState, assignResident,
     monumentsState, contributeMonument, useMonument, wish,
     craftDecor, tentBread, collectProps,
