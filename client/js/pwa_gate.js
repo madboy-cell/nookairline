@@ -1,4 +1,4 @@
-// client/js/pwa_gate.js — standalone detection + "Add to Home Screen" guide (Sections 13.A.1 / 17.B.3).
+// client/js/pwa_gate.js — environment detection & service worker registration (PWA gate removed so mobile browsers sign in directly).
 export const env = (() => {
   const ua = navigator.userAgent || '';
   const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -9,49 +9,15 @@ export const env = (() => {
   return { iOS, android, mobile: iOS || android, standalone, dev, params };
 })();
 
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallButton(); });
-
-function showInstallButton() {
-  const b = document.getElementById('a2hs-install');
-  if (b && deferredPrompt) b.hidden = false;
-}
-
 /**
- * Mobile browsers (not installed) get the install guide instead of the sign-in form —
- * the game is meant to run fullscreen from the home screen. Desktop is framed in a
- * 430px phone shell and signs in directly. `?dev=1` (or localhost) shows a testing bypass.
- * Returns true when the sign-in form may be shown.
+ * Always allow direct sign-in on all mobile & desktop browsers without an A2HS / PWA gate.
  */
-export function initGate({ onSkip } = {}) {
+export function initGate() {
   const card = document.getElementById('a2hs-card');
-  const steps = document.getElementById('a2hs-steps');
   const form = document.getElementById('login-form');
-  const isTunnel = location.hostname.endsWith('.trycloudflare.com');
-  if (!env.mobile || env.standalone || isTunnel || env.params.has('skip') || env.params.has('direct')) {
-    card.hidden = true;
-    form.hidden = false;
-    return true;
-  }
-
-  card.hidden = false;
-  form.hidden = true;
-  steps.innerHTML = env.iOS
-    ? `<div class="step"><b>1</b>Tap Safari Share [↑]</div><div class="step"><b>2</b>Tap Add to Home Screen [+]</div><div class="step"><b>3</b>Launch the app icon for fullscreen + 50 💎 gift!</div>`
-    : `<div class="step"><b>1</b>Tap Install below (or ⋮ menu)</div><div class="step"><b>2</b>Choose Install app / Add to Home screen</div><div class="step"><b>3</b>Launch the app icon for fullscreen + 50 💎 gift!</div>`;
-  showInstallButton();
-  document.getElementById('a2hs-install').onclick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice.catch(() => null);
-    deferredPrompt = null;
-  };
-  const skip = document.getElementById('a2hs-skip');
-  if (env.dev) {
-    skip.hidden = false;
-    skip.onclick = () => { form.hidden = false; card.hidden = true; onSkip?.(); };
-  }
-  return false;
+  if (card) card.hidden = true;
+  if (form) form.hidden = false;
+  return true;
 }
 
 export function registerServiceWorker() {

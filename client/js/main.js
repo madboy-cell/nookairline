@@ -4,7 +4,7 @@
 import { WorldEngine } from './world_engine.js?v=sf3';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
-import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id4';
+import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id5';
 import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=tos4';
 import { DockFishing } from './minigames/dock_fishing.js';
 import { RpgUI } from './gacha_forge_ui.js?v=wd6';
@@ -157,10 +157,8 @@ function showGate(message = '') {
     mono?.hub?.close?.();
     mono?.stopMatchView?.();
   } catch {}
-  if (message && $('a2hs-card') && $('login-form')) {
-    $('a2hs-card').hidden = true;
-    $('login-form').hidden = false;
-  }
+  if ($('a2hs-card')) $('a2hs-card').hidden = true;
+  if ($('login-form')) $('login-form').hidden = false;
   if (S.profile?.username && $('login-user') && !$('login-user').value) {
     $('login-user').value = S.profile.username;
     if (env.dev && $('login-pass') && !$('login-pass').value) $('login-pass').value = '1234';
