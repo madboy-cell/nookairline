@@ -3,10 +3,10 @@
 // grid collision (buildings + canal water, wings glide over water), +15% road speed, camera presets
 // VILLAGE (36°) / VILLAGE_EDIT (42°), editor input routing and Finger Pick-Up & Drop (0.25 s hold).
 import * as THREE from 'three';
-import { ChibiRig, CHIBI_HEIGHT } from './chibi_rig.js?v=cd46';
+import { ChibiRig, CHIBI_HEIGHT } from './chibi_rig.js?v=cd47';
 import { PetController, YardPetController, updateNuzzles } from './pet_controller.js';
 import { FxEngine } from './fx_engine.js';
-import { VillagePlaza } from './village_plaza.js';
+import { VillagePlaza } from './village_plaza.js?v=tos4';
 import { loadSprite } from './assets.js';
 import { Mover, RemoteSmoother, MOVE, damp } from '/shared/locomotion.js';
 import { ROAD_SPEED_BOOST, FISHING, footprint } from '/shared/catalog_landmarks.js';

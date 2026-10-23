@@ -677,16 +677,17 @@ export class VillagePlaza {
       const plot = isl.village?.plots?.[b.uid];
       if (plot?.crop) {
         const isReady = Number(plot.readyAt || 0) <= Date.now();
+        mesh.userData.animMode = isReady ? 'ready' : 'growing';
         const badge = makeCropBadgeSprite(isReady ? '🌾✨' : '⏳', isReady);
         badge.position.set(c.x, 0.75, c.z);
-        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady };
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady, baseScale: badge.scale.x };
         group.add(badge);
         this.floatingBadges.push(badge);
         this.pickables.push(badge);
       } else if (isl.owner === this.selfId) {
         const badge = makeCropBadgeSprite('🌱', false);
         badge.position.set(c.x, 0.75, c.z);
-        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady: false };
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: 0.65, isReady: false, baseScale: badge.scale.x };
         group.add(badge);
         this.floatingBadges.push(badge);
         this.pickables.push(badge);
@@ -702,11 +703,12 @@ export class VillagePlaza {
         || (st?.queue || []).some((j) => Number(j?.doneAt || 0) <= now);
       const isWorking = !hasOutput && (st?.queue || []).some((j) => Number(j?.doneAt || 0) > now);
       if (hasOutput || isWorking) {
+        mesh.userData.animMode = isWorking ? 'working' : 'ready';
         const info = spriteInfo(spriteKey);
         const bHeight = mesh.userData.height || (width * (info ? info.h / info.w : 1.1));
         const badge = hasOutput ? makeReadyBadgeSprite() : makeCropBadgeSprite('⏳', false);
         badge.position.set(c.x, bHeight * 0.8 + 0.3, c.z);
-        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85, isReady: hasOutput };
+        badge.userData = { kind: 'building', owner: isl.owner, uid: b.uid, type: b.type, x: c.x, z: c.z, height: bHeight * 0.85, isReady: hasOutput, baseScale: badge.scale.x };
         group.add(badge);
         this.floatingBadges.push(badge);
         this.pickables.push(badge);
@@ -739,9 +741,11 @@ export class VillagePlaza {
     loadSprite(name).then((s) => { mat.map = s.texture; mat.needsUpdate = true; });
     const geo = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.scale.set(width * (o.mirror ? -1 : 1), width * aspect, 1);
+    const baseScaleX = width * (o.mirror ? -1 : 1);
+    const baseScaleY = width * aspect;
+    mesh.scale.set(baseScaleX, baseScaleY, 1);
     mesh.position.set(x, o.y ?? 0, z);
-    mesh.userData = { ...data, height: width * aspect, lean: true };
+    mesh.userData = { ...data, height: baseScaleY, baseScaleX, baseScaleY, lean: true };
     group.add(mesh);
     if (o.pick !== false) this.pickables.push(mesh);
     if (this.leanList) this.leanList.push(mesh);
@@ -1062,7 +1066,20 @@ export class VillagePlaza {
     }
     for (let i = 0; i < this.leanList.length; i++) {
       const o = this.leanList[i];
-      if (o.userData?.lean) o.rotation.x = lean;
+      if (!o.userData?.lean) continue;
+      o.rotation.x = lean;
+      const mode = o.userData.animMode;
+      if (mode === 'working' && o.userData.baseScaleX && o.userData.baseScaleY) {
+        const chug = Math.sin(this.t * 6.5 + o.position.x * 1.3) * 0.026;
+        o.scale.set(o.userData.baseScaleX * (1 + chug), o.userData.baseScaleY * (1 - chug), 1);
+        o.rotation.z = Math.sin(this.t * 3.25 + o.position.z) * 0.014;
+      } else if (mode === 'ready' && o.userData.baseScaleX && o.userData.baseScaleY) {
+        const pulse = Math.sin(this.t * 3.8 + o.position.x) * 0.02;
+        o.scale.set(o.userData.baseScaleX * (1 + pulse), o.userData.baseScaleY * (1 + pulse), 1);
+        o.rotation.z = 0;
+      } else if (mode === 'growing') {
+        o.rotation.z = Math.sin(this.t * 2.4 + o.position.x) * 0.018;
+      }
     }
     for (const b of this.bubbles) {
       if (!b.visible) continue;
@@ -1073,8 +1090,15 @@ export class VillagePlaza {
       const h = b.userData.height || 0.6;
       const bx = b.userData.x ?? b.position.x;
       const bz = b.userData.z ?? b.position.z;
-      const bob = Math.sin(this.t * 3.5 + bx * 2) * 0.08;
+      const isReady = !!b.userData.isReady;
+      const bob = isReady
+        ? Math.abs(Math.sin(this.t * 4.8 + bx * 2)) * 0.15
+        : Math.sin(this.t * 3.2 + bx * 2) * 0.07;
       b.position.set(bx, h * Math.cos(pitch) + 0.35 + bob, bz - h * Math.sin(pitch) * 0.4);
+      if (b.userData.baseScale) {
+        const s = b.userData.baseScale * (isReady ? (1 + Math.sin(this.t * 5.2 + bx) * 0.09) : 1);
+        b.scale.set(s, s, 1);
+      }
     }
     if (this.world?.editor?.active) {
       this.world.editor.updateFloatingUi();

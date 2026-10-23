@@ -560,6 +560,23 @@ export class BasecampUI {
   playPopSfx(kind = 'harvest') {
     if (typeof window === 'undefined') return;
     try {
+      const world = window.__neora?.world;
+      const local = world?.local;
+      if (local?.rig) {
+        local.rig.triggerAttack?.('staff_cast', { dur: 0.52 });
+        if (world?.fx?.emit) {
+          world.fx.emit('fx_star', local.x, 1.0, local.z, kind === 'harvest' ? 10 : 6, {
+            speed: 0.9,
+            up: 1.15,
+            size: 0.22,
+            life: 0.5,
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+    try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       if (!this._audioCtx) this._audioCtx = new AudioCtx();

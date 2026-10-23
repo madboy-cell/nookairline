@@ -386,6 +386,23 @@ const HUD_STYLE = `
   pointer-events: none;
 }
 
+.sf-loot-magnet {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 240, 138, 0.95) 0%, rgba(217, 119, 6, 0.9) 100%);
+  border: 2px solid #FFFBEB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.8), 0 3px 8px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 4;
+}
+
 .sf-floating-item.sf-float-hit {
   background: rgba(42, 30, 22, 0.85);
   border-color: #B89872;
@@ -833,8 +850,10 @@ export class SkyFrontierScene {
     // Energy state
     this.energy = { cur: ENERGY?.MAX || 200, max: ENERGY?.MAX || 200 };
 
-    // Floating text list
+    // Floating text & flying loot magnet list
     this.floatingTexts = [];
+    this.lootMagnets = [];
+    this.dyingMonsters = [];
 
     // Pre-allocated combat geometries & materials cache
     this._mobGeos = null;
@@ -1831,6 +1850,15 @@ export class SkyFrontierScene {
       this._releaseMonsterMesh(mon.type, mon.group);
     }
     this.activeMonsters.clear();
+    for (const dm of this.dyingMonsters) {
+      this.root.remove(dm.group);
+      this._releaseMonsterMesh(dm.type, dm.group);
+    }
+    this.dyingMonsters.length = 0;
+    for (const lm of this.lootMagnets) {
+      if (lm.el?.parentNode) lm.el.parentNode.removeChild(lm.el);
+    }
+    this.lootMagnets.length = 0;
 
     if (this.hudEl) {
       this.hudEl.style.display = 'none';
@@ -2003,6 +2031,19 @@ export class SkyFrontierScene {
       const streakTxt = (this._feverStreak || 0) >= 2 ? `🔥 Fever ×${this._feverStreak} • ` : '';
       this.rarityBoostEl.textContent = `${streakTxt}🎲 Rare+ Chance: 38%`;
     }
+    const local = this.world?.local;
+    const rig = local?.rig;
+    if (this.targetNode && local && rig) {
+      const tool = NODE_TYPES[this.targetNode.type]?.tool || 'pickaxe';
+      const swing = tool === 'axe' ? 'chop_swing' : tool === 'staff' ? 'staff_cast' : 'mine_swing';
+      const tier = local.profile?.frontier?.toolbelt?.[tool] || 1;
+      rig.facing?.set?.(this.targetNode.x >= local.x, this.targetNode.z < local.z - 0.35);
+      if (rig.setHeldTool && this._heldTool !== `${tool}:${tier}`) {
+        rig.setHeldTool(tool, tier);
+        this._heldTool = `${tool}:${tier}`;
+      }
+      rig.triggerAttack?.(swing, { dur: 0.75 });
+    }
     this._syncRuneButtonState();
   }
 
@@ -2031,8 +2072,12 @@ export class SkyFrontierScene {
 
     const tool = NODE_TYPES[this.targetNode.type]?.tool || 'pickaxe';
     const swing = tool === 'axe' ? 'chop_swing' : tool === 'staff' ? 'staff_cast' : 'mine_swing';
-    const rig = this.world?.local?.rig;
-    const tier = this.world?.local?.profile?.frontier?.toolbelt?.[tool] || 1;
+    const local = this.world?.local;
+    const rig = local?.rig;
+    const tier = local?.profile?.frontier?.toolbelt?.[tool] || 1;
+    if (this.targetNode && local && rig) {
+      rig.facing?.set?.(this.targetNode.x >= local.x, this.targetNode.z < local.z - 0.35);
+    }
     if (rig?.setHeldTool && this._heldTool !== `${tool}:${tier}`) {
       rig.setHeldTool(tool, tier);
       this._heldTool = `${tool}:${tier}`;
@@ -2310,7 +2355,11 @@ export class SkyFrontierScene {
           hpFill: group.userData.hpFill,
           baseY: group.userData.baseY || 0,
           bobPhase: Math.random() * Math.PI * 2,
+          walkPhase: Math.random() * Math.PI * 2,
           shakeTimer: 0,
+          squashTimer: 0,
+          hitFlashTimer: 0,
+          hitDir: 1,
         };
         this.activeMonsters.set(id, mon);
       }
@@ -2327,8 +2376,17 @@ export class SkyFrontierScene {
       }
       this._showDeathPuff(mon.x, mon.z, mon.isBoss);
       this.activeMonsters.delete(m.id);
-      this.root.remove(mon.group);
-      this._releaseMonsterMesh(mon.type, mon.group);
+      if (mon.hpBar) mon.hpBar.visible = false;
+      this.dyingMonsters.push({
+        group: mon.group,
+        type: mon.type,
+        isBoss: mon.isBoss,
+        baseY: mon.baseY || 0,
+        x: mon.x,
+        z: mon.z,
+        age: 0,
+        life: 0.28,
+      });
     }
 
     const localId = this.world?.local?.id;
@@ -2347,6 +2405,7 @@ export class SkyFrontierScene {
           this._showUltRingVfx(mon.x, mon.z, 3.0, 0xF472B6);
         }
         this.showFloatingText(`${prefix}${parts.join('  ')}`, mon.x, mon.z, coupleSync ? 'sf-float-rare' : '');
+        this.spawnLootMagnets(m.drops[localId], mon.x, mon.z);
       }
       this._syncRuneButtonState();
     }
@@ -2364,14 +2423,35 @@ export class SkyFrontierScene {
 
   onHit(m) {
     if (!m) return;
+    if (m.by && m.by !== this.world?.local?.id) {
+      const rem = this.world?.remotes?.get?.(m.by);
+      if (rem?.rig) {
+        const tool = m.tool || 'pickaxe';
+        const swing = tool === 'axe' ? 'chop_swing' : tool === 'staff' ? 'staff_cast' : 'mine_swing';
+        rem.rig.setHeldTool?.(tool, 1);
+        if (m.facing) {
+          rem.rig.facing?.set?.(m.facing.x >= 0, m.facing.z < -0.35);
+        }
+        rem.rig.triggerAttack?.(swing, { dur: 0.45 });
+      }
+    }
     if (Array.isArray(m.hits)) {
       for (const [id, dealt, crit, monHp] of m.hits) {
         const mon = this.activeMonsters.get(id);
         if (mon) {
           mon.hp = monHp;
-          mon.shakeTimer = 0.22;
+          mon.shakeTimer = crit ? 0.30 : 0.22;
+          mon.squashTimer = crit ? 0.30 : 0.24;
+          mon.hitFlashTimer = 0.16;
+          mon.hitDir = (m.facing?.x ?? 1) >= 0 ? -1 : 1;
           const text = crit ? `💥 ${dealt}!` : `-${dealt}`;
-          this.showFloatingText(text, mon.x, mon.z);
+          this.showFloatingText(text, mon.x, mon.z, crit ? 'sf-float-perfect' : 'sf-float-hit');
+          this.world?.fx?.emit?.('fx_star', mon.x, 0.9, mon.z, crit ? 9 : 4, {
+            speed: crit ? 1.1 : 0.65,
+            up: 1.0,
+            size: crit ? 0.24 : 0.15,
+            life: 0.42,
+          });
         }
       }
     }
@@ -2530,8 +2610,24 @@ export class SkyFrontierScene {
 
     const mesh = this.nodeMeshes.get(nodeId);
     if (mesh) {
+      let strikerX = this.world?.local?.x ?? mesh.position.x;
+      if (m.by && m.by !== this.world?.local?.id) {
+        const rem = this.world?.remotes?.get?.(m.by);
+        if (rem) {
+          strikerX = rem.smooth?.x ?? rem.x ?? strikerX;
+          if (rem.rig) {
+            const rTool = typeDef.tool || 'pickaxe';
+            const rSwing = rTool === 'axe' ? 'chop_swing' : rTool === 'staff' ? 'staff_cast' : 'mine_swing';
+            rem.rig.facing?.set?.(mesh.position.x >= strikerX, mesh.position.z < (rem.smooth?.z ?? rem.z ?? 0) - 0.35);
+            rem.rig.setHeldTool?.(rTool, 1);
+            rem.rig.triggerAttack?.(rSwing, { dur: 0.72 });
+          }
+        }
+      }
       mesh.userData.shakeTimer = m.perfect ? 0.38 : 0.25;
-      mesh.userData.pulseTimer = m.perfect ? 0.38 : 0.25;
+      mesh.userData.pulseTimer = m.perfect ? 0.38 : 0.26;
+      mesh.userData.hitFlashTimer = m.perfect ? 0.18 : 0.12;
+      mesh.userData.hitDir = strikerX <= mesh.position.x ? -1 : 1;
 
       // Update 3D Node HP & Rarity Charge Bar
       if (mesh.userData.hpBar && mesh.userData.hpFill) {
@@ -2676,6 +2772,8 @@ export class SkyFrontierScene {
       }
 
       this.showFloatingText(`${prefix}${parts.join('  ')}`, node.x, node.z, extraClass);
+      const mergedLoot = { ...(userShare || {}), ...(m.rares?.[localId] || {}) };
+      this.spawnLootMagnets(mergedLoot, node.x, node.z);
       this._syncRuneButtonState();
     }
 
@@ -2711,6 +2809,41 @@ export class SkyFrontierScene {
     this.floatContainerEl.appendChild(el);
     const life = extraClass === 'sf-float-epic' ? 2.6 : extraClass === 'sf-float-hit' ? 1.1 : 1.9;
     this.floatingTexts.push({ el, wx, wz, age: 0, life });
+  }
+
+  spawnLootMagnets(itemsObj, wx, wz) {
+    if (!this.floatContainerEl || typeof document === 'undefined' || !itemsObj) return;
+    const icons = [];
+    for (const [mat, count] of Object.entries(itemsObj)) {
+      const n = Math.min(3, Math.max(1, Math.ceil(Number(count || 0) / 2)));
+      const emo = EMOJI_MAP[mat] || '📦';
+      for (let i = 0; i < n && icons.length < 6; i++) icons.push(emo);
+    }
+    const s = this.world?.worldToScreen?.(wx, 1.0, wz);
+    const startX = s ? s.x : window.innerWidth / 2;
+    const startY = s ? s.y : window.innerHeight / 2;
+
+    icons.forEach((emo, idx) => {
+      const el = document.createElement('div');
+      el.className = 'sf-loot-magnet';
+      el.textContent = emo;
+      el.style.left = `${startX}px`;
+      el.style.top = `${startY}px`;
+      this.floatContainerEl.appendChild(el);
+      const angle = ((idx - (icons.length - 1) / 2) * 0.55) + (Math.random() - 0.5) * 0.25;
+      const spreadX = Math.sin(angle) * (42 + Math.random() * 22);
+      const peakY = -(55 + Math.random() * 28);
+      this.lootMagnets.push({
+        el,
+        startX,
+        startY,
+        spreadX,
+        peakY,
+        delay: idx * 0.045,
+        age: 0,
+        life: 0.62,
+      });
+    });
   }
 
   _showDeathPuff(x, z, isBoss) {
@@ -2777,7 +2910,7 @@ export class SkyFrontierScene {
     const now = Date.now() + (this.world?.serverOffset || 0);
     const local = this.world?.local;
 
-    // 1. Node bobbing, shake, scale pulse, and depleted/respawned check
+    // 1. Grounded node breeze sway, directional hit recoil, squash-stretch, and regrowth pop
     for (const [id, mesh] of this.nodeMeshes.entries()) {
       const node = mesh.userData.node;
       const isDepleted = Boolean(node.depletedUntil && node.depletedUntil > now);
@@ -2788,12 +2921,13 @@ export class SkyFrontierScene {
         if (wasDepleted && !isDepleted) {
           node.hp = node.maxHp || 1;
           node.depletedUntil = 0;
+          mesh.userData.spawnPopTimer = 0.36;
         }
       }
 
       if (mesh.userData.shakeTimer > 0) {
         mesh.userData.shakeTimer -= dt;
-        const sInt = (mesh.userData.shakeTimer / 0.3) * 0.12;
+        const sInt = (mesh.userData.shakeTimer / 0.32) * 0.08;
         mesh.position.x = node.x + (Math.random() - 0.5) * sInt;
         mesh.position.z = node.z + (Math.random() - 0.5) * sInt;
       } else {
@@ -2801,27 +2935,57 @@ export class SkyFrontierScene {
         mesh.position.z = node.z;
       }
 
-      let pulse = 1.0;
+      let sx = isDepleted ? 0.32 : 1.0;
+      let sy = isDepleted ? 0.32 : 1.0;
+      let hitTiltZ = 0;
       if (mesh.userData.pulseTimer > 0) {
         mesh.userData.pulseTimer -= dt;
-        pulse += Math.sin((1 - mesh.userData.pulseTimer / 0.3) * Math.PI) * 0.25;
+        const p = 1 - Math.max(0, mesh.userData.pulseTimer) / 0.32;
+        const sq = Math.sin(p * Math.PI * 2) * (1 - p) * 0.24;
+        sx *= 1 + sq;
+        sy *= 1 - sq * 0.85;
+        hitTiltZ = (mesh.userData.hitDir || 1) * Math.sin(p * Math.PI) * 0.16;
+      } else if (mesh.userData.spawnPopTimer > 0) {
+        mesh.userData.spawnPopTimer -= dt;
+        const p = 1 - Math.max(0, mesh.userData.spawnPopTimer) / 0.36;
+        const pop = Math.sin(p * Math.PI) * 0.22;
+        sx *= 1 - pop * 0.4;
+        sy *= 1 + pop;
       }
 
-      const baseScale = isDepleted ? 0.3 : 1.0;
-      mesh.scale.set(baseScale * pulse, baseScale * pulse, baseScale * pulse);
-
-      if (!isDepleted) {
-        mesh.position.y = mesh.userData.baseY + Math.sin(this.elapsed * 2.2 + mesh.userData.bobPhase) * 0.08;
-      } else {
-        mesh.position.y = 0;
+      if (mesh.userData.hitFlashTimer > 0) {
+        mesh.userData.hitFlashTimer -= dt;
+        for (const item of mesh.userData.materials || []) {
+          item.mat.color.setHex(mesh.userData.hitFlashTimer > 0 ? 0xFFF3B0 : (isDepleted ? 0x666666 : 0xFFFFFF));
+        }
       }
+
+      const spriteMesh = mesh.userData.spriteMesh;
+      if (spriteMesh && !isDepleted) {
+        const isFoliage = node.type === 'tree' || node.type === 'wheat' || node.type === 'herb';
+        const swayAmp = node.type === 'wheat' || node.type === 'herb' ? 0.055 : isFoliage ? 0.028 : 0.01;
+        const breezeZ = Math.sin(this.elapsed * 2.1 + mesh.userData.bobPhase) * swayAmp;
+        const breath = Math.sin(this.elapsed * 1.8 + mesh.userData.bobPhase) * (isFoliage ? 0.018 : 0.01);
+        spriteMesh.rotation.z = breezeZ + hitTiltZ;
+        sx *= 1 + breath;
+        sy *= 1 - breath;
+      } else if (spriteMesh) {
+        spriteMesh.rotation.z = 0;
+      }
+
+      mesh.scale.set(sx, sy, sx);
+      mesh.position.y = 0;
     }
 
-    // 2. Monster position interpolation, idle motion, rotation & HP billboarding
+    // 2. Monster position interpolation, hop-walk, breathing idle, hit recoil & HP billboarding
     for (const mon of this.activeMonsters.values()) {
+      const prevX = mon.x;
+      const prevZ = mon.z;
       const lerpT = Math.min(1, dt * 10);
       mon.x += (mon.targetX - mon.x) * lerpT;
       mon.z += (mon.targetZ - mon.z) * lerpT;
+      const stepDist = Math.hypot(mon.x - prevX, mon.z - prevZ);
+      const speed = stepDist / Math.max(0.001, dt);
 
       if (mon.shakeTimer > 0) {
         mon.shakeTimer -= dt;
@@ -2832,9 +2996,46 @@ export class SkyFrontierScene {
         mon.group.position.z = mon.z;
       }
 
+      const baseScale = mon.isBoss ? 2.8 : 1.0;
+      let sx = baseScale;
+      let sy = baseScale;
+      let tiltZ = 0;
+
       if (mon.baseY > 0) {
-        mon.group.position.y = mon.baseY + Math.sin(this.elapsed * 3 + mon.bobPhase) * 0.1;
+        // Flying monsters (Pollen Wisp, Lantern Bat): hover bob + wing banking tilt
+        mon.group.position.y = mon.baseY + Math.sin(this.elapsed * 4.2 + mon.bobPhase) * 0.12;
+        tiltZ = Math.cos(this.elapsed * 4.2 + mon.bobPhase) * 0.06;
+        const flap = Math.sin(this.elapsed * 9.0 + mon.bobPhase) * 0.04;
+        sx *= 1 + flap;
+        sy *= 1 - flap;
+      } else if (speed > 0.12) {
+        // Ground monsters walking/chasing:bouncy slime/boar hop + waddle + landing squash
+        mon.walkPhase = (mon.walkPhase || 0) + dt * (mon.isBoss ? 7.5 : 11.5);
+        const hopSin = Math.sin(mon.walkPhase);
+        const hopHeight = Math.abs(hopSin) * (mon.isBoss ? 0.14 : 0.22);
+        mon.group.position.y = hopHeight;
+        tiltZ = hopSin * (mon.isBoss ? 0.05 : 0.09);
+        const bounceSq = Math.cos(mon.walkPhase * 2) * 0.075;
+        sx *= 1 + bounceSq;
+        sy *= 1 - bounceSq;
+      } else {
+        // Ground monsters idle: lively breathing squash & stretch
+        mon.group.position.y = 0;
+        const breath = Math.sin(this.elapsed * 3.2 + mon.bobPhase) * 0.042;
+        sx *= 1 + breath;
+        sy *= 1 - breath;
       }
+
+      if (mon.squashTimer > 0) {
+        mon.squashTimer -= dt;
+        const p = 1 - Math.max(0, mon.squashTimer) / 0.26;
+        const hitSq = Math.sin(p * Math.PI) * 0.24;
+        sx *= 1 + hitSq;
+        sy *= 1 - hitSq * 0.85;
+        tiltZ += (mon.hitDir || 1) * Math.sin(p * Math.PI) * 0.18;
+      }
+
+      mon.group.scale.set(sx, sy, baseScale);
 
       const dx = mon.targetX - mon.x;
       const spriteMesh = mon.group.userData?.spriteMesh;
@@ -2844,6 +3045,11 @@ export class SkyFrontierScene {
           spriteMesh.scale.x = dx > 0 ? -absX : absX;
         }
         spriteMesh.rotation.x = -(this.world?.pitch || 0.58);
+        spriteMesh.rotation.z = tiltZ;
+        if (mon.hitFlashTimer > 0) {
+          mon.hitFlashTimer -= dt;
+          spriteMesh.material.color.setHex(mon.hitFlashTimer > 0 ? 0xFFE082 : 0xFFFFFF);
+        }
       }
 
       if (mon.hpBar) {
@@ -2855,6 +3061,29 @@ export class SkyFrontierScene {
           if (camera) mon.hpBar.quaternion.copy(camera.quaternion);
         } else {
           mon.hpBar.visible = false;
+        }
+      }
+    }
+
+    // 2b. Dying monster spin-squash-pop animation
+    for (let i = this.dyingMonsters.length - 1; i >= 0; i--) {
+      const dm = this.dyingMonsters[i];
+      dm.age += dt;
+      if (dm.age >= dm.life) {
+        this.root.remove(dm.group);
+        this._releaseMonsterMesh(dm.type, dm.group);
+        this.dyingMonsters.splice(i, 1);
+      } else {
+        const p = dm.age / dm.life;
+        const baseScale = dm.isBoss ? 2.8 : 1.0;
+        const popY = Math.sin(p * Math.PI) * 0.45;
+        dm.group.position.set(dm.x, (dm.baseY || 0) + popY, dm.z);
+        const s = baseScale * (1 - p * 0.75);
+        dm.group.scale.set(s * (1 + p * 0.4), s * (1 - p * 0.5), baseScale);
+        const sm = dm.group.userData?.spriteMesh;
+        if (sm) {
+          sm.rotation.z = p * 0.85;
+          sm.material.color.setHex(0xFFE082);
         }
       }
     }
@@ -3081,7 +3310,7 @@ export class SkyFrontierScene {
       }
     }
 
-    // 11. Update floating share text positions
+    // 11. Update floating share text & flying loot magnet positions
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const item = this.floatingTexts[i];
       item.age += dt;
@@ -3094,6 +3323,52 @@ export class SkyFrontierScene {
           item.el.style.left = `${s.x}px`;
           item.el.style.top = `${s.y}px`;
           item.el.style.opacity = String(Math.max(0, 1 - (item.age / item.life) ** 2));
+        }
+      }
+    }
+
+    const playerScreen = local ? this.world?.worldToScreen?.(local.x, 0.95, local.z) : null;
+    const targetScreenX = playerScreen ? playerScreen.x : window.innerWidth / 2;
+    const targetScreenY = playerScreen ? playerScreen.y : window.innerHeight / 2;
+
+    for (let i = this.lootMagnets.length - 1; i >= 0; i--) {
+      const lm = this.lootMagnets[i];
+      if (lm.delay > 0) {
+        lm.delay -= dt;
+        continue;
+      }
+      lm.age += dt;
+      if (lm.age >= lm.life) {
+        if (lm.el?.parentNode) lm.el.parentNode.removeChild(lm.el);
+        this.lootMagnets.splice(i, 1);
+        if (local?.rig?.HIP) {
+          local.rig.HIP.position.y += 0.06;
+        }
+      } else {
+        const p = lm.age / lm.life;
+        // Phase 1 (0 -> 0.42): pop outward & upward; Phase 2 (0.42 -> 1.0): magnet home into Chibi!
+        let curX;
+        let curY;
+        let scale = 1;
+        if (p < 0.42) {
+          const bp = p / 0.42;
+          const easeOut = 1 - (1 - bp) * (1 - bp);
+          curX = lm.startX + lm.spreadX * easeOut;
+          curY = lm.startY + lm.peakY * Math.sin(bp * Math.PI * 0.5);
+          scale = 0.7 + 0.45 * Math.sin(bp * Math.PI * 0.5);
+        } else {
+          const mp = (p - 0.42) / 0.58;
+          const easeIn = mp * mp;
+          const apexX = lm.startX + lm.spreadX;
+          const apexY = lm.startY + lm.peakY;
+          curX = apexX + (targetScreenX - apexX) * easeIn;
+          curY = apexY + (targetScreenY - apexY) * easeIn - Math.sin(mp * Math.PI) * 18;
+          scale = 1.15 - 0.45 * easeIn;
+        }
+        if (lm.el) {
+          lm.el.style.left = `${curX}px`;
+          lm.el.style.top = `${curY}px`;
+          lm.el.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(2)})`;
         }
       }
     }
@@ -3131,6 +3406,13 @@ export class SkyFrontierScene {
 
   _releaseMonsterMesh(type, group) {
     group.visible = false;
+    const baseScale = group.userData?.isBoss ? 2.8 : 1.0;
+    group.scale.set(baseScale, baseScale, baseScale);
+    const sm = group.userData?.spriteMesh;
+    if (sm) {
+      sm.rotation.z = 0;
+      sm.material.color.setHex(0xFFFFFF);
+    }
     let pool = this.monsterPool.get(type);
     if (!pool) {
       pool = [];

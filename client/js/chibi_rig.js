@@ -928,6 +928,9 @@ export class ChibiRig {
     const stepZ = v === 'back' ? 0.062 : 0;
     const z = (ACC_Z[v]?.gloves ?? 0.068) + stepZ;
 
+    this.heldTool.baseRotZ = armTilt;
+    this.heldTool.baseScaleX = wM * scaleSign;
+    this.heldTool.baseScaleY = hM;
     this.heldTool.mesh.rotation.z = armTilt;
     this.heldTool.mesh.scale.set(wM * scaleSign, hM, 1);
     this.heldTool.mesh.position.set(ox * HEAD_H * posSign, effOy * HEAD_H, z);
@@ -1225,7 +1228,8 @@ export class ChibiRig {
       castArc = Math.sin(ck * Math.PI);
     }
 
-    let cArmL = 0, cArmR = 0, cTorso = 0, cHop = 0, cSx = 1, cSy = 1, cRim = 0;
+    let cArmL = 0, cArmR = 0, cLegL = 0, cLegR = 0, cTorso = 0, cHop = 0, cSx = 1, cSy = 1, cRim = 0;
+    let cToolRot = 0, cToolScale = 1;
     if (this.combatAnim) {
       this.combatAnim.t += dt;
       if (this.combatAnim.t >= this.combatAnim.dur) {
@@ -1256,15 +1260,20 @@ export class ChibiRig {
             cArmL = -swing;
             cArmR = 0.25 * cArc;
           }
+          cLegL = -0.18 * cArc;
+          cLegR = 0.18 * cArc;
           cTorso = dir * 0.24 * cArc;
           cHop = 0.09 * cArc;
           cRim = 1.4 * cArc;
+          cToolRot = dir * swing * 0.45;
+          cToolScale = 1 + 0.16 * cArc;
         } else if (kind === 'spin_slash') {
           this.TORSO_G.rotation.y = ck * Math.PI * 2;
           cArmL = -1.05 * cArc;
           cArmR = 1.05 * cArc;
           cHop = 0.16 * cArc;
           cRim = 1.6 * cArc;
+          cToolScale = 1 + 0.22 * cArc;
         } else if (kind === 'ground_slam') {
           this.TORSO_G.rotation.y = 0;
           cHop = Math.sin(ck * Math.PI) * 0.52;
@@ -1299,37 +1308,51 @@ export class ChibiRig {
             swing = -0.15 * p;
             torsoAngle = -0.02 * p;
             cHop = 0.01 * p;
+            cToolRot = -dir * 0.15 * p;
           } else if (ck < 0.42) {
             // Phase 2: Anticipation (0.12 – 0.42): arm drawn high (~-1.25 rad), torso leaning back ~-0.18, slight hop
             const p = (ck - 0.12) / 0.30;
             const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
             swing = -0.15 - 1.10 * s;
             torsoAngle = -0.02 - 0.16 * s;
-            cHop = 0.01 + 0.07 * Math.sin(p * Math.PI * 0.5);
+            cHop = 0.01 + 0.09 * Math.sin(p * Math.PI * 0.5);
+            cLegL = -0.18 * s;
+            cLegR = 0.18 * s;
+            cToolRot = -dir * (0.15 + 0.48 * s);
+            cToolScale = 1 + 0.08 * s;
           } else if (ck < 0.55) {
             // Phase 3: Swing (0.42 – 0.55): fast downward arc to ~+1.15 rad, torso snapping forward +0.26
             const p = (ck - 0.42) / 0.13;
             const s = p * p;
             swing = -1.25 + 2.40 * s;
             torsoAngle = -0.18 + 0.44 * s;
-            cHop = 0.08 * (1 - p);
-            cSx = 1.0 + 0.06 * p;
-            cSy = 1.0 - 0.06 * p;
+            cHop = 0.09 * (1 - p);
+            cSx = 1.0 + 0.08 * p;
+            cSy = 1.0 - 0.08 * p;
+            cLegL = -0.18 + 0.38 * s;
+            cLegR = 0.18 - 0.38 * s;
+            cToolRot = dir * (-0.63 + 1.25 * s);
+            cToolScale = 1.08 + 0.16 * Math.sin(p * Math.PI);
           } else if (ck < 0.70) {
             // Phase 5: Reaction (0.55 – 0.70): recoil to ~+0.85 rad
             const p = (ck - 0.55) / 0.15;
             const s = Math.sin(p * Math.PI * 0.5);
             swing = 1.15 - 0.30 * s;
             torsoAngle = 0.26 - 0.18 * s;
-            cSx = 1.06 - 0.06 * s;
-            cSy = 0.94 + 0.06 * s;
-            cRim = 1.6 * (1 - p);
+            cSx = 1.08 - 0.08 * s;
+            cSy = 0.92 + 0.08 * s;
+            cLegL = 0.20 * (1 - s);
+            cLegR = -0.20 * (1 - s);
+            cRim = 1.8 * (1 - p);
+            cToolRot = dir * (0.62 - 0.32 * s);
+            cToolScale = 1.0 + 0.10 * (1 - s);
           } else {
             // Phase 6: Recovery (0.70 – 1.00)
             const p = (ck - 0.70) / 0.30;
             const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
             swing = 0.85 * (1 - s);
             torsoAngle = 0.08 * (1 - s);
+            cToolRot = dir * 0.30 * (1 - s);
           }
 
           if (this.shownRight) {
@@ -1350,6 +1373,7 @@ export class ChibiRig {
             torsoAngle = -0.02 * p;
             torsoY = -dir * 0.05 * p;
             cHop = 0.01 * p;
+            cToolRot = -dir * 0.12 * p;
           } else if (ck < 0.42) {
             // Phase 2: Anticipation (0.12 – 0.42)
             const p = (ck - 0.12) / 0.30;
@@ -1357,7 +1381,11 @@ export class ChibiRig {
             swing = -0.10 - 0.85 * s;
             torsoAngle = -0.02 - 0.14 * s;
             torsoY = -dir * (0.05 + 0.40 * s);
-            cHop = 0.01 + 0.06 * Math.sin(p * Math.PI * 0.5);
+            cHop = 0.01 + 0.07 * Math.sin(p * Math.PI * 0.5);
+            cLegL = -0.16 * s;
+            cLegR = 0.16 * s;
+            cToolRot = -dir * (0.12 + 0.42 * s);
+            cToolScale = 1 + 0.08 * s;
           } else if (ck < 0.55) {
             // Phase 3: Swing (0.42 – 0.55): fast horizontal chop arc
             const p = (ck - 0.42) / 0.13;
@@ -1365,9 +1393,13 @@ export class ChibiRig {
             swing = -0.95 + 2.00 * s;
             torsoAngle = -0.16 + 0.38 * s;
             torsoY = dir * (-0.45 + 0.85 * s);
-            cHop = 0.07 * (1 - p);
-            cSx = 1.0 + 0.06 * p;
-            cSy = 1.0 - 0.06 * p;
+            cHop = 0.08 * (1 - p);
+            cSx = 1.0 + 0.08 * p;
+            cSy = 1.0 - 0.08 * p;
+            cLegL = -0.16 + 0.34 * s;
+            cLegR = 0.16 - 0.34 * s;
+            cToolRot = dir * (-0.54 + 1.12 * s);
+            cToolScale = 1.08 + 0.16 * Math.sin(p * Math.PI);
           } else if (ck < 0.70) {
             // Phase 5: Reaction (0.55 – 0.70): recoil
             const p = (ck - 0.55) / 0.15;
@@ -1375,9 +1407,13 @@ export class ChibiRig {
             swing = 1.05 - 0.25 * s;
             torsoAngle = 0.22 - 0.15 * s;
             torsoY = dir * (0.40 - 0.22 * s);
-            cSx = 1.06 - 0.06 * s;
-            cSy = 0.94 + 0.06 * s;
-            cRim = 1.6 * (1 - p);
+            cSx = 1.08 - 0.08 * s;
+            cSy = 0.92 + 0.08 * s;
+            cLegL = 0.18 * (1 - s);
+            cLegR = -0.18 * (1 - s);
+            cRim = 1.8 * (1 - p);
+            cToolRot = dir * (0.58 - 0.30 * s);
+            cToolScale = 1.0 + 0.10 * (1 - s);
           } else {
             // Phase 6: Recovery (0.70 – 1.00)
             const p = (ck - 0.70) / 0.30;
@@ -1385,6 +1421,7 @@ export class ChibiRig {
             swing = 0.80 * (1 - s);
             torsoAngle = 0.07 * (1 - s);
             torsoY = dir * 0.18 * (1 - s);
+            cToolRot = dir * 0.28 * (1 - s);
           }
 
           this.TORSO_G.rotation.y = torsoY;
@@ -1406,38 +1443,47 @@ export class ChibiRig {
             swing = 0.20 * p;
             torsoAngle = -0.02 * p;
             cHop = 0.02 * p;
+            cToolRot = dir * 0.08 * p;
           } else if (ck < 0.42) {
             // Phase 2: Anticipation (0.12 – 0.42): channeling forward and up
             const p = (ck - 0.12) / 0.30;
             const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
             swing = 0.20 + 0.90 * s;
             torsoAngle = -0.02 - 0.13 * s;
-            cHop = 0.02 + 0.08 * Math.sin(p * Math.PI * 0.5);
+            cHop = 0.02 + 0.10 * Math.sin(p * Math.PI * 0.5);
             cRim = 1.2 * s;
+            cToolRot = dir * (0.08 + 0.22 * s);
+            cToolScale = 1 + 0.10 * s;
           } else if (ck < 0.55) {
             // Phase 3: Cast thrust (0.42 – 0.55): arms held forward-up with no downswing
             const p = (ck - 0.42) / 0.13;
             const s = Math.sin(p * Math.PI * 0.5);
             swing = 1.10 + 0.15 * s;
             torsoAngle = -0.15 + 0.25 * s;
-            cHop = 0.10 + 0.03 * s;
+            cHop = 0.12 + 0.04 * s;
             cRim = 1.2 + 1.2 * s;
+            cToolRot = dir * (0.30 + 0.15 * s);
+            cToolScale = 1.10 + 0.14 * s;
           } else if (ck < 0.70) {
             // Phase 5: Reaction (0.55 – 0.70): burst recoil, arms settle slightly
             const p = (ck - 0.55) / 0.15;
             const s = Math.sin(p * Math.PI * 0.5);
             swing = 1.25 - 0.35 * s;
             torsoAngle = 0.10 - 0.08 * s;
-            cHop = 0.13 - 0.08 * s;
+            cHop = 0.16 - 0.10 * s;
             cRim = 2.4 - 1.2 * s;
+            cToolRot = dir * (0.45 - 0.20 * s);
+            cToolScale = 1.24 - 0.16 * s;
           } else {
             // Phase 6: Recovery (0.70 – 1.00): return to resting pose
             const p = (ck - 0.70) / 0.30;
             const s = 0.5 - 0.5 * Math.cos(p * Math.PI);
             swing = 0.90 * (1 - s);
             torsoAngle = 0.02 * (1 - s);
-            cHop = 0.05 * (1 - s);
+            cHop = 0.06 * (1 - s);
             cRim = 1.2 * (1 - s);
+            cToolRot = dir * 0.25 * (1 - s);
+            cToolScale = 1.08 - 0.08 * s;
           }
 
           if (this.shownRight) {
@@ -1462,8 +1508,8 @@ export class ChibiRig {
     }
 
     const legAmp = this.tailBody ? 0 : 0.30;
-    u.uLegL.value = step * legAmp * ww - castArc * (this.tailBody ? 0 : 0.16);
-    u.uLegR.value = -step * legAmp * ww + castArc * (this.tailBody ? 0 : 0.16);
+    u.uLegL.value = step * legAmp * ww - castArc * (this.tailBody ? 0 : 0.16) + (this.tailBody ? 0 : cLegL);
+    u.uLegR.value = -step * legAmp * ww + castArc * (this.tailBody ? 0 : 0.16) + (this.tailBody ? 0 : cLegR);
     u.uArmL.value = -step * 0.22 * ww - castArc * 0.68 + cArmL;
     u.uArmR.value = step * 0.22 * ww + castArc * 0.68 + cArmR;
     u.uTorso.value = Math.sin(ph) * 0.05 * ww + Math.sin(this.t * 10) * 0.03 * castArc + cTorso;
@@ -1473,6 +1519,15 @@ export class ChibiRig {
     u.uCloth.value = 0.006 + (this.tailBody ? 0.022 : 0.01) * ww + Math.abs(f.turnLag) * 0.02 + castArc * 0.025;
     u.uRim.value = 0.6 + castArc * 1.8 + cRim;
     this.syncBones();
+    if (this.heldTool?.mesh && this.heldTool.mesh.visible) {
+      const idleSway = Math.sin(ph - 0.5) * 0.07 * ww + Math.sin(this.t * 2.5) * 0.035 * (1 - ww);
+      this.heldTool.mesh.rotation.z = (this.heldTool.baseRotZ || 0) + cToolRot + idleSway;
+      this.heldTool.mesh.scale.set(
+        (this.heldTool.baseScaleX || 1) * cToolScale,
+        (this.heldTool.baseScaleY || 1) * cToolScale,
+        1
+      );
+    }
     if (this.tail) this.tail.pivot.rotation.z = (Math.sin(this.t * 2.1) * 0.10 + Math.sin(ph) * 0.16 * ww) * (this.shownRight ? 1 : -1) * (this.shownView === 'back' ? 0.6 : 1);
 
     // HIP: rhythmic waddle-hop + pop-turn hop + cast levitation + combat hop + squash/stretch (width never collapses)
