@@ -19,18 +19,18 @@ export const HYBRID_SHARE = 0.30;
 export const BUILDS = {
   speedster: { stat: 'swiftness', name: 'Speedster', icon: '⚡', tip: 'Chase slipstreams & land perfectly to fly!' },
   smasher: { stat: 'power', name: 'Smasher', icon: '🔥', tip: 'Boost through storm clouds — smash them all!' },
-  collector: { stat: 'fortune', name: 'Collector', icon: '🪙', tip: 'Follow jelly lines — Sugar Rush & more Pet Rides!' },
+  collector: { stat: 'fortune', name: 'Collector', icon: '💖', tip: 'Follow jelly lines — Sugar Rush & more Pet Rides!' },
   trickster: { stat: 'luck', name: 'Trickster', icon: '🍀', tip: 'Grab Mystery Prisms and let luck carry you!' },
   balanced: { stat: null, name: 'Balanced', icon: '🌈', tip: 'A little bit of everything — dress for cute!' },
 };
 
 export const HYBRIDS = {
   'swiftness+power': { id: 'juggernaut', name: 'Juggernaut', icon: '⚡🔥', perk: 'Smashing a hurdle gives a speed boost' },
-  'swiftness+fortune': { id: 'sugar_rocket', name: 'Sugar Rocket', icon: '⚡🪙', perk: 'Your chain tier raises top speed' },
+  'swiftness+fortune': { id: 'sugar_rocket', name: 'Sugar Rocket', icon: '⚡💖', perk: 'Your chain tier raises top speed' },
   'swiftness+luck': { id: 'phantom', name: 'Phantom', icon: '⚡🍀', perk: 'CLOSE CALL! near-misses give a mini boost' },
-  'power+fortune': { id: 'treasure_breaker', name: 'Treasure Breaker', icon: '🔥🪙', perk: 'Smashed hurdles burst into jelly' },
+  'power+fortune': { id: 'treasure_breaker', name: 'Treasure Breaker', icon: '🔥💖', perk: 'Smashed hurdles burst into jelly' },
   'power+luck': { id: 'gambler', name: 'Gambler', icon: '🔥🍀', perk: '25% chance your ULT becomes a SUPER ULT' },
-  'fortune+luck': { id: 'jackpot', name: 'Jackpot', icon: '🪙🍀', perk: 'Mystery Prisms also fill your pet\'s paw ring' },
+  'fortune+luck': { id: 'jackpot', name: 'Jackpot', icon: '💖🍀', perk: 'Mystery Prisms also fill your pet\'s paw ring' },
 };
 
 /** Human-readable perk list per main build (index = tier-1). */
@@ -168,7 +168,7 @@ export function dashModsFromStats(bonus = {}, opt = {}) {
 export function buildNextStep(build) {
   if (!build?.next) return null;
   const n = build.next;
-  const label = { swiftness: '⚡ Swiftness', power: '🔥 Power', fortune: '🪙 Fortune', luck: '🍀 Luck' }[n.stat];
+  const label = { swiftness: '⚡ Swiftness', power: '🔥 Power', fortune: '💖 Vitality', luck: '🍀 Luck' }[n.stat];
   return { text: `+${Math.max(0, Math.ceil(n.need - n.have))} ${label} to reach Tier ${['', 'I', 'II', 'III', 'IV'][n.tier]}`, have: n.have, need: n.need };
 }
 
@@ -178,14 +178,14 @@ export function buildNextStep(build) {
 export const ALL_BUILDS = [
   { id: 'speedster', kind: 'main', name: 'Speedster', icon: '⚡', stat: 'swiftness', tip: BUILDS.speedster.tip, perks: BUILD_PERKS.speedster },
   { id: 'smasher', kind: 'main', name: 'Smasher', icon: '🔥', stat: 'power', tip: BUILDS.smasher.tip, perks: BUILD_PERKS.smasher },
-  { id: 'collector', kind: 'main', name: 'Collector', icon: '🪙', stat: 'fortune', tip: BUILDS.collector.tip, perks: BUILD_PERKS.collector },
+  { id: 'collector', kind: 'main', name: 'Collector', icon: '💖', stat: 'fortune', tip: BUILDS.collector.tip, perks: BUILD_PERKS.collector },
   { id: 'trickster', kind: 'main', name: 'Trickster', icon: '🍀', stat: 'luck', tip: BUILDS.trickster.tip, perks: BUILD_PERKS.trickster },
   { id: 'juggernaut', kind: 'hybrid', name: 'Juggernaut', icon: '⚡🔥', stats: ['swiftness', 'power'], tip: 'Secret Hybrid: Swiftness + Power (Tier II+)', perks: [HYBRIDS['swiftness+power'].perk] },
-  { id: 'sugar_rocket', kind: 'hybrid', name: 'Sugar Rocket', icon: '⚡🪙', stats: ['swiftness', 'fortune'], tip: 'Secret Hybrid: Swiftness + Fortune (Tier II+)', perks: [HYBRIDS['swiftness+fortune'].perk] },
+  { id: 'sugar_rocket', kind: 'hybrid', name: 'Sugar Rocket', icon: '⚡💖', stats: ['swiftness', 'fortune'], tip: 'Secret Hybrid: Swiftness + Vitality (Tier II+)', perks: [HYBRIDS['swiftness+fortune'].perk] },
   { id: 'phantom', kind: 'hybrid', name: 'Phantom', icon: '⚡🍀', stats: ['swiftness', 'luck'], tip: 'Secret Hybrid: Swiftness + Luck (Tier II+)', perks: [HYBRIDS['swiftness+luck'].perk] },
-  { id: 'treasure_breaker', kind: 'hybrid', name: 'Treasure Breaker', icon: '🔥🪙', stats: ['power', 'fortune'], tip: 'Secret Hybrid: Power + Fortune (Tier II+)', perks: [HYBRIDS['power+fortune'].perk] },
+  { id: 'treasure_breaker', kind: 'hybrid', name: 'Treasure Breaker', icon: '🔥💖', stats: ['power', 'fortune'], tip: 'Secret Hybrid: Power + Vitality (Tier II+)', perks: [HYBRIDS['power+fortune'].perk] },
   { id: 'gambler', kind: 'hybrid', name: 'Gambler', icon: '🔥🍀', stats: ['power', 'luck'], tip: 'Secret Hybrid: Power + Luck (Tier II+)', perks: [HYBRIDS['power+luck'].perk] },
-  { id: 'jackpot', kind: 'hybrid', name: 'Jackpot', icon: '🪙🍀', stats: ['fortune', 'luck'], tip: 'Secret Hybrid: Fortune + Luck (Tier II+)', perks: [HYBRIDS['fortune+luck'].perk] },
+  { id: 'jackpot', kind: 'hybrid', name: 'Jackpot', icon: '💖🍀', stats: ['fortune', 'luck'], tip: 'Secret Hybrid: Vitality + Luck (Tier II+)', perks: [HYBRIDS['fortune+luck'].perk] },
   { id: 'balanced', kind: 'balanced', name: 'Balanced', icon: '🌈', stat: null, tip: BUILDS.balanced.tip, perks: BUILD_PERKS.balanced },
 ];
 
@@ -206,7 +206,7 @@ export function diffBuilds(beforeBonus = {}, afterBonus = {}) {
   const hybridDiscovered = after.kind === 'hybrid' && (before.kind !== 'hybrid' || before.id !== after.id);
   const tierUp = after.kind === 'main' && (before.id === after.id ? after.tier > before.tier : after.tier >= 1 && before.kind === 'balanced');
   const buildChanged = after.id !== before.id || after.tier !== before.tier;
-  const statIco = { swiftness: '⚡', power: '🔥', fortune: '🪙', luck: '🍀' };
+  const statIco = { swiftness: '⚡', power: '🔥', fortune: '💖', luck: '🍀' };
   let toast = '';
   if (hybridDiscovered) {
     toast = `🔍 SECRET HYBRID! You unlocked ${after.icon} ${after.name.toUpperCase()}!`;
@@ -231,7 +231,7 @@ export function diffBuilds(beforeBonus = {}, afterBonus = {}) {
 // ============================================================================
 export const SKY_WEATHERS = [
   { id: 'storm', name: 'Storm Week', icon: '⛈️', focus: 'smasher', focusName: 'Smashers', focusIcon: '🔥', banner: '⛈️ Storm Week — Smashers shine! 🔥', desc: 'Extra storm clouds on the road — boost through to smash them!' },
-  { id: 'jelly', name: 'Jelly Festival', icon: '🍬', focus: 'collector', focusName: 'Collectors', focusIcon: '🪙', banner: '🍬 Jelly Festival — Collectors shine! 🪙', desc: 'Extra Berry Jellies across all zones — Sugar Rush & Paw Rings fill fast!' },
+  { id: 'jelly', name: 'Jelly Festival', icon: '🍬', focus: 'collector', focusName: 'Collectors', focusIcon: '💖', banner: '🍬 Jelly Festival — Collectors shine! 💖', desc: 'Extra Berry Jellies across all zones — Sugar Rush & Paw Rings fill fast!' },
   { id: 'tailwind', name: 'Tailwind Week', icon: '🌬️', focus: 'speedster', focusName: 'Speedsters', focusIcon: '⚡', banner: '🌬️ Tailwind Week — Speedsters shine! ⚡', desc: 'Extra speed pads & faster slipstream drafting across the sky!' },
   { id: 'prism', name: 'Prism Party', icon: '🎁', focus: 'trickster', focusName: 'Tricksters', focusIcon: '🍀', banner: '🎁 Prism Party — Tricksters shine! 🍀', desc: 'Extra Mystery Prism rows — double item chaos!' },
 ];

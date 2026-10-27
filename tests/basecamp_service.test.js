@@ -244,6 +244,15 @@ test('story: claim applies gold, regions, residents, max_grid, monument unlocks;
   assert.ok(bc.claimStory(p).ok);
   assert.equal(p.village.max_grid, 24);
   assert.deepEqual(p.village.monument_unlocks, ['wnd_onsen']);
+  assert.equal(p.story.chapter, 5);
+  completeCurrent(p);
+  assert.ok(bc.claimStory(p).ok);
+  assert.ok(p.frontier.unlocks.regions.includes('reef'));
+  assert.equal(p.story.chapter, 6);
+  completeCurrent(p);
+  assert.ok(bc.claimStory(p).ok);
+  assert.ok(p.frontier.unlocks.regions.includes('caldera'));
+  assert.equal(p.village.max_grid, 26);
   assert.equal(bc.claimStory(p).error, 'done');
 });
 

@@ -54,6 +54,17 @@ function syncTraitsMirror(pet) {
 // ---------------------------------------------------------------------------------------------
 // Profile migration (pre-Step-3, pre-Step-3.5 & pre-Pet-V2 saves) — never loses progress
 // ---------------------------------------------------------------------------------------------
+export function ensureStarterCosmetics(p) {
+  if (!p || typeof p !== 'object') return p;
+  p.inventory = (p.inventory && typeof p.inventory === 'object' && !Array.isArray(p.inventory)) ? p.inventory : {};
+  for (const [id, def] of Object.entries(ACCESSORIES)) {
+    if (def?.starterCosmetic && !p.inventory[id]) {
+      p.inventory[id] = { refine: 0, dupes: 0, pity: 0 };
+    }
+  }
+  return p;
+}
+
 export function migrateRpg(p) {
   p.inventory = p.inventory || {};
   p.equipped = p.equipped || { outfit: { id: 'newbie_outfit', refine: 0 }, hat: null, face: null, gloves: null, boots: null, wings: null, pet: null };
@@ -74,6 +85,7 @@ export function migrateRpg(p) {
   const tailId = isGirl ? 'back_dragon_tail' : 'back_wolf_tail';
   if (!p.inventory[earId]) p.inventory[earId] = { refine: 0, dupes: 0, pity: 0 };
   if (!p.inventory[tailId]) p.inventory[tailId] = { refine: 0, dupes: 0, pity: 0 };
+  ensureStarterCosmetics(p);
   if (wasPreV2) {
     if (!p.equipped.hat?.id) p.equipped.hat = { id: earId, refine: 0 };
     if (!p.equipped.wings?.id) p.equipped.wings = { id: tailId, refine: 0 };
@@ -277,6 +289,10 @@ export function syncGlamourAndAttune(p) {
     const own = p.inventory?.[eqSlot.id];
     if (own?.attune?.stat) eqSlot.attune = { stat: own.attune.stat, count: own.attune.count | 0 };
     else delete eqSlot.attune;
+    if (own?.rolledStats && typeof own.rolledStats === 'object') eqSlot.rolledStats = { ...own.rolledStats };
+    else delete eqSlot.rolledStats;
+    if (own?.forgeGrade) eqSlot.forgeGrade = own.forgeGrade;
+    else delete eqSlot.forgeGrade;
     if (p.glamour[s]) eqSlot.glamour = p.glamour[s];
     else delete eqSlot.glamour;
   }
@@ -728,7 +744,7 @@ export function gearAttune(p, { itemId, stat, useScroll = false } = {}) {
   const own = p.inventory?.[itemId];
   if (!own || !itemDef(itemId)) return fail('not_owned');
   const curAttune = own.attune?.stat || null;
-  const info = inspectItemAttune(itemId, own.refine | 0, curAttune);
+  const info = inspectItemAttune(itemId, own.refine | 0, curAttune, { rolledStats: own.rolledStats });
   if (!info.attunable) return fail(info.reason || 'not_attunable');
   if (!info.unlocked) return fail('refine_too_low', { minRefine: 5, have: own.refine | 0 });
   if (!stat || !STAT_KEYS.includes(stat) || !info.allowedStats.includes(stat)) return fail('invalid_stat');
@@ -769,6 +785,8 @@ export function gearAttune(p, { itemId, stat, useScroll = false } = {}) {
     buildUpdate,
   };
 }
+
+export const attuneGear = gearAttune;
 
 // ---------------------------------------------------------------------------------------------
 // Wardrobe (6 slots + dice + pet) & 👗 Glamour + 🎒 Loadout Presets

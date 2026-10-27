@@ -111,6 +111,40 @@ export const CHAPTERS = Object.freeze([
       gold: 2000,
     }),
   },
+  {
+    id: 5,
+    title: 'Blossom Tides',
+    steps: Object.freeze([
+      Object.freeze({ id: 'c5_defeat_hollow_weaver', text: 'Defeat Hollow Crystal Weaver', kind: 'defeat', target: 'hollow_crystal_weaver', count: 1 }),
+      Object.freeze({ id: 'c5_craft_mithril_ingot', text: 'Smelt Mithril Ingot at Mint', kind: 'craft', target: 'mithril_ingot', count: 2 }),
+      Object.freeze({ id: 'c5_visit_gate_reef', text: 'Visit Sakura Reef Tide Gate', kind: 'visit', target: 'gate_reef', count: 1 }),
+    ]),
+    rewards: Object.freeze({
+      unlockBuildings: Object.freeze([]),
+      unlockRegions: Object.freeze(['reef']),
+      items: Object.freeze({ potion_small: 3 }),
+      residents: Object.freeze([]),
+      gold: 2600,
+    }),
+  },
+  {
+    id: 6,
+    title: 'Starforge Ascent',
+    expandTo: 26,
+    steps: Object.freeze([
+      Object.freeze({ id: 'c6_gather_sakura_timber', text: 'Gather Sakura Timber', kind: 'gather', target: 'sakura_timber', count: 12 }),
+      Object.freeze({ id: 'c6_gather_celestial_pearl', text: 'Gather Celestial Pearls', kind: 'gather', target: 'celestial_pearl', count: 10 }),
+      Object.freeze({ id: 'c6_defeat_sakura_kitsune', text: 'Defeat Lady Tamamo, Nine-Tail Kitsune', kind: 'defeat', target: 'sakura_nine_tail_kitsune', count: 1 }),
+    ]),
+    rewards: Object.freeze({
+      unlockBuildings: Object.freeze([]),
+      unlockRegions: Object.freeze(['caldera']),
+      items: Object.freeze({ golden_croissant: 2 }),
+      residents: Object.freeze([]),
+      expandTo: 26,
+      gold: 3400,
+    }),
+  },
 ]);
 
 /**

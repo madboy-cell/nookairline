@@ -7,7 +7,7 @@
 // Default Socket Box per slot (MapleStory modular fallback): any future accessory added to
 // catalog_gear_pets.js without an explicit ATTACH entry automatically snaps into its slot socket.
 import { OUTFITS } from './costumes_catalog.js';
-import { ACCESSORIES } from './catalog_gear_pets.js';
+import { ACCESSORIES, resolveWeaponClass } from './catalog_gear_pets.js';
 import { hairSpriteName, hairAttach, hairHatFit, resolveHairColor } from './hair_catalog.js';
 
 /**
@@ -29,6 +29,11 @@ export function visibleSlotId(equipped, slot, glamour = null) {
   if (!id) return null;
   if (slot !== 'outfit' && outfitHiddenSlots(visibleSlotId(equipped, 'outfit', glamour))[slot]) return null;
   return id;
+}
+/** Authoritative active combat weapon class ('melee' | 'ranged' | 'magic') resolved from visible Hands & Weapon (`Glamour || Equipped`). */
+export function activeWeaponClass(equipped, glamour = null) {
+  const visId = visibleSlotId(equipped, 'gloves', glamour);
+  return resolveWeaponClass(visId);
 }
 /** Hem for boot fitting: `lowerBody: 'gown'` forces the long-hem rules regardless of the sliced sprite's auto hem. */
 export const outfitHem = (outfitId, spriteHem) => (OUTFITS[outfitId]?.lowerBody === 'gown' ? 'long' : spriteHem || 'short');
@@ -714,6 +719,28 @@ export const ATTACH = {
   hat_rare_vending_soda_beret:       { bone: 'HEAD', hairCover: 'top', offset: [0.00, 1.08], scale: 1.28, offsets: { side: [-0.02, 1.07], back: [0.00, 1.06] }, scales: { side: 1.18, back: 1.26 }, views: { front: 'hat_rare_vending_soda_beret', side: 'hat_rare_vending_soda_beret_side', back: 'hat_rare_vending_soda_beret_back' } },
   gloves_rare_fizzy_soda_can_wand:   { bone: 'ARM', singleHand: true, grip: [0.428, 0.24], tilt: [-0.26, -0.48], offset: [0, 0], scale: 0.78, views: { front: 'gloves_rare_fizzy_soda_can_wand', side: 'gloves_rare_fizzy_soda_can_wand', back: 'gloves_rare_fizzy_soda_can_wand' } },
   boots_rare_soda_can_sneakers:      { bone: 'LEG', offset: [0.055, -0.385], scale: 0.49, offsets: { side: [0.070, -0.378], back: [0.045, -0.385] }, views: { front: 'boots_rare_soda_can_sneakers', side: 'boots_rare_soda_can_sneakers', back: 'boots_rare_soda_can_sneakers' } },
+  // ── MASTER CRAFTERS V2 HELD WEAPONS (15 singleHand Weapons: 3 Starters + 6 Boss Weapons + 6 Sovereign ★3) ──
+  gloves_starter_sword:        { bone: 'ARM', singleHand: true, grip: [0.24, 0.22], tilt: [-0.24, -0.45], offset: [0, 0], scale: 0.72, views: { front: 'gloves_starter_sword', side: 'gloves_starter_sword', back: 'gloves_starter_sword' } },
+  gloves_starter_shortbow:     { bone: 'ARM', singleHand: true, grip: [0.58, 0.49], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 0.88, views: { front: 'gloves_starter_shortbow', side: 'gloves_starter_shortbow', back: 'gloves_starter_shortbow' } },
+  gloves_starter_wand:         { bone: 'ARM', singleHand: true, grip: [0.22, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 0.74, views: { front: 'gloves_starter_wand', side: 'gloves_starter_wand', back: 'gloves_starter_wand' } },
+  gloves_boss_moss_cleaver:    { bone: 'ARM', singleHand: true, grip: [0.25, 0.22], tilt: [-0.24, -0.45], offset: [0, 0], scale: 0.88, views: { front: 'gloves_boss_moss_cleaver', side: 'gloves_boss_moss_cleaver', back: 'gloves_boss_moss_cleaver' } },
+  gloves_boss_moss_longbow:    { bone: 'ARM', singleHand: true, grip: [0.62, 0.49], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 0.96, views: { front: 'gloves_boss_moss_longbow', side: 'gloves_boss_moss_longbow', back: 'gloves_boss_moss_longbow' } },
+  gloves_boss_moss_staff:      { bone: 'ARM', singleHand: true, grip: [0.22, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 0.90, views: { front: 'gloves_boss_moss_staff', side: 'gloves_boss_moss_staff', back: 'gloves_boss_moss_staff' } },
+  gloves_boss_weaver_scythe:   { bone: 'ARM', singleHand: true, grip: [0.22, 0.22], tilt: [-0.26, -0.48], offset: [0, 0], scale: 1.02, views: { front: 'gloves_boss_weaver_scythe', side: 'gloves_boss_weaver_scythe', back: 'gloves_boss_weaver_scythe' } },
+  gloves_boss_weaver_bow:      { bone: 'ARM', singleHand: true, grip: [0.64, 0.49], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 1.00, views: { front: 'gloves_boss_weaver_bow', side: 'gloves_boss_weaver_bow', back: 'gloves_boss_weaver_bow' } },
+  gloves_boss_weaver_cane:     { bone: 'ARM', singleHand: true, grip: [0.22, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 0.94, views: { front: 'gloves_boss_weaver_cane', side: 'gloves_boss_weaver_cane', back: 'gloves_boss_weaver_cane' } },
+  gloves_boss_kitsune_blade:   { bone: 'ARM', singleHand: true, grip: [0.24, 0.23], tilt: [-0.24, -0.45], offset: [0, 0], scale: 0.98, views: { front: 'gloves_boss_kitsune_blade', side: 'gloves_boss_kitsune_blade', back: 'gloves_boss_kitsune_blade' } },
+  gloves_boss_kitsune_bow:     { bone: 'ARM', singleHand: true, grip: [0.66, 0.48], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 0.98, views: { front: 'gloves_boss_kitsune_bow', side: 'gloves_boss_kitsune_bow', back: 'gloves_boss_kitsune_bow' } },
+  gloves_boss_kitsune_staff:   { bone: 'ARM', singleHand: true, grip: [0.20, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 0.96, views: { front: 'gloves_boss_kitsune_staff', side: 'gloves_boss_kitsune_staff', back: 'gloves_boss_kitsune_staff' } },
+  gloves_boss_bahamut_cleaver: { bone: 'ARM', singleHand: true, grip: [0.22, 0.22], tilt: [-0.24, -0.45], offset: [0, 0], scale: 1.00, views: { front: 'gloves_boss_bahamut_cleaver', side: 'gloves_boss_bahamut_cleaver', back: 'gloves_boss_bahamut_cleaver' } },
+  gloves_boss_bahamut_bow:     { bone: 'ARM', singleHand: true, grip: [0.66, 0.48], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 1.00, views: { front: 'gloves_boss_bahamut_bow', side: 'gloves_boss_bahamut_bow', back: 'gloves_boss_bahamut_bow' } },
+  gloves_boss_bahamut_staff:   { bone: 'ARM', singleHand: true, grip: [0.20, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 0.96, views: { front: 'gloves_boss_bahamut_staff', side: 'gloves_boss_bahamut_staff', back: 'gloves_boss_bahamut_staff' } },
+  gloves_mythic_prism_blade:   { bone: 'ARM', singleHand: true, grip: [0.28, 0.23], tilt: [-0.24, -0.45], offset: [0, 0], scale: 1.02, views: { front: 'gloves_mythic_prism_blade', side: 'gloves_mythic_prism_blade', back: 'gloves_mythic_prism_blade' } },
+  gloves_mythic_bahamut_scythe:{ bone: 'ARM', singleHand: true, grip: [0.20, 0.22], tilt: [-0.26, -0.48], offset: [0, 0], scale: 1.06, views: { front: 'gloves_mythic_bahamut_scythe', side: 'gloves_mythic_bahamut_scythe', back: 'gloves_mythic_bahamut_scythe' } },
+  gloves_mythic_phoenix_bow:   { bone: 'ARM', singleHand: true, grip: [0.62, 0.50], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 1.02, views: { front: 'gloves_mythic_phoenix_bow', side: 'gloves_mythic_phoenix_bow', back: 'gloves_mythic_phoenix_bow' } },
+  gloves_mythic_chrono_bow:    { bone: 'ARM', singleHand: true, grip: [0.24, 0.23], tilt: [-0.48, -0.64], offset: [0.02, 0], offsets: { side: [0.06, 0], back: [0.02, 0] }, scale: 0.94, views: { front: 'gloves_mythic_chrono_bow', side: 'gloves_mythic_chrono_bow', back: 'gloves_mythic_chrono_bow' } },
+  gloves_mythic_eden_harpbow:  { bone: 'ARM', singleHand: true, grip: [0.60, 0.50], tilt: [-0.14, -0.22], offset: [0.06, 0.02], offsets: { side: [0.10, 0.02], back: [0.06, 0.02] }, scale: 1.02, views: { front: 'gloves_mythic_eden_harpbow', side: 'gloves_mythic_eden_harpbow', back: 'gloves_mythic_eden_harpbow' } },
+  gloves_mythic_poseidon_staff:{ bone: 'ARM', singleHand: true, grip: [0.22, 0.21], tilt: [-0.24, -0.46], offset: [0, 0], scale: 1.00, views: { front: 'gloves_mythic_poseidon_staff', side: 'gloves_mythic_poseidon_staff', back: 'gloves_mythic_poseidon_staff' } },
 };
 
 export const OUTFIT_FALLBACK = {

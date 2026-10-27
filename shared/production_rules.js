@@ -13,7 +13,7 @@ export const PRODUCTION_BUILDINGS = Object.freeze({
     'boba_tea',
     'golden_croissant',
   ]),
-  mint: Object.freeze(['ingot', 'crystal_glass']),
+  mint: Object.freeze(['ingot', 'crystal_glass', 'mithril_ingot']),
   workshop: Object.freeze([
     'plank',
     'thread',
@@ -102,6 +102,14 @@ export const RECIPES = Object.freeze({
     outputs: Object.freeze({ crystal_glass: 1 }),
     ms: 300 * 1000,
     minLv: 1,
+  }),
+  mithril_ingot: Object.freeze({
+    id: 'mithril_ingot',
+    building: 'mint',
+    inputs: Object.freeze({ crystal_ore: 5, stone: 2 }),
+    outputs: Object.freeze({ mithril_ingot: 1 }),
+    ms: 360 * 1000,
+    minLv: 2,
   }),
   plank: Object.freeze({
     id: 'plank',

@@ -96,6 +96,7 @@ export const REGIONS = Object.freeze({
       grove: Object.freeze({ x: -22, z: 8 }),
       wheat: Object.freeze({ x: 20, z: 12 }),
       grotto: Object.freeze({ x: 24, z: -14 }),
+      boulders: Object.freeze({ x: -16, z: -8 }),
       golem: Object.freeze({ x: -20, z: -18 }),
       gate_hollow: Object.freeze({ x: 0, z: -32 }),
     }),
@@ -117,13 +118,77 @@ export const REGIONS = Object.freeze({
     spawn: Object.freeze({ x: 0, z: 26 }),
     pois: Object.freeze({
       outpost: Object.freeze({ x: 0, z: 6 }),
+      frost_glade: Object.freeze({ x: -18, z: 16 }),
       quartz: Object.freeze({ x: -20, z: 0 }),
       mithril: Object.freeze({ x: 20, z: -10 }),
+      sanctum_guard: Object.freeze({ x: 14, z: -20 }),
       boss: Object.freeze({ x: 0, z: -26 }),
       gate_meadow: Object.freeze({ x: 0, z: 30 }),
+      gate_reef: Object.freeze({ x: 24, z: 18 }),
     }),
     gateTo: Object.freeze({
       meadow: Object.freeze({
+        at: Object.freeze({ x: 0, z: 30 }),
+        radius: 3,
+        requires: null,
+      }),
+      reef: Object.freeze({
+        at: Object.freeze({ x: 24, z: 18 }),
+        radius: 3,
+        requires: 'reef',
+      }),
+    }),
+  }),
+  reef: Object.freeze({
+    id: 'reef',
+    name: 'Celestial Sakura Reef',
+    zone: createZoneDescriptor(ZONE_KINDS.SURVIVAL_WILDS, {
+      id: 'sf_reef',
+      halfSize: 36,
+    }),
+    spawn: Object.freeze({ x: 0, z: 28 }),
+    pois: Object.freeze({
+      outpost: Object.freeze({ x: 0, z: 6 }),
+      shrine_woods: Object.freeze({ x: -22, z: 10 }),
+      pearl_shoals: Object.freeze({ x: 22, z: 10 }),
+      crane_roost: Object.freeze({ x: -20, z: -14 }),
+      bell_lagoon: Object.freeze({ x: 20, z: -14 }),
+      boss: Object.freeze({ x: 0, z: -26 }),
+      gate_hollow: Object.freeze({ x: -14, z: 30 }),
+      gate_caldera: Object.freeze({ x: 14, z: -30 }),
+    }),
+    gateTo: Object.freeze({
+      hollow: Object.freeze({
+        at: Object.freeze({ x: -14, z: 30 }),
+        radius: 3,
+        requires: null,
+      }),
+      caldera: Object.freeze({
+        at: Object.freeze({ x: 14, z: -30 }),
+        radius: 3,
+        requires: 'caldera',
+      }),
+    }),
+  }),
+  caldera: Object.freeze({
+    id: 'caldera',
+    name: 'Clockwork Star-Caldera',
+    zone: createZoneDescriptor(ZONE_KINDS.SURVIVAL_WILDS, {
+      id: 'sf_caldera',
+      halfSize: 36,
+    }),
+    spawn: Object.freeze({ x: 0, z: 28 }),
+    pois: Object.freeze({
+      outpost: Object.freeze({ x: 0, z: 6 }),
+      cinder_vents: Object.freeze({ x: -22, z: 10 }),
+      gear_foundry: Object.freeze({ x: 22, z: 10 }),
+      prism_spires: Object.freeze({ x: -20, z: -14 }),
+      chrono_ring: Object.freeze({ x: 20, z: -14 }),
+      boss: Object.freeze({ x: 0, z: -26 }),
+      gate_reef: Object.freeze({ x: 0, z: 30 }),
+    }),
+    gateTo: Object.freeze({
+      reef: Object.freeze({
         at: Object.freeze({ x: 0, z: 30 }),
         radius: 3,
         requires: null,
@@ -249,6 +314,66 @@ export const NODE_TYPES = Object.freeze({
       uncommon: Object.freeze({ ingot: 2 }),
       rare: Object.freeze({ ingot: 3, starlight_essence: 1 }),
       epic: Object.freeze({ ingot: 5, ancient_gear: 1, starlight_essence: 2 }),
+    }),
+  }),
+  sakura_tree: Object.freeze({
+    tool: 'axe',
+    minTier: 2,
+    hp: 12,
+    drop: Object.freeze({ sakura_timber: 5 }),
+    rare: Object.freeze({ honey: 0.20, cloud_silk: 0.16, starlight_essence: 0.03 }),
+    rarityDrops: Object.freeze({
+      uncommon: Object.freeze({ sakura_timber: 2 }),
+      rare: Object.freeze({ sakura_timber: 3, cloud_silk: 2 }),
+      epic: Object.freeze({ sakura_timber: 5, starlight_essence: 2 }),
+    }),
+  }),
+  pearl_clam: Object.freeze({
+    tool: 'pickaxe',
+    minTier: 2,
+    hp: 12,
+    drop: Object.freeze({ celestial_pearl: 4 }),
+    rare: Object.freeze({ fish: 0.22, crystal_glass: 0.16, starlight_essence: 0.04 }),
+    rarityDrops: Object.freeze({
+      uncommon: Object.freeze({ celestial_pearl: 2 }),
+      rare: Object.freeze({ celestial_pearl: 3, crystal_glass: 2 }),
+      epic: Object.freeze({ celestial_pearl: 5, starlight_essence: 2 }),
+    }),
+  }),
+  cloud_lotus: Object.freeze({
+    tool: 'staff',
+    minTier: 1,
+    hp: 8,
+    drop: Object.freeze({ cloud_lotus: 4 }),
+    rare: Object.freeze({ cloud_silk: 0.22, herb_seed: 0.20, starlight_essence: 0.03 }),
+    rarityDrops: Object.freeze({
+      uncommon: Object.freeze({ cloud_lotus: 2 }),
+      rare: Object.freeze({ cloud_lotus: 3, cloud_silk: 2 }),
+      epic: Object.freeze({ cloud_lotus: 5, starlight_essence: 2 }),
+    }),
+  }),
+  orichalcum: Object.freeze({
+    tool: 'pickaxe',
+    minTier: 2,
+    hp: 15,
+    drop: Object.freeze({ orichalcum_ore: 4 }),
+    rare: Object.freeze({ mithril_ingot: 0.20, ancient_gear: 0.08, starlight_essence: 0.05 }),
+    rarityDrops: Object.freeze({
+      uncommon: Object.freeze({ orichalcum_ore: 2, ingot: 1 }),
+      rare: Object.freeze({ orichalcum_ore: 3, mithril_ingot: 2 }),
+      epic: Object.freeze({ orichalcum_ore: 5, mithril_ingot: 3, ancient_gear: 2 }),
+    }),
+  }),
+  astral_prism: Object.freeze({
+    tool: 'staff',
+    minTier: 2,
+    hp: 14,
+    drop: Object.freeze({ astral_prism: 4 }),
+    rare: Object.freeze({ starlight_essence: 0.10, ancient_gear: 0.08, crystal_glass: 0.18 }),
+    rarityDrops: Object.freeze({
+      uncommon: Object.freeze({ astral_prism: 2 }),
+      rare: Object.freeze({ astral_prism: 3, starlight_essence: 1 }),
+      epic: Object.freeze({ astral_prism: 5, starlight_essence: 3, ancient_gear: 1 }),
     }),
   }),
 });
@@ -887,4 +1012,605 @@ export function clampToRegion(regionId, x, z, radius = 0.4) {
   const region = REGIONS[regionId];
   if (!region?.zone) return { x, z };
   return clampZoneWalkable(region.zone, x, z, { radius });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Smart Quest & Material Wayfinding Directory
+// ---------------------------------------------------------------------------------------------
+export const FRONTIER_ITEM_SOURCES = Object.freeze({
+  // Raw & Rare Gatherables
+  wood: Object.freeze({
+    id: 'wood', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['tree']), poiKey: 'grove',
+    label: 'Whispering Grove Trees', icon: '🪵',
+  }),
+  stone: Object.freeze({
+    id: 'stone', region: 'meadow', altRegions: Object.freeze(['hollow']), mode: 'gather',
+    nodeTypes: Object.freeze(['boulder']), poiKey: 'outpost',
+    label: 'Granite Boulders', icon: '🪨',
+  }),
+  sky_wheat: Object.freeze({
+    id: 'sky_wheat', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['wheat']), poiKey: 'wheat',
+    label: 'Mill Ruins Wheat Patch', icon: '🌾',
+  }),
+  golden_wheat: Object.freeze({
+    id: 'golden_wheat', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['wheat']), poiKey: 'wheat',
+    label: 'Mill Ruins Wheat (Rare)', icon: '✨',
+  }),
+  herb: Object.freeze({
+    id: 'herb', region: 'meadow', altRegions: Object.freeze(['hollow']), mode: 'gather',
+    nodeTypes: Object.freeze(['herb']), poiKey: 'grove',
+    label: 'Dewdrop Herb Bushes (Seeds)', icon: '🌿',
+  }),
+  herb_seed: Object.freeze({
+    id: 'herb_seed', region: 'meadow', altRegions: Object.freeze(['hollow']), mode: 'gather',
+    nodeTypes: Object.freeze(['herb']), poiKey: 'grove',
+    label: 'Dewdrop Herb Bushes', icon: '🌱',
+  }),
+  berries_crop: Object.freeze({
+    id: 'berries_crop', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['herb']), poiKey: 'wheat',
+    label: 'Dewdrop Herb Bushes (Rare)', icon: '🍓',
+  }),
+  crystal_ore: Object.freeze({
+    id: 'crystal_ore', region: 'hollow', fallbackRegion: 'meadow', fallbackPoiKey: 'grotto', mode: 'gather',
+    nodeTypes: Object.freeze(['crystal', 'quartz', 'mithril']), poiKey: 'quartz',
+    label: 'Crystal Veins', icon: '💎',
+  }),
+  crystal_glass: Object.freeze({
+    id: 'crystal_glass', region: 'hollow', fallbackRegion: 'meadow', fallbackPoiKey: 'grotto', mode: 'gather',
+    nodeTypes: Object.freeze(['quartz', 'crystal']), poiKey: 'quartz',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 1 }),
+    label: 'Quartz & Crystal Veins', icon: '🔷',
+  }),
+  ingot: Object.freeze({
+    id: 'ingot', region: 'hollow', fallbackRegion: 'meadow', fallbackPoiKey: 'grotto', mode: 'gather',
+    nodeTypes: Object.freeze(['mithril', 'crystal']), poiKey: 'mithril',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 2 }),
+    label: 'Mithril Veins (or Smelt at Mint)', icon: '🔩',
+  }),
+  honey: Object.freeze({
+    id: 'honey', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['tree', 'wheat']), poiKey: 'grove',
+    label: 'Meadow Trees & Wheat', icon: '🍯',
+  }),
+  feather: Object.freeze({
+    id: 'feather', region: 'meadow', mode: 'gather',
+    nodeTypes: Object.freeze(['tree']), poiKey: 'grove',
+    label: 'Whispering Grove Trees (Rare)', icon: '🪶',
+  }),
+  cloud_silk: Object.freeze({
+    id: 'cloud_silk', region: 'meadow', altRegions: Object.freeze(['hollow']), mode: 'gather',
+    nodeTypes: Object.freeze(['herb']), poiKey: 'grove',
+    label: 'Dewdrop Herb Bushes (Rare)', icon: '🧶',
+  }),
+  ancient_gear: Object.freeze({
+    id: 'ancient_gear', region: 'hollow', fallbackRegion: 'meadow', fallbackPoiKey: 'golem', mode: 'gather',
+    nodeTypes: Object.freeze(['quartz', 'mithril', 'crystal', 'boulder']), poiKey: 'quartz',
+    label: 'Ancient Crystal & Boulder Veins', icon: '⚙️',
+  }),
+  starlight_essence: Object.freeze({
+    id: 'starlight_essence', region: 'hollow', altRegions: Object.freeze(['reef', 'caldera']), fallbackRegion: 'meadow', fallbackPoiKey: 'wheat', mode: 'gather',
+    nodeTypes: Object.freeze(['mithril', 'quartz', 'astral_prism', 'pearl_clam']), poiKey: 'mithril',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 2 }),
+    label: 'Mithril & Astral Spires', icon: '🌟',
+  }),
+  mithril_ingot: Object.freeze({
+    id: 'mithril_ingot', region: 'hollow', altRegions: Object.freeze(['caldera']), mode: 'gather',
+    nodeTypes: Object.freeze(['mithril', 'orichalcum']), poiKey: 'mithril',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 2 }),
+    label: 'Smelt at Mint (or Mithril/Orichalcum Veins)', icon: '💠',
+  }),
+  sakura_timber: Object.freeze({
+    id: 'sakura_timber', region: 'reef', mode: 'gather',
+    nodeTypes: Object.freeze(['sakura_tree']), poiKey: 'shrine_woods',
+    minTool: Object.freeze({ tool: 'axe', tier: 2 }),
+    label: 'Shrine Sakura Trees', icon: '🌸',
+  }),
+  celestial_pearl: Object.freeze({
+    id: 'celestial_pearl', region: 'reef', mode: 'gather',
+    nodeTypes: Object.freeze(['pearl_clam']), poiKey: 'pearl_shoals',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 2 }),
+    label: 'Luminous Pearl Clams', icon: '🦪',
+  }),
+  cloud_lotus: Object.freeze({
+    id: 'cloud_lotus', region: 'reef', mode: 'gather',
+    nodeTypes: Object.freeze(['cloud_lotus']), poiKey: 'crane_roost',
+    minTool: Object.freeze({ tool: 'staff', tier: 1 }),
+    label: 'Floating Cloud-Lotus Pools', icon: '🪷',
+  }),
+  orichalcum_ore: Object.freeze({
+    id: 'orichalcum_ore', region: 'caldera', mode: 'gather',
+    nodeTypes: Object.freeze(['orichalcum']), poiKey: 'cinder_vents',
+    minTool: Object.freeze({ tool: 'pickaxe', tier: 2 }),
+    label: 'Solar Orichalcum Veins', icon: '🔶',
+  }),
+  astral_prism: Object.freeze({
+    id: 'astral_prism', region: 'caldera', mode: 'gather',
+    nodeTypes: Object.freeze(['astral_prism']), poiKey: 'prism_spires',
+    minTool: Object.freeze({ tool: 'staff', tier: 2 }),
+    label: 'Clockwork Astral Prisms', icon: '🔮',
+  }),
+  // Combat & Boss Drops
+  monster_gel: Object.freeze({
+    id: 'monster_gel', region: 'meadow', altRegions: Object.freeze(['hollow', 'reef']), mode: 'combat',
+    mobKinds: Object.freeze(['moss_slime', 'thornback_boar', 'crystal_beetle', 'reef_bell_spirit']), poiKey: 'grove',
+    label: 'Moss Slimes & Beetles', icon: '🟢',
+  }),
+  monster_fang: Object.freeze({
+    id: 'monster_fang', region: 'meadow', altRegions: Object.freeze(['hollow', 'caldera']), mode: 'combat',
+    mobKinds: Object.freeze(['thornback_boar', 'lantern_bat', 'quartz_golemling', 'sanctum_star_gargoyle']), poiKey: 'boulders',
+    label: 'Thornback Boars & Cavern Bats', icon: '🦷',
+  }),
+  boss_core_moss: Object.freeze({
+    id: 'boss_core_moss', region: 'meadow', mode: 'boss',
+    bossId: 'elder_moss_golem', mobKinds: Object.freeze(['elder_moss_golem']), poiKey: 'golem',
+    label: 'Elder Moss Golem Altar', icon: '🪨',
+  }),
+  boss_core_weaver: Object.freeze({
+    id: 'boss_core_weaver', region: 'hollow', mode: 'boss',
+    bossId: 'hollow_crystal_weaver', mobKinds: Object.freeze(['hollow_crystal_weaver']), poiKey: 'boss',
+    label: 'Crystal Weaver Altar', icon: '🕸️',
+  }),
+  boss_core_kitsune: Object.freeze({
+    id: 'boss_core_kitsune', region: 'reef', mode: 'boss',
+    bossId: 'sakura_nine_tail_kitsune', mobKinds: Object.freeze(['sakura_nine_tail_kitsune']), poiKey: 'boss',
+    label: 'Nine-Tail Kitsune Shrine Altar', icon: '🦊',
+  }),
+  boss_core_bahamut: Object.freeze({
+    id: 'boss_core_bahamut', region: 'caldera', mode: 'boss',
+    bossId: 'chronos_solar_bahamut', mobKinds: Object.freeze(['chronos_solar_bahamut']), poiKey: 'boss',
+    label: 'Chronos-Solar Bahamut Altar', icon: '☀️',
+  }),
+  // Story POIs, Monsters & Bosses
+  outpost: Object.freeze({
+    id: 'outpost', region: 'meadow', altRegions: Object.freeze(['hollow', 'reef', 'caldera']), mode: 'poi',
+    poiKey: 'outpost', label: 'Goddess Outpost Statue', icon: '🗽',
+  }),
+  wheat: Object.freeze({
+    id: 'wheat', region: 'meadow', mode: 'poi',
+    poiKey: 'wheat', label: 'Overgrown Mill Ruins', icon: '🌾',
+  }),
+  gate_hollow: Object.freeze({
+    id: 'gate_hollow', region: 'meadow', mode: 'poi',
+    poiKey: 'gate_hollow', label: 'Northern Sky Mist Gate', icon: '🌀',
+  }),
+  gate_meadow: Object.freeze({
+    id: 'gate_meadow', region: 'hollow', mode: 'poi',
+    poiKey: 'gate_meadow', label: 'Meadow Return Gate', icon: '🌀',
+  }),
+  gate_reef: Object.freeze({
+    id: 'gate_reef', region: 'hollow', mode: 'poi',
+    poiKey: 'gate_reef', label: 'Sakura Reef Tide Gate', icon: '🌸',
+  }),
+  gate_caldera: Object.freeze({
+    id: 'gate_caldera', region: 'reef', mode: 'poi',
+    poiKey: 'gate_caldera', label: 'Star-Caldera Ascent Gate', icon: '⚙️',
+  }),
+  elder_moss_golem: Object.freeze({
+    id: 'elder_moss_golem', region: 'meadow', mode: 'boss',
+    bossId: 'elder_moss_golem', mobKinds: Object.freeze(['elder_moss_golem']), poiKey: 'golem',
+    label: 'Elder Moss Golem Altar', icon: '🗿',
+  }),
+  hollow_crystal_weaver: Object.freeze({
+    id: 'hollow_crystal_weaver', region: 'hollow', mode: 'boss',
+    bossId: 'hollow_crystal_weaver', mobKinds: Object.freeze(['hollow_crystal_weaver']), poiKey: 'boss',
+    label: 'Hollow Crystal Weaver Altar', icon: '🕷️',
+  }),
+  sakura_nine_tail_kitsune: Object.freeze({
+    id: 'sakura_nine_tail_kitsune', region: 'reef', mode: 'boss',
+    bossId: 'sakura_nine_tail_kitsune', mobKinds: Object.freeze(['sakura_nine_tail_kitsune']), poiKey: 'boss',
+    label: 'Lady Tamamo Shrine Altar', icon: '🦊',
+  }),
+  chronos_solar_bahamut: Object.freeze({
+    id: 'chronos_solar_bahamut', region: 'caldera', mode: 'boss',
+    bossId: 'chronos_solar_bahamut', mobKinds: Object.freeze(['chronos_solar_bahamut']), poiKey: 'boss',
+    label: 'Chronos-Solar Bahamut Altar', icon: '🐲',
+  }),
+  moss_slime: Object.freeze({
+    id: 'moss_slime', region: 'meadow', mode: 'combat',
+    mobKinds: Object.freeze(['moss_slime']), poiKey: 'grove',
+    label: 'Moss Slimes', icon: '🟢',
+  }),
+  thornback_boar: Object.freeze({
+    id: 'thornback_boar', region: 'meadow', mode: 'combat',
+    mobKinds: Object.freeze(['thornback_boar']), poiKey: 'boulders',
+    label: 'Thornback Boars', icon: '🐗',
+  }),
+  pollen_wisp: Object.freeze({
+    id: 'pollen_wisp', region: 'meadow', mode: 'combat',
+    mobKinds: Object.freeze(['pollen_wisp']), poiKey: 'wheat',
+    label: 'Pollen Wisps', icon: '🧚',
+  }),
+  meadow_zephyr_hare: Object.freeze({
+    id: 'meadow_zephyr_hare', region: 'meadow', mode: 'combat',
+    mobKinds: Object.freeze(['meadow_zephyr_hare']), poiKey: 'grotto',
+    label: 'Zephyr Sylph-Hares', icon: '🐰',
+  }),
+  crystal_beetle: Object.freeze({
+    id: 'crystal_beetle', region: 'hollow', mode: 'combat',
+    mobKinds: Object.freeze(['crystal_beetle']), poiKey: 'quartz',
+    label: 'Crystal Beetles', icon: '🪲',
+  }),
+  lantern_bat: Object.freeze({
+    id: 'lantern_bat', region: 'hollow', mode: 'combat',
+    mobKinds: Object.freeze(['lantern_bat']), poiKey: 'mithril',
+    label: 'Lantern Bats', icon: '🦇',
+  }),
+  quartz_golemling: Object.freeze({
+    id: 'quartz_golemling', region: 'hollow', mode: 'combat',
+    mobKinds: Object.freeze(['quartz_golemling']), poiKey: 'sanctum_guard',
+    label: 'Quartz Golemlings', icon: '🗿',
+  }),
+  hollow_frost_shroom: Object.freeze({
+    id: 'hollow_frost_shroom', region: 'hollow', mode: 'combat',
+    mobKinds: Object.freeze(['hollow_frost_shroom']), poiKey: 'frost_glade',
+    label: 'Frostcap Myconids', icon: '🍄',
+  }),
+  reef_sakura_kitsune: Object.freeze({
+    id: 'reef_sakura_kitsune', region: 'reef', mode: 'combat',
+    mobKinds: Object.freeze(['reef_sakura_kitsune']), poiKey: 'shrine_woods',
+    label: 'Sakura Shrine Kitsunes', icon: '🦊',
+  }),
+  reef_pearl_snapper: Object.freeze({
+    id: 'reef_pearl_snapper', region: 'reef', mode: 'combat',
+    mobKinds: Object.freeze(['reef_pearl_snapper']), poiKey: 'pearl_shoals',
+    label: 'Tide-Pearl Snappers', icon: '🐢',
+  }),
+  reef_cloud_crane: Object.freeze({
+    id: 'reef_cloud_crane', region: 'reef', mode: 'combat',
+    mobKinds: Object.freeze(['reef_cloud_crane']), poiKey: 'crane_roost',
+    label: 'Celestial Cloud-Cranes', icon: '🦢',
+  }),
+  reef_bell_spirit: Object.freeze({
+    id: 'reef_bell_spirit', region: 'reef', mode: 'combat',
+    mobKinds: Object.freeze(['reef_bell_spirit']), poiKey: 'bell_lagoon',
+    label: 'Furin Tide-Bell Spirits', icon: '🎐',
+  }),
+  sanctum_cinder_salamander: Object.freeze({
+    id: 'sanctum_cinder_salamander', region: 'caldera', mode: 'combat',
+    mobKinds: Object.freeze(['sanctum_cinder_salamander']), poiKey: 'cinder_vents',
+    label: 'Solar-Cinder Salamanders', icon: '🦎',
+  }),
+  sanctum_arc_automaton: Object.freeze({
+    id: 'sanctum_arc_automaton', region: 'caldera', mode: 'combat',
+    mobKinds: Object.freeze(['sanctum_arc_automaton']), poiKey: 'gear_foundry',
+    label: 'Aether-Owl Automatons', icon: '🦉',
+  }),
+  sanctum_star_gargoyle: Object.freeze({
+    id: 'sanctum_star_gargoyle', region: 'caldera', mode: 'combat',
+    mobKinds: Object.freeze(['sanctum_star_gargoyle']), poiKey: 'prism_spires',
+    label: 'Astral-Shard Griffons', icon: '🦅',
+  }),
+  sanctum_chrono_sentinel: Object.freeze({
+    id: 'sanctum_chrono_sentinel', region: 'caldera', mode: 'combat',
+    mobKinds: Object.freeze(['sanctum_chrono_sentinel']), poiKey: 'chrono_ring',
+    label: 'Chrono-Gear Sentinels', icon: '🤖',
+  }),
+});
+
+/**
+ * Resolves the best region, POI coordinates, and target metadata for a material/POI/monster ID,
+ * taking into account unlocked regions and the player's current region.
+ */
+export function resolveFrontierTarget(targetId, unlocks = null, currentRegion = 'meadow') {
+  const src = FRONTIER_ITEM_SOURCES[targetId];
+  if (!src) return null;
+  let regionId = src.region;
+  let poiKey = src.poiKey;
+  const gateTargets = {
+    gate_hollow: 'hollow',
+    gate_meadow: 'meadow',
+    gate_reef: 'reef',
+    gate_caldera: 'caldera',
+  };
+  let kind = src.mode === 'gather'
+    ? 'node'
+    : src.mode === 'combat'
+    ? 'mob'
+    : src.mode === 'boss'
+    ? 'boss'
+    : gateTargets[targetId]
+    ? 'gate'
+    : 'poi';
+  let gateTo = gateTargets[targetId] || null;
+
+  if (
+    currentRegion &&
+    src.altRegions?.includes(currentRegion) &&
+    (currentRegion === 'meadow' || checkHasUnlock(unlocks, currentRegion))
+  ) {
+    regionId = currentRegion;
+  } else if (regionId !== 'meadow' && !checkHasUnlock(unlocks, regionId)) {
+    if (regionId === 'caldera' && checkHasUnlock(unlocks, 'reef')) {
+      regionId = 'reef';
+      poiKey = 'gate_caldera';
+      kind = 'gate';
+      gateTo = 'caldera';
+    } else if ((regionId === 'reef' || regionId === 'caldera') && checkHasUnlock(unlocks, 'hollow')) {
+      regionId = 'hollow';
+      poiKey = 'gate_reef';
+      kind = 'gate';
+      gateTo = 'reef';
+    } else {
+      regionId = 'meadow';
+      poiKey = 'gate_hollow';
+      kind = 'gate';
+      gateTo = 'hollow';
+    }
+  }
+  const region = REGIONS[regionId] || REGIONS.meadow;
+  const poi = region.pois?.[poiKey] || region.pois?.outpost || { x: 0, z: 0 };
+  return {
+    ...src,
+    kind,
+    gateTo,
+    region: regionId,
+    regionName: region.name,
+    poiKey,
+    x: poi.x,
+    z: poi.z,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Endless Sky Frontier Field Bounties & Daily Goddess Stamp Chest
+// ---------------------------------------------------------------------------------------------
+export const FIELD_BOUNTY_STAMP_REWARD = Object.freeze({
+  gold: 400,
+  diamonds: 15,
+  energy: 50,
+  items: Object.freeze({ repair_kit: 1, bread: 1 }),
+});
+
+const GATHER_BOUNTY_POOL = Object.freeze([
+  Object.freeze({
+    key: 'wood', kind: 'gather_item', target: 'wood', seekTarget: 'wood', region: 'meadow',
+    title: 'Timber Harvest', icon: '🪵', baseGoal: 18, unitLabel: 'Wood',
+    gold: 180, energy: 25, items: Object.freeze({ honey: 1 }),
+  }),
+  Object.freeze({
+    key: 'stone', kind: 'gather_item', target: 'stone', seekTarget: 'stone', region: 'meadow',
+    title: 'Quarry Breaker', icon: '🪨', baseGoal: 18, unitLabel: 'Stone',
+    gold: 180, energy: 25, items: Object.freeze({ crystal_ore: 2 }),
+  }),
+  Object.freeze({
+    key: 'sky_wheat', kind: 'gather_item', target: 'sky_wheat', seekTarget: 'sky_wheat', region: 'meadow',
+    title: 'Golden Sheaves', icon: '🌾', baseGoal: 15, unitLabel: 'Sky Wheat',
+    gold: 190, energy: 25, items: Object.freeze({ golden_wheat: 1 }),
+  }),
+  Object.freeze({
+    key: 'herb_seed', kind: 'gather_item', target: 'herb_seed', seekTarget: 'herb_seed', region: 'meadow',
+    title: 'Dewdrop Forager', icon: '🌱', baseGoal: 9, unitLabel: 'Herb Seeds',
+    gold: 200, energy: 25, items: Object.freeze({ berries_crop: 1 }),
+  }),
+  Object.freeze({
+    key: 'crystal_ore', kind: 'gather_item', target: 'crystal_ore', seekTarget: 'crystal_ore', region: 'hollow', requiresRegion: 'hollow',
+    title: 'Cavern Prospector', icon: '💎', baseGoal: 14, unitLabel: 'Crystal Ore',
+    gold: 260, energy: 30, items: Object.freeze({ crystal_glass: 1 }),
+  }),
+  Object.freeze({
+    key: 'sakura_timber', kind: 'gather_item', target: 'sakura_timber', seekTarget: 'sakura_timber', region: 'reef', requiresRegion: 'reef',
+    title: 'Blossom Timberman', icon: '🌸', baseGoal: 14, unitLabel: 'Sakura Timber',
+    gold: 310, energy: 35, items: Object.freeze({ celestial_pearl: 2 }),
+  }),
+  Object.freeze({
+    key: 'orichalcum_ore', kind: 'gather_item', target: 'orichalcum_ore', seekTarget: 'orichalcum_ore', region: 'caldera', requiresRegion: 'caldera',
+    title: 'Starforge Miner', icon: '🔶', baseGoal: 12, unitLabel: 'Orichalcum Ore',
+    gold: 360, energy: 35, items: Object.freeze({ astral_prism: 2 }),
+  }),
+]);
+
+const MASTERY_BOUNTY_POOL = Object.freeze([
+  Object.freeze({
+    key: 'perfects', kind: 'perfect_strikes', target: null, seekTarget: 'wood', region: 'meadow',
+    title: 'Rhythm Virtuoso', icon: '🎯', baseGoal: 6, unitLabel: 'PERFECT! Strikes',
+    gold: 210, energy: 30, items: Object.freeze({ bread: 1 }),
+  }),
+  Object.freeze({
+    key: 'nodes', kind: 'node_breaks', target: null, seekTarget: 'stone', region: 'meadow',
+    title: 'Vein Shatterer', icon: '⛏️', baseGoal: 5, unitLabel: 'Nodes Harvested',
+    gold: 200, energy: 25, items: Object.freeze({ wood: 6, stone: 6 }),
+  }),
+  Object.freeze({
+    key: 'rares', kind: 'rare_nodes', target: null, seekTarget: 'sky_wheat', region: 'meadow',
+    title: 'Lucky Prospector', icon: '🌟', baseGoal: 2, unitLabel: 'Uncommon+ Harvests',
+    gold: 240, energy: 30, items: Object.freeze({ honey: 1, golden_wheat: 1 }),
+  }),
+]);
+
+const COMBAT_BOUNTY_POOL = Object.freeze([
+  Object.freeze({
+    key: 'mobs_any', kind: 'mob_kills', target: null, seekTarget: 'monster_gel', region: 'meadow',
+    title: 'Frontier Patrol', icon: '⚔️', baseGoal: 4, unitLabel: 'Monsters Defeated',
+    gold: 220, energy: 25, items: Object.freeze({ monster_gel: 3 }),
+  }),
+  Object.freeze({
+    key: 'gel_hunt', kind: 'gather_item', target: 'monster_gel', seekTarget: 'monster_gel', region: 'meadow',
+    title: 'Slime Cleanup', icon: '🟢', baseGoal: 5, unitLabel: 'Monster Gel',
+    gold: 220, energy: 25, items: Object.freeze({ monster_fang: 2 }),
+  }),
+  Object.freeze({
+    key: 'fang_hunt', kind: 'gather_item', target: 'monster_fang', seekTarget: 'monster_fang', region: 'meadow',
+    title: 'Wild Tusks & Wings', icon: '🦷', baseGoal: 3, unitLabel: 'Monster Fangs',
+    gold: 240, energy: 30, items: Object.freeze({ potion_small: 1 }),
+  }),
+  Object.freeze({
+    key: 'hollow_hunt', kind: 'mob_kills', target: 'hollow', seekTarget: 'crystal_beetle', region: 'hollow', requiresRegion: 'hollow',
+    title: 'Crystal Vault Ward', icon: '🪲', baseGoal: 4, unitLabel: 'Hollow Monsters',
+    gold: 280, energy: 30, items: Object.freeze({ crystal_ore: 6 }),
+  }),
+  Object.freeze({
+    key: 'reef_hunt', kind: 'mob_kills', target: 'reef', seekTarget: 'reef_sakura_kitsune', region: 'reef', requiresRegion: 'reef',
+    title: 'Shrine Reef Patrol', icon: '🦊', baseGoal: 4, unitLabel: 'Reef Spirits',
+    gold: 330, energy: 35, items: Object.freeze({ cloud_lotus: 4 }),
+  }),
+  Object.freeze({
+    key: 'caldera_hunt', kind: 'mob_kills', target: 'caldera', seekTarget: 'sanctum_cinder_salamander', region: 'caldera', requiresRegion: 'caldera',
+    title: 'Star-Caldera Vanguard', icon: '🦎', baseGoal: 4, unitLabel: 'Caldera Monsters',
+    gold: 380, energy: 35, items: Object.freeze({ orichalcum_ore: 4 }),
+  }),
+]);
+
+function dealBountyRound(day, round, unlocks) {
+  const seedBase = ((day * 37) + (round * 13)) >>> 0;
+  const filterPool = (pool) => pool.filter((t) => !t.requiresRegion || checkHasUnlock(unlocks, t.requiresRegion));
+  const pools = [filterPool(GATHER_BOUNTY_POOL), filterPool(MASTERY_BOUNTY_POOL), filterPool(COMBAT_BOUNTY_POOL)];
+  const mult = Math.min(2.0, 1 + Math.max(0, round - 1) * 0.15);
+  const goldMult = Math.min(2.2, 1 + Math.max(0, round - 1) * 0.20);
+
+  return pools.map((pool, slot) => {
+    const pick = pool[(seedBase + slot * 7) % pool.length];
+    const goal = Math.max(1, Math.round(pick.baseGoal * mult));
+    const gold = Math.round(pick.gold * goldMult);
+    return {
+      slot,
+      id: `fb_${day}_r${round}_s${slot}_${pick.key}`,
+      kind: pick.kind,
+      target: pick.target,
+      seekTarget: pick.seekTarget,
+      region: pick.region,
+      icon: pick.icon,
+      title: pick.title,
+      desc: `${pick.icon} ${goal} ${pick.unitLabel}`,
+      goal,
+      have: 0,
+      claimed: false,
+      rewards: {
+        gold,
+        energy: pick.energy,
+        items: { ...(pick.items || {}) },
+      },
+    };
+  });
+}
+
+/**
+ * Ensures `fr.bounties` is initialized and rolled for the current UTC day.
+ * Pure & deterministic given `now`.
+ */
+export function ensureFieldBounties(fr, now = 0) {
+  if (!fr) return null;
+  const day = utcDayOf(now);
+  const unlocks = fr.unlocks || { regions: ['meadow'], gates: [] };
+  if (
+    !fr.bounties ||
+    fr.bounties.day !== day ||
+    !Array.isArray(fr.bounties.cards) ||
+    fr.bounties.cards.length !== 3
+  ) {
+    fr.bounties = {
+      day,
+      round: 1,
+      stamps: 0,
+      bonusClaimed: false,
+      cards: dealBountyRound(day, 1, unlocks),
+    };
+  }
+  return fr.bounties;
+}
+
+/**
+ * Records progress toward active Field Bounties.
+ * `event`: `{ kind: 'gather_item' | 'node_breaks' | 'perfect_strikes' | 'mob_kills' | 'rare_nodes', target?: string, region?: string, amount?: number }`
+ * Returns array of slot indices whose progress increased.
+ */
+export function recordBountyProgress(fr, event, now = 0) {
+  if (!fr || !event) return [];
+  const b = ensureFieldBounties(fr, now);
+  if (!b) return [];
+  const inc = Math.max(0, Number(event.amount ?? 1) || 0);
+  if (inc <= 0) return [];
+  const changed = [];
+  for (const card of b.cards) {
+    if (!card || card.claimed || card.have >= card.goal) continue;
+    if (card.kind !== event.kind) continue;
+    if (card.kind === 'gather_item' && card.target && card.target !== event.target) continue;
+    if (card.kind === 'mob_kills' && card.target && card.target !== event.region && card.target !== event.target) continue;
+    const next = Math.min(card.goal, (card.have || 0) + inc);
+    if (next > (card.have || 0)) {
+      card.have = next;
+      changed.push(card.slot);
+    }
+  }
+  return changed;
+}
+
+/**
+ * Claims a completed Field Bounty card (`slot` 0..2), awarding energy + items into `fr`,
+ * incrementing daily Goddess Stamps (up to 3), and automatically dealing the next round
+ * when all 3 cards in the current round are claimed!
+ */
+export function claimFieldBounty(fr, slot, now = 0) {
+  if (!fr) return { ok: false, error: 'no_state' };
+  const b = ensureFieldBounties(fr, now);
+  const idx = Number(slot);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= b.cards.length) {
+    return { ok: false, error: 'bad_slot', bounties: b };
+  }
+  const card = b.cards[idx];
+  if (card.claimed) return { ok: false, error: 'already_claimed', bounties: b };
+  if ((card.have || 0) < card.goal) return { ok: false, error: 'incomplete', bounties: b };
+
+  card.claimed = true;
+  if (!b.bonusClaimed) {
+    b.stamps = Math.min(3, (Number(b.stamps) || 0) + 1);
+  }
+  const rewards = card.rewards || {};
+  const goldGain = Math.max(0, Number(rewards.gold) || 0);
+  fr.energy = regenEnergy(fr.energy, now);
+  if ((rewards.energy || 0) > 0) {
+    fr.energy = addEnergy(fr.energy, rewards.energy, now);
+  }
+  const itemRes = rewards.items ? grantItems(fr, rewards.items, now) : { granted: {}, overflow: {} };
+
+  let roundAdvanced = false;
+  if (b.cards.every((c) => c.claimed)) {
+    b.round = (Number(b.round) || 1) + 1;
+    b.cards = dealBountyRound(b.day, b.round, fr.unlocks);
+    roundAdvanced = true;
+  }
+
+  return {
+    ok: true,
+    slot: idx,
+    claimedId: card.id,
+    rewards,
+    goldGain,
+    granted: itemRes.granted,
+    overflow: itemRes.overflow,
+    stamps: b.stamps,
+    bonusReady: b.stamps >= 3 && !b.bonusClaimed,
+    roundAdvanced,
+    bounties: b,
+    energy: fr.energy,
+  };
+}
+
+/**
+ * Claims the Daily 3/3 Goddess Stamp Chest once per UTC day.
+ */
+export function claimFieldBountyBonus(fr, now = 0) {
+  if (!fr) return { ok: false, error: 'no_state' };
+  const b = ensureFieldBounties(fr, now);
+  if (b.bonusClaimed) return { ok: false, error: 'already_claimed', bounties: b };
+  if ((b.stamps || 0) < 3) return { ok: false, error: 'incomplete', bounties: b };
+
+  b.bonusClaimed = true;
+  const r = FIELD_BOUNTY_STAMP_REWARD;
+  fr.energy = regenEnergy(fr.energy, now);
+  fr.energy = addEnergy(fr.energy, r.energy, now);
+  const itemRes = grantItems(fr, r.items, now);
+  return {
+    ok: true,
+    rewards: r,
+    goldGain: r.gold,
+    diamondGain: r.diamonds,
+    granted: itemRes.granted,
+    overflow: itemRes.overflow,
+    bounties: b,
+    energy: fr.energy,
+  };
 }

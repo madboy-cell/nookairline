@@ -493,7 +493,110 @@ export const ACCESSORIES = {
   hat_rare_vending_soda_beret:      { slot: 'hat',    rarity: 1, name: 'Sakura Vending-Machine & Melon-Soda Beret',           stats: { charm: 9, swiftness: 7 } },
   gloves_rare_fizzy_soda_can_wand:  { slot: 'gloves', rarity: 1, name: 'Fizzy Melon-Soda & Strawberry-Milk Splash Wand',      stats: { luck: 9, charm: 7 } },
   boots_rare_soda_can_sneakers:     { slot: 'boots',  rarity: 1, name: 'Sakura Vending-Button & Soda-Tab Sneakers',           stats: { swiftness: 10, luck: 6 } },
+  // ── MASTER CRAFTERS V2 HELD WEAPONS (3 Free Day-1 Starters + 6 Workshop Boss Weapons + 6 Sovereign ★3 Mythics) ──
+  gloves_starter_sword:             { slot: 'gloves', rarity: 1, name: 'Traveler Oak Shortsword',            stats: { power: 5, luck: 5 },      starterCosmetic: true, combatClass: 'melee' },
+  gloves_starter_shortbow:          { slot: 'gloves', rarity: 1, name: 'Woodland Hunter Shortbow',           stats: { swiftness: 5, luck: 5 },  starterCosmetic: true, combatClass: 'ranged' },
+  gloves_starter_wand:              { slot: 'gloves', rarity: 1, name: 'Apprentice Dewdrop Wand',            stats: { power: 5, fortune: 5 },   starterCosmetic: true, combatClass: 'magic' },
+  // Meadow Boss-Crafted Weapons (★2 Epic — Forged at Tinker's Workshop from Elder Moss Golem Cores)
+  gloves_boss_moss_cleaver:         { slot: 'gloves', rarity: 2, name: 'Elder Mossheart Cleaver',            stats: { power: 18, fortune: 14 }, bossCraft: true, bossId: 'elder_moss_golem', combatClass: 'melee' },
+  gloves_boss_moss_longbow:         { slot: 'gloves', rarity: 2, name: 'Thornvine Living Longbow',           stats: { swiftness: 18, luck: 14 },bossCraft: true, bossId: 'elder_moss_golem', combatClass: 'ranged' },
+  gloves_boss_moss_staff:           { slot: 'gloves', rarity: 2, name: 'Ancient World-Root Staff',           stats: { fortune: 18, power: 14 }, bossCraft: true, bossId: 'elder_moss_golem', combatClass: 'magic' },
+  // Crystal Hollow Boss-Crafted Weapons (★3 Mythic — Forged at Tinker's Workshop from Hollow Crystal Weaver Cores)
+  gloves_boss_weaver_scythe:        { slot: 'gloves', rarity: 3, name: 'Hollow Prism-Weaver Scythe',         stats: { power: 30, luck: 24 },    bossCraft: true, bossId: 'hollow_crystal_weaver', combatClass: 'melee', fx: 'sigil' },
+  gloves_boss_weaver_bow:           { slot: 'gloves', rarity: 3, name: 'Starshard Arachne Greatbow',         stats: { swiftness: 30, luck: 24 },bossCraft: true, bossId: 'hollow_crystal_weaver', combatClass: 'ranged', fx: 'star' },
+  gloves_boss_weaver_cane:          { slot: 'gloves', rarity: 3, name: 'Astral Crystal-Spindle Cane',        stats: { fortune: 30, power: 24 }, bossCraft: true, bossId: 'hollow_crystal_weaver', combatClass: 'magic', fx: 'rune' },
+  // Celestial Sakura Reef Boss-Crafted Weapons (★3 Mythic — Forged at Tinker's Workshop from Nine-Tail Kitsune Cores)
+  gloves_boss_kitsune_blade:        { slot: 'gloves', rarity: 3, name: 'Tamamo Sakura-Foxfire Katana',       stats: { power: 36, swiftness: 28 },bossCraft: true, bossId: 'sakura_nine_tail_kitsune', combatClass: 'melee', fx: 'petal' },
+  gloves_boss_kitsune_bow:          { slot: 'gloves', rarity: 3, name: 'Shrine Maiden Blossom Greatbow',     stats: { swiftness: 36, luck: 28 },bossCraft: true, bossId: 'sakura_nine_tail_kitsune', combatClass: 'ranged', fx: 'petal' },
+  gloves_boss_kitsune_staff:        { slot: 'gloves', rarity: 3, name: 'Nine-Tail Torii Spirit Kagura',      stats: { fortune: 36, power: 28 }, bossCraft: true, bossId: 'sakura_nine_tail_kitsune', combatClass: 'magic', fx: 'flame' },
+  // Clockwork Star-Caldera Boss-Crafted Weapons (★3 Sovereign-Forge — Forged at Tinker's Workshop from Chronos-Solar Bahamut Cores)
+  gloves_boss_bahamut_cleaver:      { slot: 'gloves', rarity: 3, name: 'Chronos-Solar Dragon Greatsword',    stats: { power: 42, fortune: 34 }, bossCraft: true, bossId: 'chronos_solar_bahamut', combatClass: 'melee', fx: 'flame' },
+  gloves_boss_bahamut_bow:          { slot: 'gloves', rarity: 3, name: 'Astrolabe Supernova Wing-Bow',       stats: { swiftness: 42, luck: 34 },bossCraft: true, bossId: 'chronos_solar_bahamut', combatClass: 'ranged', fx: 'star' },
+  gloves_boss_bahamut_staff:        { slot: 'gloves', rarity: 3, name: 'Eternity Orrery Solar Scepter',      stats: { fortune: 42, power: 34 }, bossCraft: true, bossId: 'chronos_solar_bahamut', combatClass: 'magic', fx: 'rune' },
+  // Sovereign ★3 Mythic Gacha Held Weapons (Matching the 6 Sovereign Mythic 6-Wings)
+  gloves_mythic_prism_blade:        { slot: 'gloves', rarity: 3, name: 'Sovereign Prism-Valkyrie Greatsword',stats: { power: 38, swiftness: 32 }, combatClass: 'melee', fx: 'star' },
+  gloves_mythic_bahamut_scythe:     { slot: 'gloves', rarity: 3, name: 'Obsidian Nebula Bahamut War-Scythe', stats: { power: 40, luck: 30 },      combatClass: 'melee', fx: 'sigil' },
+  gloves_mythic_phoenix_bow:        { slot: 'gloves', rarity: 3, name: 'Eternal Sakura-Phoenix Greatbow',    stats: { power: 38, luck: 32 },      combatClass: 'ranged', fx: 'feather_gold' },
+  gloves_mythic_chrono_bow:         { slot: 'gloves', rarity: 3, name: 'Grand Chronos Astrolabe Arbalest',   stats: { swiftness: 38, luck: 32 },  combatClass: 'ranged', fx: 'rune' },
+  gloves_mythic_eden_harpbow:       { slot: 'gloves', rarity: 3, name: 'Celestial Eden Peacock Plume-Bow',   stats: { fortune: 38, swiftness: 32 },combatClass: 'ranged', fx: 'feather_gold' },
+  gloves_mythic_poseidon_staff:     { slot: 'gloves', rarity: 3, name: 'Sovereign Atlantis Pearl Trident',   stats: { fortune: 38, power: 32 },   combatClass: 'magic', fx: 'sigil' },
 };
+
+export const COMBAT_CLASSES = Object.freeze(['melee', 'ranged', 'magic']);
+export const STARTER_WEAPON_IDS = Object.freeze([
+  'gloves_starter_sword',
+  'gloves_starter_shortbow',
+  'gloves_starter_wand',
+]);
+
+const RANGED_GLOVE_SET = new Set([
+  'gloves_cupid_strawberry_bow',
+  'gloves_gachapon_bubble_blaster',
+  'gloves_tarot_card_fan',
+  'gloves_swan_harp_bow_wand',
+  'gloves_grooming_dryer_wand',
+  'gloves_buttercream_piping_bag',
+  'gloves_perfume_atomizer_wand',
+  'gloves_polaroid_photo_hand',
+  'gloves_sylvan_wind_bracers',
+  'gloves_monarch_maple_gloves',
+  'gloves_shadow_shinobi_wraps',
+  'gloves_cyber_matrix_gloves',
+  'gloves_epic_arcade_claw_grabber',
+  'gloves_mythic_croupier_rake',
+]);
+
+const MAGIC_GLOVE_SET = new Set([
+  'gloves_starlight_wand',
+  'gloves_seraphim_silk_gauntlets',
+  'gloves_aurora_orb_mitts',
+  'gloves_mythic_ferris_star_scepter',
+  'gloves_sakura_lace_gloves',
+  'gloves_moonlight_cuffs',
+  'gloves_crimson_shrine_gloves',
+  'gloves_stained_glass_cuffs',
+  'gloves_venom_alchemist_gloves',
+  'gloves_parfait_spoon_wand',
+  'gloves_boba_milk_tea',
+  'gloves_conductor_baton_wand',
+  'gloves_origami_fan_wand',
+  'gloves_cotton_candy_wand',
+  'gloves_stained_glass_chime_staff',
+  'gloves_marionette_cross_scepter',
+  'gloves_enchanted_teapot_staff',
+  'gloves_dreamcatcher_spindle_staff',
+  'gloves_snowglobe_lantern_staff',
+  'gloves_genie_magic_lamp_wand',
+  'gloves_aquarium_scoop_net',
+  'gloves_sunflower_watering_can',
+  'gloves_cherry_soda_float_wand',
+  'gloves_bamboo_acorn_staff',
+  'gloves_amethyst_pestle_censer',
+  'gloves_star_pinwheel_wand',
+  'gloves_seal_beachball_scepter',
+  'gloves_firefly_lantern_staff',
+  'gloves_epic_train_signal_lantern',
+  'gloves_epic_sushi_paddle_fan',
+  'gloves_epic_gachapon_crank_scepter',
+  'gloves_rare_bubble_wand_duck',
+  'gloves_rare_cuckoo_pendulum_staff',
+  'gloves_rare_fizzy_soda_can_wand',
+]);
+
+for (const [id, def] of Object.entries(ACCESSORIES)) {
+  if (def.slot !== 'gloves' || def.combatClass) continue;
+  def.combatClass = RANGED_GLOVE_SET.has(id)
+    ? 'ranged'
+    : MAGIC_GLOVE_SET.has(id)
+    ? 'magic'
+    : 'melee';
+}
+
+export function resolveWeaponClass(itemId) {
+  if (!itemId) return 'melee';
+  const cls = ACCESSORIES[itemId]?.combatClass;
+  return COMBAT_CLASSES.includes(cls) ? cls : 'melee';
+}
 
 // 9 Collectible 3D Dice Skins for 2.5D Sky Monopoly & Grand Casino (3 per rarity tier: ★1 Rare / ★2 Epic / ★3 Mythic)
 export const DICE_SKINS = {

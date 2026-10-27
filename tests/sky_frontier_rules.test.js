@@ -37,6 +37,13 @@ import {
   rollHarvestRarity,
   isGateOpen,
   clampToRegion,
+  FRONTIER_ITEM_SOURCES,
+  resolveFrontierTarget,
+  FIELD_BOUNTY_STAMP_REWARD,
+  ensureFieldBounties,
+  recordBountyProgress,
+  claimFieldBounty,
+  claimFieldBountyBonus,
 } from '../shared/sky_frontier_rules.js';
 
 test('materials catalog: covers raw, refined, goods, and rare tiers with stack limits', () => {
@@ -484,4 +491,117 @@ test('rollHarvestRarity: rolls Common (1x), Uncommon (1.5x), Rare (2x), and Epic
   const boost5 = rollHarvestRarity({ nodeType: 'crystal', perfectCount: 5, totalSwings: 10, rng: () => 0.99 }).rareBoostPct;
   assert.ok(boost2 > boost0, `Expected 2 perfects (${boost2}%) > 0 perfects (${boost0}%)`);
   assert.ok(boost5 > boost2, `Expected 5 perfects (${boost5}%) > 2 perfects (${boost2}%)`);
+});
+
+test('resolveFrontierTarget: resolves gather nodes, monsters, bosses, POIs, altRegions, and locked-gate redirects', () => {
+  assert.ok(FRONTIER_ITEM_SOURCES.wood);
+  assert.ok(FRONTIER_ITEM_SOURCES.crystal_ore);
+  assert.ok(FRONTIER_ITEM_SOURCES.monster_gel);
+
+  const woodTarget = resolveFrontierTarget('wood', { regions: ['meadow'] }, 'meadow');
+  assert.equal(woodTarget.kind, 'node');
+  assert.equal(woodTarget.region, 'meadow');
+  assert.deepEqual(woodTarget.nodeTypes, ['tree']);
+
+  // Stone prefers current region when hollow is unlocked via altRegions
+  const stoneInHollow = resolveFrontierTarget('stone', { regions: ['meadow', 'hollow'] }, 'hollow');
+  assert.equal(stoneInHollow.region, 'hollow');
+
+  // Crystal ore redirects to gate_hollow in meadow when hollow is still locked
+  const lockedCrystal = resolveFrontierTarget('crystal_ore', { regions: ['meadow'], gates: [] }, 'meadow');
+  assert.equal(lockedCrystal.kind, 'gate');
+  assert.equal(lockedCrystal.region, 'meadow');
+  assert.equal(lockedCrystal.gateTo, 'hollow');
+
+  // Crystal ore resolves directly to hollow crystal veins when hollow is unlocked
+  const unlockedCrystal = resolveFrontierTarget('crystal_ore', { regions: ['meadow', 'hollow'] }, 'meadow');
+  assert.equal(unlockedCrystal.kind, 'node');
+  assert.equal(unlockedCrystal.region, 'hollow');
+  assert.ok(unlockedCrystal.nodeTypes.includes('crystal'));
+
+  // Boss & POI targets
+  const golem = resolveFrontierTarget('elder_moss_golem', { regions: ['meadow'] }, 'meadow');
+  assert.equal(golem.kind, 'boss');
+  assert.equal(golem.bossId, 'elder_moss_golem');
+
+  const outpost = resolveFrontierTarget('outpost', { regions: ['meadow'] }, 'meadow');
+  assert.equal(outpost.kind, 'poi');
+  assert.equal(outpost.x, 0);
+  assert.equal(outpost.z, 4);
+});
+
+test('Field Bounties & Goddess Stamp Chest: deterministic daily deal, progress tracking, 3/3 auto round rollover, and daily bonus', () => {
+  const now = 1_750_000_000_000;
+  const fr = {
+    unlocks: { regions: ['meadow'], gates: [] },
+    energy: { cur: 100, max: 200, updatedAt: now },
+    warehouse: { lv: 1, items: {} },
+    pantry: { lv: 1, items: {} },
+    campCrate: { items: {}, expiresAt: 0 },
+  };
+
+  const b1 = ensureFieldBounties(fr, now);
+  assert.equal(b1.round, 1);
+  assert.equal(b1.stamps, 0);
+  assert.equal(b1.cards.length, 3);
+  // With only meadow unlocked, zero hollow-only cards should be dealt
+  assert.ok(b1.cards.every((c) => c.region === 'meadow'));
+
+  // Cannot claim incomplete card or bonus chest early
+  assert.equal(claimFieldBounty(fr, 0, now).ok, false);
+  assert.equal(claimFieldBountyBonus(fr, now).ok, false);
+
+  // Progress each card to completion via matching events
+  for (const card of [...b1.cards]) {
+    const evt = {
+      kind: card.kind,
+      target: card.target,
+      region: card.region,
+      amount: card.goal,
+    };
+    const changed = recordBountyProgress(fr, evt, now);
+    assert.ok(changed.includes(card.slot), `Expected slot ${card.slot} (${card.kind}) to advance`);
+    assert.equal(fr.bounties.cards[card.slot].have, card.goal);
+  }
+
+  const r0 = claimFieldBounty(fr, 0, now);
+  assert.equal(r0.ok, true);
+  assert.equal(r0.stamps, 1);
+  assert.equal(r0.roundAdvanced, false);
+  assert.ok(r0.goldGain > 0);
+
+  const r1 = claimFieldBounty(fr, 1, now);
+  assert.equal(r1.ok, true);
+  assert.equal(r1.stamps, 2);
+  assert.equal(r1.roundAdvanced, false);
+
+  // Claiming 3rd card awards 3rd stamp, marks bonusReady, and automatically deals Round 2!
+  const r2 = claimFieldBounty(fr, 2, now);
+  assert.equal(r2.ok, true);
+  assert.equal(r2.stamps, 3);
+  assert.equal(r2.bonusReady, true);
+  assert.equal(r2.roundAdvanced, true);
+  assert.equal(fr.bounties.round, 2);
+  assert.equal(fr.bounties.cards.length, 3);
+  assert.ok(fr.bounties.cards.every((c) => !c.claimed && c.have === 0));
+
+  // Claim Daily 3/3 Goddess Stamp Chest
+  const bonus = claimFieldBountyBonus(fr, now);
+  assert.equal(bonus.ok, true);
+  assert.equal(bonus.goldGain, FIELD_BOUNTY_STAMP_REWARD.gold);
+  assert.equal(bonus.diamondGain, FIELD_BOUNTY_STAMP_REWARD.diamonds);
+  assert.equal(fr.pantry.items.repair_kit >= 1, true);
+  assert.equal(fr.pantry.items.bread >= 1, true);
+
+  // Second claim on same UTC day is rejected
+  const bonusDup = claimFieldBountyBonus(fr, now);
+  assert.equal(bonusDup.ok, false);
+  assert.equal(bonusDup.error, 'already_claimed');
+
+  // Next UTC day resets round, stamps, and bonusClaimed
+  const nextDay = now + 86_400_000;
+  const bNext = ensureFieldBounties(fr, nextDay);
+  assert.equal(bNext.round, 1);
+  assert.equal(bNext.stamps, 0);
+  assert.equal(bNext.bonusClaimed, false);
 });

@@ -20,10 +20,10 @@ import {
   unlockedMonuments,
 } from '../shared/story_rules.js';
 
-test('chapters are numbered sequentially (0 to 4) with valid schema', () => {
-  assert.equal(CHAPTERS.length, 5);
+test('chapters are numbered sequentially (0 to 6) with valid schema', () => {
+  assert.equal(CHAPTERS.length, 7);
   const ids = CHAPTERS.map((c) => c.id);
-  assert.deepEqual(ids, [0, 1, 2, 3, 4]);
+  assert.deepEqual(ids, [0, 1, 2, 3, 4, 5, 6]);
 
   const titles = CHAPTERS.map((c) => c.title);
   assert.deepEqual(titles, [
@@ -32,6 +32,8 @@ test('chapters are numbered sequentially (0 to 4) with valid schema', () => {
     'Echoes Below',
     'Seeds of the Sky',
     'Feathered Things',
+    'Blossom Tides',
+    'Starforge Ascent',
   ]);
 
   for (const ch of CHAPTERS) {
@@ -302,10 +304,29 @@ test('unlocked lists and island size accumulate across chapters', () => {
   assert.equal(maxIslandSize(story), 24);
   assert.deepEqual(unlockedMonuments(story), ['wnd_onsen']);
 
-  // Story is complete (chapter 5 does not exist)
-  assert.equal(story.chapter, 5);
-  assert.deepEqual(story.completed, [0, 1, 2, 3, 4]);
-  assert.deepEqual(story.claimed, [0, 1, 2, 3, 4]);
+  // Complete & claim Chapter 5 (Blossom Tides) — unlocks reef region
+  recordEvent(story, { kind: 'defeat', target: 'hollow_crystal_weaver' });
+  recordEvent(story, { kind: 'craft', target: 'mithril_ingot', amount: 2 });
+  recordEvent(story, { kind: 'visit', target: 'gate_reef' });
+  const c5Res = claimChapter(story);
+  assert.equal(c5Res.ok, true);
+  assert.equal(c5Res.rewards.gold, 2600);
+  assert.deepEqual(unlockedRegions(story), ['meadow', 'hollow', 'reef']);
+
+  // Complete & claim Chapter 6 (Starforge Ascent) — unlocks caldera region & expands island to 26
+  recordEvent(story, { kind: 'gather', target: 'sakura_timber', amount: 12 });
+  recordEvent(story, { kind: 'gather', target: 'celestial_pearl', amount: 10 });
+  recordEvent(story, { kind: 'defeat', target: 'sakura_nine_tail_kitsune' });
+  const c6Res = claimChapter(story);
+  assert.equal(c6Res.ok, true);
+  assert.equal(c6Res.rewards.gold, 3400);
+  assert.deepEqual(unlockedRegions(story), ['meadow', 'hollow', 'reef', 'caldera']);
+  assert.equal(maxIslandSize(story), 26);
+
+  // Story is complete (chapter 7 does not exist)
+  assert.equal(story.chapter, 7);
+  assert.deepEqual(story.completed, [0, 1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(story.claimed, [0, 1, 2, 3, 4, 5, 6]);
 
   const endClaim = claimChapter(story);
   assert.equal(endClaim.ok, false);

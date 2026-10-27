@@ -324,7 +324,8 @@ export function gearStats(equippedOrProfile = {}, catalogs = {}) {
     }
     const def = slot === 'outfit' ? outfits[e.id] : slot === 'dice' ? (diceSkins[e.id] || accessories[e.id]) : accessories[e.id];
     if (!def) continue;
-    const stats = normalizeItemStats(def.stats, def.rarity);
+    const invEntry = equippedOrProfile?.inventory?.[e.id];
+    const stats = normalizeItemStats(e.rolledStats || invEntry?.rolledStats || def.stats, def.rarity);
     const k = 1 + 0.05 * Math.max(0, Math.min(10, e.refine | 0));   // +5% per Star-Force level
     for (const s of Object.keys(out)) out[s] += ((stats[s] || 0) + (stats.all || 0)) * k;
   }

@@ -1,14 +1,14 @@
 // client/js/main.js — boot: gate → sign-in → world + realtime session.
 // Step 2: village HUD (Harvest All + bubbles, Edit Grid, mood, couple blessing, Wonder actions),
 // building / upgrade / Cloud Territory / Welcome-Back modals, Finger Pick-Up & Drop and Dock fishing.
-import { WorldEngine } from './world_engine.js?v=sf3';
+import { WorldEngine } from './world_engine.js?v=sf4';
 import { loadManifest } from './assets.js';
 import { Net, session, login, fetchMe, claimA2HS, logoutApi, bindEmailApi, changePasswordApi } from './net.js?v=nm18';
 import { env, initGate, registerServiceWorker } from './pwa_gate.js?v=id5';
-import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=tos4';
+import { GridEditor, humanError, resolveMood } from './village_plaza.js?v=mc1';
 import { DockFishing } from './minigames/dock_fishing.js';
-import { RpgUI } from './gacha_forge_ui.js?v=wd6';
-import { renderOutfitThumbLayers } from './ui_components.js?v=wd6';
+import { RpgUI } from './gacha_forge_ui.js?v=mc1';
+import { renderOutfitThumbLayers } from './ui_components.js?v=mc1';
 
 
 import { MonopolyBridge } from './monopoly_bridge.js?v=nm20';
@@ -18,8 +18,8 @@ import { NookMuseumScene, MUSEUM_SCENERY_PORTALS } from './nook_museum_scene.js?
 import { TownHallRadar } from './town_hall_radar.js?v=nm5';
 import { HallOfFameUI } from './hall_of_fame_ui.js';
 import { CouplePhotoboothUI } from './couple_photobooth.js?v=nm18';
-import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=sf6';
-import { BasecampUI } from './basecamp_ui.js?v=tos8';
+import { SkyFrontierScene } from './frontier/sky_frontier_scene.js?v=mc3';
+import { BasecampUI } from './basecamp_ui.js?v=mc1';
 import { HeartIsleUI } from './heart_isle_ui.js?v=hi1';
 import { expToNext } from '/shared/progression.js';
 import {
@@ -60,8 +60,52 @@ let cheerTimer = null;
 let selectedLineage = 'bkk';
 let selectedHairColor = 'chestnut';
 let toastTimer = 0;
-const S = { profile: null, coupled: false, visitingOwner: null, partnerCompanion: null, serverOffset: 0, pending: new Map(), reqId: 0, layoutKey: '' };
+const S = { profile: null, coupled: false, visitingOwner: null, partnerCompanion: null, serverOffset: 0, pending: new Map(), reqId: 0, layoutKey: '', equipSig: '', avaHtmlSig: '' };
 const serverNow = () => Date.now() + S.serverOffset;
+
+function computeEquipSignature(p) {
+  if (!p) return '';
+  const eq = p.equipped && typeof p.equipped === 'object' ? p.equipped : {};
+  const inv = p.inventory && typeof p.inventory === 'object' ? p.inventory : {};
+  const eqParts = [];
+  for (const slot of Object.keys(eq).sort()) {
+    const val = eq[slot];
+    if (!val) {
+      eqParts.push(`${slot}:null`);
+      continue;
+    }
+    if (typeof val === 'string') {
+      const invEntry = inv[val];
+      eqParts.push(`${slot}:${val}:${invEntry?.refine ?? ''}:${invEntry?.forgeGrade ?? ''}:${invEntry?.attune ?? ''}`);
+      continue;
+    }
+    const itemId = val.id || '';
+    const invEntry = itemId ? inv[itemId] : null;
+    eqParts.push([
+      slot,
+      itemId,
+      val.uid || '',
+      val.refine ?? invEntry?.refine ?? '',
+      val.glamour || '',
+      val.hide ? 1 : 0,
+      val.forgeGrade || invEntry?.forgeGrade || '',
+      val.attune || invEntry?.attune || '',
+      val.grade || '',
+      val.level ?? '',
+      val.stars ?? '',
+      val.visual_tier ?? '',
+      val.costume_id || '',
+      val.nickname || '',
+    ].join(':'));
+  }
+  const app = p.appearance && typeof p.appearance === 'object'
+    ? JSON.stringify(p.appearance)
+    : '';
+  const activePet = typeof p.activePet === 'object' && p.activePet
+    ? `${p.activePet.uid || ''}:${p.activePet.id || ''}:${p.activePet.stars || ''}:${p.activePet.costume_id || ''}`
+    : String(p.activePet || '');
+  return `${p.id || ''}|${p.lineage || ''}|${app}|${activePet}|${eqParts.join(';')}`;
+}
 
 export function toast(msg, ms = 2200) {
   const t = $('toast');
@@ -87,11 +131,15 @@ function renderHud(p) {
   const hudAvaEl = $('hud-avatar');
   if (hudAvaEl) {
     hudAvaEl.style.backgroundImage = 'none';
-    hudAvaEl.innerHTML = renderOutfitThumbLayers(eqOut || 'newbie_outfit', {
+    const nextAvaHtml = renderOutfitThumbLayers(eqOut || 'newbie_outfit', {
       lineage: p.lineage,
       appearance: p.appearance,
       headCrop: true,
     });
+    if (nextAvaHtml !== S.avaHtmlSig) {
+      S.avaHtmlSig = nextAvaHtml;
+      hudAvaEl.innerHTML = nextAvaHtml;
+    }
   }
   const acctBadge = $('hud-account-badge');
   if (acctBadge) {
@@ -189,14 +237,18 @@ function applyFrontierLayout(layout, self) {
   world.serverOffset = S.serverOffset || 0;
   world.setFrontierMode(true, layout);
   if (S.profile?.frontier?.energy) world.frontierScene?.setEnergy?.(S.profile.frontier.energy);
+  world.frontierScene?.onProfileUpdate?.(S.profile);
   basecampUI?._renderFrontier?.();
   if (self && world.local) world.setLocalPosition(self.x, self.z);
   // resume into the same shard/region after a reconnect (server re-validates room + unlocks)
   if (net) net.resumeInstanceId = `frontier:${layout.shardId}~${layout.regionId}`;
 }
 
-function enterFrontier(regionId = null) {
+function enterFrontier(regionId = null, opts = {}) {
   if (!net) return;
+  if (opts?.pendingSeek && world?.frontierScene) {
+    world.frontierScene._pendingSeek = opts.pendingSeek;
+  }
   const reg = typeof regionId === 'string' ? regionId.trim().toLowerCase() : '';
   const to = reg && reg !== 'meadow' ? `frontier:~${reg}` : 'frontier';
   net.send({ type: 'instance_switch', to, force: true });
@@ -436,6 +488,8 @@ function closeModal() { $('modal').hidden = true; }
 async function doLogout() {
   try { await logoutApi(); } catch {}
   session.token = null;
+  S.equipSig = '';
+  S.avaHtmlSig = '';
   try { net?.close(); } catch {}
   if (world) {
     world.activeScene = null;
@@ -1098,7 +1152,7 @@ async function startGame(profile) {
     basecampUI = new BasecampUI({
       request: (t, p) => request(t, p), toast, humanError, getProfile: () => S.profile, now: serverNow,
       onEnterEdit: (placeType = null) => enterEdit(null, placeType),
-      onEnterFrontier: (regionId = null) => enterFrontier(regionId),
+      onEnterFrontier: (regionId = null, opts = {}) => enterFrontier(regionId, opts),
       onOpenLegacy: (pk) => buildingModal(pk, { legacy: true }),
       onEnergy: (e) => world?.frontierScene?.setEnergy?.(e),
     });
@@ -1505,13 +1559,24 @@ async function startGame(profile) {
       renderHud(m.profile);
       applyMood(m.profile.village?.mood || 'auto');
       world.clearRemotes();
-      if (world.local && world.local.id !== m.profile.id) world.removeLocal();
-      if (!world.local) world.spawnLocal(m.profile, m.self);
-      else {
+      if (world.local && world.local.id !== m.profile.id) {
+        world.removeLocal();
+        S.equipSig = '';
+      }
+      if (!world.local) {
+        world.spawnLocal(m.profile, m.self);
+        S.equipSig = computeEquipSignature(m.profile);
+      } else {
         if (!moonDefenseUI?.active && !cloudDashUI?.active && m.self) world.setLocalPosition(m.self.x, m.self.z);
+        const nextEquipSig = computeEquipSignature(m.profile);
+        if (nextEquipSig !== S.equipSig) {
+          S.equipSig = nextEquipSig;
+          world.applyEquipment(m.profile.id, m.profile.equipped, m.profile.appearance);
+        }
         world.syncPetGiftAndYard(m.profile);
       }
       if (m.offline && (m.offline.gold || m.offline.berries || m.offline.diamonds)) welcomeBack(m.offline);   // server sends null since Stage 3
+      world?.frontierScene?.onProfileUpdate?.(m.profile);
       basecampUI?.onProfile(m.profile);
     })
     .on('instance_snapshot', (m) => {
@@ -1589,6 +1654,7 @@ async function startGame(profile) {
     .on('sf_boss', (m) => world?.frontierScene?.onBoss?.(m))
     .on('sf_boss_defeated', (m) => world?.frontierScene?.onBossDefeated?.(m))
     .on('sf_ult', (m) => world?.frontierScene?.onUlt?.(m))
+    .on('sf_fx', (m) => world?.frontierScene?.onFx?.(m))
     .on('player_left', (m) => {
       if (S.partnerCompanion && m.id === S.partnerCompanion.id && world?.layout?.kind !== 'townhall') {
         world.upsertRemote(S.partnerCompanion);
@@ -1608,13 +1674,27 @@ async function startGame(profile) {
       if (world) world.serverOffset = S.serverOffset || 0;
       if (m.profile?.frontier?.energy) world?.frontierScene?.setEnergy?.(m.profile.frontier.energy);
       renderHud(m.profile);
-      world.applyEquipment(m.profile.id, m.profile.equipped, m.profile.appearance);
+      world?.frontierScene?.onProfileUpdate?.(m.profile);
+      const nextEquipSig = computeEquipSignature(m.profile);
+      if (nextEquipSig !== S.equipSig) {
+        S.equipSig = nextEquipSig;
+        world.applyEquipment(m.profile.id, m.profile.equipped, m.profile.appearance);
+      }
       world.syncPetGiftAndYard(m.profile);
       rpg?.onProfile(m.profile);
       basecampUI?.onProfile(m.profile);
       voiceClient?.onProfileUpdate?.(m.profile);
     })
-    .on('player_equipped', (m) => world.applyEquipment(m.id, m.equipped, m.appearance))
+    .on('player_equipped', (m) => {
+      world.applyEquipment(m.id, m.equipped, m.appearance);
+      if (S.profile && m.id === S.profile.id) {
+        S.equipSig = computeEquipSignature({
+          ...S.profile,
+          equipped: m.equipped ?? S.profile.equipped,
+          appearance: m.appearance ?? S.profile.appearance,
+        });
+      }
+    })
     .on('global_cheer_banner', (m) => showGlobalCheerBanner(m))
     .on('mvp_charm_broadcast', (m) => {
       toast(`👑✨ MVP SECRET RARE DROP! ${m.userName || m.userId} unboxed [${m.charm?.name || 'MVP Charm'}] (${m.charm?.grade || 'SS'}-Grade) on Wave ${m.wave}!`, 5200);
@@ -1699,6 +1779,11 @@ async function startGame(profile) {
       }
       S.layoutKey = '';
       renderHud(m.profile);
+      const resumeEquipSig = computeEquipSignature(m.profile);
+      if (resumeEquipSig !== S.equipSig) {
+        S.equipSig = resumeEquipSig;
+        world.applyEquipment(m.profile.id, m.profile.equipped, m.profile.appearance);
+      }
       world.syncPetGiftAndYard(m.profile);
     })
     .on('village_updated', (m) => {
@@ -2046,6 +2131,12 @@ async function boot() {
   if (env.dev && env.params.has('dressup')) {
     const { startDressUp } = await import('./dressup.js');
     await startDressUp(env.params);
+    return;
+  }
+  // Master Crafters Skill VFX Studio: ?dev=1&vfx=1
+  if (env.dev && env.params.has('vfx')) {
+    const { startVfxStudio } = await import('./frontier/vfx_studio.js');
+    await startVfxStudio(env.params);
     return;
   }
   // QA / dev autologin: ?dev=1&user=nook&pass=1234 (or simply ?user=neen)

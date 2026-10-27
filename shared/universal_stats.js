@@ -71,7 +71,8 @@ export function computeUniversalStats(profile, opts = {}) {
       rarity = Number(rarity) || 1;
     }
 
-    const raw = def.stats || (rarity === 3 ? { all: 24 } : { all: 8 });
+    const invEntry = profile?.inventory?.[id];
+    const raw = eqItem?.rolledStats || invEntry?.rolledStats || def.stats || (rarity === 3 ? { all: 24 } : { all: 8 });
     const norm = normalizeItemStats(raw, rarity);
 
     const itemStats = {
@@ -215,7 +216,7 @@ export function inspectItemAttune(itemId, refine = 0, attuneStat = null, opts = 
   let rarity = def.rarity;
   if (rarity === 'super_mythic' || def.superMythic || def.powerRarity === 3) rarity = 3;
   else rarity = Number(rarity) || 1;
-  const raw = def.stats || (rarity === 3 ? { all: 24 } : { all: 8 });
+  const raw = opts.rolledStats || def.stats || (rarity === 3 ? { all: 24 } : { all: 8 });
   const norm = normalizeItemStats(raw, rarity);
   if (norm.all > 0) return { attunable: false, reason: 'all_stat_item', slot };
 
@@ -282,10 +283,19 @@ export function defenderModsFromProfile(prof = {}, catalogs = {}) {
   };
 }
 
+export const STAT_META = Object.freeze({
+  power:     Object.freeze({ key: 'power',     label: 'Power',     short: 'PWR', icon: '🔥' }),
+  swiftness: Object.freeze({ key: 'swiftness', label: 'Swiftness', short: 'SWF', icon: '⚡' }),
+  fortune:   Object.freeze({ key: 'fortune',   label: 'Vitality',  short: 'VIT', icon: '💖' }),
+  luck:      Object.freeze({ key: 'luck',      label: 'Luck',      short: 'LCK', icon: '🍀' }),
+});
+
 /**
- * Sky Frontier stat multipliers (Master Plan v2 §9.1 / §10):
- * Power -> attackDamageMult (+60% softCap), Fortune -> gatherYieldMult (+50% softCap),
- * Luck -> rareFindMult (+25% softCap), Swiftness -> moveSpeedMult (+25% softCap).
+ * Sky Frontier stat multipliers (Master Crafters Combat & Vitality V2):
+ * - 🔥 Power     -> attackDamageMult (+75% softCap; scales Basic Combos, Monster Skills & Ultimates)
+ * - ⚡ Swiftness -> moveSpeedMult (+25% softCap), skillHasteMult (+35% softCap cooldown haste)
+ * - 💖 Vitality  -> maxHpBonus (+0..140 Max HP), hpRegenPerSec (+0.6..5.0 HP/s passive regen), healShieldMult (+65% softCap), gatherYieldMult (+50% softCap)
+ * - 🍀 Luck      -> critChance (8%..45%), rareFindMult (+35% softCap rare & Skill Scroll drop rate)
  */
 export function skyFrontierMods(stats = {}, { petFamily = null, petPct = 0 } = {}) {
   const fortune = Number(stats.fortune) || 0;
@@ -293,11 +303,15 @@ export function skyFrontierMods(stats = {}, { petFamily = null, petPct = 0 } = {
   const power = Number(stats.power) || 0;
   const luck = Number(stats.luck) || 0;
   return {
-    attackDamageMult: +(1 + softCap(power, 0.60, 140)).toFixed(3),
+    attackDamageMult: +(1 + softCap(power, 0.75, 150)).toFixed(3),
     gatherYieldMult: +(1 + softCap(fortune, 0.50, 140)).toFixed(3),
-    rareFindMult: +(1 + softCap(luck, 0.25, 140)).toFixed(3),
+    maxHpBonus: Math.round(softCap(fortune, 140, 150)),
+    hpRegenPerSec: +(0.6 + softCap(fortune, 4.4, 140)).toFixed(2),
+    healShieldMult: +(1 + softCap(fortune, 0.65, 150)).toFixed(3),
+    rareFindMult: +(1 + softCap(luck, 0.35, 140)).toFixed(3),
     moveSpeedMult: +(1 + softCap(swiftness, 0.25, 140)).toFixed(3),
-    critChance: +(Math.min(0.45, 0.10 + softCap(luck, 0.20, 140))).toFixed(3),
+    skillHasteMult: +(1 + softCap(swiftness, 0.35, 150)).toFixed(3),
+    critChance: +(Math.min(0.45, 0.08 + softCap(luck, 0.27, 140))).toFixed(3),
     petFamily,
     petPct,
   };

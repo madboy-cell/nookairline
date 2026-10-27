@@ -30,12 +30,14 @@ import { CHARMS } from '../shared/charm_catalog.js';
 test('1. Monster and Boss tables are valid with drops in materials catalog', () => {
   // Verify all monsters have valid schema and material drops
   const monsterIds = Object.keys(MONSTERS);
-  assert.equal(monsterIds.length, 6);
+  assert.equal(monsterIds.length, 16);
 
   for (const [id, monster] of Object.entries(MONSTERS)) {
     assert.equal(monster.id, id);
     assert.ok(monster.name, `Monster ${id} missing name`);
-    assert.ok(['meadow', 'hollow'].includes(monster.region), `Monster ${id} invalid region`);
+    assert.ok(['meadow', 'hollow', 'reef', 'caldera'].includes(monster.region), `Monster ${id} invalid region`);
+    assert.ok(monster.habitatPoi, `Monster ${id} missing habitatPoi`);
+    assert.ok(['passive', 'pack'].includes(monster.aggroStyle), `Monster ${id} invalid aggroStyle`);
     assert.ok(monster.hp > 0, `Monster ${id} hp must be > 0`);
     assert.ok(monster.dmg > 0, `Monster ${id} dmg must be > 0`);
     assert.ok(monster.speed > 0, `Monster ${id} speed must be > 0`);
@@ -60,14 +62,14 @@ test('1. Monster and Boss tables are valid with drops in materials catalog', () 
 
   // Verify all bosses
   const bossIds = Object.keys(BOSSES);
-  assert.equal(bossIds.length, 2);
+  assert.equal(bossIds.length, 4);
 
   for (const [id, boss] of Object.entries(BOSSES)) {
     assert.equal(boss.id, id);
     assert.ok(boss.name, `Boss ${id} missing name`);
     assert.ok(boss.hp > 0, `Boss ${id} hp must be > 0`);
     assert.ok(boss.dmg > 0, `Boss ${id} dmg must be > 0`);
-    assert.ok(boss.pity > 0, `Boss ${id} pity must be > 0`);
+    assert.equal(boss.pity, undefined, `Boss ${id} must not have drop pity`);
     assert.ok(boss.charmTiers && typeof boss.charmTiers === 'object');
 
     for (const [matId, range] of Object.entries(boss.drop)) {
@@ -76,9 +78,7 @@ test('1. Monster and Boss tables are valid with drops in materials catalog', () 
     }
   }
 
-  assert.equal(BOSSES.elder_moss_golem.pity, 6);
   assert.deepEqual(BOSSES.elder_moss_golem.phases, [1, 0.6, 0.3]);
-  assert.equal(BOSSES.hollow_crystal_weaver.pity, 10);
   assert.equal(BOSSES.hollow_crystal_weaver.charmTiers[1], 0.10);
   assert.equal(BOSSES.hollow_crystal_weaver.charmTiers[2], 0.12);
 });
@@ -382,7 +382,7 @@ test('9. Contribution ledger and 5% qualifiers threshold', () => {
   assert.ok(qualified2.includes('charlie'));
 });
 
-test('10. Boss loot pity and independent rolls with seeded RNG', () => {
+test('10. Boss loot pure RNG + Luck scaling with seeded RNG (zero drop pity)', () => {
   // Deterministic mock RNG sequence
   function createMockRng(values) {
     let idx = 0;
@@ -393,79 +393,70 @@ test('10. Boss loot pity and independent rolls with seeded RNG', () => {
     };
   }
 
-  // Test Elder Moss Golem (drop: boss_core_moss: [2, 4], charmTiers: { 1: 0.18 }, pity: 6)
-  // Call 1 per user is core count: min + floor(rng * 3)
-  // Call 2 per user is charm roll
+  // Test Elder Moss Golem (drop: boss_core_moss: [2, 4], charmTiers: { 1: 0.18 }, pure RNG)
+  // High RNG value (0.95) never triggers any pity even across repeated rolls; Boss Cores still drop guaranteed (2..4)
+  for (let i = 0; i < 15; i++) {
+    const dryRng = createMockRng([0.5, 0.95]); // 0.5 -> core = 2 + floor(1.5) = 3; 0.95 -> natural miss
+    const dryLoot = rollBossLoot({
+      bossId: 'elder_moss_golem',
+      qualifying: ['unlucky_player'],
+      rng: dryRng,
+    });
+    assert.equal(dryLoot.unlucky_player.items.boss_core_moss, 3);
+    assert.equal(dryLoot.unlucky_player.items.core, 3);
+    assert.equal(dryLoot.unlucky_player.charmTier, null);
+    assert.equal(dryLoot.unlucky_player.pityReset, undefined);
+  }
 
-  // User 1: pity reached (pityByUser = 5 -> 5 + 1 = 6 >= pity 6)
-  // RNG produces high value (0.95), so natural roll (0.18) fails, but pity triggers!
-  const pityRng = createMockRng([0.5, 0.95]); // 0.5 -> core = 2 + floor(1.5) = 3; 0.95 -> natural fail
-  const pityLoot = rollBossLoot({
-    bossId: 'elder_moss_golem',
-    qualifying: ['pity_player'],
-    rng: pityRng,
-    pityByUser: { pity_player: 5 },
-  });
-
-  assert.equal(pityLoot.pity_player.items.boss_core_moss, 3);
-  assert.equal(pityLoot.pity_player.items.core, 3);
-  assert.equal(pityLoot.pity_player.charmTier, 1);
-  assert.equal(pityLoot.pity_player.pityReset, true);
-
-  // User 2: pity NOT reached (pityByUser = 2), natural roll fails (0.90)
-  const noDropRng = createMockRng([0.1, 0.90]);
-  const noDropLoot = rollBossLoot({
-    bossId: 'elder_moss_golem',
-    qualifying: ['unlucky_player'],
-    rng: noDropRng,
-    pityByUser: { unlucky_player: 2 },
-  });
-
-  assert.equal(noDropLoot.unlucky_player.charmTier, null);
-  assert.equal(noDropLoot.unlucky_player.pityReset, false);
-
-  // User 3: natural drop hits (rng = 0.05 < 0.18)
+  // Natural drop hits when rng < 0.18
   const dropRng = createMockRng([0.99, 0.05]);
   const dropLoot = rollBossLoot({
     bossId: 'elder_moss_golem',
     qualifying: ['lucky_player'],
     rng: dropRng,
-    pityByUser: { lucky_player: 0 },
   });
-
+  assert.equal(dropLoot.lucky_player.items.boss_core_moss, 4);
   assert.equal(dropLoot.lucky_player.charmTier, 1);
-  assert.equal(dropLoot.lucky_player.pityReset, true);
 
-  // Test Hollow Crystal Weaver (charmTiers: { 1: 0.10, 2: 0.12 }, pity: 10)
+  // 🍀 Luck boosts Boss Charm drop rate: roll = 0.20 misses at 0 Luck (0.18), hits at 200 Luck (0.18 * (1 + softCap(200,0.25,140)) > 0.20)
+  const missZeroLuck = rollBossLoot({
+    bossId: 'elder_moss_golem',
+    qualifying: ['hero'],
+    luckByUser: { hero: 0 },
+    rng: createMockRng([0.0, 0.20]),
+  });
+  assert.equal(missZeroLuck.hero.charmTier, null);
+
+  const hitHighLuck = rollBossLoot({
+    bossId: 'elder_moss_golem',
+    qualifying: ['hero'],
+    luckByUser: { hero: 200 },
+    rng: createMockRng([0.0, 0.20]),
+  });
+  assert.equal(hitHighLuck.hero.charmTier, 1);
+
+  // Test Hollow Crystal Weaver (charmTiers: { 1: 0.10, 2: 0.12 }, pure RNG)
   // Tier 2 evaluated first (0.12), then Tier 1 (0.10)
-  // Roll < 0.12 -> drops Tier 2
-  const t2Rng = createMockRng([0.0, 0.08]);
   const t2Loot = rollBossLoot({
     bossId: 'hollow_crystal_weaver',
     qualifying: ['t2_winner'],
-    rng: t2Rng,
+    rng: createMockRng([0.0, 0.08]),
   });
   assert.equal(t2Loot.t2_winner.charmTier, 2);
-  assert.equal(t2Loot.t2_winner.pityReset, true);
 
   // Roll between 0.12 and 0.22 -> drops Tier 1
-  const t1Rng = createMockRng([0.0, 0.15]);
   const t1Loot = rollBossLoot({
     bossId: 'hollow_crystal_weaver',
     qualifying: ['t1_winner'],
-    rng: t1Rng,
+    rng: createMockRng([0.0, 0.15]),
   });
   assert.equal(t1Loot.t1_winner.charmTier, 1);
-  assert.equal(t1Loot.t1_winner.pityReset, true);
 
-  // Pity guarantee for Hollow Crystal Weaver gives lowest tier (1)
-  const weaverPityRng = createMockRng([0.0, 0.80]);
-  const weaverPityLoot = rollBossLoot({
+  // Roll >= 0.22 at 0 Luck -> no charm (pure RNG, no 10-kill pity)
+  const weaverMissLoot = rollBossLoot({
     bossId: 'hollow_crystal_weaver',
-    qualifying: ['weaver_pity'],
-    rng: weaverPityRng,
-    pityByUser: { weaver_pity: 9 }, // 9 + 1 = 10 >= 10
+    qualifying: ['weaver_miss'],
+    rng: createMockRng([0.0, 0.80]),
   });
-  assert.equal(weaverPityLoot.weaver_pity.charmTier, 1);
-  assert.equal(weaverPityLoot.weaver_pity.pityReset, true);
+  assert.equal(weaverMissLoot.weaver_miss.charmTier, null);
 });

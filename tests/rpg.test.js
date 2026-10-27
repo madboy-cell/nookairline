@@ -231,6 +231,8 @@ test('box 1 banners: bad banner refunds nothing taken, relics = accessories with
     'hat_mythic_jackpot_crown', 'gloves_mythic_croupier_rake', 'boots_mythic_roulette_heels',
     'hat_mythic_carnival_carousel_crown', 'gloves_mythic_ferris_star_scepter', 'boots_mythic_coaster_wing_boots',
     'hat_mythic_dragon_hoard_crown', 'gloves_mythic_vault_key_scepter', 'boots_mythic_dragon_bullion_greaves',
+    'gloves_mythic_prism_blade', 'gloves_mythic_bahamut_scythe', 'gloves_mythic_phoenix_bow',
+    'gloves_mythic_chrono_bow', 'gloves_mythic_eden_harpbow', 'gloves_mythic_poseidon_staff',
   ]);
   assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.02)).items[0].id, 'hat_glowing_bunny');
   assert.equal(rpg.gachaPull(p, { box: 1, count: 1, currency: 'diamonds', banner: 'relics' }, seq(0.001, 0.05)).items[0].id, 'face_oracle_monocle');

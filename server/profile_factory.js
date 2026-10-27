@@ -7,6 +7,7 @@ import { defaultStory, maxIslandSize, unlockedMonuments } from '../shared/story_
 import { OUTFITS } from '../shared/costumes_catalog.js';
 import { ACCESSORIES, PET_IDS } from '../shared/catalog_gear_pets.js';
 import { HAIRSTYLES, HAIR_COLORS } from '../shared/hair_catalog.js';
+import { defaultFrontierSkills, normalizeFrontierSkills } from '../shared/skill_combos.js';
 
 export const LINEAGES = ['bkk', 'dxb', 'boy', 'girl'];
 export const STARTER_PET = { bkk: 'pet_nyx', dxb: 'pet_ragdoll', boy: 'pet_nyx', girl: 'pet_ragdoll' }; // Screen 24 starter eggs
@@ -22,6 +23,7 @@ export function defaultFrontier() {
     ultimateCharmUid: null,
     mealBuff: null,
     foodPouch: [null, null, null, null],
+    skills: defaultFrontierSkills(),
     warehouse: { lv: 1, items: {} },
     pantry: { lv: 1, items: {} },
     campCrate: { items: {}, expiresAt: 0 },
@@ -239,9 +241,35 @@ export function migrateProfile(p, now = Date.now()) {
     p.frontier = defaultFrontier();
   } else {
     deepFill(p.frontier, defaultFrontier());
+    const sk = p.frontier.skills;
+    if (!sk || typeof sk !== 'object' || Array.isArray(sk)) {
+      p.frontier.skills = defaultFrontierSkills();
+    } else {
+      normalizeFrontierSkills(sk);
+    }
   }
   p.frontier.pantry ||= { lv: 1, items: {} };
+  if (!p.basecamp || typeof p.basecamp !== 'object' || Array.isArray(p.basecamp)) p.basecamp = {};
+  if (!p.basecamp.weaponForge || typeof p.basecamp.weaponForge !== 'object' || Array.isArray(p.basecamp.weaponForge)) {
+    p.basecamp.weaponForge = { pity: 0, pending: null };
+  } else {
+    p.basecamp.weaponForge.pity = Math.max(0, p.basecamp.weaponForge.pity | 0);
+    if (p.basecamp.weaponForge.pending === undefined) p.basecamp.weaponForge.pending = null;
+  }
+  ensureStarterCosmetics(p);
   if (p.orders === undefined) p.orders = null;   // order board is created lazily (basecamp_service.orderBoard)
+  return p;
+}
+
+/** Grants all `starterCosmetic: true` accessories (starter ears/horns/tails + 3 starter weapons) into `p.inventory`. */
+export function ensureStarterCosmetics(p) {
+  if (!p || typeof p !== 'object') return p;
+  p.inventory = (p.inventory && typeof p.inventory === 'object' && !Array.isArray(p.inventory)) ? p.inventory : {};
+  for (const [id, def] of Object.entries(ACCESSORIES)) {
+    if (def?.starterCosmetic && !p.inventory[id]) {
+      p.inventory[id] = { refine: 0, dupes: 0, pity: 0 };
+    }
+  }
   return p;
 }
 
@@ -262,6 +290,11 @@ function baseProfile(username, lineage, appearanceOpts = {}) {
   const starterInventory = isGirl
     ? { newbie_outfit: { refine: 0, dupes: 0 }, hat_dragon_horns: { refine: 0, dupes: 0 }, back_dragon_tail: { refine: 0, dupes: 0 } }
     : { newbie_outfit: { refine: 0, dupes: 0 }, hat_wolf_ears: { refine: 0, dupes: 0 }, back_wolf_tail: { refine: 0, dupes: 0 } };
+  for (const [id, def] of Object.entries(ACCESSORIES)) {
+    if (def?.starterCosmetic && !starterInventory[id]) {
+      starterInventory[id] = { refine: 0, dupes: 0, pity: 0 };
+    }
+  }
   const starterSlot = isGirl
     ? { stat: 'fortune', tier: 'rare', value: 0.07, locked: false }
     : { stat: 'power', tier: 'rare', value: 0.07, locked: false };
@@ -320,6 +353,7 @@ function baseProfile(username, lineage, appearanceOpts = {}) {
     email_bound_at: null,
     email_reward_claimed: false,
     frontier: defaultFrontier(),
+    basecamp: { weaponForge: { pity: 0, pending: null } },
     story: defaultStory(),
     orders: null,
     created_at: now,

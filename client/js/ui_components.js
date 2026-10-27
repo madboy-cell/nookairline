@@ -4,14 +4,14 @@
 // automatically from shared catalogs and client/assets/asset_manifest.json.
 
 import * as THREE from 'three';
-import { ACCESSORIES, DICE_SKINS, PETS, PET_FAMILIES, petLocomotion } from '/shared/catalog_gear_pets.js';
+import { ACCESSORIES, DICE_SKINS, PETS, PET_FAMILIES, petLocomotion, resolveWeaponClass } from '/shared/catalog_gear_pets.js';
 import { resolvePetSpriteKey, resolvePetUiScale } from '/shared/pet_catalog.js';
 import { computePetPassives, normalizeActivePoses } from '/shared/pet_rules.js';
 import { OUTFITS } from '/shared/costumes_catalog.js';
 import { WONDERS, DECOR, CORE, BLUEPRINT_CARDS } from '/shared/catalog_landmarks.js';
 import { SLOTS, slotCP, recalcPlayerCP } from '/shared/progression.js';
 import { itemDef, itemSlot, FEATURED_OUTFIT, MYTHIC_DICE, petPassivePct, forgeReady } from '/shared/rpg_rules.js';
-import { computePaperDollParts, OUTFIT_FALLBACK } from '/shared/accessory_attach.js';
+import { computePaperDollParts, OUTFIT_FALLBACK, activeWeaponClass, visibleSlotId } from '/shared/accessory_attach.js';
 import { HAIRSTYLES, HAIR_COLORS, hairSpriteName } from '/shared/hair_catalog.js';
 import { normalizeItemStats, matchMods } from '/shared/monopoly_rules.js';
 import { computeUniversalStats, inspectItemAttune, skyFrontierMods } from '/shared/universal_stats.js';
@@ -35,7 +35,17 @@ export const SLOT_LABELS = {
   outfit: 'Outfit',
   hat: 'Hat',
   face: 'Face',
-  gloves: 'Gloves',
+  gloves: '⚔️ Hands & Weapon',
+  boots: 'Boots',
+  wings: 'Wings',
+  dice: '3D Dice',
+};
+
+export const SLOT_SHORT_LABELS = {
+  outfit: 'Outfit',
+  hat: 'Hat',
+  face: 'Face',
+  gloves: '⚔️ Weapon',
   boots: 'Boots',
   wings: 'Wings',
   dice: '3D Dice',
@@ -50,22 +60,22 @@ export const SLOT_ROLE_GUIDE = {
   hat: {
     icon: '🎩',
     badge: 'Universal 4-Stat Gear',
-    text: 'Boosts 🔥 Power, ⚡ Swiftness, 🪙 Fortune & 🍀 Luck across all 3 modes! Wear any cute hat & Forge +0→+10.',
+    text: 'Boosts 🔥 Power, ⚡ Swiftness, 💖 Vitality & 🍀 Luck across all 3 modes! Wear any cute hat & Forge +0→+10.',
   },
   face: {
     icon: '👓',
     badge: 'Universal 4-Stat Gear',
-    text: 'Boosts 🔥 Power, ⚡ Swiftness, 🪙 Fortune & 🍀 Luck across all 3 modes! Wear any glasses/blush & Forge +0→+10.',
+    text: 'Boosts 🔥 Power, ⚡ Swiftness, 💖 Vitality & 🍀 Luck across all 3 modes! Wear any glasses/blush & Forge +0→+10.',
   },
   gloves: {
-    icon: '🧤',
-    badge: 'Universal 4-Stat Gear',
-    text: 'Wear any bouquet, wand, teacup, or blade — all Gloves & Held items feed your 4 Universal Stats in every mode (+0→+10).',
+    icon: '⚔️',
+    badge: 'Hands & Weapon (Class + 4 Stats)',
+    text: 'Sets your Sky Frontier Combat Class (⚔️ Melee / 🏹 Ranged / 🪄 Magic via Visible Glamour || Equipped) & boosts 🔥 Power, ⚡ Swiftness, 💖 Vitality & 🍀 Luck (+0→+10).',
   },
   boots: {
     icon: '🥾',
     badge: 'Universal 4-Stat Gear',
-    text: 'Boosts ⚡ Swiftness, 🔥 Power, 🪙 Fortune & 🍀 Luck in 🎲 Monopoly, 🏝️ Sky Frontier & ☁️ Cloud Dash (+0→+10).',
+    text: 'Boosts ⚡ Swiftness, 🔥 Power, 💖 Vitality & 🍀 Luck in 🎲 Monopoly, 🏝️ Sky Frontier & ☁️ Cloud Dash (+0→+10).',
   },
   wings: {
     icon: '🪽',
@@ -167,28 +177,100 @@ export const BAG_ITEM_CATALOG = {
 export const STAT_PILL_META = {
   power:     { icon: '🔥', label: 'Power',     short: 'PWR', cls: 'stat-power' },
   swiftness: { icon: '⚡', label: 'Swiftness', short: 'SWF', cls: 'stat-swiftness' },
-  fortune:   { icon: '🪙', label: 'Fortune',   short: 'FRT', cls: 'stat-fortune' },
+  fortune:   { icon: '💖', label: 'Vitality',  short: 'VIT', cls: 'stat-fortune' },
   luck:      { icon: '🍀', label: 'Luck',      short: 'LCK', cls: 'stat-luck' },
 };
 
-export function getItemEffectiveStats(itemId, refine = 0, attuneStat = null) {
+export const WEAPON_CLASS_META = {
+  melee:  { id: 'melee',  icon: '⚔️', label: 'Melee',  badge: '⚔️ Melee',  cls: 'wc-melee' },
+  ranged: { id: 'ranged', icon: '🏹', label: 'Ranged', badge: '🏹 Ranged', cls: 'wc-ranged' },
+  magic:  { id: 'magic',  icon: '🪄', label: 'Magic',  badge: '🪄 Magic',  cls: 'wc-magic' },
+};
+
+export const FORGE_GRADE_META = {
+  SS: { grade: 'SS', label: 'Masterwork', pill: '[SS · Masterwork]', cls: 'grade-ss' },
+  S:  { grade: 'S',  label: 'Heroic',     pill: '[S · Heroic]',      cls: 'grade-s' },
+  A:  { grade: 'A',  label: 'Fine',       pill: '[A · Fine]',        cls: 'grade-a' },
+  B:  { grade: 'B',  label: 'Sturdy',     pill: '[B · Sturdy]',      cls: 'grade-b' },
+};
+
+export function renderWeaponClassBadge(itemId, { compact = false } = {}) {
+  if (!itemId || itemSlot(itemId) !== 'gloves') return '';
+  const wCls = resolveWeaponClass(itemId);
+  const meta = WEAPON_CLASS_META[wCls] || WEAPON_CLASS_META.melee;
+  return `<span class="s2-weapon-class-badge ${meta.cls}${compact ? ' is-compact' : ''}" title="Sky Frontier Combat Class: ${meta.badge}">${meta.badge}</span>`;
+}
+
+export function renderWeaponGradePill(itemId, profile = null, { compact = false } = {}) {
+  if (!itemId) return '';
+  const def = itemDef(itemId);
+  const invEntry = profile?.inventory?.[itemId];
+  const slot = itemSlot(itemId);
+  const eqEntry = (slot && profile?.equipped?.[slot]?.id === itemId) ? profile.equipped[slot] : null;
+  const grade = invEntry?.forgeGrade || eqEntry?.forgeGrade || null;
+  if (grade && FORGE_GRADE_META[grade]) {
+    const gMeta = FORGE_GRADE_META[grade];
+    return `<span class="s2-forge-grade-pill ${gMeta.cls}${compact ? ' is-compact' : ''}" title="Tinker's Workshop Anvil Grade: ${gMeta.pill}">${gMeta.pill}</span>`;
+  }
+  if (def?.bossCraft) {
+    return `<span class="s2-forge-grade-pill grade-uncrafted${compact ? ' is-compact' : ''}" title="Boss-Crafted Weapon at Tinker's Workshop">[⚒️ Boss Craft]</span>`;
+  }
+  return '';
+}
+
+export function renderActiveWeaponClassBanner(profile) {
+  const cls = activeWeaponClass(profile?.equipped, profile?.glamour);
+  const meta = WEAPON_CLASS_META[cls] || WEAPON_CLASS_META.melee;
+  const visId = visibleSlotId(profile?.equipped, 'gloves', profile?.glamour);
+  const visDef = visId ? itemDef(visId) : null;
+  const visLabel = visDef ? shortenGearName(visDef.name) : 'Bare Hands';
+  return `
+    <div class="s2-active-combat-banner ${meta.cls}">
+      <div class="s2-acb-main">
+        <span class="s2-acb-title">Active Combat Style:</span>
+        <span class="s2-weapon-class-badge ${meta.cls}">${meta.badge}</span>
+        <small class="s2-acb-source">(follows Visible Glamour || Equipped · ${escapeHtml(visLabel)})</small>
+      </div>
+      <div class="s2-acb-sub">✨ Swap <b>👗 Wear Look</b> on any weapon to switch combat class freely while keeping your highest <b>+10</b> refined stats!</div>
+    </div>
+  `;
+}
+
+export function resolveItemRawStats(itemId, profile = null, rolledStatsOverride = null) {
+  const def = itemDef(itemId);
+  if (!def) return null;
+  const invEntry = profile?.inventory?.[itemId];
+  const slot = itemSlot(itemId);
+  const eqEntry = (slot && profile?.equipped?.[slot]?.id === itemId) ? profile.equipped[slot] : null;
+  const effRarity = def.rarity === 'super_mythic' ? 3 : (def.rarity || 1);
+  const rawStats = rolledStatsOverride || invEntry?.rolledStats || eqEntry?.rolledStats || def.stats;
+  return rawStats || (effRarity === 3 ? { all: 24 } : { all: 8 });
+}
+
+export function getItemEffectiveStats(itemId, refine = 0, attuneStat = null, opts = {}) {
   const def = itemDef(itemId);
   if (!def) return { power: 0, swiftness: 0, fortune: 0, luck: 0, isAll: false, allVal: 0 };
   const mult = 1 + 0.15 * Math.max(0, refine | 0);
   const effRarity = def.rarity === 'super_mythic' ? 3 : (def.rarity || 1);
-  const raw = def.stats || (effRarity === 3 ? { all: 24 } : { all: 8 });
+  const profile = opts?.profile || null;
+  const invEntry = profile?.inventory?.[itemId];
+  const slot = itemSlot(itemId);
+  const eqEntry = (slot && profile?.equipped?.[slot]?.id === itemId) ? profile.equipped[slot] : null;
+  const rawStats = opts?.rolledStats || invEntry?.rolledStats || eqEntry?.rolledStats || def.stats;
+  const raw = rawStats || (effRarity === 3 ? { all: 24 } : { all: 8 });
   const norm = normalizeItemStats(raw, effRarity);
   const allBonus = Number(norm.all || raw.all || 0);
   if (allBonus > 0 && !norm.power && !norm.swiftness && !norm.fortune && !norm.luck) {
     const v = Math.round(allBonus * mult);
     return { power: v, swiftness: v, fortune: v, luck: v, isAll: true, allVal: v };
   }
-  const info = inspectItemAttune(itemId, refine, attuneStat);
+  const effAttune = attuneStat ?? invEntry?.attune?.stat ?? eqEntry?.attune?.stat ?? null;
+  const info = inspectItemAttune(itemId, refine, effAttune, { rolledStats: rawStats || undefined });
   if (info?.attunable) {
     const out = { power: 0, swiftness: 0, fortune: 0, luck: 0, isAll: false, allVal: 0 };
     if (info.mainStat) out[info.mainStat] += info.mainVal;
-    const secKey = (refine >= 5 && attuneStat && info.allowedStats?.includes(attuneStat))
-      ? attuneStat
+    const secKey = (refine >= 5 && effAttune && info.allowedStats?.includes(effAttune))
+      ? effAttune
       : (info.activeSecStat || info.defaultSecStat);
     if (secKey) out[secKey] += info.secVal;
     return out;
@@ -239,11 +321,11 @@ export function renderCharmCard(charm, { owned = false } = {}) {
   `;
 }
 
-export function renderItemStatPills(itemId, refine = 0, { compact = false } = {}) {
-  const eff = getItemEffectiveStats(itemId, refine);
+export function renderItemStatPills(itemId, refine = 0, { compact = false, profile = null, attuneStat = null, rolledStats = null } = {}) {
+  const eff = getItemEffectiveStats(itemId, refine, attuneStat, { profile, rolledStats });
   if (!eff.power && !eff.swiftness && !eff.fortune && !eff.luck) return '';
   if (eff.isAll) {
-    return `<div class="s2-item-stat-pills"><span class="s2-item-stat-pill stat-all" title="Boosts Power, Swiftness, Fortune &amp; Luck across Monopoly, Moon Defense &amp; Cloud Dash">🌟 +${eff.allVal} ${compact ? 'All Stats' : 'All 4 Stats'}</span></div>`;
+    return `<div class="s2-item-stat-pills"><span class="s2-item-stat-pill stat-all" title="Boosts Power, Swiftness, Vitality &amp; Luck across Monopoly, Sky Frontier &amp; Cloud Dash">🌟 +${eff.allVal} ${compact ? 'All Stats' : 'All 4 Stats'}</span></div>`;
   }
   const pills = [];
   for (const k of ['power', 'swiftness', 'fortune', 'luck']) {
@@ -251,7 +333,7 @@ export function renderItemStatPills(itemId, refine = 0, { compact = false } = {}
     if (v > 0) {
       const m = STAT_PILL_META[k];
       pills.push(
-        `<span class="s2-item-stat-pill ${m.cls}" title="${m.label} (Monopoly • Moon Defense • Cloud Dash)">${m.icon} +${v} ${compact ? m.short : m.label}</span>`
+        `<span class="s2-item-stat-pill ${m.cls}" title="${m.label} (Monopoly • Sky Frontier • Cloud Dash)">${m.icon} +${v} ${compact ? m.short : m.label}</span>`
       );
     }
   }
@@ -643,7 +725,7 @@ export function renderIconThumb(id, {
 }
 
 /**
- * Computes the 4 core RPG stats (Fortune, Swiftness, Power, Luck) dynamically from profile state.
+ * Computes the 4 core RPG stats (Vitality, Swiftness, Power, Luck) dynamically from profile state.
  */
 export function computePlayerStats(profile) {
   const uni = computeUniversalStats(profile);
@@ -691,7 +773,7 @@ export function computePlayerStats(profile) {
  */
 export function renderStatGrid(profile, selectedStat = null) {
   const st = computePlayerStats(profile);
-  const sf = st.sf || st.sfMods || skyFrontierMods(st.raw);
+  const sfMods = skyFrontierMods(st.total || st.raw);
   const pts = {
     fortune: Math.round(st.raw.fortune || 0),
     swiftness: Math.round(st.raw.swiftness || 0),
@@ -713,43 +795,50 @@ export function renderStatGrid(profile, selectedStat = null) {
   let buildProgressTag = '';
   if (dashBuild.next && dashBuild.next.need) {
     const nxtRoman = ['', 'I', 'II', 'III', 'IV'][dashBuild.next.tier] || dashBuild.next.tier;
-    buildProgressTag = `Next Tier ${nxtRoman}: ${Math.round(dashBuild.next.have || 0)}/${dashBuild.next.need} ${dashBuild.next.stat}`;
+    const nxtStatLbl = STAT_PILL_META[dashBuild.next.stat]?.label || dashBuild.next.stat;
+    buildProgressTag = `Next Tier ${nxtRoman}: ${Math.round(dashBuild.next.have || 0)}/${dashBuild.next.need} ${nxtStatLbl}`;
   } else if (dashBuild.stat && st.bonus?.[dashBuild.stat]) {
     const sharePct = Math.round((dashBuild.share?.[dashBuild.stat] || 0) * 100);
-    buildProgressTag = `MAX TIER • ${Math.round(st.bonus[dashBuild.stat])} ${dashBuild.stat} (${sharePct}% share)`;
+    const curStatLbl = STAT_PILL_META[dashBuild.stat]?.label || dashBuild.stat;
+    buildProgressTag = `MAX TIER • ${Math.round(st.bonus[dashBuild.stat])} ${curStatLbl} (${sharePct}% share)`;
   }
+
+  const sfPowerLine = `×${sfMods.attackDamageMult.toFixed(2)} All DMG (Combos &amp; Skills)`;
+  const sfSwiftLine = `+${Math.round((sfMods.moveSpeedMult - 1) * 100)}% Spd · +${Math.round((sfMods.skillHasteMult - 1) * 100)}% Skill Haste`;
+  const sfVitLine = `+${sfMods.maxHpBonus} Max HP · +${(sfMods.hpRegenPerSec || 0.6).toFixed(1)} HP/s · +${Math.round((sfMods.healShieldMult - 1) * 100)}% Heal/Shield · +${Math.round((sfMods.gatherYieldMult - 1) * 100)}% Yield`;
+  const sfLuckLine = `${Math.round(sfMods.critChance * 100)}% Crit · +${Math.round((sfMods.rareFindMult - 1) * 100)}% Rare &amp; Scroll Drop`;
 
   const bridgeDetails = {
     fortune: {
-      icon: '🪙',
-      label: 'Fortune',
+      icon: '💖',
+      label: 'Vitality',
       pts: pts.fortune,
       mono: `Start Cash +${Math.round(st.monoMods.startCashPct * 100)}% • Rent Toll +${Math.round(st.monoMods.rentPct * 100)}% • Podium +${Math.min(200, Math.round(st.raw.fortune))}%`,
-      moon: `Gather Yield ×${sf.gatherYieldMult}`,
-      dash: `Podium/Track Gold ${st.dashMods.podiumGoldPct} • Coin Magnet ${st.dashMods.magnetRadiusPct}`,
+      moon: `+${sfMods.maxHpBonus} Max HP • +${(sfMods.hpRegenPerSec || 0.6).toFixed(1)} HP/s Passive Regen • +${Math.round((sfMods.healShieldMult - 1) * 100)}% Heal/Shield • +${Math.round((sfMods.gatherYieldMult - 1) * 100)}% Yield`,
+      dash: `Podium/Track Gold ${st.dashMods.podiumGoldPct} • Jelly Magnet ${st.dashMods.magnetRadiusPct}`,
     },
     swiftness: {
       icon: '⚡',
       label: 'Swiftness',
       pts: pts.swiftness,
-      mono: `START Lap Salary +${Math.round(st.monoMods.salaryPct * 100)}% • Tempo & Sprint Boost`,
-      moon: `Move/Swing Speed ×${sf.moveSpeedMult}`,
+      mono: `START Lap Salary +${Math.round(st.monoMods.salaryPct * 100)}% • Tempo &amp; Sprint Boost`,
+      moon: sfSwiftLine,
       dash: `Top Speed ${st.dashMods.topSpeedPct} • Boost Pad Recovery ${st.dashMods.accelPct}`,
     },
     power: {
       icon: '🔥',
       label: 'Power',
       pts: pts.power,
-      mono: `Ultimate Skill & Takeover Power +${Math.round(st.monoMods.ultPct * 100)}%`,
-      moon: `Attack Power ×${sf.attackDamageMult}`,
+      mono: `Ultimate Skill &amp; Takeover Power +${Math.round(st.monoMods.ultPct * 100)}%`,
+      moon: sfPowerLine,
       dash: `Fury Gauge ${st.dashMods.furyChargePct} • Stumble Resist ${st.dashMods.knockbackResistPct}`,
     },
     luck: {
       icon: '🍀',
       label: 'Luck',
       pts: pts.luck,
-      mono: `Buy/Upgrade Discount -${Math.round(st.monoMods.discountPct * 100)}% • Casino & Podium Chest Boost`,
-      moon: `Rare Find ×${sf.rareFindMult} • Crit +${Math.round(sf.critChance * 100)}%`,
+      mono: `Buy/Upgrade Discount -${Math.round(st.monoMods.discountPct * 100)}% • Casino &amp; Podium Chest Boost`,
+      moon: sfLuckLine,
       dash: `Rare Item Box ${st.dashMods.rareBoxPct} • Miracle Shield ${st.dashMods.miracleShieldPct}`,
     },
   };
@@ -759,23 +848,23 @@ export function renderStatGrid(profile, selectedStat = null) {
   return `
     <div class="s2-stat-panel">
       <div class="s2-stat-grid">
-        <div class="s2-stat-cell ${activeStat === 'fortune' ? 'is-active' : ''} ${topStatKey === 'fortune' ? 'is-top-stat' : ''}" data-stat-info="fortune" title="Tap to inspect Fortune bonuses across Monopoly, Island Defense &amp; Cloud Dash">
-          <span class="s2-stat-ico">🍀</span>
-          <span class="s2-stat-name">Fortune</span>
+        <div class="s2-stat-cell ${activeStat === 'fortune' ? 'is-active' : ''} ${topStatKey === 'fortune' ? 'is-top-stat' : ''}" data-stat-info="fortune" title="Tap to inspect Vitality bonuses across Monopoly, Sky Frontier &amp; Cloud Dash">
+          <span class="s2-stat-ico">💖</span>
+          <span class="s2-stat-name">Vitality</span>
           <b class="s2-stat-val">${pts.fortune} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell ${activeStat === 'swiftness' ? 'is-active' : ''} ${topStatKey === 'swiftness' ? 'is-top-stat' : ''}" data-stat-info="swiftness" title="Tap to inspect Swiftness bonuses across Monopoly, Island Defense &amp; Cloud Dash">
+        <div class="s2-stat-cell ${activeStat === 'swiftness' ? 'is-active' : ''} ${topStatKey === 'swiftness' ? 'is-top-stat' : ''}" data-stat-info="swiftness" title="Tap to inspect Swiftness bonuses across Monopoly, Sky Frontier &amp; Cloud Dash">
           <span class="s2-stat-ico">⚡</span>
           <span class="s2-stat-name">Swiftness</span>
           <b class="s2-stat-val">${pts.swiftness} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell ${activeStat === 'power' ? 'is-active' : ''} ${topStatKey === 'power' ? 'is-top-stat' : ''}" data-stat-info="power" title="Tap to inspect Power bonuses across Monopoly, Island Defense &amp; Cloud Dash">
+        <div class="s2-stat-cell ${activeStat === 'power' ? 'is-active' : ''} ${topStatKey === 'power' ? 'is-top-stat' : ''}" data-stat-info="power" title="Tap to inspect Power bonuses across Monopoly, Sky Frontier &amp; Cloud Dash">
           <span class="s2-stat-ico">🔥</span>
           <span class="s2-stat-name">Power</span>
           <b class="s2-stat-val">${pts.power} <small>pts</small></b>
         </div>
-        <div class="s2-stat-cell ${activeStat === 'luck' ? 'is-active' : ''} ${topStatKey === 'luck' ? 'is-top-stat' : ''}" data-stat-info="luck" title="Tap to inspect Luck bonuses across Monopoly, Island Defense &amp; Cloud Dash">
-          <span class="s2-stat-ico">✨</span>
+        <div class="s2-stat-cell ${activeStat === 'luck' ? 'is-active' : ''} ${topStatKey === 'luck' ? 'is-top-stat' : ''}" data-stat-info="luck" title="Tap to inspect Luck bonuses across Monopoly, Sky Frontier &amp; Cloud Dash">
+          <span class="s2-stat-ico">🍀</span>
           <span class="s2-stat-name">Luck</span>
           <b class="s2-stat-val">${pts.luck} <small>pts</small></b>
         </div>
@@ -784,15 +873,12 @@ export function renderStatGrid(profile, selectedStat = null) {
         <span class="s2-dash-build-main">☁️ ${String(dashBuild.icon || '').replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')} <b>Dash Build: ${escapeHtml(dashBuild.name)}${tierStr}</b>${buildProgressTag ? ` <small class="s2-dash-build-share">(${escapeHtml(buildProgressTag)})</small>` : ''}</span>
         ${buildPerkOrTip ? `<span class="s2-dash-build-perk">${escapeHtml(buildPerkOrTip).replace(/🪙/g, '<img class="s2-inline-ico" src="/assets/ui/icon_gold.png" alt="">')}</span>` : ''}
       </div>
-      <div class="s2-sf-mods-strip" style="display:flex;flex-wrap:wrap;gap:8px;padding:6px 10px;background:rgba(20,108,148,0.10);border:1px solid rgba(20,108,148,0.32);border-radius:8px;margin-top:6px;font-size:12px;color:#3A281E;">
-        <span style="font-weight:800;color:#146C94;">🏝️ Sky Frontier Mods:</span>
-        <span>Attack Power <b>×${sf.attackDamageMult}</b></span>
-        <span>•</span>
-        <span>Gather Yield <b>×${sf.gatherYieldMult}</b></span>
-        <span>•</span>
-        <span>Rare Find <b>×${sf.rareFindMult}</b></span>
-        <span>•</span>
-        <span>Move/Swing Speed <b>×${sf.moveSpeedMult}</b></span>
+      <div class="s2-sf-mods-strip" style="display:grid;grid-template-columns:1fr;gap:3px;padding:7px 10px;background:rgba(20,108,148,0.10);border:1px solid rgba(20,108,148,0.32);border-radius:8px;margin-top:6px;font-size:11.5px;color:#3A281E;">
+        <div style="font-weight:900;color:#146C94;margin-bottom:1px;">🏝️ Sky Frontier Mods</div>
+        <div><b>🔥 Power:</b> ${sfPowerLine}</div>
+        <div><b>⚡ Swiftness:</b> ${sfSwiftLine}</div>
+        <div><b>💖 Vitality:</b> ${sfVitLine}</div>
+        <div><b>🍀 Luck:</b> ${sfLuckLine}</div>
       </div>
       ${b ? `
         <div class="s2-stat-bridge-box" data-active-stat="${activeStat}">
@@ -816,9 +902,9 @@ export function renderStatGrid(profile, selectedStat = null) {
  * Matches Mockup 07 1:1: compact 2-line caption above a 64x64 golden filigree box with +Refine top-left,
  * item icon centered (with hair layer for outfits), and stars + eye visibility toggle along the bottom.
  */
-function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false, appearance = null, wardrobeMode = 'stats') {
+function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasRedDot = false, appearance = null, wardrobeMode = 'stats', profile = null) {
   const statItemId = equippedSlot?.id || null;
-  const glamItemId = equippedSlot?.glamour || null;
+  const glamItemId = profile?.glamour?.[slot] || equippedSlot?.glamour || null;
   const hasGlamour = Boolean(glamItemId && glamItemId !== statItemId);
   const isGlamourMode = wardrobeMode === 'glamour';
   const itemId = isGlamourMode ? (glamItemId || statItemId) : statItemId;
@@ -827,20 +913,28 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
   const def = itemId ? itemDef(itemId) : null;
   const vis = itemId ? resolveItemVisual(itemId, lineage) : null;
   const rarity = def?.rarity || (itemId ? 1 : 0);
-  const stars = rarity ? '★'.repeat(rarity) : '—';
+  const effRarity = rarity === 'super_mythic' ? 3 : rarity;
+  const stars = effRarity ? '★'.repeat(effRarity) : '—';
   const filterStyle = vis?.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
   const rawName = def ? def.name : '(Empty)';
   const shortName = shortenGearName(rawName);
-  const statTip = def ? formatStatsSummary(def.stats || (rarity === 3 ? { all: 24 } : { all: 8 }), rarity, refine) : '';
+  const invEntry = itemId ? profile?.inventory?.[itemId] : null;
+  const eqEntry = (itemId && equippedSlot?.id === itemId) ? equippedSlot : null;
+  const rawStats = def ? (invEntry?.rolledStats || eqEntry?.rolledStats || def.stats || (effRarity === 3 ? { all: 24 } : { all: 8 })) : null;
+  const statTip = def ? formatStatsSummary(rawStats, effRarity, refine) : '';
   const roleInfo = SLOT_ROLE_GUIDE[slot];
   const glamourName = hasGlamour ? (itemDef(glamItemId)?.name || glamItemId) : null;
-  const attuneStr = equippedSlot?.attune?.stat ? ` | 🎯 Attuned: ${equippedSlot.attune.stat}` : '';
+  const attStatKey = equippedSlot?.attune?.stat;
+  const attuneStr = attStatKey ? ` | 🎯 Attuned: ${STAT_PILL_META[attStatKey]?.label || attStatKey}` : '';
+  const gradeKey = invEntry?.forgeGrade || eqEntry?.forgeGrade || null;
+  const gradeStr = gradeKey && FORGE_GRADE_META[gradeKey] ? ` ${FORGE_GRADE_META[gradeKey].pill}` : (def?.bossCraft ? ' [⚒️ Boss Craft]' : '');
+  const classStr = (slot === 'gloves' && itemId) ? ` | ${(WEAPON_CLASS_META[resolveWeaponClass(itemId)] || WEAPON_CLASS_META.melee).badge}` : '';
   const ult = def?.ultimate || equippedSlot?.ultimate;
   const ultStr = ult ? ` | ⚡ Ultimate: ${ult.name} (${ult.cooldownSec}s) — ${ult.desc}` : '';
   const fullTooltip = def
     ? (isGlamourMode
-        ? `👗 Look: ${rawName}${hasGlamour ? ' (Custom Glamour)' : ' (Same as Stat Gear)'}`
-        : `${rawName} (+${refine})${statTip ? ` — ${statTip}` : ''}${attuneStr}${ultStr}${hasGlamour ? ` | 👗 Look: ${glamourName}` : ''}${roleInfo ? ` | ${roleInfo.badge}` : ''}`)
+        ? `👗 Look: ${rawName}${classStr}${hasGlamour ? ' (Custom Glamour)' : ' (Same as Stat Gear)'}`
+        : `${rawName}${gradeStr} (+${refine})${classStr}${statTip ? ` — ${statTip}` : ''}${attuneStr}${ultStr}${hasGlamour ? ` | 👗 Look: ${glamourName}` : ''}${roleInfo ? ` | ${roleInfo.badge}` : ''}`)
     : `${SLOT_LABELS[slot]} (Empty)${roleInfo ? ` — ${roleInfo.text}` : ''}`;
   const slotThumbHtml = itemId
     ? (slot === 'outfit'
@@ -849,9 +943,9 @@ function renderPaperDollSlotSquare(slot, equippedSlot, isSelected, lineage, hasR
     : `<span class="s2-pd-empty">+</span>`;
 
   return `
-    <div class="rpg-slot-card s2-pd-slot s2-pd-slot-v2 rpg-rarity-${rarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''} ${isGlamourMode ? 'is-glamour-mode-slot' : ''} ${hasGlamour ? 'has-glamour-look' : ''}" data-slot="${slot}" title="${escapeHtml(fullTooltip)}">
+    <div class="rpg-slot-card s2-pd-slot s2-pd-slot-v2 rpg-rarity-${effRarity} ${isSelected ? 'selected' : ''} ${isHidden ? 'slot-hidden' : ''} ${isGlamourMode ? 'is-glamour-mode-slot' : ''} ${hasGlamour ? 'has-glamour-look' : ''}" data-slot="${slot}" title="${escapeHtml(fullTooltip)}">
       <div class="s2-pd-slot-caption" title="${escapeHtml(fullTooltip)}">
-        <span class="rpg-slot-label">${SLOT_LABELS[slot]}</span>
+        <span class="rpg-slot-label">${SLOT_SHORT_LABELS[slot] || SLOT_LABELS[slot]}</span>
         <span class="rpg-slot-name">${escapeHtml(shortName)}</span>
       </div>
       <div class="s2-pd-slot-box">
@@ -1047,11 +1141,11 @@ export function renderPaperDollHeroStage(profile, selectedSlot = 'outfit', petPo
   const isForgeReady = forgeReady(profile);
 
   const leftSlots = ['outfit', 'gloves', 'boots']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode, profile))
     .join('');
 
   const rightSlots = ['hat', 'face', 'wings']
-    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode))
+    .map((s) => renderPaperDollSlotSquare(s, eq[s], selectedSlot === s, lineage, isForgeReady, profile?.appearance, wardrobeMode, profile))
     .join('');
 
   const titleText = profile?.title || (maxRefine >= 10 ? '+10 Sovereign' : 'Sky Sovereign');

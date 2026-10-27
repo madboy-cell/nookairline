@@ -33,9 +33,10 @@ import {
 } from '/shared/charm_catalog.js';
 
 import {
-  fmtNum, escapeHtml, SLOT_LABELS, SLOT_ROLE_GUIDE, BAG_ITEM_CATALOG, SHARD_OFFER_VISUALS, resolveShardOfferMeta,
+  fmtNum, escapeHtml, SLOT_LABELS, SLOT_SHORT_LABELS, SLOT_ROLE_GUIDE, BAG_ITEM_CATALOG, SHARD_OFFER_VISUALS, resolveShardOfferMeta,
   resolveItemVisual, shortenGearName, renderIconThumb, renderOutfitThumbLayers, computePlayerStats, renderStatGrid, renderPaperDollHeroStage, renderPaperDollDomLayers,
   getPaperDollStageState, renderStarForceArc, renderItemStatPills, formatStatsSummary, getItemEffectiveStats, STAT_PILL_META,
+  renderWeaponClassBadge, renderWeaponGradePill, renderActiveWeaponClassBanner,
   mountLivePaperDollStage, stopWardrobePreview, cyclePaperDollView, togglePaperDollWalk,
 } from './ui_components.js?v=wd6';
 
@@ -1865,7 +1866,7 @@ export class RpgUI {
         }
         const curIt = this.profile.inventory?.[this.selectedForgeItem];
         const curRef = curIt ? (curIt.refine | 0) : 0;
-        const curAttInfo = inspectItemAttune(this.selectedForgeItem, curRef, curIt?.attune?.stat);
+        const curAttInfo = inspectItemAttune(this.selectedForgeItem, curRef, curIt?.attune?.stat, { rolledStats: curIt?.rolledStats });
         if (!curAttInfo.attunable) {
           this.toast('This item cannot be attuned.');
           return;
@@ -1885,6 +1886,7 @@ export class RpgUI {
         const attCost = attuneCostFor(attCount);
         const ownedScrolls = (this.profile.bag_items?.scroll_stat_attune | 0) || (this.profile.bag_items?.attune_scroll | 0);
         const useScroll = Boolean(ownedScrolls >= 1 && !attCost.free);
+        const chosenStatLabel = (STAT_PILL_META[chosenStat]?.label || chosenStat).toUpperCase();
 
         this.executeAction('gear_attune', {
           itemId: this.selectedForgeItem,
@@ -1899,7 +1901,7 @@ export class RpgUI {
             at: Date.now(),
           };
           this.playForgeSfx('attune_win');
-          this.toast(`🎯 Attuned secondary stat to ${chosenStat.toUpperCase()} +${curAttInfo.secVal}!`);
+          this.toast(`🎯 Attuned secondary stat to ${chosenStatLabel} +${curAttInfo.secVal}!`);
         });
         return;
       }
@@ -2385,12 +2387,15 @@ export class RpgUI {
       // Slot filter pills for quick switching inside Inline Closet (incl. 3D Dice Skins)
       const slotPillsHtml = [...SLOTS, 'dice'].map((s) => {
         const cnt = Object.keys(inv).filter((id) => itemSlot(id) === s).length;
+        const pillLbl = SLOT_SHORT_LABELS[s] || SLOT_LABELS[s];
         return `
-          <button class="s2-slot-pill ${curSlot === s ? 'active' : ''}" data-slot="${s}">
-            ${SLOT_LABELS[s]}${curSlot === s ? ` (${cnt})` : ''}
+          <button class="s2-slot-pill ${curSlot === s ? 'active' : ''}" data-slot="${s}" title="${escapeHtml(SLOT_LABELS[s])}">
+            ${pillLbl}${curSlot === s ? ` (${cnt})` : ''}
           </button>
         `;
       }).join('');
+
+      const activeClassBannerHtml = curSlot === 'gloves' ? renderActiveWeaponClassBanner(p) : '';
 
       // Active Slot Dual Summary: ⚔️ Stat Gear vs 👗 Visual Glamour
       const eqDef = eqSlotId ? itemDef(eqSlotId) : null;
@@ -2406,7 +2411,7 @@ export class RpgUI {
       const dualLoadoutBarHtml = curSlot !== 'dice' ? `
         <div class="s2-active-loadout-dual">
           <div class="s2-loadout-half is-stat-gear" data-closet-item="${eqSlotId || ''}">
-            <div class="s2-loadout-half-tag">⚔️ STAT GEAR <small>(Power &amp; ULT)</small></div>
+            <div class="s2-loadout-half-tag">⚔️ STAT GEAR <small>(${curSlot === 'gloves' ? '⚔️ Hands &amp; Weapon' : 'Power &amp; ULT'})</small></div>
             <div class="s2-loadout-half-body">
               ${eqSlotId ? `
                 <div class="s2-loadout-mini-thumb">
@@ -2414,7 +2419,7 @@ export class RpgUI {
                 </div>
                 <div class="s2-loadout-half-txt">
                   <b>${escapeHtml(shortenGearName(eqDef?.name || eqSlotId))}</b>
-                  <span>+${eqCpVal} CP${eqRefine > 0 ? ` • +${eqRefine}` : ''}</span>
+                  <span>+${eqCpVal} CP${eqRefine > 0 ? ` • +${eqRefine}` : ''}${curSlot === 'gloves' ? ` ${renderWeaponClassBadge(eqSlotId, { compact: true })}` : ''}</span>
                 </div>
               ` : `
                 <div class="s2-loadout-half-txt is-empty">
@@ -2437,7 +2442,7 @@ export class RpgUI {
                 </div>
                 <div class="s2-loadout-half-txt">
                   <b>${escapeHtml(shortenGearName(glamDef?.name || curGlamourId))}</b>
-                  <span class="is-glam-active">✨ Custom Look Active</span>
+                  <span class="is-glam-active">✨ Custom Look${curSlot === 'gloves' ? ` ${renderWeaponClassBadge(curGlamourId, { compact: true })}` : ' Active'}</span>
                 </div>
               ` : `
                 <div class="s2-loadout-half-txt is-same">
@@ -2474,7 +2479,16 @@ export class RpgUI {
         const cpDelta = !isSelEquipped ? (selCp - eqCp) : 0;
         const selSk = curSlot === 'outfit' ? skillFor(selId, selRarityNum) : null;
         const selTurf = selSk?.homeTheme && THEMES[selSk.homeTheme] ? THEMES[selSk.homeTheme].name : null;
-        const selStatPills = renderItemStatPills(selId, selRefine, { compact: true });
+        const selEqEntry = equipped[curSlot]?.id === selId ? equipped[curSlot] : null;
+        const selRawStats = selData?.rolledStats || selEqEntry?.rolledStats || selDef.stats;
+        const selStatPills = renderItemStatPills(selId, selRefine, {
+          compact: true,
+          profile: p,
+          attuneStat: selData?.attune?.stat,
+          rolledStats: selRawStats,
+        });
+        const selClassBadge = renderWeaponClassBadge(selId);
+        const selGradePill = renderWeaponGradePill(selId, p);
         const canForgeSel = isItemForgeReady(p, selId);
 
         let buildPreviewHtml = '';
@@ -2486,6 +2500,7 @@ export class RpgUI {
               id: selId,
               refine: selRefine,
               ...(selData.attune ? { attune: { ...selData.attune } } : {}),
+              ...(selData.rolledStats ? { rolledStats: { ...selData.rolledStats } } : {}),
             },
           };
           const simProfile = { ...p, equipped: simEquipped };
@@ -2525,10 +2540,12 @@ export class RpgUI {
                 <div class="s2-insp-title-row">
                   <span class="s2-insp-name">${escapeHtml(selName)}</span>
                 </div>
-                <div class="s2-insp-meta-row">
+                <div class="s2-insp-meta-row" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
                   <span class="rpg-stars">${selIsSuper ? '✦ SUPER' : '★'.repeat(selRarityNum)}</span>
                   <span class="s2-insp-cp">+${selCp} CP</span>
                   ${cpDelta !== 0 ? `<span class="s2-insp-delta ${cpDelta > 0 ? 'pos' : 'neg'}">(${cpDelta > 0 ? `+${cpDelta}` : cpDelta})</span>` : ''}
+                  ${selClassBadge}
+                  ${selGradePill}
                 </div>
                 ${selStatPills}
                 ${buildPreviewHtml}
@@ -2555,7 +2572,7 @@ export class RpgUI {
               </div>
             ` : (roleGuide ? `
               <div class="s2-insp-skill-strip is-gear-role">
-                <span>${roleGuide.icon} <b>${escapeHtml(roleGuide.badge)}:</b> Boosts Power, Swiftness, Fortune &amp; Luck in all 3 modes.</span>
+                <span>${roleGuide.icon} <b>${escapeHtml(roleGuide.badge)}:</b> ${escapeHtml(roleGuide.text || 'Boosts 🔥 Power, ⚡ Swiftness, 💖 Vitality & 🍀 Luck in all 3 modes.')}</span>
               </div>
             ` : '')}
           </div>
@@ -2574,6 +2591,23 @@ export class RpgUI {
         const isCustomGlamour = curGlamourId === id && curGlamourId !== eqSlotId;
         const isSelected = selId === id;
         const cpVal = Math.round(slotCP(curSlot, id, refine));
+        const invEntry = p?.inventory?.[id];
+        const eqEntry = equipped[curSlot]?.id === id ? equipped[curSlot] : null;
+        const rawStats = invEntry?.rolledStats || eqEntry?.rolledStats || def?.stats;
+        const cardClassBadge = curSlot === 'gloves' ? renderWeaponClassBadge(id, { compact: true }) : '';
+        const cardGradePill = renderWeaponGradePill(id, p, { compact: true });
+        let cardMiniStats = '';
+        if (curSlot === 'gloves' || invEntry?.rolledStats || def?.bossCraft) {
+          const eff = getItemEffectiveStats(id, refine, itemData?.attune?.stat, { profile: p, rolledStats: rawStats });
+          if (eff.isAll && eff.allVal > 0) {
+            cardMiniStats = `<div class="s2-tile-mini-stats">🌟+${eff.allVal} ALL</div>`;
+          } else {
+            const stBits = ['power', 'swiftness', 'fortune', 'luck']
+              .filter((k) => eff[k] > 0)
+              .map((k) => `${STAT_PILL_META[k].icon}+${eff[k]}`);
+            if (stBits.length) cardMiniStats = `<div class="s2-tile-mini-stats">${stBits.join(' ')}</div>`;
+          }
+        }
 
         return `
           <button type="button"
@@ -2585,6 +2619,8 @@ export class RpgUI {
               ${renderIconThumb(id, { lineage, appearance: p.appearance, size: 50, refine, stars: isSuper ? SM_TIER : rarityNum, badgeText: dupes > 0 ? `x${dupes}` : null })}
             </div>
             <div class="s2-tile-name">${escapeHtml(shortenGearName(name))}</div>
+            ${(cardClassBadge || cardGradePill) ? `<div class="s2-tile-weapon-badges">${cardClassBadge}${cardGradePill}</div>` : ''}
+            ${cardMiniStats}
             <div class="s2-tile-meta">
               <span class="rpg-stars">${isSuper ? '✦' : '★'.repeat(rarityNum)}</span>
               <span class="s2-cp-mini">+${cpVal}</span>
@@ -2618,10 +2654,10 @@ export class RpgUI {
 
           <div class="s2-compact-stats-bar" data-toggle-ult-info="1" title="Tap to expand full Stats, Ultimate &amp; Dash Build details">
             <div class="s2-compact-stats-pills">
-              <span title="Fortune Points">🍀 <b>${pts.fortune}</b></span>
+              <span title="Vitality Points">💖 <b>${pts.fortune}</b></span>
               <span title="Swiftness Points">⚡ <b>${pts.swiftness}</b></span>
               <span title="Power Points">🔥 <b>${pts.power}</b></span>
-              <span title="Luck Points">✨ <b>${pts.luck}</b></span>
+              <span title="Luck Points">🍀 <b>${pts.luck}</b></span>
               <span class="s2-compact-build-pill">☁️ ${escapeHtml(dashBuild.name)}${tierRoman ? ` ${tierRoman}` : ''}</span>
             </div>
             <button type="button" class="s2-compact-stats-toggle" data-toggle-ult-info="1">
@@ -2638,6 +2674,7 @@ export class RpgUI {
 
           <div class="s2-inline-closet-panel">
             <div class="s2-slot-pills-bar">${slotPillsHtml}</div>
+            ${activeClassBannerHtml}
             ${dualLoadoutBarHtml}
             ${inspectorHtml}
             <div class="rpg-items-grid s2-closet-grid-v2">
@@ -3356,7 +3393,7 @@ export class RpgUI {
       if (!effStats) return '';
       const parts = [];
       const meta = [
-        { k: 'fortune', ico: '💰', lbl: 'FOR' },
+        { k: 'fortune', ico: '💖', lbl: 'VIT' },
         { k: 'swiftness', ico: '⚡', lbl: 'SWF' },
         { k: 'power', ico: '⚔️', lbl: 'PWR' },
         { k: 'luck', ico: '🍀', lbl: 'LCK' },
@@ -4709,9 +4746,9 @@ export class RpgUI {
 
     if (isAttuneMode) {
       const curItem = this.selectedForgeItem ? inv[this.selectedForgeItem] : null;
-      const curInfo = this.selectedForgeItem ? inspectItemAttune(this.selectedForgeItem, curItem?.refine | 0, curItem?.attune?.stat) : null;
+      const curInfo = this.selectedForgeItem ? inspectItemAttune(this.selectedForgeItem, curItem?.refine | 0, curItem?.attune?.stat, { rolledStats: curItem?.rolledStats }) : null;
       if (!curInfo || !curInfo.attunable) {
-        const firstAttunable = ownedIds.find((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat).attunable);
+        const firstAttunable = ownedIds.find((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat, { rolledStats: inv[id]?.rolledStats }).attunable);
         if (firstAttunable) {
           this.selectedForgeItem = firstAttunable;
         }
@@ -4729,11 +4766,13 @@ export class RpgUI {
       const isActive = id === this.selectedForgeItem;
       const filterStyle = vis.filter && vis.filter !== 'none' ? `filter:${vis.filter};` : '';
       const attuneStat = inv[id]?.attune?.stat;
-      const attuneInfo = inspectItemAttune(id, refine, attuneStat);
+      const attuneInfo = inspectItemAttune(id, refine, attuneStat, { rolledStats: inv[id]?.rolledStats });
       const attuneDim = isAttuneMode && !attuneInfo.attunable ? 'opacity:0.42;' : '';
       const pickThumbInnerHtml = isOutfitPick
         ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: vis.url, filter: vis.filter, alt: def?.name || id })
         : `<img src="${vis.url}" alt="${escapeHtml(def?.name || id)}" style="${filterStyle}" />`;
+      const pickClassBadge = renderWeaponClassBadge(id, { compact: true });
+      const pickGradePill = renderWeaponGradePill(id, p, { compact: true });
 
       return `
         <div class="rpg-forge-item s2-rarity-${vis.rarity || 1} ${isActive ? 'active' : ''}" data-forge-item="${id}" style="${attuneDim}">
@@ -4741,9 +4780,10 @@ export class RpgUI {
             ${pickThumbInnerHtml}
             <span class="s2-thumb-refine">+${refine}</span>
             ${dupes > 0 ? `<span class="s2-thumb-badge">x${dupes}</span>` : ''}
-            ${attuneStat ? `<span class="s2-thumb-attune-badge" style="position:absolute;bottom:-2px;right:-2px;font-size:9.5px;z-index:4;" title="Attuned: ${attuneStat}">🎯</span>` : ''}
+            ${attuneStat ? `<span class="s2-thumb-attune-badge" style="position:absolute;bottom:-2px;right:-2px;font-size:9.5px;z-index:4;" title="Attuned: ${STAT_PILL_META[attuneStat]?.label || attuneStat}">🎯</span>` : ''}
           </div>
           <span class="s2-forge-pick-name">${escapeHtml(def?.name || id)}</span>
+          ${(pickClassBadge || pickGradePill) ? `<div class="s2-tile-weapon-badges">${pickClassBadge}${pickGradePill}</div>` : ''}
         </div>
       `;
     }).join('') : `<div class="s2-empty-notice">No items in inventory.</div>`;
@@ -4816,7 +4856,7 @@ export class RpgUI {
     const equippedIds = Object.values(p.equipped || {})
       .map((e) => e?.id)
       .filter((id) => id && inv[id]);
-    const attunableOwnedIds = ownedIds.filter((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat).attunable);
+    const attunableOwnedIds = ownedIds.filter((id) => inspectItemAttune(id, inv[id]?.refine | 0, inv[id]?.attune?.stat, { rolledStats: inv[id]?.rolledStats }).attunable);
     const baseQuickPool = isAttuneMode
       ? [...attunableOwnedIds, ...equippedIds, ...ownedIds]
       : [...equippedIds, ...ownedIds];
@@ -4830,7 +4870,7 @@ export class RpgUI {
       const isAct = id === curId;
       const qFilter = qVis.filter && qVis.filter !== 'none' ? `filter:${qVis.filter};` : '';
       const qAttune = inv[id]?.attune?.stat;
-      const qAttuneInfo = inspectItemAttune(id, qRef, qAttune);
+      const qAttuneInfo = inspectItemAttune(id, qRef, qAttune, { rolledStats: inv[id]?.rolledStats });
       const qDim = isAttuneMode && !qAttuneInfo.attunable ? 'opacity:0.4;' : '';
       const qInnerHtml = qIsOutfit
         ? renderOutfitThumbLayers(id, { lineage, appearance: p?.appearance, url: qVis.url, filter: qVis.filter, alt: qDef?.name || id })
@@ -4854,7 +4894,9 @@ export class RpgUI {
       : `<img src="${vis.url}" alt="${escapeHtml(def?.name || curId)}" style="${filterStyle}" />`;
 
     // Attunement console data & logic
-    const info = inspectItemAttune(curId, refine, it?.attune?.stat);
+    const curEqEntry = p.equipped?.[slot]?.id === curId ? p.equipped[slot] : null;
+    const curRawStats = it?.rolledStats || curEqEntry?.rolledStats || def?.stats;
+    const info = inspectItemAttune(curId, refine, it?.attune?.stat, { rolledStats: curRawStats });
     const attuneCount = it?.attune?.count ?? it?.attune_count ?? 0;
     const cost = attuneCostFor(attuneCount);
     const ownedAttuneScrolls = (p.bag_items?.scroll_stat_attune | 0) || (p.bag_items?.attune_scroll | 0);
@@ -4920,7 +4962,7 @@ export class RpgUI {
           ? `✨ +${activeAnim.star} STAR-FORCE SUCCESS!`
           : activeAnim.kind === 'forge_pity'
             ? `🛡️ SAFE! PITY +1 (${activeAnim.pity}/${FORGE.PITY_FAILS_GUARANTEE})`
-            : `🎯 TRANSMUTED! +${activeAnim.val} ${(activeAnim.stat || '').toUpperCase()}`;
+            : `🎯 TRANSMUTED! +${activeAnim.val} ${(STAT_PILL_META[activeAnim.stat]?.label || activeAnim.stat || '').toUpperCase()}`;
       stageVfxHtml = `
         <div class="s2-forge-vfx-layer" aria-hidden="true">
           <div class="s2-forge-shockwave ${activeAnim.kind}"></div>
@@ -4931,8 +4973,8 @@ export class RpgUI {
     }
 
     // Build visual Before -> After Stat Delta Pills for Star-Force mode
-    const curEff = getItemEffectiveStats(curId, refine, it?.attune?.stat);
-    const nextEff = isMax ? curEff : getItemEffectiveStats(curId, target, it?.attune?.stat);
+    const curEff = getItemEffectiveStats(curId, refine, it?.attune?.stat, { profile: p, rolledStats: curRawStats });
+    const nextEff = isMax ? curEff : getItemEffectiveStats(curId, target, it?.attune?.stat, { profile: p, rolledStats: curRawStats });
     const statDeltaPills = [];
     statDeltaPills.push(`
       <div class="s2-forge-delta-pill is-cp">
@@ -4983,14 +5025,15 @@ export class RpgUI {
 
     // Elemental Rune Cards for Stat Attunement
     const statSubLabels = {
-      swiftness: 'Top Speed & Accel',
-      power: 'Fury & Knockback',
-      fortune: 'Gold & Star Yield',
-      luck: 'Crit & Jackpot Odds',
+      swiftness: 'Move Spd & Skill Haste',
+      power: 'All DMG & Combos',
+      fortune: 'Max HP, Heal & Yield',
+      luck: 'Crit & Scroll Drop',
     };
     const statCardsHtml = (info.allowedStats || []).map((stKey) => {
       const isSelected = stKey === chosenStat;
       const isActive = stKey === info.activeSecStat;
+      const stDisplay = (STAT_PILL_META[stKey]?.label || stKey).toUpperCase();
 
       const simEquipped = {
         ...(p.equipped || {}),
@@ -4999,6 +5042,7 @@ export class RpgUI {
           id: curId,
           refine,
           attune: { stat: stKey },
+          ...(it?.rolledStats ? { rolledStats: { ...it.rolledStats } } : {}),
         },
       };
       const simProfile = { ...p, equipped: simEquipped };
@@ -5012,9 +5056,9 @@ export class RpgUI {
              data-attune-stat="${stKey}">
           ${isActive ? `<span class="s2-attune-active-tag">● Equipped</span>` : isSelected ? `<span class="s2-attune-target-tag">✨ Target</span>` : ''}
           <div class="s2-rune-medallion-wrap">
-            <img src="/assets/ui/rune_stat_${stKey}.png" class="s2-rune-medallion-img" alt="${stKey}" />
+            <img src="/assets/ui/rune_stat_${stKey}.png" class="s2-rune-medallion-img" alt="${stDisplay}" />
           </div>
-          <b class="s2-attune-name">${stKey.toUpperCase()}</b>
+          <b class="s2-attune-name">${stDisplay}</b>
           <div class="s2-attune-val">+${info.secVal}</div>
           <small class="s2-rune-sub-role">${statSubLabels[stKey] || ''}</small>
           <div class="s2-attune-build-preview" title="Resulting Cloud Dash Build">${buildNameWithTier}</div>
@@ -5032,8 +5076,8 @@ export class RpgUI {
               <b>Accessory Required for Attunement</b>
               <p>
                 ${info.reason === 'all_stat_item'
-                  ? 'All-Stat relics already boost all 4 stats equally! Pick a Hat, Face, Gloves, or Boots item below.'
-                  : 'Outfits and Dice have fixed signature stats. Pick a Hat, Face, Gloves, or Boots accessory to transmute!'}
+                  ? 'All-Stat relics already boost all 4 stats equally! Pick a Hat, Face, Hands &amp; Weapon, or Boots item below.'
+                  : 'Outfits and Dice have fixed signature stats. Pick a Hat, Face, Hands &amp; Weapon, or Boots accessory to transmute!'}
               </p>
               <button type="button" class="s2-slot-pill active" data-forge-mode="upgrade">
                 🔨 Switch to Star-Force
@@ -5077,6 +5121,7 @@ export class RpgUI {
         const curSecKey = info.activeSecStat || info.defaultSecStat || 'fortune';
         const curSecShort = (STAT_PILL_META[curSecKey]?.short || curSecKey).toUpperCase();
         const targetShort = (STAT_PILL_META[chosenStat]?.short || chosenStat).toUpperCase();
+        const mainDisplay = (STAT_PILL_META[info.mainStat]?.label || info.mainStat).toUpperCase();
         consoleHtml = `
           <div class="rpg-forge-console s2-forge-parchment s2-attune-console">
             <div class="s2-attune-transmute-strip">
@@ -5084,7 +5129,7 @@ export class RpgUI {
                 <img src="/assets/ui/rune_stat_${info.mainStat}.png" alt="" />
                 <div>
                   <small>🔒 LOCKED MAIN</small>
-                  <b>${info.mainStat.toUpperCase()} +${info.mainVal}</b>
+                  <b>${mainDisplay} +${info.mainVal}</b>
                 </div>
               </div>
               <div class="s2-transmute-arrow">＋</div>
@@ -5180,6 +5225,12 @@ export class RpgUI {
       `;
     }
 
+    const chosenStatDisplay = (STAT_PILL_META[chosenStat]?.label || chosenStat).toUpperCase();
+    const curSecShortHdr = (STAT_PILL_META[info.activeSecStat]?.short || info.activeSecStat || '').toUpperCase();
+    const targetShortHdr = (STAT_PILL_META[chosenStat]?.short || chosenStat).toUpperCase();
+    const curClassBadgeHdr = renderWeaponClassBadge(curId);
+    const curGradePillHdr = renderWeaponGradePill(curId, p);
+
     const bottomBarHtml = isAttuneMode ? `
       <div class="s2-forge-bottom-bar">
         <div class="s2-forge-title-ribbon">
@@ -5187,7 +5238,7 @@ export class RpgUI {
         </div>
         ${info.unlocked ? `
           <button id="attune-go" type="button" class="btn-gold s2-btn-rainbow s2-forge-cta-btn s2-attune-cta elem-${chosenStat}" data-act="trigger-attune-go" ${canAttuneGo ? '' : 'disabled'}>
-            <span>🎯 TRANSMUTE TO ${chosenStat.toUpperCase()} (+${info.secVal})</span>
+            <span>🎯 TRANSMUTE TO ${chosenStatDisplay} (+${info.secVal})</span>
             <small class="s2-cta-sub-cost">${isSameStat ? 'Already Active' : costShortLabel}</small>
           </button>
         ` : `
@@ -5214,7 +5265,7 @@ export class RpgUI {
     const stageTopHtml = isAttuneMode
       ? `
         <div class="s2-attune-stage-header">
-          <span class="s2-ash-pill">🧪 Alchemical Resonance • <b>+${refine} ${escapeHtml(SLOT_LABELS[slot] || slot)}</b></span>
+          <span class="s2-ash-pill">🧪 Alchemical Resonance • <b>+${refine} ${escapeHtml(SLOT_LABELS[slot] || slot)}</b> ${curClassBadgeHdr} ${curGradePillHdr}</span>
         </div>
       `
       : renderStarForceArc(refine, MAX_REFINE, justForgedStar);
@@ -5260,8 +5311,8 @@ export class RpgUI {
 
         <div class="rpg-forge-target">
           ${isAttuneMode
-            ? `${escapeHtml(def?.name || curId)} • 🎯 ${info.unlocked ? `Shift ${(info.activeSecStat || '').toUpperCase()} ➜ ${chosenStat.toUpperCase()}` : `Requires +${ATTUNE_MIN_REFINE}`}`
-            : `${escapeHtml(def?.name || curId)} • +${refine} ${isMax ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX!` : `➜ +${target}`}`}
+            ? `${escapeHtml(def?.name || curId)} ${curClassBadgeHdr} ${curGradePillHdr} • 🎯 ${info.unlocked ? `Shift ${curSecShortHdr} ➜ ${targetShortHdr}` : `Requires +${ATTUNE_MIN_REFINE}`}`
+            : `${escapeHtml(def?.name || curId)} ${curClassBadgeHdr} ${curGradePillHdr} • +${refine} ${isMax ? `${FORGE.SOVEREIGN_TITLE.toUpperCase()} MAX!` : `➜ +${target}`}`}
         </div>
       </div>
 

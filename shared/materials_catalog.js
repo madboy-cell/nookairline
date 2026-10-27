@@ -16,10 +16,16 @@ export const MATERIALS = Object.freeze({
   monster_fang: Object.freeze({ id: 'monster_fang', name: 'Monster Fang', emoji: '🦷', tier: 'raw', stack: 999 }),
   golden_wheat: Object.freeze({ id: 'golden_wheat', name: 'Golden Wheat', emoji: '🌾', tier: 'raw', stack: 999 }),
   berries_crop: Object.freeze({ id: 'berries_crop', name: 'Berries Crop', emoji: '🍓', tier: 'raw', stack: 999 }),
+  sakura_timber: Object.freeze({ id: 'sakura_timber', name: 'Sakura Timber', emoji: '🌸', tier: 'raw', stack: 999 }),
+  celestial_pearl: Object.freeze({ id: 'celestial_pearl', name: 'Celestial Pearl', emoji: '🦪', tier: 'raw', stack: 999 }),
+  cloud_lotus: Object.freeze({ id: 'cloud_lotus', name: 'Cloud Lotus', emoji: '🪷', tier: 'raw', stack: 999 }),
+  orichalcum_ore: Object.freeze({ id: 'orichalcum_ore', name: 'Orichalcum Ore', emoji: '🔶', tier: 'raw', stack: 999 }),
+  astral_prism: Object.freeze({ id: 'astral_prism', name: 'Astral Prism', emoji: '🔮', tier: 'raw', stack: 999 }),
 
   // Refined materials (stack: 999)
   plank: Object.freeze({ id: 'plank', name: 'Plank', emoji: '🪵', tier: 'refined', stack: 999 }),
   ingot: Object.freeze({ id: 'ingot', name: 'Ingot', emoji: '🪙', tier: 'refined', stack: 999 }),
+  mithril_ingot: Object.freeze({ id: 'mithril_ingot', name: 'Mithril Ingot', emoji: '💠', tier: 'refined', stack: 999 }),
   crystal_glass: Object.freeze({ id: 'crystal_glass', name: 'Crystal Glass', emoji: '🔮', tier: 'refined', stack: 999 }),
   flour: Object.freeze({ id: 'flour', name: 'Flour', emoji: '🥡', tier: 'refined', stack: 999 }),
   herb: Object.freeze({ id: 'herb', name: 'Herb', emoji: '🌿', tier: 'refined', stack: 999 }),
@@ -40,6 +46,8 @@ export const MATERIALS = Object.freeze({
   // Rare materials & boss cores (stack: 99)
   boss_core_moss: Object.freeze({ id: 'boss_core_moss', name: 'Elder Moss Core', emoji: '🟢', tier: 'rare', stack: 99 }),
   boss_core_weaver: Object.freeze({ id: 'boss_core_weaver', name: 'Crystal Weaver Core', emoji: '🟣', tier: 'rare', stack: 99 }),
+  boss_core_kitsune: Object.freeze({ id: 'boss_core_kitsune', name: 'Nine-Tail Kitsune Core', emoji: '🦊', tier: 'rare', stack: 99 }),
+  boss_core_bahamut: Object.freeze({ id: 'boss_core_bahamut', name: 'Chronos-Solar Core', emoji: '☀️', tier: 'rare', stack: 99 }),
   ancient_gear: Object.freeze({ id: 'ancient_gear', name: 'Ancient Gear', emoji: '⚙️', tier: 'rare', stack: 99 }),
   starlight_essence: Object.freeze({ id: 'starlight_essence', name: 'Starlight Essence', emoji: '✨', tier: 'rare', stack: 99 }),
 });

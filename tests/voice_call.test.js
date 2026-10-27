@@ -365,3 +365,42 @@ test('self-healing: call_heal from either peer, same-pair re-dial resume, and 90
   assert.equal(restored.startedAt, origStartedAt);
 });
 
+test('auth_resume on a healthy call does not rebuild WebRTC; real reconnects still resume', () => {
+  let currentTime = 1000000;
+  const now = () => currentTime;
+
+  const u1 = makeProfile('u1', { partner_id: 'u2' });
+  const u2 = makeProfile('u2', { partner_id: 'u1' });
+  const h = createTestHarness({ profiles: [u1, u2], now });
+
+  const inv = h.voiceService.handle('u1', { type: 'call_invite', to: 'u2' });
+  currentTime += 1000;
+  h.voiceService.handle('u2', { type: 'call_accept', callId: inv.callId });
+
+  // 1. Tab switch / notification glance: auth_resume on a socket that never dropped -> no messages at all
+  currentTime += 5000;
+  h.sentMessages.length = 0;
+  h.voiceService.onReconnect('u1', { fromResume: true });
+  h.voiceService.onReconnect('u2', { fromResume: true });
+  assert.equal(h.sentMessages.length, 0);
+  assert.equal(h.voiceService.activeCallOf('u1').state, 'connected');
+
+  // 2. Socket actually dropped (grace pending) and auth_resume arrives -> both peers get call_connected
+  h.voiceService.onDisconnect('u2');
+  currentTime += 3000;
+  h.sentMessages.length = 0;
+  h.voiceService.onReconnect('u2', { fromResume: true });
+  assert.ok(h.getSentFor('u1').some((m) => m.type === 'call_connected' && m.resumed));
+  assert.ok(h.getSentFor('u2').some((m) => m.type === 'call_connected' && m.resumed));
+  const s = h.voiceService.activeCallOf('u1');
+  assert.equal(s.graceUntil, null);
+  assert.equal(s.lastHealAt, currentTime);
+
+  // 3. Fresh socket join (e.g. page reload) without fromResume -> still resumes so the reloaded client rejoins audio
+  currentTime += 5000;
+  h.sentMessages.length = 0;
+  h.voiceService.onReconnect('u1');
+  assert.ok(h.getSentFor('u1').some((m) => m.type === 'call_connected'));
+  assert.ok(h.getSentFor('u2').some((m) => m.type === 'call_connected'));
+});
+

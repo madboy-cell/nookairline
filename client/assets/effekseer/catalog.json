@@ -1,0 +1,1693 @@
+{
+  "license": "CC0-1.0",
+  "runtime": "EffekseerForWebGL-1.80.7 (MIT)",
+  "count": 281,
+  "effects": [
+    {
+      "id": "AndrewFM01/AndrewFM01_blue_laser",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_blue_laser",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_blue_laser.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_boss_death",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_boss_death",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_boss_death.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_drill",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_drill",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_drill.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_electric_dust",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_electric_dust",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_electric_dust.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_fire",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_fire",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_fire.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_hit_eff",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_hit_eff",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_hit_eff.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_magic_circle",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_magic_circle",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_magic_circle.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_smallTexturesRibbon",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_smallTexturesRibbon",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_smallTexturesRibbon.efkefc"
+    },
+    {
+      "id": "AndrewFM01/AndrewFM01_smallTexturesSquareWave_orbital",
+      "pack": "AndrewFM01",
+      "name": "AndrewFM01_smallTexturesSquareWave_orbital",
+      "url": "/assets/effekseer/AndrewFM01/AndrewFM01_smallTexturesSquareWave_orbital.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Homing_Laser01",
+      "pack": "Basic",
+      "name": "Basic_Homing_Laser01",
+      "url": "/assets/effekseer/Basic/Basic_Homing_Laser01.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Laser01",
+      "pack": "Basic",
+      "name": "Basic_Laser01",
+      "url": "/assets/effekseer/Basic/Basic_Laser01.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Laser02",
+      "pack": "Basic",
+      "name": "Basic_Laser02",
+      "url": "/assets/effekseer/Basic/Basic_Laser02.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Laser03",
+      "pack": "Basic",
+      "name": "Basic_Laser03",
+      "url": "/assets/effekseer/Basic/Basic_Laser03.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_GeneratingPosition1",
+      "pack": "Basic",
+      "name": "Basic_Simple_GeneratingPosition1",
+      "url": "/assets/effekseer/Basic/Basic_Simple_GeneratingPosition1.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Model_UV",
+      "pack": "Basic",
+      "name": "Basic_Simple_Model_UV",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Model_UV.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Ribbon_Parent",
+      "pack": "Basic",
+      "name": "Basic_Simple_Ribbon_Parent",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Ribbon_Parent.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Ribbon_Sword",
+      "pack": "Basic",
+      "name": "Basic_Simple_Ribbon_Sword",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Ribbon_Sword.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Ring_Shape2",
+      "pack": "Basic",
+      "name": "Basic_Simple_Ring_Shape2",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Ring_Shape2.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Sprite_BillBoard",
+      "pack": "Basic",
+      "name": "Basic_Simple_Sprite_BillBoard",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Sprite_BillBoard.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Sprite_Fixed",
+      "pack": "Basic",
+      "name": "Basic_Simple_Sprite_Fixed",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Sprite_Fixed.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Sprite_FixedYAxis",
+      "pack": "Basic",
+      "name": "Basic_Simple_Sprite_FixedYAxis",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Sprite_FixedYAxis.efkefc"
+    },
+    {
+      "id": "Basic/Basic_Simple_Track1",
+      "pack": "Basic",
+      "name": "Basic_Simple_Track1",
+      "url": "/assets/effekseer/Basic/Basic_Simple_Track1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Gohlem1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Gohlem1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Gohlem1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Salamander1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Salamander1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Salamander1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Salamander2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Salamander2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Salamander2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Salamander4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Salamander4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Salamander4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Sylph1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Sylph1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Sylph1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Sylph2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Sylph2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Sylph2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Undine1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Undine1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Undine1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_A_Undine2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_A_Undine2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_A_Undine2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_AquaPoint",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_AquaPoint",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_AquaPoint.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Attack1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Attack1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Attack1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Attack2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Attack2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Attack2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Attack5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Attack5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Attack5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Attack6",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Attack6",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Attack6.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Attack_Impact",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Attack_Impact",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Attack_Impact.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Breakdown",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Breakdown",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Breakdown.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_FirePot1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_FirePot1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_FirePot1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_FirePot2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_FirePot2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_FirePot2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem11",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem11",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem11.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem7",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem7",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem7.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem_Shield1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem_Shield1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem_Shield1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Gohlem_Shield2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Gohlem_Shield2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Gohlem_Shield2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Holy1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Holy1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Holy1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Holy2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Holy2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Holy2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Icicle1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Icicle1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Icicle1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Icicle2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Icicle2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Icicle2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Icicle3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Icicle3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Icicle3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_IcicleBroken",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_IcicleBroken",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_IcicleBroken.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_IcicleLocus",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_IcicleLocus",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_IcicleLocus.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Impact",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Impact",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Impact.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Lance3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Lance3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Lance3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Lance4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Lance4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Lance4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Lance5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Lance5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Lance5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic1_earth",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic1_earth",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic1_earth.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic1_fire",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic1_fire",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic1_fire.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic1_holy",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic1_holy",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic1_holy.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic1_water",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic1_water",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic1_water.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic1_wind",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic1_wind",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic1_wind.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic2_earth",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic2_earth",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic2_earth.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic2_fire",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic2_fire",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic2_fire.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic2_holy",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic2_holy",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic2_holy.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic2_water",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic2_water",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic2_water.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Magic2_wind",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Magic2_wind",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Magic2_wind.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_MagicArea",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_MagicArea",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_MagicArea.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Rock1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Rock1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Rock1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Rock2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Rock2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Rock2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander11",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander11",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander11.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander12",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander12",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander12.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander14",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander14",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander14.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander15",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander15",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander15.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander6",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander6",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander6.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Salamander7",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Salamander7",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Salamander7.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Snowman1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Snowman1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Snowman1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_StairBroken",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_StairBroken",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_StairBroken.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_StairBroken3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_StairBroken3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_StairBroken3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph10",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph10",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph10.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph11",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph11",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph11.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph13",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph13",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph13.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph15",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph15",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph15.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph6",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph6",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph6.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph7",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph7",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph7.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Sylph8",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Sylph8",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Sylph8.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Thunder1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Thunder1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Thunder1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Thunder2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Thunder2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Thunder2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Thunder3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Thunder3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Thunder3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Topwater1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Topwater1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Topwater1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine11",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine11",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine11.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine13",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine13",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine13.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine6",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine6",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine6.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Undine8",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Undine8",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Undine8.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_WHead1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_WHead1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_WHead1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_WHead2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_WHead2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_WHead2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_WHead3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_WHead3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_WHead3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Water_Impact",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Water_Impact",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Water_Impact.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_Wind_Impact",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_Wind_Impact",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_Wind_Impact.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke2",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke2",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke2.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke3",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke3",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke3.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke4",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke4",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke4.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke5",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke5",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke5.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke6",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke6",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke6.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke7",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke7",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke7.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_foot_smoke8",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_foot_smoke8",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_foot_smoke8.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_meteo1",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_meteo1",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_meteo1.efkefc"
+    },
+    {
+      "id": "MAGICALxSPIRAL/MxS_salamander13",
+      "pack": "MAGICALxSPIRAL",
+      "name": "MxS_salamander13",
+      "url": "/assets/effekseer/MAGICALxSPIRAL/MxS_salamander13.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_HealPotion1",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_HealPotion1",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_HealPotion1.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_HealPotion2",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_HealPotion2",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_HealPotion2.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicCold",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicCold",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicCold.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicDark",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicDark",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicDark.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicFire1",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicFire1",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicFire1.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicFire2",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicFire2",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicFire2.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicHeal1",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicHeal1",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicHeal1.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicHeal2",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicHeal2",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicHeal2.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicLight",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicLight",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicLight.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicMeteo",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicMeteo",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicMeteo.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicShield",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicShield",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicShield.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicSword",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicSword",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicSword.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicThunder",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicThunder",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicThunder.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicTornade",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicTornade",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicTornade.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_MagicWater",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_MagicWater",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_MagicWater.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_PowerUp",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_PowerUp",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_PowerUp.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_Spear1",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_Spear1",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_Spear1.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_Spear2",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_Spear2",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_Spear2.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_Sword1",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_Sword1",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_Sword1.efkefc"
+    },
+    {
+      "id": "NextSoft01/NextSoft01_Sword2",
+      "pack": "NextSoft01",
+      "name": "NextSoft01_Sword2",
+      "url": "/assets/effekseer/NextSoft01/NextSoft01_Sword2.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_Background",
+      "pack": "Pierre01",
+      "name": "Pierre01_Background",
+      "url": "/assets/effekseer/Pierre01/Pierre01_Background.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_Flame",
+      "pack": "Pierre01",
+      "name": "Pierre01_Flame",
+      "url": "/assets/effekseer/Pierre01/Pierre01_Flame.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_Herald",
+      "pack": "Pierre01",
+      "name": "Pierre01_Herald",
+      "url": "/assets/effekseer/Pierre01/Pierre01_Herald.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_HolySandstorm",
+      "pack": "Pierre01",
+      "name": "Pierre01_HolySandstorm",
+      "url": "/assets/effekseer/Pierre01/Pierre01_HolySandstorm.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_LightningStrike",
+      "pack": "Pierre01",
+      "name": "Pierre01_LightningStrike",
+      "url": "/assets/effekseer/Pierre01/Pierre01_LightningStrike.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_MonsterRoar",
+      "pack": "Pierre01",
+      "name": "Pierre01_MonsterRoar",
+      "url": "/assets/effekseer/Pierre01/Pierre01_MonsterRoar.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_PhantasmMeteor",
+      "pack": "Pierre01",
+      "name": "Pierre01_PhantasmMeteor",
+      "url": "/assets/effekseer/Pierre01/Pierre01_PhantasmMeteor.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_PhantasmMeteor_Single",
+      "pack": "Pierre01",
+      "name": "Pierre01_PhantasmMeteor_Single",
+      "url": "/assets/effekseer/Pierre01/Pierre01_PhantasmMeteor_Single.efkefc"
+    },
+    {
+      "id": "Pierre01/Pierre01_SonicBoom",
+      "pack": "Pierre01",
+      "name": "Pierre01_SonicBoom",
+      "url": "/assets/effekseer/Pierre01/Pierre01_SonicBoom.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Benediction",
+      "pack": "Pierre02",
+      "name": "Pierre02_Benediction",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Benediction.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_BloodLance",
+      "pack": "Pierre02",
+      "name": "Pierre02_BloodLance",
+      "url": "/assets/effekseer/Pierre02/Pierre02_BloodLance.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_CosmicMist",
+      "pack": "Pierre02",
+      "name": "Pierre02_CosmicMist",
+      "url": "/assets/effekseer/Pierre02/Pierre02_CosmicMist.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_FeatherBomb",
+      "pack": "Pierre02",
+      "name": "Pierre02_FeatherBomb",
+      "url": "/assets/effekseer/Pierre02/Pierre02_FeatherBomb.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_FireBall",
+      "pack": "Pierre02",
+      "name": "Pierre02_FireBall",
+      "url": "/assets/effekseer/Pierre02/Pierre02_FireBall.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_GateOfCalve",
+      "pack": "Pierre02",
+      "name": "Pierre02_GateOfCalve",
+      "url": "/assets/effekseer/Pierre02/Pierre02_GateOfCalve.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_LossOfBlood",
+      "pack": "Pierre02",
+      "name": "Pierre02_LossOfBlood",
+      "url": "/assets/effekseer/Pierre02/Pierre02_LossOfBlood.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Sword_Ember",
+      "pack": "Pierre02",
+      "name": "Pierre02_Sword_Ember",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Sword_Ember.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Sword_Lightning",
+      "pack": "Pierre02",
+      "name": "Pierre02_Sword_Lightning",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Sword_Lightning.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Sword_Moonlight",
+      "pack": "Pierre02",
+      "name": "Pierre02_Sword_Moonlight",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Sword_Moonlight.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Sword_Sacredlight",
+      "pack": "Pierre02",
+      "name": "Pierre02_Sword_Sacredlight",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Sword_Sacredlight.efkefc"
+    },
+    {
+      "id": "Pierre02/Pierre02_Sword_Storm",
+      "pack": "Pierre02",
+      "name": "Pierre02_Sword_Storm",
+      "url": "/assets/effekseer/Pierre02/Pierre02_Sword_Storm.efkefc"
+    },
+    {
+      "id": "Suzuki01/Suzuki01_sword",
+      "pack": "Suzuki01",
+      "name": "Suzuki01_sword",
+      "url": "/assets/effekseer/Suzuki01/002_sword_effect/Suzuki01_sword.efkefc"
+    },
+    {
+      "id": "Suzuki01/snowstorm11",
+      "pack": "Suzuki01",
+      "name": "snowstorm11",
+      "url": "/assets/effekseer/Suzuki01/003_snowstorm_effect/snowstorm11.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Arrow1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Arrow1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Arrow1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Arrow2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Arrow2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Arrow2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow10",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow10",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow10.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow11",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow11",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow11.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow12",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow12",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow12.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow13",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow13",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow13.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow14",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow14",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow14.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow15",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow15",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow15.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow4",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow5",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow5",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow5.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow6",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow6",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow6.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow7",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow7",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow7.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow8",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow8",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow8.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Blow9",
+      "pack": "Tktk01",
+      "name": "Tktk01_Blow9",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Blow9.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure4",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure5",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure5",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure5.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure6",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure6",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure6.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Cure7",
+      "pack": "Tktk01",
+      "name": "Tktk01_Cure7",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Cure7.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Dark1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Dark1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Dark1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Dark2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Dark2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Dark2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Dark3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Dark3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Dark3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire4",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire5",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire5",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire5.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire6",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire6",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire6.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire7",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire7",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire7.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Fire8",
+      "pack": "Tktk01",
+      "name": "Tktk01_Fire8",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Fire8.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Light1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Light1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Light1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Light2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Light2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Light2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Light3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Light3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Light3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Light4",
+      "pack": "Tktk01",
+      "name": "Tktk01_Light4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Light4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Magic1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Magic1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Magic1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Magic2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Magic2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Magic2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Soil1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Soil1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Soil1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword10",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword10",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword10.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword11",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword11",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword11.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword12",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword12",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword12.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword13",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword13",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword13.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword14",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword14",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword14.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword15",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword15",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword15.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword16",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword16",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword16.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword17",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword17",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword17.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword18",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword18",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword18.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword19",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword19",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword19.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword20",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword20",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword20.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword21",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword21",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword21.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword3",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword4",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword5",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword5",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword5.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword6",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword6",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword6.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword7",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword7",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword7.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword8",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword8",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword8.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Sword9",
+      "pack": "Tktk01",
+      "name": "Tktk01_Sword9",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Sword9.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Wind1",
+      "pack": "Tktk01",
+      "name": "Tktk01_Wind1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Wind1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_Wind2",
+      "pack": "Tktk01",
+      "name": "Tktk01_Wind2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_Wind2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_hozyo1",
+      "pack": "Tktk01",
+      "name": "Tktk01_hozyo1",
+      "url": "/assets/effekseer/Tktk01/Tktk01_hozyo1.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_hozyo2",
+      "pack": "Tktk01",
+      "name": "Tktk01_hozyo2",
+      "url": "/assets/effekseer/Tktk01/Tktk01_hozyo2.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_hozyo3",
+      "pack": "Tktk01",
+      "name": "Tktk01_hozyo3",
+      "url": "/assets/effekseer/Tktk01/Tktk01_hozyo3.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_hozyo4",
+      "pack": "Tktk01",
+      "name": "Tktk01_hozyo4",
+      "url": "/assets/effekseer/Tktk01/Tktk01_hozyo4.efkefc"
+    },
+    {
+      "id": "Tktk01/Tktk01_hozyo5",
+      "pack": "Tktk01",
+      "name": "Tktk01_hozyo5",
+      "url": "/assets/effekseer/Tktk01/Tktk01_hozyo5.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow5",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow5",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow5.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Blow6",
+      "pack": "Tktk02",
+      "name": "Tktk02_Blow6",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Blow6.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Claw1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Claw1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Claw1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Claw2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Claw2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Claw2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Claw3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Claw3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Claw3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Claw4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Claw4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Claw4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Dark1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Dark1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Dark1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Dark2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Dark2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Dark2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire5",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire5",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire5.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire6",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire6",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire6.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire7",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire7",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire7.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Fire8",
+      "pack": "Tktk02",
+      "name": "Tktk02_Fire8",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Fire8.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun5",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun5",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun5.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun6",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun6",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun6.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun7",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun7",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun7.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun8",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun8",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun8.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Gun9",
+      "pack": "Tktk02",
+      "name": "Tktk02_Gun9",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Gun9.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Light1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Light1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Light1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Light2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Light2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Light2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Light3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Light3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Light3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Light4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Light4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Light4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Spear1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Spear1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Spear1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Spear2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Spear2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Spear2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Spear3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Spear3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Spear3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Spear4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Spear4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Spear4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword1",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword1",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword1.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword2",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword2",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword2.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword3",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword3",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword3.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword4",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword4",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword4.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword5",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword5",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword5.efkefc"
+    },
+    {
+      "id": "Tktk02/Tktk02_Sword6",
+      "pack": "Tktk02",
+      "name": "Tktk02_Sword6",
+      "url": "/assets/effekseer/Tktk02/Tktk02_Sword6.efkefc"
+    },
+    {
+      "id": "Tktk03/Tktk03_Light",
+      "pack": "Tktk03",
+      "name": "Tktk03_Light",
+      "url": "/assets/effekseer/Tktk03/Tktk03_Light.efkefc"
+    },
+    {
+      "id": "Tktk03/Tktk03_ToonHit",
+      "pack": "Tktk03",
+      "name": "Tktk03_ToonHit",
+      "url": "/assets/effekseer/Tktk03/Tktk03_ToonHit.efkefc"
+    },
+    {
+      "id": "Tktk03/Tktk03_ToonWater",
+      "pack": "Tktk03",
+      "name": "Tktk03_ToonWater",
+      "url": "/assets/effekseer/Tktk03/Tktk03_ToonWater.efkefc"
+    }
+  ]
+}

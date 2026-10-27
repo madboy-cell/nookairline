@@ -30,6 +30,9 @@ import {
 } from '../shared/story_rules.js';
 import { grantExp, storesOf, canPay, payCost } from './economy_service.js';
 import { recalcPlayerCP } from '../shared/progression.js';
+import { ACCESSORIES } from '../shared/catalog_gear_pets.js';
+import { BOSS_WEAPON_FORGE, rollBossWeaponStats } from '../shared/combat_rules.js';
+import { syncGlamourAndAttune } from './rpg_service.js';
 
 const fail = (error, extra = {}) => ({ ok: false, error, ...extra });
 
@@ -747,11 +750,198 @@ export function createBasecampService({ db = null, rng = Math.random, now = () =
   }
 
   // ------------------------------------------------------------------------------------------
+  // Tinker's Workshop — ⚒️ Boss Weapon Forge (via bc_craft_decor 'weapon_forge:*')
+  // ------------------------------------------------------------------------------------------
+  function hasBuilding(p, type) {
+    if ((p?.village?.copies?.[type] | 0) > 0) return true;
+    if ((p?.village?.levels?.[type] | 0) > 0) return true;
+    if (Array.isArray(p?.village?.buildings) && p.village.buildings.some((b) => b?.type === type)) return true;
+    const bcBld = p?.basecamp?.buildings;
+    if (Array.isArray(bcBld) && bcBld.some((b) => b === type || b?.type === type)) return true;
+    if (bcBld && typeof bcBld === 'object' && !Array.isArray(bcBld) && (bcBld[type] | 0) > 0) return true;
+    return false;
+  }
+
+  function hasForgeMats(p, mats) {
+    const stores = p?.frontier ? storesOf(p) : null;
+    const bag = (p?.basecamp?.bag && typeof p.basecamp.bag === 'object') ? p.basecamp.bag : null;
+    for (const [mat, need] of Object.entries(mats || {})) {
+      const req = Number(need) || 0;
+      if (req <= 0) continue;
+      const inStore = stores ? (stores[storeOf(mat)]?.items?.[mat] | 0) : 0;
+      const inBag = bag ? (bag[mat] | 0) : 0;
+      if (inStore + inBag < req) return false;
+    }
+    return true;
+  }
+
+  function deductForgeMats(p, mats) {
+    const stores = p?.frontier ? storesOf(p) : null;
+    const bag = (p?.basecamp?.bag && typeof p.basecamp.bag === 'object') ? p.basecamp.bag : null;
+    for (const [mat, need] of Object.entries(mats || {})) {
+      let rem = Number(need) || 0;
+      if (rem <= 0) continue;
+      if (stores) {
+        const kind = storeOf(mat);
+        const haveStore = stores[kind]?.items?.[mat] | 0;
+        const fromStore = Math.min(haveStore, rem);
+        if (fromStore > 0) {
+          takeItems(stores, { [mat]: fromStore });
+          rem -= fromStore;
+        }
+      }
+      if (rem > 0 && bag) {
+        bag[mat] = Math.max(0, (bag[mat] | 0) - rem);
+        if (bag[mat] <= 0) delete bag[mat];
+      }
+    }
+  }
+
+  function handleWeaponForge(p, key) {
+    const [, action, weaponId] = String(key).split(':');
+    p.basecamp = (p.basecamp && typeof p.basecamp === 'object' && !Array.isArray(p.basecamp)) ? p.basecamp : {};
+    const wf = (p.basecamp.weaponForge && typeof p.basecamp.weaponForge === 'object' && !Array.isArray(p.basecamp.weaponForge))
+      ? p.basecamp.weaponForge
+      : (p.basecamp.weaponForge = { pity: 0, pending: null });
+    wf.pity = Math.max(0, wf.pity | 0);
+    if (wf.pending === undefined) wf.pending = null;
+
+    if (!hasBuilding(p, 'workshop')) return fail('workshop_required');
+    p.inventory = (p.inventory && typeof p.inventory === 'object' && !Array.isArray(p.inventory)) ? p.inventory : {};
+
+    if (action === 'roll') {
+      const recipe = BOSS_WEAPON_FORGE.RECIPES[weaponId];
+      if (!recipe) return fail('unknown_weapon');
+      if (wf.pending) return fail('pending_roll_choice', { pending: wf.pending });
+      if ((p.gold || 0) < recipe.gold) return fail('not_enough_gold', { cost: recipe.gold });
+      if (!hasForgeMats(p, recipe.mats)) return fail('not_enough_materials');
+
+      p.gold = (p.gold || 0) - recipe.gold;
+      deductForgeMats(p, recipe.mats);
+
+      const roll = rollBossWeaponStats({ weaponId, pity: wf.pity, rng });
+      wf.pity = roll.pityNext;
+
+      if (!p.inventory[weaponId]) {
+        p.inventory[weaponId] = {
+          refine: 0,
+          dupes: 0,
+          pity: 0,
+          rolledStats: { ...roll.rolledStats },
+          forgeGrade: roll.grade,
+        };
+        if (p.equipped && typeof p.equipped === 'object') {
+          if (!p.equipped.gloves?.id) {
+            p.equipped.gloves = {
+              id: weaponId,
+              refine: 0,
+              rolledStats: { ...roll.rolledStats },
+              forgeGrade: roll.grade,
+            };
+            syncGlamourAndAttune(p);
+          } else if (p.equipped.gloves.id === weaponId) {
+            syncGlamourAndAttune(p);
+          }
+        }
+        if (p.village) refresh(p);
+        else p.cp = recalcPlayerCP(p);
+        return {
+          ok: true,
+          weaponForge: {
+            mode: 'created',
+            weaponId,
+            grade: roll.grade,
+            gradeLabel: roll.gradeLabel,
+            rolledStats: { ...roll.rolledStats },
+            pity: wf.pity,
+            pityHit: roll.pityHit,
+          },
+        };
+      }
+
+      const inv = p.inventory[weaponId];
+      inv.dupes = (inv.dupes | 0) + 1;
+      wf.pending = {
+        weaponId,
+        grade: roll.grade,
+        gradeLabel: roll.gradeLabel,
+        rolledStats: { ...roll.rolledStats },
+        pityHit: roll.pityHit,
+      };
+      return {
+        ok: true,
+        weaponForge: {
+          mode: 'choice',
+          weaponId,
+          current: {
+            grade: inv.forgeGrade || 'A',
+            rolledStats: inv.rolledStats || ACCESSORIES[weaponId]?.stats,
+            refine: inv.refine | 0,
+            dupes: inv.dupes | 0,
+          },
+          candidate: wf.pending,
+          pity: wf.pity,
+        },
+      };
+    }
+
+    if (action === 'take') {
+      if (!wf.pending || wf.pending.weaponId !== weaponId) return fail('no_pending_roll');
+      const inv = p.inventory[weaponId];
+      if (!inv) return fail('no_pending_roll');
+      inv.rolledStats = { ...wf.pending.rolledStats };
+      inv.forgeGrade = wf.pending.grade;
+      wf.pending = null;
+      if (p.equipped?.gloves?.id === weaponId) {
+        p.equipped.gloves.rolledStats = { ...inv.rolledStats };
+        p.equipped.gloves.forgeGrade = inv.forgeGrade;
+        syncGlamourAndAttune(p);
+      }
+      if (p.village) refresh(p);
+      else if (p.cp !== undefined) p.cp = recalcPlayerCP(p);
+      return {
+        ok: true,
+        weaponForge: {
+          mode: 'taken',
+          weaponId,
+          grade: inv.forgeGrade,
+          rolledStats: { ...inv.rolledStats },
+          refine: inv.refine | 0,
+          dupes: inv.dupes | 0,
+          pity: wf.pity,
+        },
+      };
+    }
+
+    if (action === 'keep') {
+      if (!wf.pending || wf.pending.weaponId !== weaponId) return fail('no_pending_roll');
+      const inv = p.inventory[weaponId];
+      if (!inv) return fail('no_pending_roll');
+      wf.pending = null;
+      return {
+        ok: true,
+        weaponForge: {
+          mode: 'kept',
+          weaponId,
+          grade: inv.forgeGrade || 'A',
+          rolledStats: inv.rolledStats || ACCESSORIES[weaponId]?.stats,
+          refine: inv.refine | 0,
+          dupes: inv.dupes | 0,
+          pity: wf.pity,
+        },
+      };
+    }
+
+    return fail('bad_forge_action');
+  }
+
+  // ------------------------------------------------------------------------------------------
   // Stage 5: Camp Props + cosmetic decor (§11.5)
   // ------------------------------------------------------------------------------------------
-  /** bc_craft_decor { decor } — crafts one owned copy (the grid editor places it). */
+  /** bc_craft_decor { decor } — crafts one owned copy (the grid editor places it), or runs Workshop Weapon Forge. */
   function craftDecor(p, key) {
     key = String(key || '');
+    if (key.startsWith('weapon_forge:')) return handleWeaponForge(p, key);
     if (!DECOR[key]) return fail('bad_decor');
     if (PROTECTED_DECOR.includes(key) || CUT_DECOR.includes(key) || !CRAFTABLE_DECOR.includes(key)) return fail('not_craftable');
     const cost = decorCraftCost(key);

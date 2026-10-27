@@ -2712,7 +2712,7 @@ export class CloudDashUI {
           ${me.newGhostPb ? '<div class="cd-best">👻 NEW GHOST PB RECORD!</div>' : ''}
           ${(me.streak || 0) >= 2 ? `<div class="cd-best">🔥 Top-2 Streak ×${me.streak}!</div>` : ''}
           <div class="cd-rew"><span>${ico('gold')} ${me.gold}</span><span>${ico('berry')} ${me.berries}</span><span>${ico('diamond')} ${me.diamonds}</span></div>
-          <div style="font:800 11.5px sans-serif;color:#5c3416">Style ✨${(me.style || 0).toLocaleString()} · ${me.multiplier > 1 ? `${smIco('gold')} Fortune ×${me.multiplier.toFixed(2)} · ` : ''}+${me.exp} EXP${me.levelsGained ? ' · 🎉 LEVEL UP!' : ''}</div>` : ''}
+          <div style="font:800 11.5px sans-serif;color:#5c3416">Style ✨${(me.style || 0).toLocaleString()} · ${me.multiplier > 1 ? `💖 Vitality ×${me.multiplier.toFixed(2)} · ` : ''}+${me.exp} EXP${me.levelsGained ? ' · 🎉 LEVEL UP!' : ''}</div>` : ''}
         ${leagueHtml}
         ${dailyHtml}
         ${this._buildCardHtml()}

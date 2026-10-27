@@ -1248,7 +1248,7 @@ function shortBuffLabel(key, d) {
     if (b.goldPct) return `🪙 +${b.goldPct}% Gold • +120🌸`;
     if (b.berriesPct) return `🍓 +${b.berriesPct}% Berry • +120🌸`;
     if (b.luckPct) return `🍀 +${b.luckPct}% Luck • +120🌸`;
-    if (b.fortunePct) return `✨ +${b.fortunePct}% Fortune • +120🌸`;
+    if (b.fortunePct) return `💖 +${b.fortunePct}% Vitality • +120🌸`;
     if (b.swiftnessPct) return `⚡ +${b.swiftnessPct}% Speed • +120🌸`;
     if (b.traitLuckPct) return `🐾 +${b.traitLuckPct}% Pet Luck • +120🌸`;
     if (b.storagePct) return `📦 +${b.storagePct}% Cap • +120🌸`;

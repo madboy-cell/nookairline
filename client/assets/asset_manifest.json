@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T04:10:40.802Z",
+  "generatedAt": "2026-10-26T15:37:16.221Z",
   "sprites": {
     "bkk_base_front": {
       "file": "chibi/bkk_base_front.png",
@@ -21658,6 +21658,594 @@
     },
     "biome_winter_highland": {
       "file": "terrain/biome_winter_highland.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "gloves_starter_sword": {
+      "file": "chibi/gloves_starter_sword.png",
+      "w": 281,
+      "h": 299,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.234
+    },
+    "gloves_starter_shortbow": {
+      "file": "chibi/gloves_starter_shortbow.png",
+      "w": 286,
+      "h": 318,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.17
+    },
+    "gloves_starter_wand": {
+      "file": "chibi/gloves_starter_wand.png",
+      "w": 276,
+      "h": 300,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.169
+    },
+    "gloves_boss_moss_cleaver": {
+      "file": "chibi/gloves_boss_moss_cleaver.png",
+      "w": 311,
+      "h": 318,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.306
+    },
+    "gloves_boss_moss_longbow": {
+      "file": "chibi/gloves_boss_moss_longbow.png",
+      "w": 307,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.225
+    },
+    "gloves_boss_moss_staff": {
+      "file": "chibi/gloves_boss_moss_staff.png",
+      "w": 303,
+      "h": 334,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.194
+    },
+    "gloves_boss_weaver_scythe": {
+      "file": "chibi/gloves_boss_weaver_scythe.png",
+      "w": 318,
+      "h": 319,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.182
+    },
+    "gloves_boss_weaver_bow": {
+      "file": "chibi/gloves_boss_weaver_bow.png",
+      "w": 288,
+      "h": 337,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.266
+    },
+    "gloves_boss_weaver_cane": {
+      "file": "chibi/gloves_boss_weaver_cane.png",
+      "w": 277,
+      "h": 322,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.207
+    },
+    "gloves_mythic_prism_blade": {
+      "file": "chibi/gloves_mythic_prism_blade.png",
+      "w": 351,
+      "h": 387,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.248
+    },
+    "gloves_mythic_bahamut_scythe": {
+      "file": "chibi/gloves_mythic_bahamut_scythe.png",
+      "w": 382,
+      "h": 388,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.244
+    },
+    "gloves_mythic_phoenix_bow": {
+      "file": "chibi/gloves_mythic_phoenix_bow.png",
+      "w": 349,
+      "h": 426,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.232
+    },
+    "gloves_mythic_chrono_bow": {
+      "file": "chibi/gloves_mythic_chrono_bow.png",
+      "w": 343,
+      "h": 367,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.413
+    },
+    "gloves_mythic_eden_harpbow": {
+      "file": "chibi/gloves_mythic_eden_harpbow.png",
+      "w": 393,
+      "h": 397,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.315
+    },
+    "gloves_mythic_poseidon_staff": {
+      "file": "chibi/gloves_mythic_poseidon_staff.png",
+      "w": 367,
+      "h": 385,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.185
+    },
+    "vfx_flower_periwinkle": {
+      "file": "vfx/vfx_flower_periwinkle.png",
+      "w": 283,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.673
+    },
+    "vfx_flower_lavender": {
+      "file": "vfx/vfx_flower_lavender.png",
+      "w": 285,
+      "h": 254,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.62
+    },
+    "vfx_flower_buttercup": {
+      "file": "vfx/vfx_flower_buttercup.png",
+      "w": 286,
+      "h": 250,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.649
+    },
+    "vfx_crystal_cyan": {
+      "file": "vfx/vfx_crystal_cyan.png",
+      "w": 233,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.566
+    },
+    "vfx_crystal_violet": {
+      "file": "vfx/vfx_crystal_violet.png",
+      "w": 250,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.584
+    },
+    "vfx_moss_megalith": {
+      "file": "vfx/vfx_moss_megalith.png",
+      "w": 300,
+      "h": 272,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.612
+    },
+    "vfx_dewdrop_pearl": {
+      "file": "vfx/vfx_dewdrop_pearl.png",
+      "w": 258,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.653
+    },
+    "vfx_lantern_wisp": {
+      "file": "vfx/vfx_lantern_wisp.png",
+      "w": 224,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.46
+    },
+    "vfx_starlight_arrow": {
+      "file": "vfx/vfx_starlight_arrow.png",
+      "w": 310,
+      "h": 127,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.36
+    },
+    "vfx_slime_jelly_puff": {
+      "file": "vfx/vfx_slime_jelly_puff.png",
+      "w": 224,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.631
+    },
+    "vfx_lilypad_lotus": {
+      "file": "vfx/vfx_lilypad_lotus.png",
+      "w": 284,
+      "h": 226,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.655
+    },
+    "vfx_boar_bramble_thorn": {
+      "file": "vfx/vfx_boar_bramble_thorn.png",
+      "w": 290,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.652
+    },
+    "vfx_gale_leaf_swirl": {
+      "file": "vfx/vfx_gale_leaf_swirl.png",
+      "w": 273,
+      "h": 277,
+      "anchorX": 0.5,
+      "anchorY": 0.16,
+      "coverage": 0.576
+    },
+    "vfx_tusk_dust_plume": {
+      "file": "vfx/vfx_tusk_dust_plume.png",
+      "w": 306,
+      "h": 266,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.673
+    },
+    "vfx_beetle_horn_spire": {
+      "file": "vfx/vfx_beetle_horn_spire.png",
+      "w": 239,
+      "h": 280,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.529
+    },
+    "vfx_ice_prism_rosette": {
+      "file": "vfx/vfx_ice_prism_rosette.png",
+      "w": 259,
+      "h": 267,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.641
+    },
+    "vfx_bat_echo_wing": {
+      "file": "vfx/vfx_bat_echo_wing.png",
+      "w": 292,
+      "h": 235,
+      "anchorX": 0.5,
+      "anchorY": 0.35,
+      "coverage": 0.509
+    },
+    "vfx_crimson_soul_lantern": {
+      "file": "vfx/vfx_crimson_soul_lantern.png",
+      "w": 244,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.35,
+      "coverage": 0.56
+    },
+    "vfx_quartz_rune_obelisk": {
+      "file": "vfx/vfx_quartz_rune_obelisk.png",
+      "w": 166,
+      "h": 301,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.565
+    },
+    "vfx_gravity_orbit_slab": {
+      "file": "vfx/vfx_gravity_orbit_slab.png",
+      "w": 253,
+      "h": 241,
+      "anchorX": 0.5,
+      "anchorY": 0.2,
+      "coverage": 0.584
+    },
+    "vfx_worldroot_arch": {
+      "file": "vfx/vfx_worldroot_arch.png",
+      "w": 276,
+      "h": 306,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.614
+    },
+    "vfx_shrine_pillar_ruin": {
+      "file": "vfx/vfx_shrine_pillar_ruin.png",
+      "w": 189,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.641
+    },
+    "vfx_weaver_prism_spindle": {
+      "file": "vfx/vfx_weaver_prism_spindle.png",
+      "w": 229,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.12,
+      "coverage": 0.462
+    },
+    "vfx_arachne_silk_crystal": {
+      "file": "vfx/vfx_arachne_silk_crystal.png",
+      "w": 207,
+      "h": 290,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.534
+    },
+    "vfx_rainbow_star_shard": {
+      "file": "vfx/vfx_rainbow_star_shard.png",
+      "w": 285,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.35,
+      "coverage": 0.502
+    },
+    "vfx_arcane_comet_orb": {
+      "file": "vfx/vfx_arcane_comet_orb.png",
+      "w": 323,
+      "h": 175,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.441
+    },
+    "vfx_celestial_gold_lily": {
+      "file": "vfx/vfx_celestial_gold_lily.png",
+      "w": 249,
+      "h": 258,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.65
+    },
+    "sf_mob_zephyr_hare": {
+      "file": "village/sf_mob_zephyr_hare.png",
+      "w": 283,
+      "h": 277,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.505
+    },
+    "sf_mob_frost_shroom": {
+      "file": "village/sf_mob_frost_shroom.png",
+      "w": 214,
+      "h": 278,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.611
+    },
+    "sf_mob_sakura_kitsune": {
+      "file": "village/sf_mob_sakura_kitsune.png",
+      "w": 251,
+      "h": 280,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.482
+    },
+    "sf_mob_pearl_snapper": {
+      "file": "village/sf_mob_pearl_snapper.png",
+      "w": 307,
+      "h": 240,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.524
+    },
+    "sf_mob_cloud_crane": {
+      "file": "village/sf_mob_cloud_crane.png",
+      "w": 299,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.14,
+      "coverage": 0.41
+    },
+    "sf_mob_bell_spirit": {
+      "file": "village/sf_mob_bell_spirit.png",
+      "w": 183,
+      "h": 287,
+      "anchorX": 0.5,
+      "anchorY": 0.15,
+      "coverage": 0.565
+    },
+    "sf_boss_sakura_kitsune": {
+      "file": "village/sf_boss_sakura_kitsune.png",
+      "w": 266,
+      "h": 316,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.632
+    },
+    "sf_outpost_reef": {
+      "file": "village/sf_outpost_reef.png",
+      "w": 323,
+      "h": 321,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.493
+    },
+    "sf_prop_sakura_torii": {
+      "file": "village/sf_prop_sakura_torii.png",
+      "w": 296,
+      "h": 324,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.435
+    },
+    "sf_mob_cinder_salamander": {
+      "file": "village/sf_mob_cinder_salamander.png",
+      "w": 279,
+      "h": 282,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.482
+    },
+    "sf_mob_arc_automaton": {
+      "file": "village/sf_mob_arc_automaton.png",
+      "w": 242,
+      "h": 275,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.57
+    },
+    "sf_mob_star_gargoyle": {
+      "file": "village/sf_mob_star_gargoyle.png",
+      "w": 296,
+      "h": 303,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.436
+    },
+    "sf_mob_chrono_sentinel": {
+      "file": "village/sf_mob_chrono_sentinel.png",
+      "w": 235,
+      "h": 339,
+      "anchorX": 0.5,
+      "anchorY": 0.14,
+      "coverage": 0.575
+    },
+    "sf_boss_solar_bahamut": {
+      "file": "village/sf_boss_solar_bahamut.png",
+      "w": 329,
+      "h": 341,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.612
+    },
+    "sf_outpost_caldera": {
+      "file": "village/sf_outpost_caldera.png",
+      "w": 288,
+      "h": 315,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.546
+    },
+    "sf_prop_astrolabe_pillar": {
+      "file": "village/sf_prop_astrolabe_pillar.png",
+      "w": 196,
+      "h": 317,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.602
+    },
+    "sf_node_sakura_tree": {
+      "file": "village/sf_node_sakura_tree.png",
+      "w": 310,
+      "h": 313,
+      "anchorX": 0.5,
+      "anchorY": 0.08,
+      "coverage": 0.575
+    },
+    "sf_node_pearl_clam": {
+      "file": "village/sf_node_pearl_clam.png",
+      "w": 243,
+      "h": 298,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.676
+    },
+    "sf_node_cloud_lotus": {
+      "file": "village/sf_node_cloud_lotus.png",
+      "w": 304,
+      "h": 246,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.567
+    },
+    "sf_node_orichalcum": {
+      "file": "village/sf_node_orichalcum.png",
+      "w": 251,
+      "h": 289,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.614
+    },
+    "sf_node_astral_prism": {
+      "file": "village/sf_node_astral_prism.png",
+      "w": 274,
+      "h": 291,
+      "anchorX": 0.5,
+      "anchorY": 0.1,
+      "coverage": 0.584
+    },
+    "gloves_boss_kitsune_blade": {
+      "file": "chibi/gloves_boss_kitsune_blade.png",
+      "w": 293,
+      "h": 327,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.165
+    },
+    "gloves_boss_kitsune_bow": {
+      "file": "chibi/gloves_boss_kitsune_bow.png",
+      "w": 301,
+      "h": 325,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.247
+    },
+    "gloves_boss_kitsune_staff": {
+      "file": "chibi/gloves_boss_kitsune_staff.png",
+      "w": 306,
+      "h": 328,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.175
+    },
+    "gloves_boss_bahamut_cleaver": {
+      "file": "chibi/gloves_boss_bahamut_cleaver.png",
+      "w": 310,
+      "h": 314,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.274
+    },
+    "gloves_boss_bahamut_bow": {
+      "file": "chibi/gloves_boss_bahamut_bow.png",
+      "w": 299,
+      "h": 337,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.288
+    },
+    "gloves_boss_bahamut_staff": {
+      "file": "chibi/gloves_boss_bahamut_staff.png",
+      "w": 285,
+      "h": 311,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "coverage": 0.267
+    },
+    "terrain_reef_floor": {
+      "file": "terrain/terrain_reef_floor.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "terrain_reef_water": {
+      "file": "terrain/terrain_reef_water.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "terrain_caldera_floor": {
+      "file": "terrain/terrain_caldera_floor.png",
+      "w": 256,
+      "h": 256,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "tile": true,
+      "coverage": 1
+    },
+    "terrain_caldera_ember": {
+      "file": "terrain/terrain_caldera_ember.png",
       "w": 256,
       "h": 256,
       "anchorX": 0.5,

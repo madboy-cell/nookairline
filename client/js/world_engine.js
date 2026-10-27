@@ -16,11 +16,54 @@ import { getEquippedWalkFx, getTrailOffset, TRAIL_INTERVAL, shouldEmitRemoteStep
 export const CAMERA_PRESETS = {
   VILLAGE: { PITCH_DEG: 36, DIST: 24, MIN: 14, MAX: 34 },
   VILLAGE_EDIT: { PITCH_DEG: 42, DIST: 28, MIN: 16, MAX: 40 },
+  SKY_FRONTIER: { PITCH_DEG: 38, DIST: 28.5, MIN: 18, MAX: 40 },
 };
 const CAMERA = { BASE_FOV: 35, FOLLOW_LAMBDA: 6.5, LOOK_AHEAD: 0.6 };
 const JOY = { ZONE_X: 0.42, ZONE_Y: 0.62, RADIUS: 52 };
 export const HOLD = { PICKUP_S: 0.25, EDIT_S: 0.40, TAP_PX: 14 };
 const BODY_R = 0.28;                                  // chibi collision radius against grid cells
+
+const _projVec = new THREE.Vector3();
+const _raycaster = new THREE.Raycaster();
+const _ndcVec2 = new THREE.Vector2();
+const _frontierSkyCache = new Map();
+
+function frontierSkyTexture(regionId = 'meadow') {
+  const key = (regionId === 'hollow' || regionId === 'reef' || regionId === 'caldera') ? regionId : 'meadow';
+  if (_frontierSkyCache.has(key)) return _frontierSkyCache.get(key);
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 256;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 256);
+  if (key === 'hollow') {
+    grad.addColorStop(0.0, '#070D1B');
+    grad.addColorStop(0.45, '#10203B');
+    grad.addColorStop(0.80, '#18344B');
+    grad.addColorStop(1.0, '#22475E');
+  } else if (key === 'reef') {
+    grad.addColorStop(0.0, '#72B6EA');
+    grad.addColorStop(0.42, '#BAE2FB');
+    grad.addColorStop(0.76, '#FFE3EE');
+    grad.addColorStop(1.0, '#FFF4E6');
+  } else if (key === 'caldera') {
+    grad.addColorStop(0.0, '#0E091A');
+    grad.addColorStop(0.42, '#241433');
+    grad.addColorStop(0.76, '#52232B');
+    grad.addColorStop(1.0, '#8A3E24');
+  } else {
+    grad.addColorStop(0.0, '#5AA5E6');
+    grad.addColorStop(0.48, '#9CD5FA');
+    grad.addColorStop(0.82, '#E8F5FF');
+    grad.addColorStop(1.0, '#FFF2D6');
+  }
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  _frontierSkyCache.set(key, t);
+  return t;
+}
 
 let _coupleCircleTex = null;
 function coupleMagicCircleTexture() {
@@ -147,6 +190,7 @@ export class WorldEngine {
     this._museumLayout = null;
     this.zoneSeq = 1;
     this._reconcileTarget = null;
+    this._localDash = null;
     this.frame = 0; this.fps = 0; this._fpsT = 0; this._fpsN = 0; this._dockT = 0;
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -191,9 +235,16 @@ export class WorldEngine {
   }
 
   setFrontierMode(active, layout = null) {
+    const wasFrontier = Boolean(this._frontierMode);
     this._frontierMode = !!active;
     this.clearMoveState();
     if (active) {
+      this.preset = CAMERA_PRESETS.SKY_FRONTIER;
+      if (!wasFrontier) {
+        this.camDist = this.preset.DIST;
+      } else {
+        this.camDist = THREE.MathUtils.clamp(this.camDist, this.preset.MIN, this.preset.MAX);
+      }
       this._townhallMode = false; this._townhallLayout = null;
       this._museumMode = false; this._museumLayout = null;
       if (this.townHallScene) this.townHallScene.setActive(false);
@@ -201,16 +252,42 @@ export class WorldEngine {
       if (this.plaza?.root) this.plaza.root.visible = false;
       for (const yp of this.yardPets) yp.dispose(this.scene);
       this.yardPets = [];
-      this._frontierLayout = layout || { kind: 'sky_frontier', halfSize: 36 };
+      this._frontierLayout = layout || { kind: 'sky_frontier', halfSize: 36, regionId: 'meadow' };
+      const regId = this._frontierLayout.regionId || 'meadow';
+      this.scene.background = frontierSkyTexture(regId);
+      this.scene.fog = regId === 'hollow'
+        ? new THREE.FogExp2(0x0E1D33, 0.0068)
+        : regId === 'caldera'
+          ? new THREE.FogExp2(0x221226, 0.0056)
+          : regId === 'reef'
+            ? new THREE.FogExp2(0xFFEBF2, 0.0034)
+            : new THREE.FogExp2(0xE2F0FF, 0.0036);
+      const showClouds = !(this._frontierMode && (regId === 'hollow' || regId === 'caldera'));
+      for (const c of this.env?.clouds || []) c.visible = showClouds;
+      this._frontierSettleT = 1.15;
       this.frontierScene?.enter?.(this._frontierLayout);
     } else {
       this._frontierLayout = null;
+      this._frontierSettleT = 0;
+      this.scene.fog = null;
+      this.preset = this.editMode ? CAMERA_PRESETS.VILLAGE_EDIT : CAMERA_PRESETS.VILLAGE;
+      if (wasFrontier) {
+        this.camDist = THREE.MathUtils.clamp(this.preset.DIST, this.preset.MIN, this.preset.MAX);
+      }
       this.frontierScene?.exit?.();
+      for (const c of this.env?.clouds || []) c.visible = true;
       if (!this._townhallMode && !this._museumMode) {
         if (this.plaza?.root) this.plaza.root.visible = true;
+        this.plaza?.setMood?.(this.plaza.mood || 'auto');
         if (this.local?.profile) this.syncYardPets(this.local.profile);
       }
     }
+  }
+
+  addCameraShake(intensity = 0.08, dur = 0.14) {
+    const prev = this._camShake;
+    if (prev && prev.dur - prev.t > 0 && prev.intensity > intensity) return;
+    this._camShake = { intensity: Math.min(0.32, intensity), dur: Math.max(0.05, dur), t: 0 };
   }
 
   walkTo(x, z) {
@@ -263,12 +340,16 @@ export class WorldEngine {
 
   clearMoveState() {
     this._reconcileTarget = null;
+    this._localDash = null;
     if (this.input) {
       this.input.tapTarget = null;
       this.input.path = null;
     }
     const L = this.local;
     if (L) {
+      if (L.rig?.billboard && !this.lift && !this.coupleStage?.active) {
+        L.rig.billboard.position.y = 0;
+      }
       if (L.mover) {
         L.mover.vx = 0;
         L.mover.vz = 0;
@@ -350,6 +431,7 @@ export class WorldEngine {
   resize() {
     const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
+    this._canvasRect = this.canvas.getBoundingClientRect();
     const aspect = w / h;
     this.camera.aspect = aspect;
     const base = THREE.MathUtils.degToRad(CAMERA.BASE_FOV);
@@ -535,6 +617,98 @@ export class WorldEngine {
     L.lastSentMoving = false;
     L.lastSentRight = right;
     L.lastSentBack = back;
+    L.lastSentX = L.x;
+    L.lastSentZ = L.z;
+  }
+
+  flushMoveNow(forceAlways = false) {
+    const L = this.local;
+    if (!L || !this.onLocalMove || this.lift || this.coupleStage?.active) return;
+    const moved =
+      forceAlways ||
+      !Number.isFinite(L.lastSentX) ||
+      !Number.isFinite(L.lastSentZ) ||
+      Math.hypot(L.x - L.lastSentX, L.z - L.lastSentZ) > 0.025;
+    if (!moved) return;
+    L.lastSentX = L.x;
+    L.lastSentZ = L.z;
+    this.onLocalMove(
+      {
+        x: +L.x.toFixed(3),
+        z: +L.z.toFixed(3),
+        vx: +(L.mover?.vx || 0).toFixed(2),
+        vz: +(L.mover?.vz || 0).toFixed(2),
+        right: Boolean(L.rig?.facing?.right ?? true),
+        back: Boolean(L.rig?.facing?.back ?? false),
+        zoneSeq: this.zoneSeq,
+      },
+      true
+    );
+  }
+
+  startLocalDash(toX, toZ, { durMs = 175, hopHeight = 0 } = {}) {
+    const L = this.local;
+    if (!L || !Number.isFinite(toX) || !Number.isFinite(toZ) || this.lift || this.coupleStage?.active) return;
+    let tx = toX;
+    let tz = toZ;
+    if (typeof this.clampWalkable === 'function') {
+      const cl = this.clampWalkable(tx, tz);
+      if (cl && Number.isFinite(cl.x) && Number.isFinite(cl.z)) {
+        tx = cl.x;
+        tz = cl.z;
+      }
+    }
+    if (this.input) {
+      this.input.tapTarget = null;
+      this.input.path = null;
+    }
+    this._reconcileTarget = null;
+    this._localDash = {
+      fromX: L.x,
+      fromZ: L.z,
+      toX: tx,
+      toZ: tz,
+      elapsed: 0,
+      dur: Math.max(0.08, (Number(durMs) || 175) / 1000),
+      hopHeight: Math.max(0, Number(hopHeight) || 0),
+      lastSentAt: 0,
+    };
+  }
+
+  reconcileLocalDash(serverX, serverZ, { hopHeight = 0 } = {}) {
+    const L = this.local;
+    if (!L || !Number.isFinite(serverX) || !Number.isFinite(serverZ)) return;
+    if (this._localDash) {
+      if (Math.hypot(this._localDash.toX - serverX, this._localDash.toZ - serverZ) <= 0.6) {
+        this._localDash.toX = serverX;
+        this._localDash.toZ = serverZ;
+        return;
+      }
+      this.startLocalDash(serverX, serverZ, { durMs: 140, hopHeight });
+      return;
+    }
+    if (Math.hypot(L.x - serverX, L.z - serverZ) > 0.15) {
+      this.startLocalDash(serverX, serverZ, { durMs: 140, hopHeight });
+    }
+  }
+
+  startRemoteDash(id, toX, toZ, { durMs = 175, hopHeight = 0 } = {}) {
+    const r = this.remotes.get(id);
+    if (!r || !Number.isFinite(toX) || !Number.isFinite(toZ)) return;
+    r._remoteDash = {
+      fromX: r.smooth.x,
+      fromZ: r.smooth.z,
+      toX,
+      toZ,
+      elapsed: 0,
+      dur: Math.max(0.08, (Number(durMs) || 175) / 1000),
+      hopHeight: Math.max(0, Number(hopHeight) || 0),
+    };
+    r.smooth.tx = toX;
+    r.smooth.tz = toZ;
+    r.smooth.vx = 0;
+    r.smooth.vz = 0;
+    r.smooth.age = 0;
   }
 
   upsertRemote(p) {
@@ -577,6 +751,10 @@ export class WorldEngine {
     if (this.coupleStage?.active && r === this.getPartnerEntity()) {
       return r;
     }
+    if (r._remoteDash && Number.isFinite(p.x) && Number.isFinite(p.z) && Math.hypot(p.x - r._remoteDash.toX, p.z - r._remoteDash.toZ) <= 0.8) {
+      r._remoteDash.toX = p.x;
+      r._remoteDash.toZ = p.z;
+    }
     r.smooth.onPacket(p);
     if (typeof p.right === 'boolean') r.right = p.right;
     return r;
@@ -586,6 +764,8 @@ export class WorldEngine {
   teleportRemote(id, x, z) {
     const r = this.remotes.get(id);
     if (!r) return;
+    r._remoteDash = null;
+    if (r.rig?.billboard) r.rig.billboard.position.y = 0;
     r.smooth = new RemoteSmoother(x, z);
     r.rig.setPosition(x, z);
     r.pet?.placeNear({ x, z, right: r.right });
@@ -735,13 +915,12 @@ export class WorldEngine {
 
   /** Ray → ground plane. `anywhere` = also return points off the islands (editor clamps itself). */
   raycastGround(cx, cy, anywhere = false) {
-    const r = this.canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(ndc, this.camera);
-    const t = -ray.ray.origin.y / ray.ray.direction.y;
+    const r = (this._canvasRect && this._canvasRect.width > 0) ? this._canvasRect : (this._canvasRect = this.canvas.getBoundingClientRect());
+    _ndcVec2.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+    _raycaster.setFromCamera(_ndcVec2, this.camera);
+    const t = -_raycaster.ray.origin.y / _raycaster.ray.direction.y;
     if (!(t > 0)) return null;
-    const p = ray.ray.origin.clone().addScaledVector(ray.ray.direction, t);
+    const p = _raycaster.ray.origin.clone().addScaledVector(_raycaster.ray.direction, t);
     if (anywhere) return p;
     if (this.moonDefenseUI?.active) {
       const half = this.moonDefenseUI.halfSize || 30;
@@ -758,10 +937,17 @@ export class WorldEngine {
     return islandAt(this.layout, p.x, p.z) || onBridge(this.layout, p.x, p.z) ? p : null;
   }
 
-  worldToScreen(x, y, z) {
-    const v = new THREE.Vector3(x, y, z).project(this.camera);
-    const r = this.canvas.getBoundingClientRect();
-    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  worldToScreen(x, y, z, out = null) {
+    const v = _projVec.set(x, y, z).project(this.camera);
+    const r = (this._canvasRect && this._canvasRect.width > 0) ? this._canvasRect : (this._canvasRect = this.canvas.getBoundingClientRect());
+    const sx = r.left + (v.x + 1) / 2 * r.width;
+    const sy = r.top + (1 - v.y) / 2 * r.height;
+    if (out) {
+      out.x = sx;
+      out.y = sy;
+      return out;
+    }
+    return { x: sx, y: sy };
   }
 
   isOverLocalChibi(cx, cy) {
@@ -893,6 +1079,10 @@ export class WorldEngine {
     this.onDrop?.({ x: +x.toFixed(3), z: +z.toFixed(3), propId, targetId: L.id });
   }
 
+  clampWalkable(x, z) {
+    return this.nearestWalkable(x, z);
+  }
+
   nearestWalkable(x, z) {
     if (this.moonDefenseUI?.active) {
       if (this.moonDefenseUI.clampWalkable) return this.moonDefenseUI.clampWalkable(x, z);
@@ -980,6 +1170,7 @@ export class WorldEngine {
       if (this.activeScene) { this.activeScene.update(dt); this.activeScene.render(); return; }
       this.update(dt);
       this.renderer.render(this.scene, this.camera);
+      this.activeFrontier?.skillVfx?.drawPostRender?.(this.renderer, this.camera);
     };
     tick();
   }
@@ -1015,14 +1206,16 @@ export class WorldEngine {
     }
 
     const L = this.local;
-    const tint = this.getInstanceKind() === 'townhall' && this.townHallScene?.moodTint
-      ? this.townHallScene.moodTint
-      : this.plaza.moodTint;
+    const tint = this.activeFrontier?.getMoodTint
+      ? this.activeFrontier.getMoodTint()
+      : (this.getInstanceKind() === 'townhall' && this.townHallScene?.moodTint
+        ? this.townHallScene.moodTint
+        : this.plaza.moodTint);
     // Update couple proximity & active stage choreography first so L and P stay 100% locked during poses
     this.updateCoupleStage(dt);
     const inCoupleStage = Boolean(this.coupleStage?.active);
     if (L) {
-      if (!inCoupleStage && !this.lift && !this.editMode && !this.editor?.active && this.layout && !this.walkable(L.x, L.z)) {
+      if (!inCoupleStage && !this.lift && !this._localDash && !this.editMode && !this.editor?.active && this.layout && !this.walkable(L.x, L.z)) {
         const safe = this.nearestWalkable(L.x, L.z);
         L.x = safe.x; L.z = safe.z;
         L.rig.setPosition(L.x, L.z);
@@ -1040,7 +1233,32 @@ export class WorldEngine {
         L.mover.update(dt, ix, iz, MOVE.BASE_SPEED * L.speedMult);
       }
       const prevX = L.x, prevZ = L.z;
-      if (!this.lift && !inCoupleStage) {
+      let dashActive = false;
+      let dashJustFinished = false;
+      let dashPeriodicSend = false;
+      if (!this.lift && !inCoupleStage && this._localDash) {
+        dashActive = true;
+        const d = this._localDash;
+        d.elapsed += dt;
+        const tDash = Math.min(1, d.elapsed / d.dur);
+        L.x = d.fromX + (d.toX - d.fromX) * tDash;
+        L.z = d.fromZ + (d.toZ - d.fromZ) * tDash;
+        const hopY = d.hopHeight > 0 && tDash < 1 ? Math.sin(tDash * Math.PI) * d.hopHeight : 0;
+        L.rig.setPosition(L.x, L.z);
+        if (L.rig.billboard) L.rig.billboard.position.y = hopY;
+        const nowMs = performance.now();
+        if (tDash >= 1) {
+          if (L.rig.billboard) L.rig.billboard.position.y = 0;
+          this._localDash = null;
+          dashJustFinished = true;
+        } else if (!d.lastSentAt || nowMs - d.lastSentAt >= 34) {
+          d.lastSentAt = nowMs;
+          dashPeriodicSend = true;
+        }
+      } else if (!this.lift && !inCoupleStage) {
+        if (L.rig.billboard && L.rig.billboard.position.y !== 0) {
+          L.rig.billboard.position.y = 0;
+        }
         const dx = L.mover.vx * dt, dz = L.mover.vz * dt;
         let nx = L.x + dx, nz = L.z + dz;
         // Smooth, non-oscillating wall-slide:
@@ -1185,8 +1403,8 @@ export class WorldEngine {
       L.rig.material.uniforms.uTint.value.setRGB(tint[0], tint[1], tint[2]);
       // Blend actual displacement velocity with raw input intent for facing so wall-sliding never triggers surprise Front/Back pop-turns
       const hasInput = !inCoupleStage && Math.hypot(ix, iz) > 0.08;
-      const faceVx = (this.lift || inCoupleStage) ? 0 : (hasInput ? L.animVx * 0.55 + ix * 1.6 : (moving ? L.animVx : 0));
-      const faceVz = (this.lift || inCoupleStage) ? 0 : (hasInput ? L.animVz * 0.55 + iz * 1.6 : (moving ? L.animVz : 0));
+      const faceVx = (this.lift || inCoupleStage || dashActive) ? 0 : (hasInput ? L.animVx * 0.55 + ix * 1.6 : (moving ? L.animVx : 0));
+      const faceVz = (this.lift || inCoupleStage || dashActive) ? 0 : (hasInput ? L.animVz * 0.55 + iz * 1.6 : (moving ? L.animVz : 0));
       L.rig.update(dt, { vx: faceVx, vz: faceVz, walkWeight: (this.lift || inCoupleStage) ? 0 : L.mover.walkWeight }, this.camera);
 
       // footstep dust on each heel strike
@@ -1253,13 +1471,24 @@ export class WorldEngine {
         }
       }
 
-      if (moving && !this.cloudDashUI?.active) this.followDetached = false;
+      if ((moving || dashActive) && !this.cloudDashUI?.active) this.followDetached = false;
       const f = L.rig.facing;
       const state = { x: +L.x.toFixed(3), z: +L.z.toFixed(3), vx: +L.animVx.toFixed(3), vz: +L.animVz.toFixed(3), right: f.right, back: f.back, zoneSeq: this.zoneSeq };
       if (!this.lift && !inCoupleStage) {
-        if (moving) { this.onLocalMove?.(state, false); L.lastSentMoving = true; }
-        else if (L.lastSentMoving) { this.onLocalMove?.({ ...state, vx: 0, vz: 0 }, true); L.lastSentMoving = false; }
-        else if (L.lastSentBack !== f.back || L.lastSentRight !== f.right) this.onLocalMove?.({ ...state, vx: 0, vz: 0 }, true); // idle turn-to-camera
+        if (dashJustFinished) {
+          const keepMoving = Math.hypot(ix, iz) > 0.08;
+          this.onLocalMove?.(keepMoving ? state : { ...state, vx: 0, vz: 0 }, true);
+          L.lastSentMoving = keepMoving;
+          L.lastSentX = L.x; L.lastSentZ = L.z;
+        } else if (dashPeriodicSend) {
+          this.onLocalMove?.(state, true);
+          L.lastSentMoving = true;
+          L.lastSentX = L.x; L.lastSentZ = L.z;
+        } else if (!dashActive) {
+          if (moving) { this.onLocalMove?.(state, false); L.lastSentMoving = true; }
+          else if (L.lastSentMoving) { this.onLocalMove?.({ ...state, vx: 0, vz: 0 }, true); L.lastSentMoving = false; L.lastSentX = L.x; L.lastSentZ = L.z; }
+          else if (L.lastSentBack !== f.back || L.lastSentRight !== f.right) { this.onLocalMove?.({ ...state, vx: 0, vz: 0 }, true); L.lastSentX = L.x; L.lastSentZ = L.z; } // idle turn-to-camera
+        }
         L.lastSentBack = f.back; L.lastSentRight = f.right;
       }
 
@@ -1283,8 +1512,8 @@ export class WorldEngine {
         this.onDockNear?.(!!dockNear(this.layout, L.x, L.z, FISHING.DOCK_REACH - 0.3));
       }
 
-      // landmarks trigger check hook (Town Hall / Museum scene / POIs)
-      this.checkLandmarksTrigger(L.x, L.z);
+      // landmarks trigger check hook (Town Hall / Museum scene / POIs; skipped inside Sky Frontier)
+      if (!this._frontierMode) this.checkLandmarksTrigger(L.x, L.z);
     }
 
     const hideRemotesForSiege = Boolean(this.moonDefenseUI?.active);
@@ -1295,7 +1524,28 @@ export class WorldEngine {
       if (hideRemotesForSiege) continue;
       const isStagedPartner = inCoupleStage && r === partnerEnt;
       const px = r.smooth.x, pz = r.smooth.z;
-      if (!isStagedPartner) r.smooth.update(dt);
+      let rDashActive = false;
+      if (!isStagedPartner && r._remoteDash) {
+        rDashActive = true;
+        const rd = r._remoteDash;
+        rd.elapsed += dt;
+        const rt = Math.min(1, rd.elapsed / rd.dur);
+        r.smooth.x = rd.fromX + (rd.toX - rd.fromX) * rt;
+        r.smooth.z = rd.fromZ + (rd.toZ - rd.fromZ) * rt;
+        r.smooth.tx = rd.toX;
+        r.smooth.tz = rd.toZ;
+        const hopY = rd.hopHeight > 0 && rt < 1 ? Math.sin(rt * Math.PI) * rd.hopHeight : 0;
+        if (r.rig?.billboard) r.rig.billboard.position.y = hopY;
+        if (rt >= 1) {
+          if (r.rig?.billboard) r.rig.billboard.position.y = 0;
+          r._remoteDash = null;
+        }
+      } else if (!isStagedPartner) {
+        if (r.rig?.billboard && r.rig.billboard.position.y !== 0) {
+          r.rig.billboard.position.y = 0;
+        }
+        r.smooth.update(dt);
+      }
       const vx = isStagedPartner ? 0 : (r.smooth.x - px) / Math.max(dt, 1e-4);
       const vz = isStagedPartner ? 0 : (r.smooth.z - pz) / Math.max(dt, 1e-4);
       const speed = Math.hypot(vx, vz);
@@ -1304,7 +1554,7 @@ export class WorldEngine {
       r.rig.setPosition(r.smooth.x, r.smooth.z);
       r.rig.material.uniforms.uTint.value.setRGB(tint[0], tint[1], tint[2]);
       // remote facing follows the sender's authoritative facing when idle (keeps idle turn-to-camera in sync)
-      r.rig.update(dt, moving ? { vx, vz } : { vx: 0, vz: 0, walkWeight: 0 }, this.camera);
+      r.rig.update(dt, (moving && !rDashActive) ? { vx, vz } : { vx: 0, vz: 0, walkWeight: 0 }, this.camera);
       if (!isStagedPartner && !moving && r.rig.facing.right !== r.right && !r.rig.facing.turning) r.rig.facing.set(r.right, r.rig.facing.back);
 
       const rWalkFx = getEquippedWalkFx(r.data?.equipped);
@@ -1396,19 +1646,46 @@ export class WorldEngine {
     // camera rig (smoothly blends between VILLAGE / Museum Hall 36°, VILLAGE_EDIT 42°, and 2.5D Portal 34°)
     const isMuseum = this.getInstanceKind() === 'museum';
     const inPortal25D = isMuseum && Boolean(this.nookMuseumScene?.currentPortalId);
-    const targetPitch = THREE.MathUtils.degToRad(inPortal25D ? 34 : this.preset.PITCH_DEG);
+    let settleFrac = 0;
+    if (this._frontierSettleT > 0) {
+      this._frontierSettleT = Math.max(0, this._frontierSettleT - dt);
+      const u = this._frontierSettleT / 1.15;
+      settleFrac = u * u * (3 - 2 * u);
+    }
+    const targetPitch = THREE.MathUtils.degToRad((inPortal25D ? 34 : this.preset.PITCH_DEG) + settleFrac * 2.6);
     this.pitch += (targetPitch - this.pitch) * (1 - Math.exp(-8 * dt));
-    const effDist = this.camDist;
-    const lookY = inPortal25D ? CHIBI_HEIGHT * 0.52 : CHIBI_HEIGHT * 0.4;
-    const lookZ = inPortal25D ? this.camTarget.z - 0.55 : this.camTarget.z;
-    this.camera.position.set(this.camTarget.x, this.camTarget.y + Math.sin(this.pitch) * effDist, this.camera.position.z);
-    this.camera.position.z = this.camTarget.z + Math.cos(this.pitch) * effDist;
-    this.camera.lookAt(this.camTarget.x, lookY, lookZ);
+    const effDist = this.camDist + settleFrac * 2.8;
+    let shakeX = 0, shakeY = 0, shakeZ = 0;
+    if (this._camShake) {
+      this._camShake.t += dt;
+      if (this._camShake.t >= this._camShake.dur) {
+        this._camShake = null;
+      } else {
+        const decay = 1 - this._camShake.t / this._camShake.dur;
+        const amp = this._camShake.intensity * decay * decay;
+        shakeX = Math.sin(this._camShake.t * 58) * amp;
+        shakeY = Math.cos(this._camShake.t * 47) * amp * 0.65;
+        shakeZ = Math.sin(this._camShake.t * 41 + 1.1) * amp * 0.75;
+      }
+    }
+    const lookY = (inPortal25D ? CHIBI_HEIGHT * 0.52 : CHIBI_HEIGHT * 0.4) + shakeY * 0.6;
+    const lookZ = (inPortal25D ? this.camTarget.z - 0.55 : this.camTarget.z) + shakeZ * 0.6;
+    this.camera.position.set(
+      this.camTarget.x + shakeX,
+      this.camTarget.y + Math.sin(this.pitch) * effDist + shakeY,
+      this.camTarget.z + Math.cos(this.pitch) * effDist + shakeZ
+    );
+    this.camera.lookAt(this.camTarget.x + shakeX * 0.6, lookY, lookZ);
+    this.camera.updateMatrixWorld();
 
+    const regId = this._frontierLayout?.regionId;
+    const showClouds = !(this._frontierMode && (regId === 'hollow' || regId === 'caldera')) && !(isMuseum && inPortal25D);
     for (const c of this.env.clouds) {
-      c.visible = true;
-      c.position.x += c.userData.speed * dt;
-      if (c.position.x > 95) c.position.x = -55;
+      c.visible = showClouds;
+      if (showClouds) {
+        c.position.x += c.userData.speed * dt;
+        if (c.position.x > 95) c.position.x = -55;
+      }
     }
     if (this.activeFrontier) {
       this.activeFrontier.update?.(dt, this.camera);
@@ -1894,6 +2171,7 @@ export class WorldEngine {
   capturePolaroid(meta = {}) {
     // Synchronous render so WebGL drawing buffer is populated immediately prior to drawImage
     this.renderer.render(this.scene, this.camera);
+    this.activeFrontier?.skillVfx?.drawPostRender?.(this.renderer, this.camera);
 
     const W = 960;
     const H = 1200;

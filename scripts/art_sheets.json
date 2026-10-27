@@ -7684,6 +7684,93 @@
           1
         ]
       ]
+    },
+    {
+      "id": "sheet_weapons_mastercrafter_v1",
+      "src": "art_src/sheet_weapons_mastercrafter_v1.jpg",
+      "pack": "chibi",
+      "cols": 3,
+      "rows": 3,
+      "cells": [
+        { "name": "gloves_starter_sword", "anchorY": 0.5 },
+        { "name": "gloves_starter_shortbow", "anchorY": 0.5 },
+        { "name": "gloves_starter_wand", "anchorY": 0.5 },
+        { "name": "gloves_boss_moss_cleaver", "anchorY": 0.5 },
+        { "name": "gloves_boss_moss_longbow", "anchorY": 0.5 },
+        { "name": "gloves_boss_moss_staff", "anchorY": 0.5 },
+        { "name": "gloves_boss_weaver_scythe", "anchorY": 0.5 },
+        { "name": "gloves_boss_weaver_bow", "anchorY": 0.5 },
+        { "name": "gloves_boss_weaver_cane", "anchorY": 0.5 }
+      ]
+    },
+    {
+      "id": "sheet_weapons_sovereign_v1",
+      "src": "art_src/sheet_weapons_sovereign_v1.jpg",
+      "pack": "chibi",
+      "cols": 3,
+      "rows": 2,
+      "cells": [
+        { "name": "gloves_mythic_prism_blade", "anchorY": 0.5 },
+        { "name": "gloves_mythic_bahamut_scythe", "anchorY": 0.5 },
+        { "name": "gloves_mythic_phoenix_bow", "anchorY": 0.5 },
+        { "name": "gloves_mythic_chrono_bow", "anchorY": 0.5 },
+        { "name": "gloves_mythic_eden_harpbow", "anchorY": 0.5 },
+        { "name": "gloves_mythic_poseidon_staff", "anchorY": 0.5 }
+      ]
+    },
+    {
+      "id": "sheet_tos_skill_vfx",
+      "src": "art_src/sheet_tos_skill_vfx.jpg",
+      "pack": "vfx",
+      "cols": 3,
+      "rows": 3,
+      "cells": [
+        { "name": "vfx_flower_periwinkle", "anchorY": 0.08 },
+        { "name": "vfx_flower_lavender", "anchorY": 0.08 },
+        { "name": "vfx_flower_buttercup", "anchorY": 0.08 },
+        { "name": "vfx_crystal_cyan", "anchorY": 0.08 },
+        { "name": "vfx_crystal_violet", "anchorY": 0.08 },
+        { "name": "vfx_moss_megalith", "anchorY": 0.08 },
+        { "name": "vfx_dewdrop_pearl", "anchorY": 0.12 },
+        { "name": "vfx_lantern_wisp", "anchorY": 0.5 },
+        { "name": "vfx_starlight_arrow", "anchorY": 0.5 }
+      ]
+    },
+    {
+      "id": "sheet_tos_skill_vfx_2",
+      "src": "art_src/sheet_tos_skill_vfx_2.jpg",
+      "pack": "vfx",
+      "cols": 3,
+      "rows": 3,
+      "cells": [
+        { "name": "vfx_slime_jelly_puff", "anchorY": 0.08 },
+        { "name": "vfx_lilypad_lotus", "anchorY": 0.08 },
+        { "name": "vfx_boar_bramble_thorn", "anchorY": 0.08 },
+        { "name": "vfx_gale_leaf_swirl", "anchorY": 0.16, "minIslandRatio": 0.002 },
+        { "name": "vfx_tusk_dust_plume", "anchorY": 0.08, "minIslandRatio": 0.002 },
+        { "name": "vfx_beetle_horn_spire", "anchorY": 0.08 },
+        { "name": "vfx_ice_prism_rosette", "anchorY": 0.12 },
+        { "name": "vfx_bat_echo_wing", "anchorY": 0.35 },
+        { "name": "vfx_crimson_soul_lantern", "anchorY": 0.35, "minIslandRatio": 0.002 }
+      ]
+    },
+    {
+      "id": "sheet_tos_skill_vfx_3",
+      "src": "art_src/sheet_tos_skill_vfx_3.jpg",
+      "pack": "vfx",
+      "cols": 3,
+      "rows": 3,
+      "cells": [
+        { "name": "vfx_quartz_rune_obelisk", "anchorY": 0.08 },
+        { "name": "vfx_gravity_orbit_slab", "anchorY": 0.20, "minIslandRatio": 0.002 },
+        { "name": "vfx_worldroot_arch", "anchorY": 0.08, "smartInkMatte": true },
+        { "name": "vfx_shrine_pillar_ruin", "anchorY": 0.08 },
+        { "name": "vfx_weaver_prism_spindle", "anchorY": 0.12 },
+        { "name": "vfx_arachne_silk_crystal", "anchorY": 0.08, "smartInkMatte": true },
+        { "name": "vfx_rainbow_star_shard", "anchorY": 0.35 },
+        { "name": "vfx_arcane_comet_orb", "anchorY": 0.50, "smartInkMatte": true },
+        { "name": "vfx_celestial_gold_lily", "anchorY": 0.08 }
+      ]
     }
   ]
 }

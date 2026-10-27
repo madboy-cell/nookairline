@@ -619,11 +619,17 @@ export class VoiceCallClient {
     const onWakeOrOnline = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       unlockAudio();
+      if (this._state === 'connected' || this._state === 'calling') {
+        this._acquireWakeLock();
+      }
       if (this._state === 'connected') {
         const pcState = this.pc ? (this.pc.iceConnectionState || this.pc.connectionState) : 'closed';
         if (!this.pc || pcState === 'disconnected' || pcState === 'failed' || pcState === 'closed' || this.pc.signalingState === 'closed') {
           this.healCall('wake');
         }
+        // iOS pauses (mutes) the mic track while the app is backgrounded and often never unmutes it,
+        // so the partner stops hearing us even though we still hear them. Re-check shortly after wake.
+        this._scheduleMicWakeCheck();
       }
     };
     document.addEventListener('visibilitychange', onWakeOrOnline);
@@ -1651,6 +1657,7 @@ export class VoiceCallClient {
     this.peerId = userId;
     this.peerName = this.getUserName(userId);
     this.diamondsEarned = 0;
+    this._acquireWakeLock();
 
     await this.ensureLocalMedia();
     this.net.send({ type: 'call_invite', to: userId });
@@ -1765,6 +1772,7 @@ export class VoiceCallClient {
         this._lastIceConfig = msg.ice || this._lastIceConfig;
         this._state = 'connected';
         this.reconnecting = false;
+        this._acquireWakeLock();
 
         this.hideIncomingBanner();
         this.showInCallPill();
@@ -1882,6 +1890,59 @@ export class VoiceCallClient {
     return tracks.length > 0 && tracks.some((t) => t.readyState !== 'ended');
   }
 
+  /**
+   * Stricter than _isLocalMicHealthy(): also treats a track that iOS has muted (interrupted by
+   * backgrounding / notifications / Siri) as unusable, and verifies the RTP sender still carries it.
+   */
+  _isLocalMicLive() {
+    if (!this._isLocalMicHealthy()) return false;
+    const track = this.localStream.getAudioTracks().find((t) => t.readyState !== 'ended');
+    if (!track || track.muted) return false;
+    if (this.pc && typeof this.pc.getSenders === 'function') {
+      const sender = this.pc.getSenders().find((s) => s.track && s.track.kind === 'audio');
+      if (!sender || !sender.track || sender.track.readyState === 'ended') return false;
+    }
+    return true;
+  }
+
+  _scheduleMicWakeCheck() {
+    if (this._micWakeTimer) clearTimeout(this._micWakeTimer);
+    // Give iOS a moment to unmute the track on its own before forcing a fresh getUserMedia.
+    this._micWakeTimer = setTimeout(() => {
+      this._micWakeTimer = null;
+      if (this._state !== 'connected') return;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (!this._isLocalMicLive()) {
+        // Throttle forced re-acquisition so a mic held by another app (e.g. a phone call) can't loop.
+        const nowMs = Date.now();
+        if (nowMs - (this._lastMicRecoverAt || 0) < 4000) return;
+        this._lastMicRecoverAt = nowMs;
+        this._recoverLocalMic();
+      }
+    }, 700);
+  }
+
+  async _acquireWakeLock() {
+    if (typeof navigator === 'undefined' || !navigator.wakeLock?.request) return;
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    if (this._wakeLock && !this._wakeLock.released) return;
+    try {
+      this._wakeLock = await navigator.wakeLock.request('screen');
+      // If the call ended while the request was pending, release immediately.
+      if (this._state !== 'connected' && this._state !== 'calling') this._releaseWakeLock();
+    } catch {
+      this._wakeLock = null;
+    }
+  }
+
+  _releaseWakeLock() {
+    const lock = this._wakeLock;
+    this._wakeLock = null;
+    if (lock && !lock.released) {
+      try { lock.release().catch(() => {}); } catch {}
+    }
+  }
+
   async _recoverLocalMic() {
     if (this._recoveringMic) return;
     this._recoveringMic = true;
@@ -1914,12 +1975,9 @@ export class VoiceCallClient {
       return null;
     }
     try {
-      if (this.localStream) {
-        try {
-          this.localStream.getTracks().forEach((t) => t.stop());
-        } catch {}
-        this.localStream = null;
-      }
+      // Acquire the new mic stream FIRST, and only stop the previous tracks once it succeeded,
+      // so a failed recovery (permission prompt dismissed, mic busy) never leaves us with no mic at all.
+      const prevStream = this.localStream;
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -1938,21 +1996,39 @@ export class VoiceCallClient {
       stream.getAudioTracks().forEach((track) => {
         track.enabled = !this.isMuted;
         track.onended = () => {
-          if (this._state === 'connected') {
+          if (this._state === 'connected' && this.localStream === stream) {
             this._recoverLocalMic();
+          }
+        };
+        // iOS mutes capture during interruptions (other app, Siri, phone call). If it is still muted
+        // once we are visible again, the wake check re-acquires the mic.
+        track.onmute = () => {
+          if (this._state === 'connected' && this.localStream === stream) {
+            this._scheduleMicWakeCheck();
           }
         };
       });
       if (this.pc) {
         const senders = typeof this.pc.getSenders === 'function' ? this.pc.getSenders() : [];
+        const transceivers = typeof this.pc.getTransceivers === 'function' ? this.pc.getTransceivers() : [];
         stream.getTracks().forEach((track) => {
-          const existingAudioSender = senders.find((s) => s.track && s.track.kind === track.kind);
+          const existingAudioSender = senders.find((s) => s.track && s.track.kind === track.kind)
+            || transceivers.find((t) => !t.stopped && t.receiver?.track?.kind === track.kind)?.sender;
           if (existingAudioSender && typeof existingAudioSender.replaceTrack === 'function') {
             existingAudioSender.replaceTrack(track).catch(() => {});
           } else if (!senders.some((s) => s.track === track)) {
             this.pc.addTrack(track, stream);
           }
         });
+      }
+      if (prevStream && prevStream !== stream) {
+        try {
+          prevStream.getTracks().forEach((t) => {
+            t.onended = null;
+            t.onmute = null;
+            t.stop();
+          });
+        } catch {}
       }
       this.setupAudioAnalysis(stream, 'local');
       return stream;
@@ -2425,6 +2501,11 @@ export class VoiceCallClient {
       clearTimeout(this._graceStreamTimer);
       this._graceStreamTimer = null;
     }
+    if (this._micWakeTimer) {
+      clearTimeout(this._micWakeTimer);
+      this._micWakeTimer = null;
+    }
+    this._releaseWakeLock();
     this._state = 'idle';
     this.callId = null;
     this.peerId = null;

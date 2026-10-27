@@ -7,6 +7,7 @@ import { PODIUM } from '/shared/monopoly_rules.js';
 import { ALL_BUILDS, BUILD_PERKS, detectBuild, getWeeklyWeather, leagueTierFor, DASH_DAILY_CHEST_MAX } from '/shared/dash_builds.js';
 import { computeUniversalStats } from '/shared/universal_stats.js';
 import { normalizePetId, PETS } from '/shared/pet_catalog.js';
+import { MONSTER_SKILLS } from '/shared/combat_rules.js';
 
 const modesBase = { ...MODES };
 delete modesBase.moon_bunny;
@@ -74,6 +75,7 @@ export class TableHub {
     this._moonStartedTableId = null;
     this._cdStarted = false;
     this._cdStartedTableId = null;
+    this._frontierScrollTop = 0;
     if (!document.getElementById('hub-dash-styles')) {
       const st = document.createElement('style');
       st.id = 'hub-dash-styles';
@@ -82,6 +84,8 @@ body:has(.hub-wrap:not([hidden])) #hud-guide-pill,
 body:has(.hub-wrap:not([hidden])) #hud-couple-pill{display:none!important}
 body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!important;z-index:120!important}
 .hub{position:relative}
+.frontier-hub-card{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.hub-btn,.hub-tab,.hub-x{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .hub-table-card.dash{background:radial-gradient(ellipse at 50% 48%,#2e5b9e 0%,#1d3a6e 64%,#102244 100%);border-color:#e6b44c}
 .hub-table-card.dash .hub-stage.hub-stage-diorama{height:calc(152px * var(--s))}
 .hub-table-card.dash .hub-board,.hub-table-card.dash .hub-vip-table-img{display:none}
@@ -232,6 +236,8 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
   // ------------------------------------------------------------------------- render
   render() {
     if (this.root.hidden) return;
+    const prevFrontierCard = this.root.querySelector?.('.frontier-hub-card');
+    if (prevFrontierCard) this._frontierScrollTop = prevFrontierCard.scrollTop || 0;
     const t = this.table;
     const tableMode = (t && !this.isHost && t.mode) ? t.mode : this.mode;
     const isCasino = tableMode === 'casino';
@@ -246,6 +252,30 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
       </button>`).join('');
 
     if (this.mode === 'sky_frontier' || this.tab === 'sky_frontier') {
+      const unlockedSkillsMap = (prof?.frontier?.skills?.unlocked && typeof prof.frontier.skills.unlocked === 'object')
+        ? prof.frontier.skills.unlocked
+        : {};
+      const skillStatsByReg = {
+        meadow: { have: 0, total: 0 },
+        hollow: { have: 0, total: 0 },
+        reef: { have: 0, total: 0 },
+        caldera: { have: 0, total: 0 },
+      };
+      let totalSkillsUnlocked = 0;
+      for (const sk of Object.values(MONSTER_SKILLS || {})) {
+        const reg = sk?.region;
+        if (!reg || !skillStatsByReg[reg]) continue;
+        skillStatsByReg[reg].total += 1;
+        if ((Number(unlockedSkillsMap[sk.id]) || 0) > 0) {
+          skillStatsByReg[reg].have += 1;
+          totalSkillsUnlocked += 1;
+        }
+      }
+      const skillLabel = (reg) => {
+        const st = skillStatsByReg[reg] || { have: 0, total: 5 };
+        return `📜 ${st.have}/${st.total || 5} Skills`;
+      };
+
       const hollowUnlocked = Boolean(
         prof?.frontier?.unlocks?.regions?.includes('hollow')
         || prof?.frontier?.unlocks?.gates?.includes('hollow')
@@ -253,59 +283,137 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
         || prof?.story?.completed?.includes?.(1)
         || (prof?.story?.progress?.c2_visit_gate_hollow || 0) >= 1
       );
+      const reefUnlocked = Boolean(
+        prof?.frontier?.unlocks?.regions?.includes('reef')
+        || prof?.frontier?.unlocks?.gates?.includes('reef')
+        || (prof?.story?.chapter || 0) >= 6
+        || prof?.story?.completed?.includes?.(5)
+        || ((prof?.story?.chapter || 0) >= 5 && (prof?.story?.progress?.c5_visit_gate_reef || 0) >= 1)
+      );
+      const calderaUnlocked = Boolean(
+        prof?.frontier?.unlocks?.regions?.includes('caldera')
+        || prof?.frontier?.unlocks?.gates?.includes('caldera')
+        || (prof?.story?.chapter || 0) >= 7
+        || prof?.story?.completed?.includes?.(6)
+      );
       const hasPartner = Boolean(prof?.partner_id);
+      const partnerStoryCh = Number(prof?.partner_story_chapter) || 0;
+      const partnerRegs = Array.isArray(prof?.partner_regions) ? prof.partner_regions : [];
+      const hollowGuestUnlocked = !hollowUnlocked && hasPartner && (partnerRegs.includes('hollow') || partnerStoryCh >= 2);
+      const reefGuestUnlocked = !reefUnlocked && hasPartner && (partnerRegs.includes('reef') || partnerStoryCh >= 6);
+      const calderaGuestUnlocked = !calderaUnlocked && hasPartner && (partnerRegs.includes('caldera') || partnerStoryCh >= 7);
+
+      const hollowOpen = hollowUnlocked || hollowGuestUnlocked;
+      const reefOpen = reefUnlocked || reefGuestUnlocked;
+      const calderaOpen = calderaUnlocked || calderaGuestUnlocked;
+
       this.root.innerHTML = `
       <div class="hub">
         <div class="hub-head"><span>🎮 PLAY &amp; 4-SEAT TABLE HUB</span><button class="hub-x" data-act="close">✕</button></div>
         <div class="hub-tabs">${tabs}</div>
-        <div class="hub-table-card frontier-hub-card" style="padding:16px 14px;background:linear-gradient(180deg,#241810 0%,#1a1008 100%);border:2px solid #C9A45C;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.55);color:#FFF8E7;">
+        <div class="hub-table-card frontier-hub-card" style="padding:14px 13px;background:linear-gradient(180deg,#241810 0%,#1a1008 100%);border:2px solid #C9A45C;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.55);color:#FFF8E7;max-height:66vh;overflow-y:auto;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <span style="font-size:28px;">🏝️</span>
+            <span style="font-size:26px;">🏝️</span>
             <div>
-              <div style="font-size:16px;font-weight:900;color:#FFE6A3;letter-spacing:0.3px;">🏝️ Sky Frontier — Co-op Expedition</div>
-              <div style="font-size:11.5px;color:#C9B29B;margin-top:2px;line-height:1.35;">Up to 10 adventurers per shard • Split loot by contribution • Tools are weapons • Zero item loss on KO</div>
+              <div style="font-size:15.5px;font-weight:900;color:#FFE6A3;letter-spacing:0.3px;">🏝️ Sky Frontier — Living Ecology (4 Regions • 📜 ${totalSkillsUnlocked}/20 Skills)</div>
+              <div style="font-size:11px;color:#C9B29B;margin-top:2px;line-height:1.35;">Up to 10 heroes per shard • Hunt Habitat Packs &amp; ⭐ Alpha Elites • Collect 20 Monster Skill Scrolls</div>
             </div>
           </div>
 
-          <div style="display:flex;flex-direction:column;gap:10px;margin:14px 0;">
-            <div class="sf-region-card" data-act="enter-frontier" data-region="meadow" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(134,239,172,0.5);border-radius:14px;padding:12px 14px;cursor:pointer;transition:transform .12s ease;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                <b style="font-size:13.5px;color:#86EFAC;">🌾 Whispering Meadow (Region 1)</b>
-                <span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:#15803D;color:#fff;">Open</span>
+          <div style="display:flex;flex-direction:column;gap:9px;margin:12px 0 4px;">
+            <div class="sf-region-card" data-region="meadow" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(134,239,172,0.5);border-radius:14px;padding:10px 12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <b style="font-size:13px;color:#86EFAC;">🌲 Whispering Meadow (Region 1)</b>
+                <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#15803D;color:#fff;">Open • ${skillLabel('meadow')}</span>
               </div>
-              <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
-                Gather Wood, Stone, Sky Wheat &amp; Herbs • Defend the Goddess Outpost • Boss: Elder Moss Golem
+              <div style="font-size:11px;color:#E2E8F0;margin-top:3px;line-height:1.35;">
+                4 Habitats (Slime, Wisp, Zephyr Hare, Boar) • Wood, Stone, Sky Wheat • Boss: Elder Moss Golem
               </div>
-              <div style="margin-top:8px;display:flex;justify-content:flex-end;">
-                <button type="button" id="hub-enter-frontier" class="hub-btn gold" data-act="enter-frontier" data-region="meadow" style="padding:7px 14px;font-size:12.5px;font-weight:900;background:linear-gradient(180deg,#22C55E,#15803D);border:1.5px solid #BBF7D0;color:#FFF;cursor:pointer;border-radius:10px;">
-                  🌾 Enter Whispering Meadow ▸
+              <div style="margin-top:7px;display:flex;justify-content:flex-end;">
+                <button type="button" id="hub-enter-frontier" class="hub-btn gold" data-act="enter-frontier" data-region="meadow" style="padding:6px 13px;font-size:12px;font-weight:900;background:linear-gradient(180deg,#22C55E,#15803D);border:1.5px solid #BBF7D0;color:#FFF;cursor:pointer;border-radius:10px;">
+                  🌲 Enter Whispering Meadow ▸
                 </button>
               </div>
             </div>
 
-            <div class="sf-region-card" ${hollowUnlocked || hasPartner ? 'data-act="enter-frontier" data-region="hollow"' : ''} style="background:${hollowUnlocked ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${hollowUnlocked ? 'rgba(103,232,249,0.65)' : 'rgba(201,164,92,0.3)'};border-radius:14px;padding:12px 14px;${hollowUnlocked || hasPartner ? 'cursor:pointer;' : 'opacity:0.86;'}">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                <b style="font-size:13.5px;color:${hollowUnlocked ? '#67E8F9' : '#93C5FD'};">💎 Crystal Hollow (Region 2)</b>
-                <span id="hub-hollow-badge" style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:${hollowUnlocked ? '#0E7490' : '#1E3A8A'};color:${hollowUnlocked ? '#ECFEFF' : '#93C5FD'};border:1px solid ${hollowUnlocked ? '#67E8F9' : 'transparent'};">${hollowUnlocked ? 'Open' : '🔒 Complete Ch.2'}</span>
+            <div class="sf-region-card" data-region="hollow" style="background:${hollowOpen ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${hollowOpen ? 'rgba(103,232,249,0.65)' : 'rgba(201,164,92,0.3)'};border-radius:14px;padding:10px 12px;${hollowOpen ? '' : 'opacity:0.88;'}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <b style="font-size:13px;color:${hollowOpen ? '#67E8F9' : '#93C5FD'};">💎 Crystal Hollow (Region 2)</b>
+                <span id="hub-hollow-badge" style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:${hollowOpen ? '#0E7490' : '#1E3A8A'};color:${hollowOpen ? '#ECFEFF' : '#93C5FD'};border:1px solid ${hollowOpen ? '#67E8F9' : 'transparent'};">${hollowUnlocked ? `Open • ${skillLabel('hollow')}` : hollowGuestUnlocked ? `💞 Co-Op • ${skillLabel('hollow')}` : `🔒 Story Ch.2 • ${skillLabel('hollow')}`}</span>
               </div>
-              <div style="font-size:11.5px;color:#E2E8F0;margin-top:4px;line-height:1.4;">
-                ${hollowUnlocked ? 'Unlocked! Warp directly or step through the North Sky Mist Gate • ' : 'Unlocks after Story Chapter 2 (or Partner Guest) • '}Gather Crystal Ore, Quartz &amp; Mithril • Boss: Hollow Crystal Weaver
+              <div style="font-size:11px;color:#E2E8F0;margin-top:3px;line-height:1.35;">
+                4 Habitats (Frostcap, Beetle, Bat, Golemling) • Crystal, Quartz &amp; Mithril • Boss: Hollow Crystal Weaver
               </div>
-              <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+              <div style="margin-top:7px;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
                 ${hollowUnlocked
-                  ? `<button type="button" id="hub-enter-hollow" class="hub-btn gold" data-act="enter-frontier" data-region="hollow" style="padding:7px 14px;font-size:12.5px;font-weight:900;background:linear-gradient(180deg,#06B6D4,#0E7490);border:1.5px solid #A5F3FC;color:#FFF;box-shadow:0 3px 12px rgba(6,182,212,0.4);cursor:pointer;border-radius:10px;">
+                  ? `<button type="button" id="hub-enter-hollow" class="hub-btn gold" data-act="enter-frontier" data-region="hollow" style="padding:6px 13px;font-size:12px;font-weight:900;background:linear-gradient(180deg,#06B6D4,#0E7490);border:1.5px solid #A5F3FC;color:#FFF;box-shadow:0 3px 12px rgba(6,182,212,0.4);cursor:pointer;border-radius:10px;">
                       💎 Enter Crystal Hollow ▸
                     </button>`
-                  : hasPartner
-                    ? `<button type="button" id="hub-enter-hollow-guest" class="hub-btn" data-act="enter-frontier" data-region="hollow" style="padding:6px 12px;font-size:11.5px;font-weight:800;background:rgba(30,58,138,0.65);border:1px solid #93C5FD;color:#DBEAFE;cursor:pointer;border-radius:10px;">
+                  : hollowGuestUnlocked
+                    ? `<button type="button" id="hub-enter-hollow-guest" class="hub-btn" data-act="enter-frontier" data-region="hollow" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(30,58,138,0.65);border:1px solid #93C5FD;color:#DBEAFE;cursor:pointer;border-radius:10px;">
                         💞 Join Partner in Hollow ▸
                       </button>`
-                    : `<span style="font-size:11px;font-weight:800;color:#94A3B8;">🔒 Finish Story Ch.2 to unlock</span>`}
+                    : `${hasPartner ? `<span style="font-size:10px;font-weight:800;color:#CBD5E1;">💞 Or join Partner inside Frontier</span>` : ''}
+                      <button type="button" class="hub-btn" data-act="locked-frontier-info" data-region="hollow" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(30,41,59,0.75);border:1px solid rgba(147,197,253,0.45);color:#CBD5E1;cursor:pointer;border-radius:10px;">
+                        🔒 Story Ch.2 ⓘ
+                      </button>`}
+              </div>
+            </div>
+
+            <div class="sf-region-card" data-region="reef" style="background:${reefOpen ? 'rgba(244,114,182,0.11)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${reefOpen ? 'rgba(249,168,212,0.7)' : 'rgba(201,164,92,0.28)'};border-radius:14px;padding:10px 12px;${reefOpen ? '' : 'opacity:0.88;'}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <b style="font-size:13px;color:${reefOpen ? '#F9A8D4' : '#FBCFE8'};">🌸 Celestial Sakura Reef (Region 3)</b>
+                <span id="hub-reef-badge" style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:${reefOpen ? '#9D174D' : '#4C1D95'};color:#FDF2F8;border:1px solid ${reefOpen ? '#F9A8D4' : 'transparent'};">${reefUnlocked ? `Open • ${skillLabel('reef')}` : reefGuestUnlocked ? `💞 Co-Op • ${skillLabel('reef')}` : `🔒 Story Ch.5 • ${skillLabel('reef')}`}</span>
+              </div>
+              <div style="font-size:11px;color:#E2E8F0;margin-top:3px;line-height:1.35;">
+                4 Habitats (Kitsune, Snapper, Crane, Bell Spirit) • Sakura Timber, Pearl &amp; Lotus • Boss: Lady Tamamo
+              </div>
+              <div style="margin-top:7px;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+                ${reefUnlocked
+                  ? `<button type="button" id="hub-enter-reef" class="hub-btn gold" data-act="enter-frontier" data-region="reef" style="padding:6px 13px;font-size:12px;font-weight:900;background:linear-gradient(180deg,#EC4899,#BE185D);border:1.5px solid #FBCFE8;color:#FFF;box-shadow:0 3px 12px rgba(236,72,153,0.4);cursor:pointer;border-radius:10px;">
+                      🌸 Enter Sakura Reef ▸
+                    </button>`
+                  : reefGuestUnlocked
+                    ? `<button type="button" id="hub-enter-reef-guest" class="hub-btn" data-act="enter-frontier" data-region="reef" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(131,24,67,0.65);border:1px solid #F9A8D4;color:#FCE7F3;cursor:pointer;border-radius:10px;">
+                        💞 Join Partner in Reef ▸
+                      </button>`
+                    : `${hasPartner ? `<span style="font-size:10px;font-weight:800;color:#CBD5E1;">💞 Or join Partner inside Frontier</span>` : ''}
+                      <button type="button" class="hub-btn" data-act="locked-frontier-info" data-region="reef" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(30,41,59,0.75);border:1px solid rgba(249,168,212,0.45);color:#CBD5E1;cursor:pointer;border-radius:10px;">
+                        🔒 Story Ch.5 ⓘ
+                      </button>`}
+              </div>
+            </div>
+
+            <div class="sf-region-card" data-region="caldera" style="background:${calderaOpen ? 'rgba(245,158,11,0.11)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${calderaOpen ? 'rgba(252,211,77,0.7)' : 'rgba(201,164,92,0.28)'};border-radius:14px;padding:10px 12px;${calderaOpen ? '' : 'opacity:0.88;'}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                <b style="font-size:13px;color:${calderaOpen ? '#FCD34D' : '#FDE68A'};">⚙️ Clockwork Star-Caldera (Region 4)</b>
+                <span id="hub-caldera-badge" style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:${calderaOpen ? '#92400E' : '#3B0764'};color:#FEF3C7;border:1px solid ${calderaOpen ? '#FCD34D' : 'transparent'};">${calderaUnlocked ? `Open • ${skillLabel('caldera')}` : calderaGuestUnlocked ? `💞 Co-Op • ${skillLabel('caldera')}` : `🔒 Story Ch.6 • ${skillLabel('caldera')}`}</span>
+              </div>
+              <div style="font-size:11px;color:#E2E8F0;margin-top:3px;line-height:1.35;">
+                4 Habitats (Salamander, Automaton, Gargoyle, Sentinel) • Orichalcum &amp; Astral Prism • Boss: Solar Bahamut
+              </div>
+              <div style="margin-top:7px;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+                ${calderaUnlocked
+                  ? `<button type="button" id="hub-enter-caldera" class="hub-btn gold" data-act="enter-frontier" data-region="caldera" style="padding:6px 13px;font-size:12px;font-weight:900;background:linear-gradient(180deg,#F59E0B,#B45309);border:1.5px solid #FDE68A;color:#FFF;box-shadow:0 3px 12px rgba(245,158,11,0.4);cursor:pointer;border-radius:10px;">
+                      ⚙️ Enter Star-Caldera ▸
+                    </button>`
+                  : calderaGuestUnlocked
+                    ? `<button type="button" id="hub-enter-caldera-guest" class="hub-btn" data-act="enter-frontier" data-region="caldera" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(120,53,15,0.65);border:1px solid #FCD34D;color:#FEF3C7;cursor:pointer;border-radius:10px;">
+                        💞 Join Partner in Caldera ▸
+                      </button>`
+                    : `${hasPartner ? `<span style="font-size:10px;font-weight:800;color:#CBD5E1;">💞 Or join Partner inside Frontier</span>` : ''}
+                      <button type="button" class="hub-btn" data-act="locked-frontier-info" data-region="caldera" style="padding:5px 11px;font-size:11px;font-weight:800;background:rgba(30,41,59,0.75);border:1px solid rgba(252,211,77,0.45);color:#CBD5E1;cursor:pointer;border-radius:10px;">
+                        🔒 Story Ch.6 ⓘ
+                      </button>`}
               </div>
             </div>
           </div>
         </div>
       </div>`;
+      const nextFrontierCard = this.root.querySelector?.('.frontier-hub-card');
+      if (nextFrontierCard && this._frontierScrollTop > 0) {
+        nextFrontierCard.scrollTop = this._frontierScrollTop;
+      }
       return;
     }
     const seats = t ? t.seats : [];
@@ -620,8 +728,20 @@ body:has(.hub-wrap:not([hidden])) #toast{top:calc(var(--safe-top, 0px) + 58px)!i
     if (!el || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
     if (el.id === 'hub-enter-frontier' || el.id === 'hub-enter-hollow' || el.dataset.act === 'enter-frontier') {
       const region = el.dataset.region || el.closest('[data-region]')?.dataset?.region || 'meadow';
-      this.close();
+      this.close({ leave: true });
       window.__neora?.enterFrontier?.(region);
+      return;
+    }
+    if (el.dataset.act === 'locked-frontier-info') {
+      const reg = el.dataset.region || 'hollow';
+      const hasPartner = Boolean(this.liveProfile?.partner_id);
+      const coOpNote = hasPartner ? ' (Or step in together once your Partner unlocks it!)' : '';
+      const unlockTips = {
+        hollow: `🔒 Crystal Hollow unlocks in 📜 Story Ch. 2: Echoes Below!${coOpNote}`,
+        reef: `🔒 Celestial Sakura Reef unlocks at 📜 Story Ch. 5: Blossom Tides!${coOpNote}`,
+        caldera: `🔒 Clockwork Star-Caldera unlocks after 📜 Story Ch. 6: Starforge Ascent!${coOpNote}`,
+      };
+      this.toast(unlockTips[reg] || '🔒 Progress your Base Camp Story Board to unlock this region!', 3200);
       return;
     }
     const t = this.table;

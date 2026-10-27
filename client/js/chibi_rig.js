@@ -622,8 +622,9 @@ export class ChibiRig {
       const name = a.def.views[v];
       const s = name && a.sprites[name];
       const isBoot = a.def.bone === 'LEG';
-      // side view (arms only) or single-hand held weapon: only the leading arm is visible; stow weapons during couple poses or while riding a mount
-      const stowWeapon = !!((this.couplePose || this.riding) && a.def.singleHand);
+      // side view (arms only) or single-hand held weapon: only the leading arm is visible; stow weapons during couple poses, while riding, or while a gathering tool is out
+      const toolOut = Boolean(this.heldTool?.mesh?.visible);
+      const stowWeapon = !!((this.couplePose || this.riding || toolOut) && a.def.singleHand);
       const hiddenSide = ((v === 'side' && !isBoot) || a.def.singleHand) && a.side !== 0 && a.side !== flip;
       if (!s || s.fallback || hiddenSide || stowWeapon) { a.mesh.visible = false; continue; }
       a.mesh.visible = true;
@@ -652,6 +653,9 @@ export class ChibiRig {
       const stepY = isBoot ? (a.side === flip ? -0.008 : 0.008) : 0;
       const stepZ = isBoot && a.side === flip ? 0.004 : (a.def.singleHand && v === 'back' ? 0.062 : 0);
       const armTilt = isGlove && v !== 'side' ? -a.side * 0.14 : rotZ * scaleSign;
+      a.baseRotZ = armTilt;
+      a.baseScaleX = wM * scaleSign;
+      a.baseScaleY = hM;
       a.mesh.rotation.z = armTilt;
       a.mesh.scale.set(wM * scaleSign, hM, 1);
       a.mesh.position.set(ox * HEAD_H * posSign, (effOy + stepY) * HEAD_H, ACC_Z[v][a.slot] + stepZ);
@@ -863,6 +867,10 @@ export class ChibiRig {
         this.heldTool = null;
       }
       this._heldToolDef = null;
+      if (this.views) {
+        const curV = this.shownView || 'front';
+        this.layoutAccessories(curV, this.shownRight ?? true, (this.views[curV] || this.views.front)?.hem || 'short');
+      }
       return;
     }
 
@@ -890,6 +898,9 @@ export class ChibiRig {
     this.heldTool = { kind, tier: t, mesh, def, texture: tex };
     this._heldToolDef = { kind, tier: t };
     this.layoutHeldTool(this.shownView || 'front', this.shownRight ?? true);
+    for (let i = 0; i < this.accMeshes.length; i++) {
+      if (this.accMeshes[i].def?.singleHand) this.accMeshes[i].mesh.visible = false;
+    }
   }
 
   layoutHeldTool(view, right) {
@@ -943,7 +954,7 @@ export class ChibiRig {
     this.castT = this.castMax;
   }
 
-  triggerAttack(kind = 'slash', { dur, onImpact } = {}) {
+  triggerAttack(kind = 'slash', { dur, onImpact, weaponScaleBoost = 1 } = {}) {
     const isGathering = kind === 'mine_swing' || kind === 'chop_swing' || kind === 'staff_cast';
     const defaultDur = isGathering ? 0.75 : 0.42;
     const effDur = Math.max(0.18, dur !== undefined ? dur : defaultDur);
@@ -955,6 +966,7 @@ export class ChibiRig {
       kind,
       t: 0,
       dur: effDur,
+      weaponScaleBoost: Number(weaponScaleBoost) || 1,
       onImpact: typeof onImpact === 'function' ? onImpact : null,
       impactFired: false,
     };
@@ -1268,12 +1280,27 @@ export class ChibiRig {
           cToolRot = dir * swing * 0.45;
           cToolScale = 1 + 0.16 * cArc;
         } else if (kind === 'spin_slash') {
-          this.TORSO_G.rotation.y = ck * Math.PI * 2;
-          cArmL = -1.05 * cArc;
-          cArmR = 1.05 * cArc;
-          cHop = 0.16 * cArc;
-          cRim = 1.6 * cArc;
-          cToolScale = 1 + 0.22 * cArc;
+          // Keep 2.5D paper-doll TORSO_G.rotation.y strictly within [-0.44, +0.44] rad so Z-layered hair/face never invert!
+          const twirlSin = Math.sin(ck * Math.PI * 2);
+          const twirlCos = Math.abs(Math.cos(ck * Math.PI * 2));
+          this.TORSO_G.rotation.y = twirlSin * 0.44 * cArc;
+          const sweep = -1.15 + 2.35 * Math.sin(ck * Math.PI);
+          if (this.shownRight) {
+            cArmR = sweep;
+            cArmL = -0.95 * cArc;
+          } else {
+            cArmL = -sweep;
+            cArmR = 0.95 * cArc;
+          }
+          cLegL = -0.22 * twirlSin * cArc;
+          cLegR = 0.22 * twirlSin * cArc;
+          cTorso = dir * 0.20 * twirlSin * cArc;
+          cSx = 1 - 0.22 * (1 - twirlCos) * cArc;
+          cSy = 1 + 0.07 * (1 - twirlCos) * cArc;
+          cHop = 0.22 * cArc;
+          cRim = 1.85 * cArc;
+          cToolRot = dir * sweep * 0.52;
+          cToolScale = 1 + 0.24 * cArc;
         } else if (kind === 'ground_slam') {
           this.TORSO_G.rotation.y = 0;
           cHop = Math.sin(ck * Math.PI) * 0.52;
@@ -1494,6 +1521,129 @@ export class ChibiRig {
             cArmR = 0.70 * swing;
           }
           cTorso = dir * torsoAngle;
+        } else if (kind === 'slash_backhand') {
+          this.TORSO_G.rotation.y = -dir * 0.34 * cArc;
+          const swing = ck < 0.22
+            ? 0.85 * (ck / 0.22)
+            : 0.85 - 2.05 * Math.sin(((ck - 0.22) / 0.78) * Math.PI);
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = 0.26 * cArc;
+          } else {
+            cArmL = -swing;
+            cArmR = -0.26 * cArc;
+          }
+          cLegL = 0.16 * cArc;
+          cLegR = -0.16 * cArc;
+          cTorso = -dir * 0.18 * cArc;
+          cHop = 0.10 * cArc;
+          cRim = 1.55 * cArc;
+          cToolRot = dir * swing * 0.44;
+          cToolScale = 1 + 0.18 * cArc;
+        } else if (kind === 'bow_shot') {
+          this.TORSO_G.rotation.y = 0;
+          let bowArm = 0;
+          let drawArm = 0;
+          if (ck < 0.44) {
+            const p = Math.sin((ck / 0.44) * Math.PI * 0.5);
+            bowArm = 0.62 * p;
+            drawArm = -0.68 * p;
+            cTorso = -dir * 0.12 * p;
+            cHop = 0.04 * p;
+            cRim = 0.9 * p;
+            cToolRot = -dir * 0.22 * p;
+            cToolScale = 1 + 0.10 * p;
+          } else {
+            const rk = (ck - 0.44) / 0.56;
+            const snap = Math.sin(Math.min(1, rk * 2.2) * Math.PI);
+            const settle = 1 - rk;
+            bowArm = 0.62 * settle + 0.18 * snap;
+            drawArm = (-0.68 - 0.32 * snap) * settle;
+            cTorso = -dir * (0.12 + 0.08 * snap) * settle;
+            cHop = 0.06 * settle;
+            cSx = 1 + 0.06 * snap;
+            cSy = 1 - 0.05 * snap;
+            cRim = 1.75 * settle;
+            cToolRot = dir * (-0.22 * settle + 0.16 * snap);
+            cToolScale = 1 + 0.18 * settle;
+          }
+          if (this.shownRight) {
+            cArmR = bowArm;
+            cArmL = drawArm;
+          } else {
+            cArmL = -bowArm;
+            cArmR = -drawArm;
+          }
+        } else if (kind === 'wand_cast') {
+          this.TORSO_G.rotation.y = 0;
+          const swing = ck < 0.32
+            ? -0.45 * (ck / 0.32)
+            : -0.45 + 1.48 * Math.sin(((ck - 0.32) / 0.68) * Math.PI);
+          if (this.shownRight) {
+            cArmR = swing;
+            cArmL = -0.42 * cArc;
+          } else {
+            cArmL = -swing;
+            cArmR = 0.42 * cArc;
+          }
+          cTorso = dir * 0.12 * cArc;
+          cHop = 0.13 * cArc;
+          cRim = 1.85 * cArc;
+          cToolRot = dir * swing * 0.36;
+          cToolScale = 1 + 0.16 * cArc;
+        } else if (kind === 'float_chant') {
+          this.TORSO_G.rotation.y = 0;
+          const lift = Math.sin(ck * Math.PI);
+          const gentleBob = Math.sin(ck * Math.PI * 3) * 0.03 * lift;
+          if (this.shownRight) {
+            cArmR = 0.76 * lift;
+            cArmL = -0.52 * lift;
+          } else {
+            cArmL = -0.76 * lift;
+            cArmR = 0.52 * lift;
+          }
+          cLegL = -0.14 * lift;
+          cLegR = -0.05 * lift;
+          cTorso = -dir * 0.06 * lift;
+          cHop = 0.28 * lift + gentleBob;
+          cRim = 2.25 * lift;
+          cToolRot = dir * 0.28 * lift;
+          cToolScale = 1 + 0.16 * lift;
+        } else if (kind === 'leap_slam') {
+          this.TORSO_G.rotation.y = 0;
+          if (ck < 0.56) {
+            const uk = ck / 0.56;
+            const arc = Math.sin(uk * Math.PI);
+            const wind = Math.sin(uk * Math.PI * 0.5);
+            if (this.shownRight) {
+              cArmR = -1.22 * wind;
+              cArmL = 0.55 * wind;
+            } else {
+              cArmL = 1.22 * wind;
+              cArmR = -0.55 * wind;
+            }
+            cHop = arc * 0.62;
+            cSx = 0.94;
+            cSy = 1.08;
+            cRim = 1.6 * wind;
+            cToolRot = -dir * 0.52 * wind;
+            cToolScale = 1 + 0.20 * wind;
+          } else {
+            const dk = 1 - (ck - 0.56) / 0.44;
+            if (this.shownRight) {
+              cArmR = 1.05 * dk;
+              cArmL = -0.45 * dk;
+            } else {
+              cArmL = -1.05 * dk;
+              cArmR = 0.45 * dk;
+            }
+            cTorso = dir * 0.24 * dk;
+            cSx = 1 + 0.20 * dk;
+            cSy = 1 - 0.18 * dk;
+            cRim = 2.35 * dk;
+            cToolRot = dir * 0.58 * dk;
+            cToolScale = 1 + 0.24 * dk;
+          }
         }
       }
     } else if (this.TORSO_G.rotation.y !== 0) {
@@ -1519,14 +1669,29 @@ export class ChibiRig {
     u.uCloth.value = 0.006 + (this.tailBody ? 0.022 : 0.01) * ww + Math.abs(f.turnLag) * 0.02 + castArc * 0.025;
     u.uRim.value = 0.6 + castArc * 1.8 + cRim;
     this.syncBones();
+    const idleWepSway = Math.sin(ph - 0.5) * 0.07 * ww + Math.sin(this.t * 2.5) * 0.035 * (1 - ww);
     if (this.heldTool?.mesh && this.heldTool.mesh.visible) {
-      const idleSway = Math.sin(ph - 0.5) * 0.07 * ww + Math.sin(this.t * 2.5) * 0.035 * (1 - ww);
-      this.heldTool.mesh.rotation.z = (this.heldTool.baseRotZ || 0) + cToolRot + idleSway;
+      this.heldTool.mesh.rotation.z = (this.heldTool.baseRotZ || 0) + cToolRot + idleWepSway;
       this.heldTool.mesh.scale.set(
         (this.heldTool.baseScaleX || 1) * cToolScale,
         (this.heldTool.baseScaleY || 1) * cToolScale,
         1
       );
+    } else if (this.accMeshes.length) {
+      const wepBoost = this.combatAnim
+        ? 1 + ((this.combatAnim.weaponScaleBoost || 1) - 1) * Math.sin((this.combatAnim.t / Math.max(0.01, this.combatAnim.dur)) * Math.PI)
+        : 1;
+      const effWepScale = cToolScale * wepBoost;
+      for (let i = 0; i < this.accMeshes.length; i++) {
+        const a = this.accMeshes[i];
+        if (!a.def?.singleHand || !a.mesh.visible) continue;
+        a.mesh.rotation.z = (a.baseRotZ || 0) + cToolRot + idleWepSway * 0.75;
+        a.mesh.scale.set(
+          (a.baseScaleX || a.mesh.scale.x) * effWepScale,
+          (a.baseScaleY || a.mesh.scale.y) * effWepScale,
+          1
+        );
+      }
     }
     if (this.tail) this.tail.pivot.rotation.z = (Math.sin(this.t * 2.1) * 0.10 + Math.sin(ph) * 0.16 * ww) * (this.shownRight ? 1 : -1) * (this.shownView === 'back' ? 0.6 : 1);
 

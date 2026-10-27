@@ -217,7 +217,7 @@ export function rollBox1Rarities({ count = 1, rates = BOX1.RATES, pity = 0, smPi
 
 const dicePool = (rarity) => DICE_IDS.filter((k) => DICE_SKINS[k].rarity === rarity);
 const poolOf = (rarity) => [
-  ...Object.keys(ACCESSORIES).filter((k) => !ACCESSORIES[k].starterCosmetic && ACCESSORIES[k].rarity === rarity),
+  ...Object.keys(ACCESSORIES).filter((k) => !ACCESSORIES[k].starterCosmetic && !ACCESSORIES[k].bossCraft && ACCESSORIES[k].rarity === rarity),
   ...Object.keys(OUTFITS).filter((k) => OUTFITS[k].rarity === rarity && k !== 'newbie_outfit' && !isSuperMythicDef(k, OUTFITS[k])),
   ...dicePool(rarity),
 ];
@@ -226,7 +226,7 @@ export const BOX1_POOL = { 1: poolOf(1), 2: poolOf(2), 3: poolOf(3) };
 // Box 1 sub-banner pills (Section 21.L.1). All four share Box 1's price / 🎟️ ticket and the 10x Epic+ guarantee.
 // Locked Step 3 decisions: each banner keeps its OWN 40-pull pity counter (`pityKey`) so pulling one banner never
 // eats another's pity; "2× rate-up" = double weight for the listed items inside their rarity tier.
-const accPool = (rarity) => Object.keys(ACCESSORIES).filter((k) => !ACCESSORIES[k].starterCosmetic && ACCESSORIES[k].rarity === rarity);
+const accPool = (rarity) => Object.keys(ACCESSORIES).filter((k) => !ACCESSORIES[k].starterCosmetic && !ACCESSORIES[k].bossCraft && ACCESSORIES[k].rarity === rarity);
 const petPool = () => [...PET_IDS];
 export const BOX1_BANNERS = {
   season: {

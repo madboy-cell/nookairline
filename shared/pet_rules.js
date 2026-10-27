@@ -128,9 +128,9 @@ export const STAT_LINES = Object.freeze({
   fortune: {
     id: 'fortune',
     kind: 'stat',
-    name: 'Fortune',
-    icon: '🪙',
-    desc: 'All Gold earned',
+    name: 'Vitality',
+    icon: '💖',
+    desc: 'Max HP, healing & gather yield',
     values: Object.freeze({ common: 0.04, rare: 0.07, epic: 0.11, mythic: 0.16 }),
   },
   swiftness: {

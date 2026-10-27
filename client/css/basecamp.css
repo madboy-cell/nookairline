@@ -1,0 +1,837 @@
+/* client/css/basecamp.css — Tinker's Workshop ⚒️ Weapon Forge, Keep vs Take Anvil Modal,
+   and shared Wardrobe / Forge ⚔️ Hands & Weapon class & grade badges.
+   Mobile-first (393×852 portrait safe, zero horizontal overflow). */
+
+/* ==========================================================================
+   0. Basecamp Sheet Scroll Containment & Mobile Touch Ergonomics
+   ========================================================================== */
+.bc-body,
+.bc-item-body {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bc-btn,
+.bc-tab,
+.bc-wf-tab,
+.bc-chip-item,
+.bc-x,
+.bc-wf-equip-mini,
+.bc-wf-filter-pill,
+.bc-wf-tier-cta,
+.bc-hud-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bc-x {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   1. Shared Weapon Class & Forge Grade Pills (Wardrobe, Forge & Basecamp)
+   ========================================================================== */
+.s2-weapon-class-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font: 800 10.5px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+  border: 1.5px solid #9d7d52;
+  background: #fdf6e6;
+  color: #3B2A20;
+  box-shadow: 0 1px 0 rgba(59, 42, 32, 0.15);
+}
+.s2-weapon-class-badge.is-compact {
+  padding: 1px 5px;
+  font-size: 9.5px;
+}
+.s2-weapon-class-badge.wc-melee {
+  background: linear-gradient(180deg, #fff1eb 0%, #fde0d3 100%);
+  border-color: #c95b3c;
+  color: #7c2410;
+}
+.s2-weapon-class-badge.wc-ranged {
+  background: linear-gradient(180deg, #eefbe9 0%, #d8f3cf 100%);
+  border-color: #4f9440;
+  color: #1f5316;
+}
+.s2-weapon-class-badge.wc-magic {
+  background: linear-gradient(180deg, #f3edff 0%, #e4d6ff 100%);
+  border-color: #7e56c2;
+  color: #41207a;
+}
+
+.s2-forge-grade-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font: 900 10.5px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  border: 1.5px solid #8a7356;
+  background: #f5ecda;
+  color: #3B2A20;
+}
+.s2-forge-grade-pill.is-compact {
+  padding: 1px 5px;
+  font-size: 9px;
+}
+.s2-forge-grade-pill.grade-b {
+  background: linear-gradient(180deg, #eaf3ff 0%, #d4e6ff 100%);
+  border-color: #4f82c4;
+  color: #194278;
+}
+.s2-forge-grade-pill.grade-a {
+  background: linear-gradient(180deg, #e7fbf2 0%, #c8f3df 100%);
+  border-color: #2f9469;
+  color: #115438;
+}
+.s2-forge-grade-pill.grade-s {
+  background: linear-gradient(180deg, #fff8db 0%, #ffe699 100%);
+  border-color: #d48c17;
+  color: #6b3d00;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
+}
+.s2-forge-grade-pill.grade-ss {
+  background: linear-gradient(135deg, #ffe9f5 0%, #ffd1ea 52%, #ffe9b8 100%);
+  border-color: #d63b84;
+  color: #6e103e;
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.55);
+}
+.s2-forge-grade-pill.grade-uncrafted {
+  background: #efe3cb;
+  border-color: #9e8259;
+  color: #5a4228;
+}
+
+/* Wardrobe Active Sky Frontier Combat Style Banner */
+.s2-active-combat-banner {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 2px solid #b99660;
+  background: linear-gradient(180deg, #fbf3e1 0%, #f1e2c3 100%);
+  color: #3B2A20;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 5px rgba(59, 42, 32, 0.12);
+}
+.s2-active-combat-banner.wc-melee { border-color: #cf6a4c; }
+.s2-active-combat-banner.wc-ranged { border-color: #5b9d4d; }
+.s2-active-combat-banner.wc-magic { border-color: #8862c9; }
+.s2-acb-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.s2-acb-title {
+  font: 800 11.5px/1.2 Georgia, "Times New Roman", serif;
+  color: #3B2A20;
+}
+.s2-acb-source {
+  font: 700 10px/1.2 system-ui, sans-serif;
+  color: #6E5339;
+}
+.s2-acb-sub {
+  margin-top: 4px;
+  font: 600 10.5px/1.32 system-ui, sans-serif;
+  color: #573e28;
+}
+
+/* Compact weapon badges & mini rolled stats on Closet / Forge tiles */
+.s2-tile-weapon-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+  max-width: 100%;
+}
+.s2-tile-mini-stats {
+  font: 800 9.5px/1.2 system-ui, sans-serif;
+  color: #4f3824;
+  text-align: center;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   2. Tinker's Workshop Sub-Tab Bar (🔥 Smelt & Craft | ⚒️ Weapon Forge)
+   ========================================================================== */
+.bc-wf-quick-btn {
+  background: linear-gradient(180deg, #5c3a28 0%, #3f2518 100%) !important;
+  color: #ffe9be !important;
+  border-color: #2b180e !important;
+}
+
+.bc-wf-subtabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 2px 0 9px;
+  padding: 4px;
+  background: #d8c39b;
+  border: 2px solid #9f8356;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.bc-wf-tab {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 6px;
+  border-radius: 9px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: #5a4229;
+  font: 800 11.5px/1.15 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bc-wf-tab.on {
+  background: linear-gradient(180deg, #fffaf0 0%, #f4e4c1 100%);
+  border-color: #3B2A20;
+  color: #2e1e14;
+  box-shadow: 0 2px 0 #3B2A20;
+}
+.bc-wf-tab-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font: 900 9.5px/1.2 system-ui, sans-serif;
+  flex-shrink: 0;
+}
+.bc-wf-tab-badge.ready {
+  background: #def5ce;
+  border: 1px solid #598f3b;
+  color: #234c11;
+}
+.bc-wf-tab-badge.urgent {
+  background: #ffe08a;
+  border: 1px solid #b86c09;
+  color: #5c2e00;
+  animation: bcWfPulse 1.15s ease-in-out infinite;
+}
+@keyframes bcWfPulse {
+  50% { transform: scale(1.06); }
+}
+
+/* ==========================================================================
+   3. Master Smith Pity Meter Card
+   ========================================================================== */
+.bc-wf-pity-card {
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #3c291e 0%, #2c1d15 100%);
+  color: #f8ecd5;
+  border: 2px solid #c9a45c;
+  border-radius: 13px;
+  padding: 8px 10px;
+  margin-bottom: 9px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 3px 8px rgba(0, 0, 0, 0.22);
+}
+.bc-wf-pity-card.primed {
+  border-color: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.bc-wf-pity-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+.bc-wf-pity-title {
+  font: 800 12px/1.2 Georgia, "Times New Roman", serif;
+  color: #fff5df;
+}
+.bc-wf-pity-title b {
+  color: #ffd56b;
+}
+.bc-wf-pity-tag {
+  font: 800 10px/1.2 system-ui, sans-serif;
+  color: #f3cfa4;
+}
+.bc-wf-pity-card.primed .bc-wf-pity-tag {
+  color: #fde047;
+}
+.bc-wf-pity-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(201, 164, 92, 0.45);
+  overflow: hidden;
+}
+.bc-wf-pity-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e09132 0%, #fbbf24 65%, #f472b6 100%);
+  transition: width 0.25s ease;
+}
+.bc-wf-pips {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 4px;
+}
+.bc-wf-pip {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 244, 220, 0.16);
+}
+.bc-wf-pip.on {
+  background: #fbbf24;
+}
+.bc-wf-pip.crown {
+  background: rgba(244, 114, 182, 0.35);
+}
+.bc-wf-pip.crown.on {
+  background: #f472b6;
+}
+.bc-wf-odds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 6px;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(201, 164, 92, 0.28);
+  font: 700 10px/1.2 system-ui, sans-serif;
+}
+.bc-wf-odds .odd-b { color: #9ec5ff; }
+.bc-wf-odds .odd-a { color: #86efac; }
+.bc-wf-odds .odd-s { color: #fcd34d; }
+.bc-wf-odds .odd-ss { color: #f9a8d4; }
+
+/* ==========================================================================
+   4. Keep Current vs Take New Roll Comparison Panel (393px 2-Col Safe!)
+   ========================================================================== */
+.bc-wf-choice-panel {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.98) 0%, rgba(245, 230, 200, 0.98) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2.5px solid #b46914;
+  border-radius: 14px;
+  padding: 9px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.34), 0 10px 24px rgba(36, 22, 12, 0.38);
+}
+.bc-wf-choice-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.bc-wf-choice-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #fffdf8;
+  border: 2px solid #c9a45c;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.bc-wf-choice-kicker {
+  font: 900 9.5px/1.1 system-ui, sans-serif;
+  letter-spacing: 0.5px;
+  color: #9a4d06;
+  text-transform: uppercase;
+}
+.bc-wf-choice-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font: 700 13px/1.2 Georgia, "Times New Roman", serif;
+  color: #2f1e14;
+}
+.bc-wf-dupe-banner {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #eaf7df;
+  border: 1.5px solid #6c9a4b;
+  color: #254d12;
+  font: 700 10.5px/1.25 system-ui, sans-serif;
+  margin-bottom: 6px;
+}
+.bc-wf-dupe-cnt {
+  color: #3f6a28;
+  font-weight: 800;
+}
+.bc-wf-pity-hit {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #fef08a 0%, #fbcfe8 100%);
+  border: 1.5px solid #d97706;
+  color: #6b213f;
+  font: 900 10.5px/1.25 system-ui, sans-serif;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.bc-wf-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.bc-wf-roll-card {
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 7px;
+  border-radius: 11px;
+  border: 2px solid #bda276;
+  background: #fffcf5;
+}
+.bc-wf-roll-card.is-candidate {
+  border-color: #4f9440;
+  background: #f8fff4;
+}
+.bc-wf-roll-card.is-candidate.is-s {
+  border-color: #d98a12;
+  background: linear-gradient(180deg, #fffdf2 0%, #fff3cc 100%);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.42);
+}
+.bc-wf-roll-card.is-candidate.is-ss {
+  border-color: #d63b84;
+  background: linear-gradient(180deg, #fff7fb 0%, #ffe6f3 60%, #fff4d2 100%);
+  box-shadow: 0 0 14px rgba(244, 114, 182, 0.52);
+}
+.bc-wf-roll-hdr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  font: 800 10.5px/1.2 system-ui, sans-serif;
+  color: #5b422a;
+  margin-bottom: 4px;
+}
+.bc-wf-grade-row {
+  margin-bottom: 5px;
+}
+.bc-wf-spark-tag {
+  padding: 1px 5px;
+  border-radius: 999px;
+  font: 900 9px/1.2 system-ui, sans-serif;
+}
+.bc-wf-spark-tag.up {
+  background: #dcfce7;
+  color: #166534;
+}
+.bc-wf-spark-tag.s {
+  background: #fef08a;
+  color: #854d0e;
+}
+.bc-wf-spark-tag.ss {
+  background: #fbcfe8;
+  color: #831843;
+}
+.bc-wf-stats-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  background: rgba(59, 42, 32, 0.05);
+  margin-bottom: 7px;
+}
+.bc-wf-stat-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font: 700 10.5px/1.25 system-ui, sans-serif;
+  color: #3B2A20;
+  min-width: 0;
+}
+.bc-wf-stat-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bc-wf-stat-line b {
+  font-weight: 900;
+  white-space: nowrap;
+}
+.bc-wf-stat-line.dim {
+  color: #7c6248;
+  font-style: italic;
+}
+.bc-wf-delta {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 900;
+}
+.bc-wf-delta.up { color: #1f7a2e; }
+.bc-wf-delta.down { color: #b4321e; }
+.bc-wf-decision-btn {
+  width: 100%;
+  padding: 6px 6px !important;
+  font-size: 11px !important;
+  text-align: center;
+}
+
+/* Newly Forged Weapon Celebration Card */
+.bc-wf-created-banner {
+  box-sizing: border-box;
+  padding: 9px;
+  border-radius: 13px;
+  border: 2px solid #598f3b;
+  background: linear-gradient(180deg, #f5fbe9 0%, #e6f4d2 100%);
+  margin-bottom: 9px;
+}
+.bc-wf-created-banner.grade-s {
+  border-color: #d48c17;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef0c7 100%);
+}
+.bc-wf-created-banner.grade-ss {
+  border-color: #d63b84;
+  background: linear-gradient(180deg, #fff5fa 0%, #fde2f0 100%);
+}
+.bc-wf-created-kicker {
+  font: 900 10px/1.15 system-ui, sans-serif;
+  color: #2c6617;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.bc-wf-created-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+.bc-wf-equipped-pill {
+  flex: 1;
+  font: 800 11px/1.2 system-ui, sans-serif;
+  color: #255b14;
+}
+
+/* ==========================================================================
+   5. Region Tier & Class Filter Strip + 12 Boss Weapon Recipe Cards
+   ========================================================================== */
+.bc-wf-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 1px 6px;
+  margin: 0 0 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
+.bc-wf-filter-strip::-webkit-scrollbar {
+  display: none;
+}
+.bc-wf-filter-pill {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1.5px solid #9f8356;
+  background: #f6ebd6;
+  color: #4f3824;
+  font: 800 11px/1.15 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 0 rgba(59, 42, 32, 0.16);
+}
+.bc-wf-filter-pill.on {
+  background: linear-gradient(180deg, #4a3527 0%, #3B2A20 100%);
+  border-color: #2b180e;
+  color: #ffe9be;
+  box-shadow: inset 0 -2px 0 #c9a45c, 0 2px 5px rgba(59, 42, 32, 0.25);
+}
+.bc-wf-filter-pill:active {
+  transform: translateY(1px);
+}
+.bc-wf-filter-sep {
+  flex: 0 0 1.5px;
+  width: 1.5px;
+  height: 18px;
+  background: rgba(110, 83, 57, 0.35);
+  border-radius: 2px;
+  margin: 0 1px;
+}
+
+.bc-wf-tier-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px 6px;
+  margin: 10px 0 5px;
+}
+.bc-wf-tier-title-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+.bc-wf-tier-title {
+  font: 700 13px/1.2 Georgia, "Times New Roman", serif;
+  color: #3B2A20;
+}
+.bc-wf-tier-badge {
+  font: 800 10px/1.2 system-ui, sans-serif;
+  color: #6E5339;
+  background: rgba(201, 164, 92, 0.22);
+  border: 1px solid #b99f74;
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.bc-wf-tier-cta {
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 9px;
+  border: 1.5px solid #3B2A20;
+  background: linear-gradient(180deg, #b8e49a 0%, #5fa73f 100%);
+  color: #133a05;
+  font: 900 10.5px/1.15 system-ui, sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 1.5px 0 #3B2A20;
+  box-sizing: border-box;
+}
+.bc-wf-tier-cta.is-locked {
+  background: #F4EAD6;
+  border-color: #8a6f4c;
+  color: #5b422a;
+  box-shadow: 0 1.5px 0 #8a6f4c;
+}
+.bc-wf-tier-cta:active {
+  transform: translateY(1px);
+}
+
+.bc-wf-tier-hint {
+  font: 600 10.5px/1.3 system-ui, sans-serif;
+  color: #6E5339;
+  margin: -1px 0 6px;
+}
+.bc-wf-tier-hint.locked {
+  color: #8f4922;
+}
+.bc-wf-recipe-card {
+  box-sizing: border-box;
+  background: #F4EAD6;
+  border: 2px solid #b99f74;
+  border-radius: 13px;
+  padding: 9px;
+  margin-bottom: 8px;
+}
+.bc-wf-recipe-card.rarity-2 {
+  border-color: #8d68b8;
+}
+.bc-wf-recipe-card.rarity-3 {
+  border-color: #c98a2c;
+  background: linear-gradient(180deg, #fbf3df 0%, #f3e5c6 100%);
+}
+.bc-wf-card-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.bc-wf-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: #fffaf0;
+  border: 2px solid #b99f74;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(59, 42, 32, 0.1);
+}
+.bc-wf-thumb.rarity-2 {
+  border-color: #8d68b8;
+  background: radial-gradient(circle, #ffffff 0%, #efe6ff 100%);
+}
+.bc-wf-thumb.rarity-3 {
+  border-color: #d48c17;
+  background: radial-gradient(circle, #ffffff 0%, #ffefc2 100%);
+}
+.bc-wf-thumb img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.bc-wf-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.bc-wf-name {
+  font: 700 13.5px/1.2 Georgia, "Times New Roman", serif;
+  color: #2f1e14;
+}
+.bc-wf-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+.bc-wf-rarity-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  font: 800 10px/1.2 system-ui, sans-serif;
+}
+.bc-wf-rarity-pill.r2 {
+  background: #ede2ff;
+  border: 1px solid #8d68b8;
+  color: #4b2878;
+}
+.bc-wf-rarity-pill.r3 {
+  background: #fff0c2;
+  border: 1px solid #c98a2c;
+  color: #6e3f00;
+}
+.bc-wf-owned-box {
+  margin-top: 7px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #fffaf0;
+  border: 1.5px solid #cdb88f;
+}
+.bc-wf-owned-box.grade-s {
+  border-color: #d48c17;
+  background: #fffcf0;
+}
+.bc-wf-owned-box.grade-ss {
+  border-color: #d63b84;
+  background: #fff7fb;
+}
+.bc-wf-owned-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.bc-wf-refine-pill {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #3B2A20;
+  color: #ffd875;
+  font: 900 10px/1.2 system-ui, sans-serif;
+}
+.bc-wf-dupe-pill {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #efe3cb;
+  border: 1px solid #b99f74;
+  color: #4f3822;
+  font: 800 10px/1.2 system-ui, sans-serif;
+}
+.bc-wf-equip-mini {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 8px;
+  border: 1.5px solid #3B2A20;
+  background: linear-gradient(180deg, #8cc657 0%, #5c9630 100%);
+  color: #fff;
+  font: 800 10.5px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.bc-wf-equipped-mini {
+  margin-left: auto;
+  font: 800 10px/1.2 system-ui, sans-serif;
+  color: #2b6818;
+}
+.bc-wf-inline-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 4px;
+}
+.bc-wf-inline-stat {
+  font: 700 11px/1.25 system-ui, sans-serif;
+  color: #3B2A20;
+}
+.bc-wf-inline-stat b {
+  color: #1f5c18;
+  font-weight: 900;
+}
+.bc-wf-unowned-preview {
+  margin-top: 6px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.72);
+  border: 1px dashed #b99f74;
+  font: 600 10.5px/1.3 system-ui, sans-serif;
+  color: #5b422a;
+}
+.bc-wf-cost-row {
+  margin-top: 7px !important;
+}
+.bc-wf-card-foot {
+  margin-top: 7px;
+}
+.bc-wf-forge-btn {
+  width: 100%;
+  padding: 7px 10px !important;
+  font-size: 12px !important;
+}
+.bc-wf-reroll-btn {
+  background: linear-gradient(180deg, #f7d98c 0%, #dfab42 100%) !important;
+  color: #3B2A20 !important;
+  border-color: #3B2A20 !important;
+}
+.bc-wf-reroll-hint {
+  margin-top: 4px;
+  font: 600 10px/1.25 system-ui, sans-serif;
+  color: #6a4e32;
+  text-align: center;
+}

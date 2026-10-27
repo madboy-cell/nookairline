@@ -1605,7 +1605,7 @@ export async function startServer({ port = Number(process.env.PORT) || 4000, dat
             });
             send(ws, snapshotFor(ws));
             tables.connect(ws.userId);
-            voiceService.onReconnect(ws.userId);
+            voiceService.onReconnect(ws.userId, { fromResume: true });
             break;
           }
           case 'instance_switch':

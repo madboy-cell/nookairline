@@ -275,6 +275,51 @@ test('Sky Frontier server WebSocket integration (shard routing, clamp, gate lock
       const hollowViaGate = await c2.waitFor((m) => m.type === 'instance_snapshot' && m.layout?.regionId === 'hollow');
       assert.equal(hollowViaGate.layout.regionId, 'hollow');
       assert.ok(hollowViaGate.self.z < 26.5, `Arrival in hollow should clear return gate ring (got z=${hollowViaGate.self.z})`);
+
+      // 9. Field Bounties, Daily Stamp Chest & Quick Heal Potion over WS
+      c2.send({ type: 'instance_switch', to: 'frontier', force: true, spawn: { x: 0, z: 4.5 } });
+      await c2.waitFor((m) => m.type === 'instance_snapshot' && m.layout?.regionId === 'meadow');
+
+      c2.send({ type: 'sf_state', reqId: 901 });
+      const stRes = await c2.waitFor((m) => m.type === 'action_result' && m.reqId === 901);
+      assert.equal(stRes.ok, true);
+      assert.equal(stRes.bounties?.cards?.length, 3);
+      assert.equal(stRes.bounties?.round, 1);
+
+      // Advance all 3 bounty cards and claim them to verify gold credit, stamps, and Round 2 auto-rollover
+      const goldBefore = srv.db.getProfile('leo').gold || 0;
+      const diamondsBefore = srv.db.getProfile('leo').diamonds || 0;
+      for (const c of srv.db.getProfile('leo').frontier.bounties.cards) {
+        c.have = c.goal;
+      }
+      for (let slot = 0; slot < 3; slot++) {
+        c2.send({ type: 'sf_state', op: 'bounty_claim', slot, reqId: 910 + slot });
+        const cl = await c2.waitFor((m) => m.type === 'action_result' && m.reqId === 910 + slot);
+        assert.equal(cl.ok, true);
+        assert.equal(cl.stamps, slot + 1);
+        if (slot === 2) {
+          assert.equal(cl.roundAdvanced, true);
+          assert.equal(cl.bonusReady, true);
+          assert.equal(cl.bounties.round, 2);
+        }
+      }
+      assert.ok(srv.db.getProfile('leo').gold > goldBefore, 'Claiming Field Bounties must credit p.gold');
+
+      // Claim Daily 3/3 Goddess Stamp Chest
+      c2.send({ type: 'sf_state', op: 'bounty_bonus', reqId: 920 });
+      const bonusRes = await c2.waitFor((m) => m.type === 'action_result' && m.reqId === 920);
+      assert.equal(bonusRes.ok, true);
+      assert.equal(bonusRes.goldGain, 400);
+      assert.equal(bonusRes.diamondGain, 15);
+      assert.ok(srv.db.getProfile('leo').diamonds >= diamondsBefore + 15);
+      assert.ok((srv.db.getProfile('leo').frontier.pantry.items.repair_kit || 0) >= 1);
+
+      // Give leo a potion_small, damage leo via nearby mob or shard state, and test Quick Heal + Sanctuary fast-heal
+      srv.db.getProfile('leo').frontier.pantry.items.potion_small = 2;
+      c2.send({ type: 'sf_eat', foodId: 'potion_small', reqId: 930 });
+      const fullHpHeal = await c2.waitFor((m) => m.type === 'action_result' && m.reqId === 930);
+      assert.equal(fullHpHeal.ok, false);
+      assert.equal(fullHpHeal.error, 'hp_full');
     });
   } finally {
     for (const ws of openSockets) {

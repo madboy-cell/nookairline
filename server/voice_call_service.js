@@ -514,9 +514,19 @@ export function createVoiceCallService({
     }
   }
 
-  function onReconnect(userId) {
+  /**
+   * @param {string} userId
+   * @param {object} [opts]
+   * @param {boolean} [opts.fromResume] true when triggered by `auth_resume` on a socket that never closed.
+   *   In that case a healthy connected call (no grace pending) is left untouched, so a tab switch or
+   *   notification glance never tears down and rebuilds a working RTCPeerConnection on both peers.
+   */
+  function onReconnect(userId, { fromResume = false } = {}) {
     const uid = String(userId);
     let session = activeCallOf(uid);
+    if (fromResume && session && session.state === 'connected' && !session.graceUntil) {
+      return;
+    }
 
     // If the session just expired via grace_expired within 90s and both peers are online, restore it!
     if (!session) {
@@ -551,6 +561,7 @@ export function createVoiceCallService({
       const otherId = (uid === session.callerId) ? session.calleeId : session.callerId;
       if (typeof isOnline === 'function' && isOnline(otherId)) {
         session.graceUntil = null;
+        session.lastHealAt = now();
         const ice = getIceConfig();
         send(session.callerId, {
           type: 'call_connected',
