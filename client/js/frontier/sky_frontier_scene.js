@@ -2484,7 +2484,67 @@ body:has(#sf-skill-modal:not([hidden])) .bc-sf-pouch {
   pointer-events: none;
 }
 .sf-mob-tag-row:empty { display: none; }
-.sf-mob-tag-row .sf-tag-chip { padding: 1px; background: rgba(36, 24, 18, 0.85); }
+.sf-mob-tag-row .sf-tag-chip {
+  padding: 1px 6px 1px 3px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #F8FAFC;
+  font-size: 9px;
+  font-weight: 900;
+  border-width: 1.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.sf-mob-plate.is-frozen {
+  border-color: #67E8F9;
+  box-shadow: 0 0 12px rgba(103, 232, 249, 0.55);
+}
+.sf-boss-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.sf-boss-tag-row:empty { display: none; }
+.sf-sk-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #312E81;
+  background: linear-gradient(180deg, #E0E7FF, #C7D2FE);
+  border: 1px solid #818CF8;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.sf-sk-scaling-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.sf-sk-scale-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9.5px;
+  font-weight: 900;
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  color: #78350F;
+  border-radius: 7px;
+  padding: 1px 6px;
+}
+.sf-sk-scale-pill b { color: #B45309; }
+.sf-sk-puzzle-hint {
+  font-size: 9.8px;
+  font-weight: 800;
+  color: #1E3A8A;
+  background: #EFF6FF;
+  border: 1px dashed #93C5FD;
+  border-radius: 8px;
+  padding: 3px 7px;
+  line-height: 1.28;
+}
 .sf-mob-guard-track {
   position: absolute;
   top: 100%;
@@ -2784,6 +2844,8 @@ export class SkyFrontierScene {
 
     // Combat state
     this.activeMonsters = new Map(); // id -> monsterData
+    this.monsters = this.activeMonsters;
+    this._statusCalloutDedup = new Map();
     this.monsterPool = new Map();    // type -> array of pooled THREE.Group
     this.targetMonster = null;
     this.isAttacking = false;
@@ -3162,6 +3224,7 @@ export class SkyFrontierScene {
               <span class="sf-boss-guard-lbl" id="sf-boss-guard-lbl">🛡️ Guard</span>
               <div class="sf-boss-guard-track"><div class="sf-boss-guard-fill" id="sf-boss-guard-fill"></div></div>
             </div>
+            <div class="sf-boss-tag-row" id="sf-boss-tag-row"></div>
           </div>
         </div>
 
@@ -3309,6 +3372,7 @@ export class SkyFrontierScene {
     this.bossGuardEl = hud.querySelector('#sf-boss-guard');
     this.bossGuardLblEl = hud.querySelector('#sf-boss-guard-lbl');
     this.bossGuardFillEl = hud.querySelector('#sf-boss-guard-fill');
+    this.bossTagRowEl = hud.querySelector('#sf-boss-tag-row');
     this.targetPillsEl = hud.querySelector('#sf-target-pills');
     this.autoToggleEl = hud.querySelector('#sf-auto-toggle');
     this.rarityBoostEl = hud.querySelector('#sf-rarity-boost');
@@ -5772,6 +5836,117 @@ export class SkyFrontierScene {
     }
   }
 
+  _esc(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  _spawnDamageNumber(wx, wz, amount = 0, isCrit = false, color = null, customText = null) {
+    const label = customText != null
+      ? String(customText)
+      : isCrit
+      ? `💥 ${amount}!`
+      : `-${amount}`;
+    const el = this.showFloatingText(label, wx, wz, isCrit ? 'sf-float-perfect' : 'sf-float-hit');
+    if (el && color) {
+      el.style.color = color;
+      el.style.borderColor = color;
+    }
+    return el;
+  }
+
+  _syncBossTagRow(mask = 0) {
+    if (!this.bossTagRowEl) return;
+    if (mask === this._lastBossTagMask) return;
+    this._lastBossTagMask = mask;
+    this.bossTagRowEl.innerHTML = mask
+      ? decodeTagMask(mask).map((t) => this._tagChipHtml(t, { size: 12, withLabel: true })).join('')
+      : '';
+  }
+
+  _applyMonsterHitStates(hitStates, frozenIds = null) {
+    const frozenSet = Array.isArray(frozenIds) && frozenIds.length ? new Set(frozenIds) : null;
+    const rows = Array.isArray(hitStates) ? hitStates.slice() : [];
+    if (frozenSet) {
+      const seen = new Set(rows.map((r) => (Array.isArray(r) ? r[0] : null)));
+      for (const fid of frozenSet) {
+        if (!seen.has(fid)) {
+          const fMon = this.activeMonsters.get(fid);
+          rows.push([fid, ((fMon?.tagMask || 0) | 16 | 8), fMon?.poise ?? null]);
+        }
+      }
+    }
+    if (!rows.length) return;
+    const now = performance.now();
+    if (!this._statusCalloutDedup) this._statusCalloutDedup = new Map();
+
+    for (const row of rows) {
+      if (!Array.isArray(row)) continue;
+      const [id, rawMask, rawPoise] = row;
+      const mon = this.activeMonsters.get(id);
+      if (!mon) continue;
+      const prevMask = mon.tagMask || 0;
+      const nextMask = (Number(rawMask) || 0) | (frozenSet?.has(id) ? 16 : 0);
+
+      if (rawPoise !== undefined) {
+        const nextPoise = rawPoise !== null && Number.isFinite(Number(rawPoise)) ? Number(rawPoise) : null;
+        if (mon.poise !== nextPoise) {
+          mon.poise = nextPoise;
+          this._syncMonsterGuardBar(mon);
+        }
+      }
+
+      if (prevMask !== nextMask) {
+        mon.tagMask = nextMask;
+        mon.tags = decodeTagMask(nextMask);
+        this._syncMonsterTagSprite(mon);
+        if (mon.isBoss && this.activeBoss) {
+          this.activeBoss.tagMask = nextMask;
+          this._syncBossTagRow(nextMask);
+        }
+
+        const added = nextMask & ~prevMask;
+        const canPop = (bit) => {
+          const key = `${id}:${bit}`;
+          const last = this._statusCalloutDedup.get(key) || 0;
+          if (now - last < 650) return false;
+          this._statusCalloutDedup.set(key, now);
+          return true;
+        };
+
+        if ((added & 16) && canPop(16)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, true, '#67E8F9', '🧊 FROZEN!');
+          this.skillVfx?.spawnEffect?.({
+            vfxId: 'reaction_deep_freeze',
+            level: 1,
+            x: mon.x,
+            z: mon.z,
+            targetX: mon.x,
+            targetZ: mon.z,
+            facing: { x: 0, z: 1 },
+          });
+        } else if ((added & 256) && canPop(256)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, true, '#FDE047', '😵 STUNNED!');
+        } else if ((added & 64) && canPop(64)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#F472B6', '🌠 MARKED +25%');
+        } else if ((added & 128) && canPop(128)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#C084FC', '🌀 GATHERED');
+        } else if ((added & 8) && !(nextMask & 16) && canPop(8)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#7DD3FC', '❄️ CHILLED');
+        } else if ((added & 1) && canPop(1)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#38BDF8', '💧 SOAKED');
+        } else if ((added & 2) && canPop(2)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#FB923C', '🔥 BURNING');
+        } else if ((added & 4) && canPop(4)) {
+          this._spawnDamageNumber(mon.x, mon.z, 0, false, '#FACC15', '⚡ SHOCKED');
+        }
+      }
+    }
+  }
+
   _applyMonsterHits(hits, { facing = null, isSkill = false, showFloats = true } = {}) {
     if (!Array.isArray(hits) || hits.length === 0) return;
     const pNow = performance.now();
@@ -5914,6 +6089,7 @@ export class SkyFrontierScene {
         if (Array.isArray(res.hits) && res.hits.length > 0) {
           mon._zeroHitStreak = 0;
           this._applyMonsterHits(res.hits, { facing, isSkill: false, showFloats: firstArrival });
+          this._applyMonsterHitStates(res.hitStates, res.frozenIds);
         } else {
           // Self-heal if server returned 0 hits (e.g. server range/position mismatch or stale mob):
           // immediately step closer to the monster and reconcile shard state if repeated!
@@ -6140,14 +6316,8 @@ export class SkyFrontierScene {
       if (mon) {
         const prevHp = mon.hp;
         const prevPoise = mon.poise;
-        if (mon.tagMask !== wireMask) {
-          mon.tagMask = wireMask;
-          mon.tags = decodeTagMask(wireMask);
-          this._syncMonsterTagSprite(mon);
-        }
-        if (mon.poise !== wirePoise) {
-          mon.poise = wirePoise;
-          this._syncMonsterGuardBar(mon);
+        if (mon.tagMask !== wireMask || mon.poise !== wirePoise) {
+          this._applyMonsterHitStates([[id, wireMask, wirePoise]]);
         }
         if (Math.hypot(x - mon.x, z - mon.z) > 5.0) {
           mon.x = x;
@@ -6284,18 +6454,19 @@ export class SkyFrontierScene {
     ids.forEach((id, i) => {
       const def = STATUS_TAGS[id];
       const cx = i * cell + cell / 2;
+      const borderCol = def?.color || '#67E8F9';
       ctx.beginPath();
-      ctx.arc(cx, cell / 2, cell / 2 - 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(20, 14, 28, 0.78)';
+      ctx.arc(cx, cell / 2, cell / 2 - 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
       ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = def?.color || '#FFFFFF';
+      ctx.lineWidth = 4.5;
+      ctx.strokeStyle = borderCol;
       ctx.stroke();
       const img = imgs[id];
       if (img && img.complete && img.naturalWidth > 0 && !img._failed) {
         ctx.drawImage(img, cx - 22, cell / 2 - 22, 44, 44);
       } else {
-        ctx.font = '34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+        ctx.font = 'bold 34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
         ctx.fillStyle = '#FFFFFF';
         ctx.fillText(def?.icon || '•', cx, cell / 2 + 2);
       }
@@ -6557,6 +6728,9 @@ export class SkyFrontierScene {
       } else {
         this._applyMonsterHits(m.hits, { facing: m.facing, isSkill: false, showFloats: true });
       }
+      this._applyMonsterHitStates(m.hitStates, m.frozenIds);
+    } else if (m.hitStates || m.frozenIds) {
+      this._applyMonsterHitStates(m.hitStates, m.frozenIds);
     }
     if (Array.isArray(m.heals)) {
       for (const [uid, amt] of m.heals) {
@@ -6885,6 +7059,9 @@ export class SkyFrontierScene {
         } else {
           this._applyMonsterHits(m.hits, { facing: m.facing, isSkill: false, showFloats: true });
         }
+        this._applyMonsterHitStates(m.hitStates, m.frozenIds);
+      } else if (m.hitStates || m.frozenIds) {
+        this._applyMonsterHitStates(m.hitStates, m.frozenIds);
       }
 
       const heals = m.partyHeals || m.heals;
@@ -6926,6 +7103,9 @@ export class SkyFrontierScene {
             }
           }
         }
+      }
+      if (m.hitStates || m.frozenIds) {
+        this._applyMonsterHitStates(m.hitStates, m.frozenIds);
       }
       if (Array.isArray(m.heals)) {
         for (const [uid, amt] of m.heals) {
@@ -7076,6 +7256,9 @@ export class SkyFrontierScene {
         } else {
           this._applyMonsterHits(m.hits, { facing, isSkill: true, showFloats: true });
         }
+        this._applyMonsterHitStates(m.hitStates, m.frozenIds);
+      } else if (m.hitStates || m.frozenIds) {
+        this._applyMonsterHitStates(m.hitStates, m.frozenIds);
       }
 
       if (Number(m.shieldHp) > 0) {
@@ -7258,6 +7441,16 @@ export class SkyFrontierScene {
       if (this.bossFillEl) this.bossFillEl.style.width = `${pct}%`;
       if (this.bossTextEl) this.bossTextEl.textContent = `${cur} / ${max}`;
       this._syncBossGuardBar(m);
+      let bossMask = Number(m.tagMask) || 0;
+      if (!bossMask) {
+        for (const bm of this.activeMonsters.values()) {
+          if (bm && bm.isBoss) {
+            bossMask = bm.tagMask || 0;
+            break;
+          }
+        }
+      }
+      this._syncBossTagRow(bossMask);
 
       if (cur > 0 && nextStage > prevStage) {
         this._lastBossStage = nextStage;
@@ -8243,7 +8436,38 @@ export class SkyFrontierScene {
         tiltZ += (mon.hitDir || 1) * Math.sin(p * Math.PI) * 0.18;
       }
 
+      const mask = mon.tagMask || 0;
+      const isFrozen = (mask & 16) !== 0;
+      const isStunned = (mask & 256) !== 0;
+      const isChilled = (mask & 8) !== 0;
+      const isBurning = (mask & 2) !== 0;
+      const isShocked = (mask & 4) !== 0;
+      const isSoaked = (mask & 1) !== 0;
+      const isMarked = (mask & 64) !== 0;
+      const isBroken = mon.poise !== null && mon.poise !== undefined && mon.poise < 0;
+
+      if (isFrozen) {
+        sx = baseScale;
+        sy = baseScale;
+        tiltZ = 0;
+        mon.group.position.y = mon.baseY || 0;
+      } else if (isStunned) {
+        tiltZ = Math.sin(this.elapsed * 14.0 + mon.bobPhase) * 0.14;
+        sx *= 0.96;
+        sy *= 1.04;
+      }
+
       mon.group.scale.set(sx, sy, baseScale);
+
+      const ud = mon.group.userData;
+      if (ud?.freezeShell) {
+        ud.freezeShell.visible = isFrozen && mon.hp > 0;
+        if (ud.freezeShell.visible) {
+          ud.freezeShell.rotation.y = this.elapsed * 0.8;
+          const pulse = 1 + Math.sin(this.elapsed * 4.5) * 0.035;
+          ud.freezeShell.scale.set(pulse, pulse, pulse);
+        }
+      }
 
       if (mon.isElite && !mon.isBoss && mon.hp > 0) {
         const eRing = mon.group.userData?.eliteRing;
@@ -8271,7 +8495,7 @@ export class SkyFrontierScene {
       const dx = mon.targetX - mon.x;
       const spriteMesh = mon.group.userData?.spriteMesh;
       if (spriteMesh) {
-        if (Math.abs(dx) > 0.008) {
+        if (!isFrozen && Math.abs(dx) > 0.008) {
           const absX = Math.abs(spriteMesh.scale.x);
           spriteMesh.scale.x = dx > 0 ? -absX : absX;
         }
@@ -8279,7 +8503,25 @@ export class SkyFrontierScene {
         spriteMesh.rotation.z = tiltZ;
         if (mon.hitFlashTimer > 0) {
           mon.hitFlashTimer -= dt;
-          spriteMesh.material.color.setHex(mon.hitFlashTimer > 0 ? 0xFFE082 : 0xFFFFFF);
+          spriteMesh.material.color.setHex(0xFFE082);
+        } else if (isFrozen) {
+          spriteMesh.material.color.setHex(0x67E8F9);
+        } else if (isStunned) {
+          spriteMesh.material.color.setHex(0xFDE68A);
+        } else if (isBroken) {
+          spriteMesh.material.color.setHex(0xFCA5A5);
+        } else if (isBurning) {
+          spriteMesh.material.color.setHex(0xFDBA74);
+        } else if (isShocked) {
+          spriteMesh.material.color.setHex(0xFEF08A);
+        } else if (isChilled) {
+          spriteMesh.material.color.setHex(0x93C5FD);
+        } else if (isSoaked) {
+          spriteMesh.material.color.setHex(0xA5F3FC);
+        } else if (isMarked) {
+          spriteMesh.material.color.setHex(0xF5D0FE);
+        } else {
+          spriteMesh.material.color.setHex(0xFFFFFF);
         }
       }
 
@@ -8288,9 +8530,11 @@ export class SkyFrontierScene {
         const hasGuard = mon.poise !== null && mon.poise !== undefined && !mon.isBoss;
         const tagSpr = mon.group.userData?.tagSprite;
         if (tagSpr) {
-          tagSpr.visible = !isTargetedMob && (mon.tagMask || 0) > 0;
+          tagSpr.visible = (mon.tagMask || 0) > 0;
+          const baseH = ud?.baseH || 1.1;
+          tagSpr.position.y = isTargetedMob ? baseH + 0.56 : baseH + 0.42;
           // Readability first (no depth test), but soften the x-ray look when a big herd shares the screen
-          const tagOp = this.activeMonsters.size > 8 ? 0.62 : 1;
+          const tagOp = this.activeMonsters.size > 8 ? 0.72 : 1;
           if (tagSpr.material.opacity !== tagOp) tagSpr.material.opacity = tagOp;
         }
         if (!isTargetedMob && mon.hp > 0 && (mon.hp < mon.maxHp || hasGuard)) {
@@ -9265,9 +9509,10 @@ export class SkyFrontierScene {
           this._lastMobComboId = liveTm.id;
           if (this.mobTagRowEl) {
             this.mobTagRowEl.innerHTML = tmMask
-              ? (liveTm.tags || decodeTagMask(tmMask)).map((t) => this._tagChipHtml(t, { size: 12, withLabel: false })).join('')
+              ? (liveTm.tags || decodeTagMask(tmMask)).map((t) => this._tagChipHtml(t, { size: 12, withLabel: true })).join('')
               : '';
           }
+          this.mobOverheadEl.classList.toggle('is-frozen', (tmMask & 16) !== 0);
           if (this.mobGuardTrackEl) {
             const hasGuard = tmPoise !== null;
             this.mobGuardTrackEl.hidden = !hasGuard;
@@ -9286,7 +9531,7 @@ export class SkyFrontierScene {
         this.mobOverheadEl.style.transform = `translate3d(${mx.toFixed(1)}px, ${my.toFixed(1)}px, 0) translate(-50%, -100%)`;
       } else if (!this.mobOverheadEl.hidden) {
         this.mobOverheadEl.hidden = true;
-        this.mobOverheadEl.classList.remove('is-alpha');
+        this.mobOverheadEl.classList.remove('is-alpha', 'is-frozen');
         this._lastMobOverheadKey = '';
         this._lastMobTargetKey = '';
         this._lastMobComboId = null;
@@ -9466,6 +9711,7 @@ export class SkyFrontierScene {
     }
     if (group.userData?.tagSprite) group.userData.tagSprite.visible = false;
     if (group.userData?.guardBar) group.userData.guardBar.visible = false;
+    if (group.userData?.freezeShell) group.userData.freezeShell.visible = false;
     let pool = this.monsterPool.get(type);
     if (!pool) {
       pool = [];
@@ -9587,11 +9833,43 @@ export class SkyFrontierScene {
     hpBar.visible = false;
     group.add(hpBar);
 
+    // 3D Ice Encasement Shell (hidden by default; shown when monster is Frozen — bit 16)
+    const freezeShell = new THREE.Group();
+    const shellGeo = new THREE.OctahedronGeometry(0.62 * w, 1);
+    const shellMat = new THREE.MeshBasicMaterial({
+      color: 0x67E8F9,
+      transparent: true,
+      opacity: 0.36,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+    shellMesh.position.set(0, h * 0.48, 0.04);
+    shellMesh.scale.set(0.86, 1.08, 0.55);
+    freezeShell.add(shellMesh);
+
+    const frostRingGeo = new THREE.RingGeometry(0.42 * w, 0.58 * w, 6);
+    frostRingGeo.rotateX(-Math.PI / 2);
+    const frostRingMat = new THREE.MeshBasicMaterial({
+      color: 0xBAE6FD,
+      transparent: true,
+      opacity: 0.72,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const frostRing = new THREE.Mesh(frostRingGeo, frostRingMat);
+    frostRing.position.set(0, 0.045, 0);
+    freezeShell.add(frostRing);
+    freezeShell.visible = false;
+    group.add(freezeShell);
+
     group.userData = {
       type,
       spriteKey: cfg.key,
       isBoss,
       baseY,
+      baseW: w,
+      baseH: h,
       shadowR: cfg.shadowR,
       hpBar,
       hpFill,
@@ -9601,6 +9879,7 @@ export class SkyFrontierScene {
       spriteMesh,
       shadow,
       eliteRing,
+      freezeShell,
     };
 
     return group;
@@ -11465,6 +11744,9 @@ export class SkyFrontierScene {
         if (Array.isArray(res.hits) && res.hits.length > 0) {
           this._applyMonsterHits(res.hits, { facing, isSkill: true, showFloats: firstArrival });
         }
+        if (res.hitStates || res.frozenIds) {
+          this._applyMonsterHitStates(res.hitStates, res.frozenIds);
+        }
         return true;
       }
       // Rejection backoff: never let auto spam the same rejected request (or toasts)
@@ -12230,7 +12512,11 @@ export class SkyFrontierScene {
       const td = SKILL_TRAITS[t];
       return td ? `<span class="sf-trait-chip" title="${td.label}">${td.icon} ${td.label}</span>` : '';
     }).join('');
-    const applies = (c.applies || []).map((t) => this._tagChipHtml(t)).join('');
+    const skDef = MONSTER_SKILLS[skId];
+    const applyIds = [...(c.applies || [])];
+    if (skDef?.freezeMs > 0 && !applyIds.includes('frozen')) applyIds.unshift('frozen');
+    if (skDef?.stunMs > 0 && !applyIds.includes('stunned')) applyIds.push('stunned');
+    const applies = applyIds.map((t) => this._tagChipHtml(t)).join('');
     const extra = c.extendTagsPct ? `<span class="sf-trait-chip" title="Extends statuses">⏳ +${Math.round(c.extendTagsPct * 100)}% statuses</span>` : '';
     const resoChip = sfIsResonancePrimer(skId)
       ? `<span class="sf-combo-chip payoff" title="${String(RESONANCE?.desc || 'Primes Resonance: your next damaging skill hits harder.').replace(/"/g, '&quot;')}">🎶 primes next skill</span>`
@@ -12637,6 +12923,18 @@ export class SkyFrontierScene {
         if (nums.damage > 0) powerTag += `💥 ${nums.damage} DMG`;
         if (nums.healPerTick > 0) powerTag += `${powerTag ? ' · ' : ''}💚 +${nums.healPerTick}/s`;
         if (nums.shieldHp > 0) powerTag += `${powerTag ? ' · ' : ''}🛡️ +${nums.shieldHp}`;
+        if (nums.freezeMs > 0) powerTag += `${powerTag ? ' · ' : ''}❄️ Freeze: ${(nums.freezeMs / 1000).toFixed(1)}s`;
+        if (nums.stunMs > 0) powerTag += `${powerTag ? ' · ' : ''}😵 Stun: ${(nums.stunMs / 1000).toFixed(1)}s`;
+
+        const roleBadgeHtml = sk.teamRole
+          ? `<span class="sf-sk-role-badge">${this._esc(sk.teamRole)}</span>`
+          : '';
+        const scalingPills = Array.isArray(nums.scaling) && nums.scaling.length
+          ? `<div class="sf-sk-scaling-row">${nums.scaling.map((s) => `<span class="sf-sk-scale-pill" title="${this._esc(s.stat)} scaling">${s.icon} ${this._esc(s.label)} <b>${this._esc(s.text || s.value || '')}</b></span>`).join('')}</div>`
+          : '';
+        const puzzleHintHtml = sk.puzzleHint
+          ? `<div class="sf-sk-puzzle-hint">🧩 <b>Co-Op Puzzle:</b> ${this._esc(sk.puzzleHint)}</div>`
+          : '';
 
         return `
           <div class="sf-sk-card ${slotIdx >= 0 ? 'equipped' : ''} ${!isUnlocked ? 'locked' : ''} ${isFocused ? 'is-focused' : ''}" data-skill-card="${skId}">
@@ -12644,11 +12942,12 @@ export class SkyFrontierScene {
               <div style="display:flex;align-items:center;gap:6px;min-width:0;">
                 <span style="font-size:20px;">${sk.icon}</span>
                 <div style="min-width:0;">
-                  <div style="font-size:12px;font-weight:900;color:#2E1C10;">
-                    ${sk.name}
+                  <div style="font-size:12px;font-weight:900;color:#2E1C10;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                    <span>${sk.name}</span>
                     <span style="font-size:10px;font-weight:900;color:${isUnlocked ? '#7C3AED' : '#78716C'};">
                       ${isUnlocked ? (lv >= 5 ? '★ Lv.5 MAX' : `Lv.${lv}/5`) : '🔒 Locked'}
                     </span>
+                    ${roleBadgeHtml}
                   </div>
                   <div style="font-size:10px;font-weight:800;color:#6B4F35;display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:1px;">
                     <span>${dropHint}</span>
@@ -12661,7 +12960,9 @@ export class SkyFrontierScene {
             <div style="font-size:10.5px;font-weight:700;color:#4A3525;line-height:1.3;">
               ${sk.desc || sk.summary || ''}${powerTag ? ` <b style="color:#7C2D12;">(${powerTag})</b>` : ''}
             </div>
+            ${scalingPills}
             ${this._skillComboInfoHtml(skId)}
+            ${puzzleHintHtml}
             <div style="display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:2px;flex-wrap:wrap;">
               ${
                 isUnlocked

@@ -1837,6 +1837,11 @@ export function createSkyFrontierService({
             }
           }
           if (hits.length > 0 || heals.length > 0) {
+            const tickNow = z.nextTickAt;
+            const hitStates = hits.map(([id]) => {
+              const mon = sh.live.monsters.get(id);
+              return mon ? [mon.id, mon.hp > 0 ? tagMask(mon, tickNow) : 0, mon.hp > 0 ? poiseWire(mon, tickNow) : 0] : null;
+            }).filter(Boolean);
             broadcast(inst, {
               type: 'sf_fx',
               kind: 'zone_tick',
@@ -1846,6 +1851,7 @@ export function createSkyFrontierService({
               z: round2(z.z),
               radius: z.radius,
               hits,
+              hitStates,
               heals,
               reactions: reactionsOut,
             });
@@ -2525,9 +2531,11 @@ export function createSkyFrontierService({
             totalDealtBasic += dealt;
             if (weaponClass === 'melee' && comboStep === 3 && mon.hp > 0) {
               mon.stunUntil = Math.max(mon.stunUntil || 0, t + (cls.finisherStaggerMs || 420));
+              liveRegion(sh, regionId).dirty.add(mon.id);
             }
             if (weaponClass === 'magic' && comboStep === 3 && mon.hp > 0 && mon.tags) {
               for (const [k, until] of Object.entries(mon.tags)) if (until > t) mon.tags[k] = until + (HIT3_PRIMES.magic.extendMs || 1000);
+              liveRegion(sh, regionId).dirty.add(mon.id);
             }
             hitResults.push([id, dealt, crit, Math.max(0, Math.round(mon.hp)), mx, mz]);
           }
@@ -2559,6 +2567,10 @@ export function createSkyFrontierService({
         }
       }
 
+      const hitStates = hitResults.map(([id]) => {
+        const mon = sh.live.monsters.get(id);
+        return mon ? [mon.id, mon.hp > 0 ? tagMask(mon, t) : 0, mon.hp > 0 ? poiseWire(mon, t) : 0] : null;
+      }).filter(Boolean);
       const vfxId = `combo_${weaponClass}_${comboStep}`;
       broadcast(ws.instanceId, {
         type: 'sf_fx',
@@ -2572,6 +2584,7 @@ export function createSkyFrontierService({
         crit: anyCrit,
         facing,
         hits: hitResults,
+        hitStates,
         partyHeals,
         reactions: reactionsOut,
         readyAt: ps.attackReadyAt,
@@ -2583,6 +2596,7 @@ export function createSkyFrontierService({
         vfxId,
         crit: anyCrit,
         hits: hitResults,
+        hitStates,
         reactions: reactionsOut,
         heals: partyHeals,
         partyHeals,
@@ -2680,6 +2694,10 @@ export function createSkyFrontierService({
       }
     }
     const weaponClass = activeWeaponClass(p.equipped, p.glamour);
+    const hitStates = hits.map(([id]) => {
+      const mon = sh.live.monsters.get(id);
+      return mon ? [mon.id, mon.hp > 0 ? tagMask(mon, t) : 0, mon.hp > 0 ? poiseWire(mon, t) : 0] : null;
+    }).filter(Boolean);
     broadcast(ws.instanceId, { type: 'sf_hit', by: p.id, tool, facing, hits, heals });
     broadcast(ws.instanceId, {
       type: 'sf_fx',
@@ -2693,10 +2711,11 @@ export function createSkyFrontierService({
       crit: anyCrit,
       facing,
       hits,
+      hitStates,
       partyHeals: heals,
       readyAt: ps.attackReadyAt,
     });
-    return { ok: true, tool, weaponClass, comboStep: 1, hits, heals, cooldownMs: cd, readyAt: ps.attackReadyAt, serverNow: t };
+    return { ok: true, tool, weaponClass, comboStep: 1, hits, hitStates, heals, cooldownMs: cd, readyAt: ps.attackReadyAt, serverNow: t };
   }
 
   function resolveUltimateCharm(p, fr) {
@@ -2885,10 +2904,11 @@ export function createSkyFrontierService({
           dashTo(dest);
           effectX = dest.x; effectZ = dest.z;
           const halfW = ((MONSTER_SKILLS.sk_tusk_rush.lineWidth || 2.0) / 2 + 0.7) * echo.radiusMult;
+          const rushStunMs = (Number(stats?.swiftness) || 0) >= 135 ? (nums.stunMs || 850) : 850;
           for (const mon of monstersInRegion()) {
             if (distToSegment(mon.x, mon.z, startX, startZ, dest.x, dest.z) > halfW) continue;
             hitMon(mon, nums.damage);
-            stunMon(mon, 850);
+            stunMon(mon, rushStunMs);
           }
           break;
         }
@@ -2942,10 +2962,11 @@ export function createSkyFrontierService({
         case 'sk_earthshatter': {
           resolveGroundTarget(MONSTER_SKILLS.sk_earthshatter.castRange || 7.5, 2.2);
           const radius = 4.8;
+          const hiSwf = (Number(stats?.swiftness) || 0) >= 135;
           for (const mon of monstersInRegion()) {
             if (dist(effectX, effectZ, mon.x, mon.z) > radius) continue;
             hitMon(mon, nums.damage);
-            stunMon(mon, mon.kind === 'boss' ? 700 : 1500);
+            stunMon(mon, mon.kind === 'boss' ? (hiSwf ? (nums.bossStunMs || 700) : 700) : (hiSwf ? (nums.stunMs || 1500) : 1500));
           }
           break;
         }
@@ -2980,16 +3001,25 @@ export function createSkyFrontierService({
         }
         case 'sk_frost_nova': {
           const radius = RAD(4.5);
+          const R = liveRegion(sh, regionId);
+          const hiSwf = (Number(stats?.swiftness) || 0) >= 135;
           for (const mon of monstersInRegion()) {
             if (dist(startX, startZ, mon.x, mon.z) > radius) continue;
             const res = hitMon(mon, nums.damage);
-            if (mon.hp <= 0 || isTagImmune(mon.type, 'chilled')) continue;
+            if (mon.hp <= 0) continue;
             const deep = res.reactions.some((r) => r.freezeMult);
-            const freezeDur = Math.round((mon.kind === 'boss' ? 750 : 1600) * (deep ? 2 : 1) * (echo.tagDurMult || 1));
+            const baseFreeze = mon.kind === 'boss'
+              ? (hiSwf ? (nums.bossFreezeMs || 750) : 750)
+              : (hiSwf ? (nums.freezeMs || 1600) : 1600);
+            const freezeDur = Math.round(baseFreeze * (deep ? 2 : 1) * (echo.tagDurMult || 1));
             mon.frozenUntil = Math.max(mon.frozenUntil || 0, t + freezeDur);
             mon.slowUntil = Math.max(mon.slowUntil || 0, t + 4000);
             mon.slowPct = 0.50;
             mon.vuln = 0.15;
+            if (!mon.tags?.chilled || mon.tags.chilled <= t) {
+              applyTag(mon, 'chilled', t, null, echo.tagDurMult || 1);
+            }
+            R.dirty.add(mon.id);
           }
           break;
         }
@@ -3098,7 +3128,7 @@ export function createSkyFrontierService({
               conducted = true;
               maxBounces += REACTIONS.conduction.extraBounces;
             }
-            stunMon(cur, 550);
+            stunMon(cur, (Number(stats?.swiftness) || 0) >= 135 ? (nums.stunMs || 550) : 550);
             let nextMon = null, nextD = Infinity;
             for (const mon of monstersInRegion()) {
               if (visited.has(mon.id)) continue;
@@ -3139,11 +3169,12 @@ export function createSkyFrontierService({
         case 'sk_supernova_cleave': {
           const novaRange = RNG(MONSTER_SKILLS.sk_supernova_cleave.range || 8.5);
           const hitIds = hitsInArc({ origin: { x: startX, z: startZ }, facing, range: novaRange, arcDeg: 95, targets: monstersInRegion() });
+          const hiSwf = (Number(stats?.swiftness) || 0) >= 135;
           for (const id of hitIds) {
             const mon = sh.live.monsters.get(id);
             if (!mon || mon.hp <= 0) continue;
             hitMon(mon, nums.damage);
-            stunMon(mon, mon.kind === 'boss' ? 700 : 1400);
+            stunMon(mon, mon.kind === 'boss' ? (hiSwf ? (nums.bossStunMs || 700) : 700) : (hiSwf ? (nums.stunMs || 1400) : 1400));
           }
           effectX = startX + facing.x * 4.2;
           effectZ = startZ + facing.z * 4.2;
@@ -3155,6 +3186,20 @@ export function createSkyFrontierService({
     if (reactionsOut.length) noteReactions(p.id, reactionsOut, ws.instanceId);
     const resonancePrimed = isPrimeRole;
     if (isPrimeRole) ps.buffs.resonance = { pct: RESONANCE.dmgMult - 1, until: t + RESONANCE.windowMs };
+
+    const R = liveRegion(sh, regionId);
+    const hitStates = [];
+    const frozenSet = new Set();
+    for (const [monId] of hits) {
+      const mon = sh.live.monsters.get(monId);
+      if (!mon) continue;
+      if (mon.hp > 0) {
+        R.dirty.add(mon.id);
+        if (mon.frozenUntil > t) frozenSet.add(mon.id);
+      }
+      hitStates.push([mon.id, mon.hp > 0 ? tagMask(mon, t) : 0, mon.hp > 0 ? poiseWire(mon, t) : 0]);
+    }
+    const frozenIds = [...frozenSet];
 
     ps.x = s.x; ps.z = s.z;
     const skillCds = [...ps.skillCds];
@@ -3177,6 +3222,8 @@ export function createSkyFrontierService({
       cooldownMs: cdMs,
       skillCds,
       hits,
+      hitStates,
+      frozenIds,
       reactions: reactionsOut,
       echo: weaponClass,
       resonanceUsed,
@@ -3196,6 +3243,8 @@ export function createSkyFrontierService({
       skillCds,
       pos: { x: s.x, z: s.z },
       hits,
+      hitStates,
+      frozenIds,
       reactions: reactionsOut,
       echo: weaponClass,
       resonanceUsed,

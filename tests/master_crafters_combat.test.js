@@ -2118,3 +2118,89 @@ test('17. Mage (6.5m) & Ranger (7.8m) basic attack reach, buffed ranged/ground M
 
   env.service.stopAll();
 });
+
+// =================================================================================================
+// 18. Team Puzzle Metadata, Multi-Stat Scaling & 0ms Authoritative Status Sync (hitStates & frozenIds)
+// =================================================================================================
+test('18. All 20 skills define teamRole, puzzleHint, statScaling & computeSkillNumbers multi-stat pills; sk_frost_nova emits 0ms hitStates (frozen+chilled bits) and frozenIds', () => {
+  // 1) All 20 MONSTER_SKILLS metadata + computeSkillNumbers multi-stat scaling & starter duration preservation
+  const starterStats = { power: 30, fortune: 25, swiftness: 60, luck: 20 };
+  const endgameStats = { power: 120, fortune: 100, swiftness: 140, luck: 90 };
+
+  for (const id of MONSTER_SKILL_IDS) {
+    const sk = MONSTER_SKILLS[id];
+    assert.ok(typeof sk.desc === 'string' && sk.desc.length >= 40, `${id} must have rich desc`);
+    assert.ok(typeof sk.teamRole === 'string' && sk.teamRole.length >= 4, `${id} must have teamRole`);
+    assert.ok(typeof sk.puzzleHint === 'string' && sk.puzzleHint.length >= 20, `${id} must have puzzleHint`);
+    assert.ok(Array.isArray(sk.statScaling) && sk.statScaling.length >= 3, `${id} must have statScaling array`);
+
+    const nStart = computeSkillNumbers(id, 3, starterStats, 180);
+    const nHigh = computeSkillNumbers(id, 3, endgameStats, 250);
+    assert.ok(Array.isArray(nHigh.scaling) && nHigh.scaling.length >= 3, `${id} computeSkillNumbers must return >= 3 scaling pills`);
+    assert.ok(nHigh.cooldownMs < nStart.cooldownMs, `${id} cooldownMs scales down with Swiftness`);
+    assert.ok(nHigh.skillCritPct > nStart.skillCritPct, `${id} skillCritPct scales up with Luck`);
+  }
+
+  // Starter swiftness <= 80 preserves exact 1600ms / 750ms freezeMs & 1500ms / 550ms / 1400ms stunMs
+  const frostStart = computeSkillNumbers('sk_frost_nova', 3, { power: 40, fortune: 30, swiftness: 80, luck: 20 }, 180);
+  const frostFast = computeSkillNumbers('sk_frost_nova', 3, endgameStats, 250);
+  assert.equal(frostStart.freezeMs, 1600, 'Starter swiftness <= 80 keeps exact 1600ms freezeMs');
+  assert.equal(frostStart.bossFreezeMs, 750, 'Starter swiftness <= 80 keeps exact 750ms bossFreezeMs');
+  assert.ok(frostFast.freezeMs > 1600, `Swiftness > 80 extends freezeMs (${frostFast.freezeMs} > 1600)`);
+  assert.ok(frostFast.bossFreezeMs > 750, `Swiftness > 80 extends bossFreezeMs (${frostFast.bossFreezeMs} > 750)`);
+
+  const quakeStart = computeSkillNumbers('sk_earthshatter', 3, starterStats, 180);
+  const quakeFast = computeSkillNumbers('sk_earthshatter', 3, endgameStats, 250);
+  assert.equal(quakeStart.stunMs, 1500);
+  assert.ok(quakeFast.stunMs > 1500, 'Swiftness > 80 extends sk_earthshatter stunMs');
+
+  const chainFast = computeSkillNumbers('sk_chain_lightning', 3, endgameStats, 250);
+  assert.ok(chainFast.stunMs > 550, 'Swiftness > 80 extends sk_chain_lightning stunMs');
+
+  const novaFast = computeSkillNumbers('sk_supernova_cleave', 3, endgameStats, 250);
+  assert.ok(novaFast.stunMs > 1400 && novaFast.bossStunMs > 700, 'Swiftness > 80 extends sk_supernova_cleave stunMs');
+
+  const drainStart = computeSkillNumbers('sk_echo_drain', 3, starterStats, 180);
+  const drainHigh = computeSkillNumbers('sk_echo_drain', 3, endgameStats, 250);
+  assert.ok(drainHigh.leechPct > drainStart.leechPct, 'Vitality increases sk_echo_drain leechPct');
+
+  // 2) 0ms authoritative hitStates & frozenIds on sk_frost_nova (including against crystal_beetle!)
+  const env = createCombatEnv({ initialNow: 150_000_000, rng: () => 0.5 });
+  const instId = 'frontier:sf_sync18~hollow';
+  const ws = { instanceId: instId };
+  const hero = createStarterProfile('cryo_hero', '1234', 'bkk');
+  migrateRpg(hero);
+  hero.level = 20;
+  wardrobeEquip(hero, { slot: 'gloves', itemId: 'gloves_starter_sword' });
+  hero.frontier.skills.unlocked.sk_frost_nova = 3;
+  env.profiles.set(hero.id, hero);
+  env.instances.set(instId, new Set([hero.id]));
+  env.presence.set(hero.id, { instanceId: instId, x: 0, z: 0, t: env.getTime() });
+
+  const sh = env.service.loadShard('sf_sync18');
+  env.service.handle(ws, hero, { type: 'sf_state' });
+  sh.live.monsters.clear();
+
+  env.service.handle(ws, hero, { type: 'sf_pouch_set', skillAction: 'equip', slot: 0, skillId: 'sk_frost_nova' });
+  const mBat = spawnTestMob(sh, 'm_sync_bat', 'lantern_bat', 0, -2.0, { hp: 800, regionId: 'hollow' });
+  const mBeetle = spawnTestMob(sh, 'm_sync_beetle', 'crystal_beetle', 2.0, 0, { hp: 800, regionId: 'hollow' });
+  env.broadcasts.length = 0;
+
+  const rFrost = env.service.handle(ws, hero, { type: 'sf_attack', skillSlot: 0 });
+  assert.equal(rFrost.ok, true);
+  assert.equal(rFrost.hits.length, 2);
+  assert.ok(Array.isArray(rFrost.hitStates) && rFrost.hitStates.length === 2, 'castMonsterSkill returns hitStates for all hit monsters');
+  assert.ok(Array.isArray(rFrost.frozenIds) && rFrost.frozenIds.includes(mBat.id) && rFrost.frozenIds.includes(mBeetle.id), 'frozenIds contains all frozen monster IDs');
+
+  for (const state of rFrost.hitStates) {
+    assert.equal((state[1] & 16) === 16, true, `Monster ${state[0]} hitState has frozen bit (16) set immediately`);
+    assert.equal((state[1] & 8) === 8, true, `Monster ${state[0]} hitState has chilled bit (8) set immediately`);
+  }
+
+  const skillFx = env.broadcasts.find((b) => b.msg.type === 'sf_fx' && b.msg.kind === 'monster_skill' && b.msg.skillId === 'sk_frost_nova');
+  assert.ok(skillFx, 'sf_fx monster_skill broadcast emitted');
+  assert.deepEqual(skillFx.msg.hitStates, rFrost.hitStates, 'sf_fx broadcast carries identical 0ms hitStates');
+  assert.deepEqual(skillFx.msg.frozenIds, rFrost.frozenIds, 'sf_fx broadcast carries identical frozenIds');
+
+  env.service.stopAll();
+});

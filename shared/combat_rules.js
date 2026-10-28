@@ -1046,12 +1046,15 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 14000,
     scalingStat: 'fortune',
+    statScaling: Object.freeze(['fortune', 'swiftness', 'luck']),
+    teamRole: '🌿 Party Healer',
+    puzzleHint: 'Cast before your big nuke to prime 🎶 Resonance (+25% next Skill DMG & +50% status duration) while keeping frontline Co-Op tanks topped off!',
     aimType: 'self_aoe',
     radius: 4.4,
     durationMs: 5000,
     ticks: 5,
     healPctPerTick: Object.freeze([0.055, 0.064, 0.073, 0.082, 0.095]),
-    desc: 'Unfurls a 4.4m golden pollen sacred seal & fairy-mote sanctuary that heals you and nearby Co-Op allies every second for 5s (scales with 💖 Vitality).',
+    desc: 'Unfurls a 4.4m golden pollen sanctuary that heals you and nearby Co-Op allies every second for 5s (scales with 💖 Vitality) and primes 🎶 Resonance (+25% next Skill DMG)!',
   }),
   sk_jelly_shield: Object.freeze({
     id: 'sk_jelly_shield',
@@ -1063,13 +1066,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 12000,
     scalingStat: 'fortune',
+    statScaling: Object.freeze(['fortune', 'swiftness', 'luck']),
+    teamRole: '💧 Hydro Primer',
+    puzzleHint: 'Splashes 💧 Soaked across nearby packs — sets up a teammate’s ❄️ Frost Nova for 2× 🧊 Deep Freeze or ⚡ Chain Arc for 1.5× ⚡💧 Conduction stun!',
     aimType: 'self_aoe',
     radius: 4.2,
     durationMs: 6000,
     shieldMaxHpPct: Object.freeze([0.28, 0.33, 0.38, 0.43, 0.48]),
     slowPct: 0.40,
     slowMs: 3000,
-    desc: 'Splashes an emerald-aqua dewdrop ring & translucent 3D bubble canopy around nearby Co-Op allies, granting a 💖 Vitality shield and slowing monsters by 40%.',
+    desc: 'Wraps nearby Co-Op allies in a 6s 💖 Vitality bubble shield while splashing a 4.2m dewdrop wave that slows foes (-40% Move 3s) and primes 💧 Soaked for Cryo/Electro combos!',
   }),
   sk_tusk_rush: Object.freeze({
     id: 'sk_tusk_rush',
@@ -1081,12 +1087,15 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 7000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🔨 Guard Breaker',
+    puzzleHint: 'Drill through 🧊 Frozen monsters to trigger 1.6× 🧊🔨 Shatter (+35 Guard break), or open with 😵 Stun + 💫 Stagger so teammates land guaranteed 🎯 Exposed crits!',
     aimType: 'line',
     dashDist: 5.2,
     lineWidth: 2.0,
     dmgMult: Object.freeze([1.80, 2.05, 2.30, 2.60, 2.95]),
     stunMs: 850,
-    desc: 'Drills 5.2m forward inside a spiraling meadow gale shockwave cone, damaging and stunning every monster along your path for 0.85s (scales with 🔥 Power).',
+    desc: 'Drills 5.2m forward in a gale-tusk shockwave, dealing 🔥 Power DMG, inflicting 😵 Stun (0.85s) + 💫 Stagger, and detonating 🧊 Frozen foes for 1.6× 🧊🔨 Shatter!',
   }),
   sk_crystal_fan: Object.freeze({
     id: 'sk_crystal_fan',
@@ -1098,11 +1107,14 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 6500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🧊🔨 Shatter Payoff',
+    puzzleHint: 'Blast right after a teammate’s ❄️ Frost Nova or 🔨 Tusk Rush to detonate 🧊🔨 Shatter (1.6× DMG) and guaranteed 🎯 Exposed criticals across the whole cone!',
     aimType: 'cone',
     range: 7.2,
     arcDeg: 62,
     dmgMult: Object.freeze([2.10, 2.40, 2.70, 3.05, 3.45]),
-    desc: 'Blasts a 7.2m, 62° cone spray of cyan-sapphire prism shards that shatter into 3D crystal clusters on impact (scales with 🔥 Power).',
+    desc: 'Blasts a 7.2m, 62° cone of heavy prism shards (🔥 Power DMG) that shatters 🧊 Frozen packs for 1.6× 🧊🔨 Shatter DMG and crits 😵 Stunned/💫 Staggered foes!',
   }),
   sk_echo_drain: Object.freeze({
     id: 'sk_echo_drain',
@@ -1114,11 +1126,15 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 10000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'fortune', 'swiftness', 'luck']),
+    teamRole: '🩸 Siphon Brawler',
+    puzzleHint: 'Cast inside elemental-primed packs (💧 Soaked, 🔥 Burning, ⚡ Shocked, or ❄️ Chilled) to trigger 🩸 Siphon (+30% DMG & 2× HP leech) and prime 🎶 Resonance!',
     aimType: 'self_aoe',
     radius: 3.8,
     dmgMult: Object.freeze([1.65, 1.88, 2.12, 2.36, 2.65]),
     leechPct: 0.25,
-    desc: 'Spins a 3.8m crimson-violet nocturnal siphon vortex around you, damaging nearby monsters and leeching 25% of damage dealt back as HP (scales with 🔥 Power).',
+    baseLeechPct: 0.25,
+    desc: 'Spins a 3.8m crimson siphon vortex (🔥 Power DMG) that leeches HP (boosted by 💖 Vitality). Triggers 🩸 Siphon (+30% DMG & 2× Leech) on elemental-tagged foes!',
   }),
   sk_gravity_spin: Object.freeze({
     id: 'sk_gravity_spin',
@@ -1130,11 +1146,14 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 11000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🌀 Pack Gatherer',
+    puzzleHint: 'Vacuum scattered mobs into a tight cluster with 🌀 Gathered so teammates can drop 🌲 Earthshatter, ☄️ Solar Meteor, or 🌠 Star Brand for 1.4× 🌀🪨 Crush DMG!',
     aimType: 'self_aoe',
     radius: 4.4,
     pullRadius: 4.6,
     dmgMult: Object.freeze([2.00, 2.28, 2.58, 2.88, 3.25]),
-    desc: 'Orbits 3D sacred quartz rune-mandalas inside an amethyst cosmic gravity well, pulling nearby monsters inward and cleaving them (scales with 🔥 Power).',
+    desc: 'Orbits sacred quartz rune-mandalas that vacuum monsters within 4.6m inward, dealing 🔥 Power DMG and priming 🌀 Gathered (2.5s) for 1.4× 🌀🪨 Crush AoE combos!',
   }),
   sk_earthshatter: Object.freeze({
     id: 'sk_earthshatter',
@@ -1146,12 +1165,15 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: true,
     cooldownMs: 15000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🔨 Guard Breaker',
+    puzzleHint: 'Drop onto 🌀 Gathered or 🧊 Frozen packs to trigger 1.4× 🌀🪨 Crush + 1.6× 🧊🔨 Shatter simultaneously while locking foes down with a 1.5s 😵 Stun!',
     aimType: 'ground_aoe',
     castRange: 7.5,
     radius: 4.8,
     dmgMult: Object.freeze([3.00, 3.45, 3.90, 4.35, 4.85]),
     stunMs: 1500,
-    desc: 'Boss Relic Skill — Slams the earth up to 7.5m away to erupt 3D granite megaliths and golden seismic shockwaves across a 4.8m crater, dealing heavy 🔥 Power DMG and stunning foes for 1.5s.',
+    desc: 'Boss Relic — Erupts a 4.8m megalith crater up to 7.5m away, dealing heavy 🔥 Power DMG, inflicting 😵 Stun (1.5s) + 💫 Stagger, and detonating 🧊🔨 Shatter & 🌀🪨 Crush!',
   }),
   sk_prism_beam: Object.freeze({
     id: 'sk_prism_beam',
@@ -1163,11 +1185,14 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: true,
     cooldownMs: 16000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '✨🌠 Judgement Sniper',
+    puzzleHint: 'Line up after a Ranger’s Hit-3 Mark or a teammate’s 🌠 Star Brand to detonate 1.6× ✨🌠 Judgement and shred Boss Guard bars from 10m away!',
     aimType: 'line',
     range: 10.0,
     lineWidth: 1.9,
     dmgMult: Object.freeze([3.40, 3.90, 4.40, 4.90, 5.45]),
-    desc: 'Boss Relic Skill — Anchors a glowing crystalline hexagram seal beneath your feet and fires a 10.0m piercing starlight prism laser through every foe in a line (scales with 🔥 Power).',
+    desc: 'Boss Relic — Fires a 10.0m piercing starlight prism laser (🔥 Power DMG) that detonates 🌠 Marked targets for 1.6× ✨🌠 Judgement DMG and heavy Guard break!',
   }),
   sk_zephyr_vault: Object.freeze({
     id: 'sk_zephyr_vault',
@@ -1179,6 +1204,9 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 7500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🍃 Wind Detonator',
+    puzzleHint: 'Fire into 🔥 Burning foes for 🔥🍃 Wildfire (spreads burn 3m) or ❄️ Chilled foes for ❄️🍃 Frostwind (1.2s 🧊 Freeze) while backstepping out of Boss telegraphs!',
     aimType: 'cone',
     range: 7.6,
     arcDeg: 70,
@@ -1188,7 +1216,7 @@ export const MONSTER_SKILLS = Object.freeze({
     hastePct: 0.30,
     hasteMs: 3500,
     dmgMult: Object.freeze([1.75, 2.00, 2.25, 2.55, 2.90]),
-    desc: 'Fires a 7.6m emerald wind-cutter volley in a 70° cone (slowing foes by 35% for 2.5s) while vaulting 3.4m backward to safety and granting +30% Attack Haste for 3.5s (scales with 🔥 Power).',
+    desc: 'Fires a 7.6m, 70° wind volley (-35% Move 2.5s) while vaulting 3.4m back (+30% Haste 3.5s). Detonates 🔥 Burning into 🔥🍃 Wildfire and ❄️ Chilled into 1.2s 🧊 Frostwind!',
   }),
   sk_frost_nova: Object.freeze({
     id: 'sk_frost_nova',
@@ -1200,13 +1228,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 11500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🧊 Cryo Lockdown',
+    puzzleHint: 'Pair with a teammate’s 💧 Acid Splash, Mirror Shell, or Koi Whirlpool for a 2.6s 🧊 Deep Freeze, then 🔨 Earthshatter for 1.85× Shatter Strike!',
     aimType: 'self_aoe',
     radius: 4.5,
     freezeMs: 1600,
     slowPct: 0.50,
     slowMs: 4000,
     dmgMult: Object.freeze([1.85, 2.12, 2.40, 2.70, 3.05]),
-    desc: 'Detonates a 4.5m ring of crystalline frost spores around you, freezing monsters solid for 1.6s and chilling them by 50% for 4s (scales with 🔥 Power).',
+    desc: 'Erupt a 4.5m cryo nova that Encases monsters in solid ice (🧊 Frozen 1.6s · +15% Shatter DMG taken) and ❄️ Chills (-45% Move 4s). Detonates 💧 Soaked into 🧊 Deep Freeze (2.6s + 1.4× DMG)!',
   }),
   sk_foxfire_wisps: Object.freeze({
     id: 'sk_foxfire_wisps',
@@ -1218,11 +1249,14 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 8500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🔥 Pyro Primer',
+    puzzleHint: 'Ignites targets with 🔥 Burning so Wind skills (🍃 Zephyr Vault / 🌸 Sakura Tempest) trigger 🔥🍃 Wildfire, or hit 💧 Soaked foes for ♨️ Scald blind steam!',
     aimType: 'homing',
     range: 8.6,
     orbCount: 3,
     dmgMult: Object.freeze([2.25, 2.58, 2.92, 3.28, 3.70]),
-    desc: 'Conjures 3 homing sakura-pink spirit foxfire orbs that lock onto nearby foes within 8.6m and detonate on impact (scales with 🔥 Power).',
+    desc: 'Conjures 3 homing shrine foxfire orbs within 8.6m (🔥 Power DMG) that ignite foes with 🔥 Burning (4s DoT) and detonate 💧 Soaked into ♨️ Scald steam (30% miss)!',
   }),
   sk_mirror_shell: Object.freeze({
     id: 'sk_mirror_shell',
@@ -1234,6 +1268,9 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 13000,
     scalingStat: 'fortune',
+    statScaling: Object.freeze(['fortune', 'power', 'swiftness', 'luck']),
+    teamRole: '🛡️ Team Bastion',
+    puzzleHint: 'Grants the party a 45% DMG reduction + 35% thorns shell while priming 💧 Soaked across 4.6m for ❄️💧 Deep Freeze or ⚡💧 Conduction follow-ups!',
     aimType: 'self_aoe',
     radius: 4.6,
     durationMs: 5000,
@@ -1241,7 +1278,7 @@ export const MONSTER_SKILLS = Object.freeze({
     reflectPct: 0.35,
     shieldMaxHpPct: Object.freeze([0.30, 0.35, 0.40, 0.45, 0.52]),
     dmgMult: Object.freeze([1.55, 1.78, 2.02, 2.28, 2.60]),
-    desc: 'Encases you in an iridescent pearl barrier for 5s (absorbing 💖 Vitality shield HP, cutting incoming damage by 45%, and reflecting 35% water thorns) while pulsing a 4.6m tide shockwave.',
+    desc: 'Shields nearby Co-Op allies for 5s (💖 Vitality barrier, -45% DMG taken, 35% thorns reflect) and pulses a 4.6m tide wave (🔥 Power DMG) that primes 💧 Soaked!',
   }),
   sk_tailwind_gale: Object.freeze({
     id: 'sk_tailwind_gale',
@@ -1253,13 +1290,17 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 12500,
     scalingStat: 'fortune',
+    statScaling: Object.freeze(['fortune', 'swiftness', 'luck']),
+    teamRole: '🦢 Tempo Buffer',
+    puzzleHint: 'Pop right before a Boss Guard-break window to heal the squad, grant +35% Haste & +20% Crit for 6s, and prime your own 🎶 Resonance (+25% next Skill DMG)!',
     aimType: 'self_aoe',
     radius: 5.5,
     durationMs: 6000,
     hastePct: 0.35,
+    hasteMs: 6000,
     critBonusPct: 0.20,
     healPctPerTick: Object.freeze([0.12, 0.14, 0.16, 0.18, 0.21]),
-    desc: 'Summons an uplifting crane feather gale across 5.5m, healing nearby Co-Op allies and granting +35% Move/Attack Haste & +20% Crit for 6s (scales with 💖 Vitality).',
+    desc: 'Summons a 5.5m crane tailwind that heals Co-Op allies (💖 Vitality), grants +35% Haste & +20% Crit for 6s, and primes 🎶 Resonance (+25% next Skill DMG)!',
   }),
   sk_koi_whirlpool: Object.freeze({
     id: 'sk_koi_whirlpool',
@@ -1271,6 +1312,9 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 12000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '💧🌀 Hydro Gatherer',
+    puzzleHint: 'The ultimate Co-Op setup zone: pulls packs together and applies 💧 Soaked + 🌀 Gathered every pulse for ❄️💧 Deep Freeze, ⚡💧 Conduction, and 🌀🪨 Crush!',
     aimType: 'ground_aoe',
     castRange: 7.8,
     radius: 4.6,
@@ -1278,7 +1322,7 @@ export const MONSTER_SKILLS = Object.freeze({
     durationMs: 4000,
     ticks: 4,
     dmgMult: Object.freeze([0.72, 0.82, 0.94, 1.06, 1.20]),
-    desc: 'Anchors a 4.6m spinning turquoise lagoon whirlpool up to 7.8m away that continuously pulls monsters inward and deals 4 pulses of 🔥 Power damage.',
+    desc: 'Anchors a 4.6m lagoon whirlpool up to 7.8m away for 4s that pulls monsters inward over 4 pulses (🔥 Power DMG) and primes both 💧 Soaked and 🌀 Gathered!',
   }),
   sk_sakura_tempest: Object.freeze({
     id: 'sk_sakura_tempest',
@@ -1290,13 +1334,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: true,
     cooldownMs: 16500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'fortune', 'swiftness', 'luck']),
+    teamRole: '🌸 Mobile Storm Healer',
+    puzzleHint: 'Walk through 🔥 Burning or ❄️ Chilled packs to trigger 🔥🍃 Wildfire (burn spread) and ❄️🍃 Frostwind (1.2s 🧊 Freeze) every second while healing Co-Op allies!',
     aimType: 'self_aoe',
     radius: 5.6,
     durationMs: 3000,
     ticks: 3,
     dmgMult: Object.freeze([1.22, 1.40, 1.58, 1.78, 2.00]),
     healPctPerTick: Object.freeze([0.06, 0.07, 0.08, 0.09, 0.105]),
-    desc: 'Boss Relic Skill — Unleashes Lady Tamamo’s 5.6m sakura shrine storm for 3s, dealing 3 sweeping waves of 🔥 Power DMG to foes while healing Co-Op allies inside!',
+    desc: 'Boss Relic — Unleashes a 5.6m mobile sakura storm for 3s that deals 3 waves of 🔥 Power DMG, heals Co-Op allies (💖 Vitality), and detonates 🔥🍃 Wildfire & ❄️🍃 Frostwind!',
   }),
   sk_solar_meteor: Object.freeze({
     id: 'sk_solar_meteor',
@@ -1308,13 +1355,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 10500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🔥 Pyro Detonator',
+    puzzleHint: 'Drop onto 🌀 Gathered or 🧊 Frozen packs for 1.4× 🌀🪨 Crush or 1.6× 🧊🔨 Shatter, then leave a 3s 🔥 Burning field for Wind teammates to spread 🔥🍃 Wildfire!',
     aimType: 'ground_aoe',
     castRange: 8.2,
     radius: 4.4,
     durationMs: 3000,
     ticks: 3,
     dmgMult: Object.freeze([2.45, 2.80, 3.18, 3.58, 4.05]),
-    desc: 'Calls down a blazing solar-cinder meteor up to 8.2m away onto a 4.4m impact zone, dealing massive 🔥 Power impact damage and leaving scorched embers for 3s.',
+    desc: 'Calls down a solar meteor up to 8.2m away across 4.4m (massive 🔥 Power DMG + 3s ember zone), igniting 🔥 Burning and detonating 🌀🪨 Crush, 🧊🔨 Shatter & ♨️ Scald!',
   }),
   sk_chain_lightning: Object.freeze({
     id: 'sk_chain_lightning',
@@ -1326,13 +1376,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 7500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '⚡ Electro Chain',
+    puzzleHint: 'Fire into a 💧 Soaked pack (from Koi Whirlpool, Mirror Shell, or Dewdrop Canopy) to trigger ⚡💧 Conduction for 1.5× DMG, 1.2s 😵 Stun, and +3 extra chain bounces!',
     aimType: 'chain',
     range: 8.5,
     bounces: 4,
     bounceRange: 6.0,
     stunMs: 550,
     dmgMult: Object.freeze([2.15, 2.46, 2.80, 3.15, 3.55]),
-    desc: 'Discharges high-voltage aether lightning that arcs across up to 4 monsters within 8.5m, dealing 🔥 Power DMG and micro-stunning each target for 0.55s.',
+    desc: 'Arcs high-voltage lightning across 4 foes within 8.5m (🔥 Power DMG, 0.55s 😵 Stun & ⚡ Shocked). Detonates 💧 Soaked for ⚡💧 Conduction (1.5× DMG, 1.2s Stun, +3 bounces)!',
   }),
   sk_star_brand: Object.freeze({
     id: 'sk_star_brand',
@@ -1344,13 +1397,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 11000,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '🌠 Damage Amplifier',
+    puzzleHint: 'Brands foes to take +25% bonus DMG from the whole Co-Op party for 5s and primes 🌠 Marked so Celestial Prism Ray detonates 1.6× ✨🌠 Judgement!',
     aimType: 'ground_aoe',
     castRange: 8.0,
     radius: 4.2,
     vulnPct: 0.25,
     vulnMs: 5000,
     dmgMult: Object.freeze([2.20, 2.52, 2.86, 3.22, 3.65]),
-    desc: 'Calls down an amethyst starlight spear up to 8.0m away across 4.2m, dealing 🔥 Power DMG and branding struck foes to take +25% bonus damage from all party members for 5s!',
+    desc: 'Strikes a 4.2m zone up to 8.0m away (🔥 Power DMG), branding foes with 🌠 Marked and +25% bonus DMG taken from all Co-Op allies for 5s while priming 🎶 Resonance!',
   }),
   sk_time_dilation: Object.freeze({
     id: 'sk_time_dilation',
@@ -1362,13 +1418,16 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: false,
     cooldownMs: 14000,
     scalingStat: 'fortune',
+    statScaling: Object.freeze(['fortune', 'power', 'swiftness', 'luck']),
+    teamRole: '⏳ Cooldown Weaver',
+    puzzleHint: 'Cast right after your party applies 🧊 Frozen, 💧 Soaked, 🔥 Burning, or 🌠 Marked to extend every status duration by +50%, slow foes 65%, and refund 2.5s off your skills!',
     aimType: 'self_aoe',
     radius: 5.0,
     slowPct: 0.65,
     slowMs: 4500,
     cdRefundMs: 2500,
     dmgMult: Object.freeze([1.65, 1.90, 2.15, 2.42, 2.75]),
-    desc: 'Expands a 5.0m golden clockwork time-dome that slows monsters by 65% for 4.5s, deals shockwave DMG, and rewinds 2.5s off your other Monster Skill cooldown!',
+    desc: 'Expands a 5.0m clockwork dome that slows foes (-65% Move 4.5s), extends active 🧊 Freeze & elemental status durations by +50%, and rewinds 2.5s off your other skill cooldowns!',
   }),
   sk_supernova_cleave: Object.freeze({
     id: 'sk_supernova_cleave',
@@ -1380,12 +1439,15 @@ export const MONSTER_SKILLS = Object.freeze({
     isBossSkill: true,
     cooldownMs: 17500,
     scalingStat: 'power',
+    statScaling: Object.freeze(['power', 'swiftness', 'luck']),
+    teamRole: '☀️ Apex Cataclysm',
+    puzzleHint: 'Unleash onto 🧊 Frozen or 💧 Soaked packs for 1.6× 🧊🔨 Shatter or ♨️ Scald, stunning the entire 95° cone for 1.4s and priming 🔥 Burning + 💫 Stagger!',
     aimType: 'cone',
     range: 8.5,
     arcDeg: 95,
     stunMs: 1400,
     dmgMult: Object.freeze([3.65, 4.18, 4.72, 5.28, 5.90]),
-    desc: 'Boss Relic Skill — Channels Chronos-Solar Bahamut’s 95° golden supernova cataclysm up to 8.5m forward, dealing colossal 🔥 Power DMG and stunning foes for 1.4s!',
+    desc: 'Boss Relic — Unleashes an 8.5m, 95° solar supernova cone (colossal 🔥 Power DMG), inflicting 1.4s 😵 Stun + 🔥 Burning + 💫 Stagger and detonating 🧊🔨 Shatter!',
   }),
 });
 
@@ -1409,23 +1471,117 @@ export function skillCooldownMs(skillId, stats = {}) {
 
 export function computeSkillNumbers(skillId, level = 1, stats = {}, maxHp = 100) {
   const def = MONSTER_SKILLS[skillId];
-  if (!def) return { damage: 0, healPerTick: 0, shieldHp: 0 };
+  if (!def) return { damage: 0, healPerTick: 0, shieldHp: 0, lv: 1, level: 1, cooldownMs: 10000, scaling: [] };
   const lvIdx = Math.max(0, Math.min(4, (Number(level) || 1) - 1));
+  const lv = lvIdx + 1;
+
   const power = Math.max(0, Number(stats?.power) || 0);
   const vit = Math.max(0, Number(stats?.fortune) || 0);
+  const swift = Math.max(0, Number(stats?.swiftness) || 0);
+  const luck = Math.max(0, Number(stats?.luck) || 0);
+
   const pwrMult = 1 + softCap(power, 0.85, 150);
-  const healMult = 1 + softCap(vit, 0.65, 150);
+  const vitMult = 1 + softCap(vit, 0.65, 150);
+  const swfCdPct = Math.round(softCap(swift, 0.35, 150) * 100);
+  const extraSwf = Math.max(0, swift - 80);
+  const ccDurMult = 1 + softCap(extraSwf, 0.35, 140);
+  const skillCritPct = Math.round((0.08 + softCap(luck, 0.30, 140)) * 100);
+  const leechBonusPct = Math.round(softCap(vit, 0.12, 150) * 100);
 
   const dmgScale = def.dmgMult ? def.dmgMult[lvIdx] : 0;
   const damage = dmgScale > 0 ? Math.max(1, Math.round(16 * dmgScale * pwrMult)) : 0;
 
   const healPct = def.healPctPerTick ? def.healPctPerTick[lvIdx] : 0;
-  const healPerTick = healPct > 0 ? Math.max(2, Math.round(maxHp * healPct * healMult)) : 0;
+  const healPerTick = healPct > 0 ? Math.max(2, Math.round(maxHp * healPct * vitMult)) : 0;
+  const healAmount = healPerTick;
+  const totalHeal = healPerTick > 0 ? healPerTick * (def.ticks || 1) : 0;
 
   const shieldPct = def.shieldMaxHpPct ? def.shieldMaxHpPct[lvIdx] : 0;
-  const shieldHp = shieldPct > 0 ? Math.max(8, Math.round(maxHp * shieldPct * healMult)) : 0;
+  const shieldHp = shieldPct > 0 ? Math.max(8, Math.round(maxHp * shieldPct * vitMult)) : 0;
 
-  return { damage, healPerTick, shieldHp, lv: lvIdx + 1 };
+  const baseLeech = def.baseLeechPct || def.leechPct || 0;
+  const leechPct = baseLeech > 0 ? Math.min(85, Math.round((baseLeech + softCap(vit, 0.12, 150)) * 100)) : 0;
+
+  const cooldownMs = skillCooldownMs(skillId, stats);
+  const freezeMs = def.freezeMs ? Math.round(def.freezeMs * ccDurMult) : 0;
+  const bossFreezeMs = def.freezeMs ? Math.round(750 * ccDurMult) : 0;
+  const stunMs = def.stunMs ? Math.round(def.stunMs * ccDurMult) : 0;
+  const bossStunMs = def.stunMs
+    ? Math.round((skillId === 'sk_earthshatter' || skillId === 'sk_supernova_cleave' ? 700 : Math.round(def.stunMs * 0.5)) * ccDurMult)
+    : 0;
+  const slowMs = def.slowMs ? Math.round(def.slowMs * ccDurMult) : 0;
+  const hasteMs = def.hasteMs ? Math.round(def.hasteMs * ccDurMult) : 0;
+  const vulnMs = def.vulnMs ? Math.round(def.vulnMs * ccDurMult) : 0;
+
+  const speedPct = def.hastePct ? Math.round(def.hastePct * 100) : 0;
+  const slowPct = def.slowPct ? Math.round(def.slowPct * 100) : 0;
+  const vulnPct = def.vulnPct ? Math.round(def.vulnPct * 100) : (skillId === 'sk_frost_nova' ? 15 : 0);
+
+  const pwrBonusPct = Math.round((pwrMult - 1) * 100);
+  const vitBonusPct = Math.round((vitMult - 1) * 100);
+  const ccBonusPct = Math.round((ccDurMult - 1) * 100);
+
+  const scaling = [];
+  if (damage > 0) {
+    const t = `+${pwrBonusPct}% DMG`;
+    scaling.push({ stat: 'power', icon: '🔥', label: 'Power', text: t, value: t });
+  }
+  if (healPerTick > 0 || shieldHp > 0 || leechPct > 0) {
+    const t = shieldHp > 0 ? `+${vitBonusPct}% Shield` : leechPct > 0 ? `${leechPct}% Leech` : `+${vitBonusPct}% Heal`;
+    scaling.push({
+      stat: 'fortune',
+      icon: '💖',
+      label: 'Vitality',
+      text: t,
+      value: t,
+    });
+  }
+  const swfText = ccBonusPct > 0 ? `-${swfCdPct}% CD · +${ccBonusPct}% Dur` : `-${swfCdPct}% CD`;
+  scaling.push({
+    stat: 'swiftness',
+    icon: '⚡',
+    label: 'Swiftness',
+    text: swfText,
+    value: swfText,
+  });
+  const lckText = `${skillCritPct}% Crit / Drop`;
+  scaling.push({
+    stat: 'luck',
+    icon: '🍀',
+    label: 'Luck',
+    text: lckText,
+    value: lckText,
+  });
+
+  return {
+    lv,
+    level: lv,
+    mult: dmgScale || healPct || shieldPct || 1,
+    cooldownMs,
+    damage,
+    healPerTick,
+    healAmount,
+    totalHeal,
+    shieldHp,
+    leechPct,
+    leechBonusPct,
+    speedPct,
+    slowPct,
+    vulnPct,
+    freezeMs,
+    bossFreezeMs,
+    stunMs,
+    bossStunMs,
+    slowMs,
+    hasteMs,
+    vulnMs,
+    ccBonusPct,
+    pwrBonusPct,
+    vitBonusPct,
+    swfCdPct,
+    skillCritPct,
+    scaling,
+  };
 }
 
 export function rollMonsterSkillDrop({
